@@ -195,8 +195,8 @@
   <div class="modal modal-wide">
     <div class="modal-header">
       <div>
-        <div class="modal-title">New Proforma Invoice</div>
-        <div class="modal-sub">신규 견적서 작성 · Firebase Firestore 저장</div>
+        <div class="modal-title" id="n_modal_title">New Proforma Invoice</div>
+        <div class="modal-sub" id="n_modal_sub">신규 견적서 작성 · Firebase Firestore 저장</div>
       </div>
       <button class="modal-close" onclick="closeNewPI()">✕</button>
     </div>
@@ -301,7 +301,8 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">닫기</button>
-      <button class="btn btn-outline" id="btn_mark_sent" onclick="updateStatus('sent')">📨 Sent로 변경</button>
+      <button class="btn btn-outline" style="border-color:#ffd740;color:#ffd740" onclick="openEditModal()">✏ 수정</button>
+      <button class="btn btn-outline" id="btn_mark_sent" onclick="updateStatus('sent')">📨 Sent</button>
       <button class="btn btn-primary" id="btn_mark_confirmed" onclick="updateStatus('confirmed')">✔ Confirmed</button>
     </div>
   </div>
@@ -329,6 +330,7 @@
   const customerMap = {};
   let allPIs = [];
   let currentPIId = null;
+  let editPIId = null;
 
   // ── 고객맵 로드 ──
   async function loadCustomerMap() {
@@ -515,6 +517,11 @@
 
   // ── New PI 모달 열기/닫기 ──
   window.openNewPIModal = function() {
+    editPIId = null;
+    document.getElementById("n_modal_title").textContent = "New Proforma Invoice";
+    document.getElementById("n_modal_sub").textContent = "신규 견적서 작성 · Firebase Firestore 저장";
+    document.getElementById("n_save_btn").textContent = "✔ Firestore 저장";
+
     // 오늘 날짜 기본값
     document.getElementById("n_pi_date").value = new Date().toISOString().split("T")[0];
     nCalcValid();
@@ -529,7 +536,88 @@
     });
     nItems = []; nCounter = 0;
     document.getElementById("n_li_body").innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>';
+    
+    // 추가비용 초기화
+    document.getElementById("n_handling").value = 0;
+    document.getElementById("n_freight").value = 0;
+    document.getElementById("n_insurance").value = 0;
+    document.getElementById("n_remarks").value = "";
+
     nRecalcTotals();
+    document.getElementById("new_pi_overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  };
+
+  // ── 기존 PI 수정 모달 열기 ──
+  window.openEditModal = async function() {
+    if (!currentPIId) return;
+    editPIId = currentPIId;
+    const p = allPIs.find(x => x.id === editPIId);
+    if (!p) return;
+
+    // 상세 모달 닫기
+    closeModal();
+
+    // 수정 모드 UI 변경
+    document.getElementById("n_modal_title").textContent = "Edit Proforma Invoice";
+    document.getElementById("n_modal_sub").textContent = `기존 견적서 수정 및 새로운 리비전 발행 (${p.piNumber})`;
+    document.getElementById("n_save_btn").textContent = "✔ 수정사항 저장";
+
+    // 고객 목록 채우기
+    const sel = document.getElementById("n_customer");
+    sel.innerHTML = '<option value="">-- 선택 --</option>';
+    Object.entries(customerMap).forEach(([id, c]) => {
+      const opt = document.createElement("option");
+      opt.value = id; opt.textContent = c.name || id;
+      opt.dataset.info = JSON.stringify(c);
+      sel.appendChild(opt);
+    });
+
+    // 기존 데이터 폼에 채우기
+    document.getElementById("n_pi_date").value = p.piDate || "";
+    document.getElementById("n_validity").value = p.validityDays || 30;
+    document.getElementById("n_valid_until").value = p.validUntilDate || "";
+    sel.value = p.customerId || "";
+    document.getElementById("n_contact").value = customerMap[p.customerId]?.contactPerson || "";
+    document.getElementById("n_email").value = customerMap[p.customerId]?.email || "";
+    document.getElementById("n_incoterms").value = p.incoterms || "";
+    document.getElementById("n_dest").value = p.destinationPort || "";
+    document.getElementById("n_payment").value = p.paymentTerms || "";
+    document.getElementById("n_shipping").value = p.shippingMethod || "Sea Freight";
+    document.getElementById("n_rate").value = p.exchangeRate || 1468.96;
+    document.getElementById("n_remarks").value = p.remarks || "";
+    document.getElementById("n_handling").value = p.handlingCharges || 0;
+    document.getElementById("n_freight").value = p.freightCharges || 0;
+    document.getElementById("n_insurance").value = p.insuranceCharges || 0;
+
+    // Line Items 가져오기
+    nItems = []; nCounter = 0;
+    document.getElementById("n_li_body").innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">불러오는 중...</td></tr>';
+
+    try {
+      const revSnap = await getDocs(collection(doc(db,"companies",COMPANY_ID,"proforma_invoices",editPIId),"revisions"));
+      if (!revSnap.empty) {
+        const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+        const liSnap = await getDocs(collection(latestRev.ref,"line_items"));
+        if (!liSnap.empty) {
+          const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
+          nItems = items.map((item, i) => ({
+            id: ++nCounter,
+            desc: item.description || "",
+            qty: item.quantity || 1,
+            unit: item.unit || "KG",
+            cost: item.costKrw || 0,
+            margin: item.profitMargin || 0
+          }));
+        }
+      }
+    } catch(e) {
+      console.error("Line items 로딩 실패:", e);
+    }
+
+    nRenderItems(); // 렌더링 및 금액 합계 리계산 실행
+
+    // 모달 열기
     document.getElementById("new_pi_overlay").classList.add("open");
     document.body.style.overflow = "hidden";
   };
@@ -618,7 +706,7 @@
   }
   window.nRecalcTotals = nRecalcTotals;
 
-  // ── PI 저장 ──
+  // ── PI 저장/수정 ──
   window.nSavePI = async function() {
     const btn = document.getElementById("n_save_btn");
     const customerId = document.getElementById("n_customer").value;
@@ -629,17 +717,6 @@
     if (!nItems.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
     btn.disabled=true; btn.textContent="저장 중...";
     try {
-      // PI 번호 생성
-      const year    = new Date(piDate).getFullYear();
-      const metaRef = doc(db,"companies",COMPANY_ID,"meta","pi_counter");
-      let num;
-      await runTransaction(db, async tx => {
-        const snap = await tx.get(metaRef);
-        const cur  = snap.exists()?(snap.data()[`count_${year}`]||0):0;
-        num = cur+1;
-        tx.set(metaRef,{[`count_${year}`]:num},{merge:true});
-      });
-      const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2,"0")}`;
       // 금액 계산
       let subtotal=0;
       const processedItems = nItems.map((item,i)=>{
@@ -654,29 +731,91 @@
       const ins     = parseFloat(document.getElementById("n_insurance").value)||0;
       const grand   = subtotal+hand+frt+ins;
       const validUntil = document.getElementById("n_valid_until").value;
-      // Firestore 트랜잭션 저장
-      await runTransaction(db, async tx=>{
-        const piRef  = doc(collection(doc(db,"companies",COMPANY_ID),"proforma_invoices"));
-        const revRef = doc(collection(piRef,"revisions"));
-        tx.set(piRef,{piNumber,piDate,customerId,
-          incoterms:document.getElementById("n_incoterms").value,
-          destinationPort:document.getElementById("n_dest").value,
-          paymentTerms:document.getElementById("n_payment").value,
-          shippingMethod:document.getElementById("n_shipping").value,
-          exchangeRate:rate,validityDays:parseInt(document.getElementById("n_validity").value)||30,
-          validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
-          handlingCharges:hand,freightCharges:frt,insuranceCharges:ins,
-          subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
-          currentVersion:"A",status:"draft",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-        tx.set(revRef,{version:"A",revisionNumber:1,status:"draft",
-          subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
-        processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });
-      });
-      closeNewPI();
-      alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grand.toFixed(2)}`);
+
+      if (editPIId) {
+        // 기존 PI 수정 및 새 버전 발행
+        await runTransaction(db, async tx => {
+          const piRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", editPIId);
+          const piSnap = await tx.get(piRef);
+          if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
+
+          const data = piSnap.data();
+          const curVer = data.currentVersion || "A";
+          const nextVer = String.fromCharCode(curVer.charCodeAt(0) + 1);
+
+          // 리비전 수 카운트 (간단히 버전 알파벳 차이로 번호 도출)
+          const nextRevNum = nextVer.charCodeAt(0) - 64; // A=1, B=2, C=3...
+
+          // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
+          tx.update(piRef, {
+            piDate, customerId,
+            incoterms: document.getElementById("n_incoterms").value,
+            destinationPort: document.getElementById("n_dest").value,
+            paymentTerms: document.getElementById("n_payment").value,
+            shippingMethod: document.getElementById("n_shipping").value,
+            exchangeRate: rate, validityDays: parseInt(document.getElementById("n_validity").value)||30,
+            validUntilDate: validUntil, remarks: document.getElementById("n_remarks").value,
+            handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
+            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
+            currentVersion: nextVer, updatedAt: serverTimestamp()
+          });
+
+          // 2. 새 Revision 문서 등록
+          const revRef = doc(collection(piRef, "revisions"));
+          tx.set(revRef, {
+            version: nextVer, revisionNumber: nextRevNum, status: data.status || "draft",
+            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4), createdAt: serverTimestamp()
+          });
+
+          // 3. 새 Revision 하위 Line items 등록
+          processedItems.forEach(item => {
+            tx.set(doc(collection(revRef, "line_items")), item);
+          });
+        });
+
+        closeNewPI();
+        const curPIObj = allPIs.find(x => x.id === editPIId);
+        const curVerStr = curPIObj ? curPIObj.currentVersion || "A" : "A";
+        const nextVerStr = String.fromCharCode(curVerStr.charCodeAt(0) + 1);
+        alert(`✅ 수정 완료!\n새 리비전(${nextVerStr})이 발행되었습니다.`);
+      } else {
+        // 신규 PI 번호 발번 트랜잭션
+        const year    = new Date(piDate).getFullYear();
+        const metaRef = doc(db,"companies",COMPANY_ID,"meta","pi_counter");
+        let num;
+        await runTransaction(db, async tx => {
+          const snap = await tx.get(metaRef);
+          const cur  = snap.exists()?(snap.data()[`count_${year}`]||0):0;
+          num = cur+1;
+          tx.set(metaRef,{[`count_${year}`]:num},{merge:true});
+        });
+        const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2,"0")}`;
+
+        // 신규 Firestore 트랜잭션 저장
+        await runTransaction(db, async tx=>{
+          const piRef  = doc(collection(doc(db,"companies",COMPANY_ID),"proforma_invoices"));
+          const revRef = doc(collection(piRef,"revisions"));
+          tx.set(piRef,{piNumber,piDate,customerId,
+            incoterms:document.getElementById("n_incoterms").value,
+            destinationPort:document.getElementById("n_dest").value,
+            paymentTerms:document.getElementById("n_payment").value,
+            shippingMethod:document.getElementById("n_shipping").value,
+            exchangeRate:rate,validityDays:parseInt(document.getElementById("n_validity").value)||30,
+            validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
+            handlingCharges:hand,freightCharges:frt,insuranceCharges:ins,
+            subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
+            currentVersion:"A",status:"draft",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+          tx.set(revRef,{version:"A",revisionNumber:1,status:"draft",
+            subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
+          processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });
+        });
+
+        closeNewPI();
+        alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grand.toFixed(2)}`);
+      }
     } catch(e) {
       alert("❌ 저장 실패: "+e.message); console.error(e);
-    } finally { btn.disabled=false; btn.textContent="✔ 저장"; }
+    } finally { btn.disabled=false; btn.textContent=editPIId ? "✔ 수정사항 저장" : "✔ Firestore 저장"; }
   };
 
   // ── 초기화 ──
