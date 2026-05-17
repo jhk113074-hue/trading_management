@@ -1,18 +1,15 @@
 // firebase/config.js
-// Firebase 프로젝트 설정값을 여기에 입력하세요.
-// Firebase Console → 프로젝트 설정 → 내 앱 → SDK 설정 및 구성에서 복사
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+  authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+  projectId:         "tradingmanagement-c1cf4",
+  storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+  messagingSenderId: "1033735327012",
+  appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
 };
 
 const app = initializeApp(firebaseConfig);
