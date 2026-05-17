@@ -85,6 +85,29 @@
     .status-badge-lg{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-left:10px;}
     .total-highlight{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:right;margin-top:16px;}
     .total-highlight .grand{font-size:20px;font-weight:700;color:var(--green);margin-top:4px;}
+
+    /* ── New PI Form Modal ── */
+    .modal-wide{width:1000px;}
+    .form-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+    .form-section h4{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:700;}
+    .fg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .fg-2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .fg-full{grid-column:1/-1;}
+    .fgroup{display:flex;flex-direction:column;gap:5px;}
+    .fgroup label{font-size:11px;color:var(--text-muted);font-weight:500;}
+    .fgroup input,.fgroup select{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:13px;font-family:inherit;width:100%;outline:none;}
+    .fgroup input:focus,.fgroup select:focus{border-color:var(--accent);}
+    .fgroup input[readonly]{color:var(--text-muted);}
+    .fgroup select option{background:var(--surface2);}
+    .li-form-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+    .li-form-table th{padding:8px 6px;color:var(--text-muted);font-size:11px;font-weight:600;border-bottom:1px solid var(--border);text-align:left;}
+    .li-form-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);}
+    .li-form-table input,.li-form-table select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 7px;color:var(--text);font-size:12px;width:100%;outline:none;}
+    .li-form-table input:focus,.li-form-table select:focus{border-color:var(--accent);}
+    .calc-cell{color:var(--green);font-weight:600;text-align:right;padding:6px 8px;}
+    .total-bar{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;display:flex;justify-content:flex-end;gap:32px;margin-top:12px;font-size:13px;}
+    .total-bar span{color:var(--text-muted);}
+    .total-bar strong{color:var(--green);font-size:16px;font-weight:700;}
   </style>
 </head>
 <body>
@@ -108,7 +131,7 @@
         <div class="page-title">Proforma Invoice</div>
         <div class="page-sub">전체 PI 목록 · Firestore 실시간 연동</div>
       </div>
-      <a href="create_pi.html" class="btn btn-primary">＋ New PI</a>
+      <button class="btn btn-primary" onclick="openNewPIModal()">＋ New PI</button>
     </div>
 
     <!-- Toolbar -->
@@ -162,6 +185,97 @@
   </main>
 </div>
 
+<!-- ═══════════════ New PI 작성 모달 ═══════════════ -->
+<div class="modal-overlay" id="new_pi_overlay" onclick="closeNewPIOnOverlay(event)">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">New Proforma Invoice</div>
+        <div class="modal-sub">신규 견적서 작성 · Firebase Firestore 저장</div>
+      </div>
+      <button class="modal-close" onclick="closeNewPI()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- ① 기본 정보 -->
+      <div class="form-section">
+        <h4>① PI 기본 정보</h4>
+        <div class="fg">
+          <div class="fgroup"><label>PI Date ★</label><input type="date" id="n_pi_date" onchange="nCalcValid()"></div>
+          <div class="fgroup"><label>Validity (Days)</label><input type="number" id="n_validity" value="30" onchange="nCalcValid()"></div>
+          <div class="fgroup"><label>Valid Until (자동)</label><input type="text" id="n_valid_until" readonly></div>
+        </div>
+      </div>
+      <!-- ② 고객 -->
+      <div class="form-section">
+        <h4>② 고객 선택</h4>
+        <div class="fg">
+          <div class="fgroup"><label>Customer ★</label>
+            <select id="n_customer" onchange="nOnCustomer()">
+              <option value="">-- 선택 --</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Contact</label><input type="text" id="n_contact" readonly></div>
+          <div class="fgroup"><label>Email</label><input type="text" id="n_email" readonly></div>
+        </div>
+      </div>
+      <!-- ③ 거래 조건 -->
+      <div class="form-section">
+        <h4>③ 거래 조건</h4>
+        <div class="fg">
+          <div class="fgroup"><label>Incoterms ★</label>
+            <select id="n_incoterms">
+              <option value="">-- 선택 --</option>
+              <option>CIF</option><option>FOB</option><option>EXW</option><option>DDP</option><option>DOOR TO DOOR</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Destination Port ★</label><input type="text" id="n_dest" placeholder="예: JEBEL ALI"></div>
+          <div class="fgroup"><label>Payment Terms ★</label>
+            <select id="n_payment">
+              <option value="">-- 선택 --</option>
+              <option>100% LC 90 days from BL date</option>
+              <option>TT in advance</option>
+              <option>LC at sight</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Shipping Method</label>
+            <select id="n_shipping"><option>Sea Freight</option><option>Air Freight</option><option>Truck</option></select>
+          </div>
+          <div class="fgroup"><label>Exchange Rate (KRW/USD)</label><input type="number" id="n_rate" value="1468.96" step="0.01" onchange="nRecalc()"></div>
+          <div class="fgroup"><label>Remarks</label><input type="text" id="n_remarks" placeholder="특이사항"></div>
+        </div>
+      </div>
+      <!-- ④ Line Items -->
+      <div class="form-section">
+        <h4>④ 상품 라인</h4>
+        <table class="li-form-table">
+          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
+          <tbody id="n_li_body"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
+        </table>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:12px;" onclick="nAddItem()">＋ 상품 추가</button>
+      </div>
+      <!-- ⑤ 추가 비용 -->
+      <div class="form-section">
+        <h4>⑤ 추가 비용</h4>
+        <div class="fg-2">
+          <div class="fgroup"><label>Handling (USD)</label><input type="number" id="n_handling" value="0" step="0.01" onchange="nRecalcTotals()"></div>
+          <div class="fgroup"><label>Freight (USD)</label><input type="number" id="n_freight" value="0" step="0.01" onchange="nRecalcTotals()"></div>
+          <div class="fgroup"><label>Insurance (USD)</label><input type="number" id="n_insurance" value="0" step="0.01" onchange="nRecalcTotals()"></div>
+          <div class="fgroup"><label>원화 환산 (참고)</label><input type="text" id="n_krw" readonly></div>
+        </div>
+        <div class="total-bar">
+          <span>Subtotal: <b id="n_sub">0.00</b></span>
+          <span>Extras: <b id="n_extras">0.00</b></span>
+          <span>GRAND TOTAL: <strong id="n_grand">USD 0.00</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeNewPI()">취소</button>
+      <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI()">✔ 저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ PI 상세 모달 ═══════════════ -->
 <div class="modal-overlay" id="modal_overlay" onclick="closeModalOnOverlay(event)">
   <div class="modal" id="pi_modal">
@@ -190,7 +304,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getFirestore, collection, doc, getDocs, onSnapshot,
-    updateDoc, serverTimestamp
+    updateDoc, serverTimestamp, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -390,7 +504,173 @@
   };
 
   // ── ESC 키로 닫기 ──
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { closeModal(); closeNewPI(); } });
+
+  // ── New PI 모달 열기/닫기 ──
+  window.openNewPIModal = function() {
+    // 오늘 날짜 기본값
+    document.getElementById("n_pi_date").value = new Date().toISOString().split("T")[0];
+    nCalcValid();
+    // 고객 목록 채우기
+    const sel = document.getElementById("n_customer");
+    sel.innerHTML = '<option value="">-- 선택 --</option>';
+    Object.entries(customerMap).forEach(([id, c]) => {
+      const opt = document.createElement("option");
+      opt.value = id; opt.textContent = c.name || id;
+      opt.dataset.info = JSON.stringify(c);
+      sel.appendChild(opt);
+    });
+    nItems = []; nCounter = 0;
+    document.getElementById("n_li_body").innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>';
+    nRecalcTotals();
+    document.getElementById("new_pi_overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  };
+  window.closeNewPI = function() {
+    document.getElementById("new_pi_overlay").classList.remove("open");
+    document.body.style.overflow = "";
+  };
+  window.closeNewPIOnOverlay = function(e) {
+    if (e.target === document.getElementById("new_pi_overlay")) closeNewPI();
+  };
+
+  // ── 유효기간 계산 ──
+  window.nCalcValid = function() {
+    const d = document.getElementById("n_pi_date").value;
+    const days = parseInt(document.getElementById("n_validity").value)||30;
+    if (!d) return;
+    const dt = new Date(d); dt.setDate(dt.getDate()+days);
+    document.getElementById("n_valid_until").value = dt.toISOString().split("T")[0];
+  };
+
+  // ── 고객 선택 ──
+  window.nOnCustomer = function() {
+    const sel = document.getElementById("n_customer");
+    const opt = sel.selectedOptions[0];
+    if (!opt?.dataset.info) return;
+    const c = JSON.parse(opt.dataset.info);
+    document.getElementById("n_contact").value = c.contactPerson||"";
+    document.getElementById("n_email").value   = c.email||"";
+    document.getElementById("n_dest").value    = c.preferredPort||"";
+    const iSel = document.getElementById("n_incoterms");
+    for (let o of iSel.options) if (o.value===c.preferredIncoterms) { iSel.value=o.value; break; }
+    const pSel = document.getElementById("n_payment");
+    for (let o of pSel.options) if (o.value===c.paymentTerms) { pSel.value=o.value; break; }
+  };
+
+  // ── 라인 아이템 ──
+  let nItems=[], nCounter=0;
+  window.nAddItem = function() {
+    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,margin:10});
+    nRenderItems();
+  };
+  function nCalcItem(item) {
+    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    const cu   = item.cost/rate;
+    const sp   = item.margin<100 ? cu/(1-item.margin/100) : cu;
+    item._sale = sp; item._total = sp*item.qty;
+  }
+  function nRenderItems() {
+    const tbody = document.getElementById("n_li_body");
+    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
+    tbody.innerHTML = nItems.map((item,i) => {
+      nCalcItem(item);
+      const units = ["KG","BOX","M","M2","M3","BL","SET","EA"].map(u=>`<option${item.unit===u?" selected":""}>${u}</option>`).join("");
+      return `<tr>
+        <td>${i+1}</td>
+        <td><input type="text" value="${item.desc}" placeholder="상품명/규격" onchange="nUpdateItem(${item.id},'desc',this.value)"></td>
+        <td><input type="number" value="${item.qty}" min="0.01" step="0.01" style="width:70px" onchange="nUpdateItem(${item.id},'qty',this.value)"></td>
+        <td><select style="width:75px" onchange="nUpdateItem(${item.id},'unit',this.value)">${units}</select></td>
+        <td><input type="number" value="${item.cost}" min="0" style="width:100px" onchange="nUpdateItem(${item.id},'cost',this.value)"></td>
+        <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
+        <td class="calc-cell">${(item._sale||0).toFixed(4)}</td>
+        <td class="calc-cell">${(item._total||0).toFixed(2)}</td>
+        <td><button style="background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px" onclick="nDeleteItem(${item.id})">✕</button></td>
+      </tr>`;
+    }).join("");
+    nRecalcTotals();
+  }
+  window.nUpdateItem = function(id,field,val) {
+    const item = nItems.find(i=>i.id===id); if(!item) return;
+    item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
+    nRenderItems();
+  };
+  window.nDeleteItem = function(id) { nItems=nItems.filter(i=>i.id!==id); nRenderItems(); };
+  window.nRecalc    = function() { nRenderItems(); };
+  function nRecalcTotals() {
+    const sub  = nItems.reduce((s,i)=>s+(i._total||0),0);
+    const hand = parseFloat(document.getElementById("n_handling").value)||0;
+    const frt  = parseFloat(document.getElementById("n_freight").value)||0;
+    const ins  = parseFloat(document.getElementById("n_insurance").value)||0;
+    const grand= sub+hand+frt+ins;
+    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    document.getElementById("n_sub").textContent    = sub.toFixed(2);
+    document.getElementById("n_extras").textContent = (hand+frt+ins).toFixed(2);
+    document.getElementById("n_grand").textContent  = "USD "+grand.toFixed(2);
+    document.getElementById("n_krw").value          = "₩ "+(grand*rate).toLocaleString();
+  }
+  window.nRecalcTotals = nRecalcTotals;
+
+  // ── PI 저장 ──
+  window.nSavePI = async function() {
+    const btn = document.getElementById("n_save_btn");
+    const customerId = document.getElementById("n_customer").value;
+    const piDate     = document.getElementById("n_pi_date").value;
+    const rate       = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    if (!customerId) { alert("고객을 선택해 주세요."); return; }
+    if (!piDate)     { alert("날짜를 입력해 주세요."); return; }
+    if (!nItems.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
+    btn.disabled=true; btn.textContent="저장 중...";
+    try {
+      // PI 번호 생성
+      const year    = new Date(piDate).getFullYear();
+      const metaRef = doc(db,"companies",COMPANY_ID,"meta","pi_counter");
+      let num;
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(metaRef);
+        const cur  = snap.exists()?(snap.data()[`count_${year}`]||0):0;
+        num = cur+1;
+        tx.set(metaRef,{[`count_${year}`]:num},{merge:true});
+      });
+      const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2,"0")}`;
+      // 금액 계산
+      let subtotal=0;
+      const processedItems = nItems.map((item,i)=>{
+        nCalcItem(item);
+        subtotal+=item._total||0;
+        return {lineNumber:i+1,description:item.desc,costKrw:item.cost,quantity:item.qty,unit:item.unit,
+                exchangeRate:rate,profitMargin:item.margin,
+                costUsd:+(item.cost/rate).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
+      });
+      const hand    = parseFloat(document.getElementById("n_handling").value)||0;
+      const frt     = parseFloat(document.getElementById("n_freight").value)||0;
+      const ins     = parseFloat(document.getElementById("n_insurance").value)||0;
+      const grand   = subtotal+hand+frt+ins;
+      const validUntil = document.getElementById("n_valid_until").value;
+      // Firestore 트랜잭션 저장
+      await runTransaction(db, async tx=>{
+        const piRef  = doc(collection(doc(db,"companies",COMPANY_ID),"proforma_invoices"));
+        const revRef = doc(collection(piRef,"revisions"));
+        tx.set(piRef,{piNumber,piDate,customerId,
+          incoterms:document.getElementById("n_incoterms").value,
+          destinationPort:document.getElementById("n_dest").value,
+          paymentTerms:document.getElementById("n_payment").value,
+          shippingMethod:document.getElementById("n_shipping").value,
+          exchangeRate:rate,validityDays:parseInt(document.getElementById("n_validity").value)||30,
+          validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
+          handlingCharges:hand,freightCharges:frt,insuranceCharges:ins,
+          subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
+          currentVersion:"A",status:"draft",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        tx.set(revRef,{version:"A",revisionNumber:1,status:"draft",
+          subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
+        processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });
+      });
+      closeNewPI();
+      alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grand.toFixed(2)}`);
+    } catch(e) {
+      alert("❌ 저장 실패: "+e.message); console.error(e);
+    } finally { btn.disabled=false; btn.textContent="✔ 저장"; }
+  };
 
   // ── 초기화 ──
   window.addEventListener("DOMContentLoaded", async () => {
