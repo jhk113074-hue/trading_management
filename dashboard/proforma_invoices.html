@@ -259,8 +259,8 @@
       <div class="form-section">
         <h4>④ 상품 라인</h4>
         <table class="li-form-table">
-          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Rate (환율)</th><th>Cost (USD)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
-          <tbody id="n_li_body"><tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
+          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Rate (환율)</th><th>Cost (USD)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th>Remarks / 비고</th><th></th></tr></thead>
+          <tbody id="n_li_body"><tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
         </table>
         <button class="btn btn-outline" style="margin-top:10px;font-size:12px;" onclick="nAddItem()">＋ 상품 추가</button>
       </div>
@@ -447,6 +447,7 @@
               <td>${item.unit||"-"}</td>
               <td class="num">$${(item.salePriceUsd||0).toFixed(4)}</td>
               <td class="num" style="color:var(--green)">$${(item.lineTotalUsd||0).toFixed(2)}</td>
+              <td>${item.remarks||"-"}</td>
             </tr>`).join("");
         }
       }
@@ -488,7 +489,7 @@
           <h4>📦 상품 라인 (Line Items · ${p.currentVersion||"A"} 버전)</h4>
           <table class="li-table">
             <thead>
-              <tr><th>#</th><th>Description</th><th style="text-align:right">Qty</th><th>Unit</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr>
+              <tr><th>#</th><th>Description</th><th style="text-align:right">Qty</th><th>Unit</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th><th>Remarks</th></tr>
             </thead>
             <tbody>${lineItemsHTML}</tbody>
           </table>
@@ -656,7 +657,8 @@
               rate: r,
               costUsd: costU,
               margin: margin,
-              _baseCurrency: baseCurr
+              _baseCurrency: baseCurr,
+              remarks: item.remarks || ""
             };
           });
         }
@@ -706,7 +708,7 @@
   let nItems=[], nCounter=0;
   window.nAddItem = function() {
     const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
-    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,rate:globalRate,costUsd:0,margin:10,_baseCurrency:"KRW"});
+    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,rate:globalRate,costUsd:0,margin:10,_baseCurrency:"KRW",remarks:""});
     nRenderItems();
   };
   function nCalcItem(item) {
@@ -724,7 +726,7 @@
   }
   function nRenderItems() {
     const tbody = document.getElementById("n_li_body");
-    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
+    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="12" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
     
     // 상품 마스터 Datalist 옵션 빌드
     const productOptions = Object.entries(productMap).map(([id, p]) => {
@@ -748,6 +750,7 @@
         <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
         <td class="calc-cell">${(item._sale||0).toFixed(4)}</td>
         <td class="calc-cell">${(item._total||0).toFixed(2)}</td>
+        <td><input type="text" value="${item.remarks || ''}" placeholder="비고" style="width:110px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'remarks',this.value)"></td>
         <td><button style="background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px" onclick="nDeleteItem(${item.id})">✕</button></td>
       </tr>`;
     }).join("");
@@ -789,7 +792,7 @@
         }
       }
     } else {
-      item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
+      item[field] = (field==="desc"||field==="unit"||field==="remarks") ? val : (parseFloat(val)||0);
     }
     nRenderItems();
   };
@@ -834,7 +837,8 @@
         const itemRate = item.rate || rate;
         return {lineNumber:i+1,description:item.desc,costKrw:item.cost,quantity:item.qty,unit:item.unit,
                 exchangeRate:itemRate,profitMargin:item.margin,
-                costUsd:+(item.costUsd||0).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
+                costUsd:+(item.costUsd||0).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4),
+                remarks:item.remarks||""};
       });
       const hand    = parseFloat(document.getElementById("n_handling").value)||0;
       const frt     = parseFloat(document.getElementById("n_freight").value)||0;
