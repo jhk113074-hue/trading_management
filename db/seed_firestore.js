@@ -9,7 +9,7 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 // 아래 경로에 저장: e:\무역관리프로그램\firebase\serviceAccountKey.json
 let app;
 try {
-  const serviceAccount = require("../firebase/serviceAccountKey.json");
+  const serviceAccount = require("../firebase/tradingmanagement-c1cf4-firebase-adminsdk-fbsvc-00445e0fa7.json");
   app = initializeApp({ credential: cert(serviceAccount) });
 } catch (e) {
   // 서비스 계정 키가 없을 경우 환경변수 사용
