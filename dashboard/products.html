@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>YSACC TMS - Products Master DB</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, getDocs, onSnapshot,
+      setDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+      authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+      projectId:         "tradingmanagement-c1cf4",
+      storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+      messagingSenderId: "1033735327012",
+      appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const COMPANY_ID = "YSACC";
+
+    let allProducts = [];
+    let editProdId = null;
+
+    // ── 실시간 상품 마스터 DB 구독 ──
+    function subscribeProducts() {
+      const prodCol = collection(doc(db,"companies",COMPANY_ID),"products");
+      onSnapshot(prodCol, (snap) => {
+        allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // 상품코드 정렬
+        allProducts.sort((a,b) => (a.productCode || "").localeCompare(b.productCode || ""));
+        renderProducts();
+      }, (err) => {
+        console.error("상품 DB 로딩 오류:", err);
+      });
+    }
+
+    // ── 상품 화면 렌더링 ──
+    function renderProducts() {
+      const q = document.getElementById("search_input").value.toLowerCase();
+      const catFilter = document.getElementById("cat_filter").value;
+      const currFilter = document.getElementById("curr_filter").value;
+
+      const filtered = allProducts.filter(p => {
+        const matchesSearch = 
+          (p.nameKo || "").toLowerCase().includes(q) ||
+          (p.nameEn || "").toLowerCase().includes(q) ||
+          (p.productCode || "").toLowerCase().includes(q) ||
+          (p.supplierName || "").toLowerCase().includes(q);
+        
+        const matchesCat = !catFilter || p.categoryLarge === catFilter;
+        const matchesCurr = !currFilter || p.currency === currFilter;
+
+        return matchesSearch && matchesCat && matchesCurr;
+      });
+
+      document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+
+      const tbody = document.getElementById("prod_table_body");
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 상품이 마스터 DB에 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const priceFormatted = p.purchasePrice ? p.purchasePrice.toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00";
+        const specStr = `${p.specWidth||'-'}x${p.specLength||'-'}x${p.specHeight||'-'} ${p.unit||'KG'}`;
+        return `
+          <tr>
+            <td><strong style="color:var(--accent2)">${p.productCode || "-"}</strong></td>
+            <td>
+              <div style="font-weight:600;font-size:13px;color:var(--text)">${p.nameKo || "-"}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${p.nameEn || "-"}</div>
+            </td>
+            <td>
+              <span style="font-size:11px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:4px;color:var(--text-muted)">
+                ${p.categoryLarge || "-"} > ${p.categoryMedium || "-"}
+              </span>
+            </td>
+            <td>
+              <div style="font-size:12px;font-weight:600;color:var(--green);">${p.currency || "USD"} ${priceFormatted}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">Min Qty: ${p.minOrderQty||0}</div>
+            </td>
+            <td>
+              <div style="font-size:12px;">${p.supplierName || "-"}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">코드: ${p.supplierCode || "-"}</div>
+            </td>
+            <td>${specStr}</td>
+            <td style="text-align:center;font-weight:600;color:var(--yellow);">${p.stockQty || 0}</td>
+            <td><span style="font-size:11px;color:var(--text-muted);">${p.origin || "-"}</span></td>
+            <td style="text-align:right;white-space:nowrap;">
+              <button class="action-btn edit-btn" onclick="openEditModal('${p.id}')">✏ 수정</button>
+              <button class="action-btn delete-btn" onclick="deleteProduct('${p.id}', '${p.nameKo}')">✕ 삭제</button>
+            </td>
+          </tr>`;
+      }).join("");
+    }
+
+    // ── 상품 등록 / 수정 저장 ──
+    window.saveProduct = async function() {
+      const code = document.getElementById("p_code").value.trim();
+      const nameKo = document.getElementById("p_name_ko").value.trim();
+      if (!code) { alert("상품코드는 필수 입력사항입니다."); return; }
+      if (!nameKo) { alert("상품명(한글)은 필수 입력사항입니다."); return; }
+
+      const btn = document.getElementById("save_btn");
+      btn.disabled = true; btn.textContent = "저장 중...";
+
+      // 6개 분류 스펙 데이터 매핑
+      const productData = {
+        // 1. 기본 정보
+        productCode: code,
+        nameKo: nameKo,
+        nameEn: document.getElementById("p_name_en").value.trim(),
+        categoryLarge: document.getElementById("p_cat_l").value.trim(),
+        categoryMedium: document.getElementById("p_cat_m").value.trim(),
+        categorySmall: document.getElementById("p_cat_s").value.trim(),
+        description: document.getElementById("p_desc").value.trim(),
+        imageUrl: document.getElementById("p_img_url").value.trim(),
+
+        // 2. 구매/공급 정보
+        supplierName: document.getElementById("p_sup_name").value.trim(),
+        supplierCode: document.getElementById("p_sup_code").value.trim(),
+        supplierContact: document.getElementById("p_sup_contact").value.trim(),
+        supplierPhone: document.getElementById("p_sup_phone").value.trim(),
+        supplierEmail: document.getElementById("p_sup_email").value.trim(),
+        supplierAddress: document.getElementById("p_sup_addr").value.trim(),
+        minOrderQty: parseFloat(document.getElementById("p_moq").value) || 0,
+
+        // 3. 가격 정보
+        purchasePrice: parseFloat(document.getElementById("p_price").value) || 0,
+        currency: document.getElementById("p_curr").value,
+        priceValidFrom: document.getElementById("p_valid_from").value,
+        priceValidTo: document.getElementById("p_valid_to").value,
+        discountRate: parseFloat(document.getElementById("p_discount").value) || 0,
+        freightIncluded: document.getElementById("p_freight_inc").value,
+
+        // 4. 상품 규격
+        unit: document.getElementById("p_unit").value,
+        specWidth: parseFloat(document.getElementById("p_width").value) || 0,
+        specLength: parseFloat(document.getElementById("p_length").value) || 0,
+        specHeight: parseFloat(document.getElementById("p_height").value) || 0,
+        weight: parseFloat(document.getElementById("p_weight").value) || 0,
+        color: document.getElementById("p_color").value.trim(),
+        material: document.getElementById("p_material").value.trim(),
+        origin: document.getElementById("p_origin").value.trim(),
+
+        // 5. 재고/납기
+        stockQty: parseFloat(document.getElementById("p_stock").value) || 0,
+        leadTimeDays: parseInt(document.getElementById("p_leadtime").value) || 0,
+        storageLocation: document.getElementById("p_location").value.trim(),
+        storageTemp: document.getElementById("p_temp").value.trim(),
+        storageHumidity: document.getElementById("p_humidity").value.trim(),
+
+        // 6. 품질/규정
+        manufacturer: document.getElementById("p_manufacturer").value.trim(),
+        manufactureDate: document.getElementById("p_mfg_date").value,
+        expiryDate: document.getElementById("p_exp_date").value,
+        certifications: document.getElementById("p_certs").value.trim(),
+        msdsManaged: document.getElementById("p_msds").value,
+
+        updatedAt: serverTimestamp()
+      };
+
+      if (!editProdId) {
+        productData.createdAt = serverTimestamp();
+      }
+
+      try {
+        const docId = editProdId || code; // 수정 시 기존 ID, 신규 시 상품코드를 ID로 강제 통일하여 DB 정밀화
+        await setDoc(doc(db, "companies", COMPANY_ID, "products", docId), productData);
+        closeProdModal();
+        alert("✅ 성공적으로 저장되었습니다.");
+      } catch (e) {
+        alert("❌ 저장 실패: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✔ 저장";
+      }
+    };
+
+    // ── 상품 삭제 처리 ──
+    window.deleteProduct = async function(id, name) {
+      if (!confirm(`⚠️ 정말로 상품 [${name}]을(를) DB에서 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        await deleteDoc(doc(db, "companies", COMPANY_ID, "products", id));
+        alert("✅ 성공적으로 삭제되었습니다.");
+      } catch (e) {
+        alert("❌ 삭제 실패: " + e.message);
+      }
+    };
+
+    // ── 모달 제어 ──
+    window.openNewProdModal = function() {
+      editProdId = null;
+      document.getElementById("modal_title").textContent = "Add New Product Master";
+      document.getElementById("modal_sub").textContent = "상품 마스터 규격 신규 등록 (6대 분류 필수 사양 완벽 탑재)";
+      document.getElementById("prod_form").reset();
+      document.getElementById("p_code").readOnly = false;
+      
+      // 가격 유효 시작일 오늘 자동 세팅
+      document.getElementById("p_valid_from").value = new Date().toISOString().split("T")[0];
+
+      switchTab(1);
+      document.getElementById("prod_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.openEditModal = function(id) {
+      editProdId = id;
+      const p = allProducts.find(x => x.id === id);
+      if (!p) return;
+
+      document.getElementById("modal_title").textContent = "Edit Product Master";
+      document.getElementById("modal_sub").textContent = `상품 마스터 상세 규격 수정 (${p.nameKo})`;
+      
+      // 기본 정보
+      document.getElementById("p_code").value = p.productCode || "";
+      document.getElementById("p_code").readOnly = true; // 상품코드는 ID이므로 수정불가
+      document.getElementById("p_name_ko").value = p.nameKo || "";
+      document.getElementById("p_name_en").value = p.nameEn || "";
+      document.getElementById("p_cat_l").value = p.categoryLarge || "";
+      document.getElementById("p_cat_m").value = p.categoryMedium || "";
+      document.getElementById("p_cat_s").value = p.categorySmall || "";
+      document.getElementById("p_desc").value = p.description || "";
+      document.getElementById("p_img_url").value = p.imageUrl || "";
+
+      // 구매/공급 정보
+      document.getElementById("p_sup_name").value = p.supplierName || "";
+      document.getElementById("p_sup_code").value = p.supplierCode || "";
+      document.getElementById("p_sup_contact").value = p.supplierContact || "";
+      document.getElementById("p_sup_phone").value = p.supplierPhone || "";
+      document.getElementById("p_sup_email").value = p.supplierEmail || "";
+      document.getElementById("p_sup_addr").value = p.supplierAddress || "";
+      document.getElementById("p_moq").value = p.minOrderQty || 0;
+
+      // 가격 정보
+      document.getElementById("p_price").value = p.purchasePrice || 0;
+      document.getElementById("p_curr").value = p.currency || "USD";
+      document.getElementById("p_valid_from").value = p.priceValidFrom || "";
+      document.getElementById("p_valid_to").value = p.priceValidTo || "";
+      document.getElementById("p_discount").value = p.discountRate || 0;
+      document.getElementById("p_freight_inc").value = p.freightIncluded || "N";
+
+      // 상품 규격
+      document.getElementById("p_unit").value = p.unit || "KG";
+      document.getElementById("p_width").value = p.specWidth || 0;
+      document.getElementById("p_length").value = p.specLength || 0;
+      document.getElementById("p_height").value = p.specHeight || 0;
+      document.getElementById("p_weight").value = p.weight || 0;
+      document.getElementById("p_color").value = p.color || "";
+      document.getElementById("p_material").value = p.material || "";
+      document.getElementById("p_origin").value = p.origin || "";
+
+      // 재고/납기
+      document.getElementById("p_stock").value = p.stockQty || 0;
+      document.getElementById("p_leadtime").value = p.leadTimeDays || 0;
+      document.getElementById("p_location").value = p.storageLocation || "";
+      document.getElementById("p_temp").value = p.storageTemp || "";
+      document.getElementById("p_humidity").value = p.storageHumidity || "";
+
+      // 품질/규정
+      document.getElementById("p_manufacturer").value = p.manufacturer || "";
+      document.getElementById("p_mfg_date").value = p.manufactureDate || "";
+      document.getElementById("p_exp_date").value = p.expiryDate || "";
+      document.getElementById("p_certs").value = p.certifications || "";
+      document.getElementById("p_msds").value = p.msdsManaged || "N";
+
+      switchTab(1);
+      document.getElementById("prod_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.closeProdModal = function() {
+      document.getElementById("prod_overlay").classList.remove("open");
+      document.body.style.overflow = "";
+    };
+
+    // ── 탭 제어 ──
+    window.switchTab = function(idx) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+
+      document.getElementById(`tab_btn_${idx}`).classList.add("active");
+      document.getElementById(`tab_pane_${idx}`).classList.add("active");
+    };
+
+    window.filterProducts = renderProducts;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      subscribeProducts();
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d2e; --surface2:#222638;
+      --border:#2e3248; --accent:#6c63ff; --accent2:#00d4ff;
+      --green:#00e676; --yellow:#ffd740; --red:#ff5252;
+      --text:#e8eaf6; --text-muted:#8892b0;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); }
+
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .logo { padding:0 24px 24px; font-size:18px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--border); }
+    .logo span { color:var(--text-muted); font-size:11px; display:block; margin-top:2px; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 24px; font-size:13px; color:var(--text-muted); cursor:pointer; transition:all .2s; }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active { background:var(--surface2); color:var(--text); border-left:3px solid var(--accent); padding-left:21px; }
+
+    .main { margin-left:220px; padding:32px; flex:1; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-title { font-size:24px; font-weight:700; }
+    .page-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; transition:all .2s; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { opacity:.85; transform:translateY(-1px); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .btn-outline:hover { background:var(--surface2); }
+
+    /* Toolbar */
+    .toolbar { display:flex; gap:12px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:20px; }
+    .search-box { position:relative; flex:1; }
+    .search-box span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; }
+    .search-box input { width:100%; padding:10px 10px 10px 38px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; transition:all .2s; }
+    .search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,99,255,.15); }
+    .filter { padding:10px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; cursor:pointer; }
+    .filter:focus { border-color:var(--accent); }
+    .result-count { font-size:12px; color:var(--text-muted); font-weight:500; padding:0 8px; }
+
+    /* Table Card */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; padding:12px; color:var(--text-muted); font-size:11px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; }
+    td { padding:14px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--surface2); }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; text-align:center; }
+
+    .action-btn { background:transparent; border:none; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; border-radius:4px; transition:all .2s; }
+    .edit-btn { color:var(--accent2); background:rgba(0,212,255,.08); margin-right:4px; }
+    .edit-btn:hover { background:rgba(0,212,255,.18); }
+    .delete-btn { color:var(--red); background:rgba(255,82,82,.08); }
+    .delete-btn:hover { background:rgba(255,82,82,.18); }
+
+    /* Overlay / Modal Drawer */
+    .overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,11,18,.8); backdrop-filter:blur(6px); display:flex; justify-content:center; align-items:center; z-index:1000; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+    .overlay.open { opacity:1; pointer-events:auto; }
+    .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:95%; max-width:980px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 48px rgba(0,0,0,.4); transform:scale(.95); transition:transform .3s ease; }
+    .overlay.open .modal-box { transform:scale(1); }
+    .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .modal-close { background:transparent; border:none; color:var(--text-muted); font-size:24px; cursor:pointer; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:24px; overflow-y:auto; flex:1; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg); }
+
+    /* Tabs UI */
+    .tabs-nav { display:flex; gap:6px; background:var(--bg); border:1px solid var(--border); padding:4px; border-radius:10px; margin-bottom:24px; }
+    .tab-btn { flex:1; text-align:center; padding:10px; font-size:12px; font-weight:600; color:var(--text-muted); border-radius:8px; cursor:pointer; border:none; background:transparent; transition:all .2s; }
+    .tab-btn:hover { color:var(--text); background:var(--surface); }
+    .tab-btn.active { color:#fff; background:var(--accent); }
+
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; animation:fadeIn .2s ease; }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Grid Form */
+    .form-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .form-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    .form-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .fgroup { display:flex; flex-direction:column; gap:6px; }
+    .fgroup label { font-size:11px; font-weight:600; color:var(--text-muted); }
+    .fgroup input, .fgroup select, .fgroup textarea { padding:10px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; outline:none; transition:border-color .2s; }
+    .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus { border-color:var(--accent); }
+    .fgroup input[readonly] { background:rgba(46,50,72,.3); color:var(--text-muted); cursor:not-allowed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <nav style="padding-top:16px;">
+      <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
+      <div class="nav-item" onclick="location.href='proforma_invoices.html'">📋 Proforma Invoice</div>
+      <div class="nav-item active" onclick="location.href='products.html'">📦 Products DB</div>
+      <div class="nav-item" onclick="location.href='customers.html'">👥 Customers</div>
+      <div class="nav-item">🏭 Suppliers</div>
+      <div class="nav-item">🤝 Negotiations</div>
+      <div class="nav-item">📈 Reports</div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">상품 마스터 DB (Products)</div>
+        <div class="page-sub">글로벌 무역 원자재/상품 사양 조회, 추가 및 6대 분류 스펙 관리 도구</div>
+      </div>
+      <button class="btn btn-primary" onclick="openNewProdModal()">＋ New Product</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search_input" placeholder="상품명(한글/영문), 상품코드, 공급업체 검색..." oninput="filterProducts()">
+      </div>
+      <select class="filter" id="cat_filter" onchange="filterProducts()">
+        <option value="">전체 대분류</option>
+        <option>Carbon Fiber</option>
+        <option>Epoxy Resin</option>
+        <option>Aramid Paper</option>
+      </select>
+      <select class="filter" id="curr_filter" onchange="filterProducts()">
+        <option value="">전체 통화</option>
+        <option>USD</option>
+        <option>KRW</option>
+        <option>EUR</option>
+      </select>
+      <span class="result-count" id="result_count">총 0건</span>
+    </div>
+
+    <!-- Table Grid -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>상품코드</th>
+              <th>상품명 (한글/영문)</th>
+              <th>카테고리</th>
+              <th>구매 단가 / MOQ</th>
+              <th>공급업체 (공급코드)</th>
+              <th>규격 / 단위</th>
+              <th style="text-align:center">재고 수량</th>
+              <th>원산지</th>
+              <th style="text-align:right">작업</th>
+            </tr>
+          </thead>
+          <tbody id="prod_table_body">
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Firestore 실시간 상품 DB 로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── 상품 등록/수정 모달 ── -->
+<div class="overlay" id="prod_overlay" onclick="if(event.target===this) closeProdModal()">
+  <div class="modal-box">
+    
+    <div class="modal-header">
+      <div>
+        <div id="modal_title" style="font-size:18px;font-weight:700;color:var(--text)">Add New Product Master</div>
+        <div id="modal_sub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">글로벌 상품 정보 및 무역원가 스펙 연동</div>
+      </div>
+      <button class="modal-close" onclick="closeProdModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- 6-Tabs Navigation -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tab_btn_1" onclick="switchTab(1)">📑 1. 기본 정보</button>
+        <button class="tab-btn" id="tab_btn_2" onclick="switchTab(2)">🏭 2. 공급 & 공급처</button>
+        <button class="tab-btn" id="tab_btn_3" onclick="switchTab(3)">💰 3. 구매 & 가격</button>
+        <button class="tab-btn" id="tab_btn_4" onclick="switchTab(4)">📏 4. 규격 & 물성</button>
+        <button class="tab-btn" id="tab_btn_5" onclick="switchTab(5)">📦 5. 재고 & 납기</button>
+        <button class="tab-btn" id="tab_btn_6" onclick="switchTab(6)">🔬 6. 품질 & 규제</button>
+      </div>
+
+      <form id="prod_form" onsubmit="event.preventDefault();">
+        
+        <!-- Tab 1: 기본 정보 -->
+        <div class="tab-pane active" id="tab_pane_1">
+          <div class="form-grid">
+            <div class="fgroup"><label>상품코드 (필수) ★</label><input type="text" id="p_code" placeholder="예: PROD-CF-001"></div>
+            <div class="fgroup"><label>상품명_한글 (필수) ★</label><input type="text" id="p_name_ko" placeholder="예: 고강도 탄소섬유 3K"></div>
+            <div class="fgroup"><label>상품명_영문</label><input type="text" id="p_name_en" placeholder="예: High Strength Carbon Fiber 3K"></div>
+            <div class="fgroup"><label>대분류</label><input type="text" id="p_cat_l" placeholder="예: Carbon Fiber"></div>
+            <div class="fgroup"><label>중분류</label><input type="text" id="p_cat_m" placeholder="예: Fabric"></div>
+            <div class="fgroup"><label>소분류</label><input type="text" id="p_cat_s" placeholder="예: Woven"></div>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>상품 상세 설명</label>
+            <textarea id="p_desc" rows="3" placeholder="상품 용도, 물성 요약 등 기술"></textarea>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>상품 이미지 URL</label>
+            <input type="text" id="p_img_url" placeholder="https://">
+          </div>
+        </div>
+
+        <!-- Tab 2: 구매/공급 정보 -->
+        <div class="tab-pane" id="tab_pane_2">
+          <div class="form-grid">
+            <div class="fgroup"><label>공급업체명</label><input type="text" id="p_sup_name" placeholder="예: 국도화학"></div>
+            <div class="fgroup"><label>공급업체코드</label><input type="text" id="p_sup_code" placeholder="예: SUP-KUKDO"></div>
+            <div class="fgroup"><label>공급처 주 담당자명</label><input type="text" id="p_sup_contact" placeholder="공급사 담당 부서/성명"></div>
+            <div class="fgroup"><label>공급처 연락처</label><input type="text" id="p_sup_phone" placeholder="전화번호"></div>
+            <div class="fgroup"><label>공급처 이메일</label><input type="email" id="p_sup_email" placeholder="sales@supplier.com"></div>
+            <div class="fgroup"><label>최소주문수량 (MOQ)</label><input type="number" id="p_moq" placeholder="0"></div>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>공급업체 주소</label>
+            <input type="text" id="p_sup_addr" placeholder="공급업체 본사 또는 창고 영문 주소">
+          </div>
+        </div>
+
+        <!-- Tab 3: 가격 정보 -->
+        <div class="tab-pane" id="tab_pane_3">
+          <div class="form-grid-4">
+            <div class="fgroup"><label>구매가 (원가)</label><input type="number" step="0.0001" id="p_price" placeholder="0.0000"></div>
+            <div class="fgroup">
+              <label>구매 통화</label>
+              <select id="p_curr">
+                <option>USD</option><option>KRW</option><option>EUR</option>
+              </select>
+            </div>
+            <div class="fgroup"><label>가격유효기간_시작일</label><input type="date" id="p_valid_from"></div>
+            <div class="fgroup"><label>가격유효기간_종료일</label><input type="date" id="p_valid_to"></div>
+          </div>
+          <div class="form-grid-2" style="margin-top:16px;">
+            <div class="fgroup"><label>할인율 (%)</label><input type="number" step="0.1" id="p_discount" placeholder="0.0"></div>
+            <div class="fgroup">
+              <label>배송료 포함 여부</label>
+              <select id="p_freight_inc">
+                <option>N</option><option>Y</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: 상품 규격 -->
+        <div class="tab-pane" id="tab_pane_4">
+          <div class="form-grid">
+            <div class="fgroup">
+              <label>단위</label>
+              <select id="p_unit">
+                <option>KG</option><option>BOX</option><option>M</option><option>M2</option><option>M3</option><option>EA</option><option>SET</option>
+              </select>
+            </div>
+            <div class="fgroup"><label>규격_가로 (Width / mm)</label><input type="number" id="p_width" placeholder="0"></div>
+            <div class="fgroup"><label>규격_세로 (Length / mm)</label><input type="number" id="p_length" placeholder="0"></div>
+            <div class="fgroup"><label>규격_높이 (Height / mm)</label><input type="number" id="p_height" placeholder="0"></div>
+            <div class="fgroup"><label>무게 (Weight / kg)</label><input type="number" step="0.01" id="p_weight" placeholder="0.00"></div>
+            <div class="fgroup"><label>색상</label><input type="text" id="p_color" placeholder="예: Black, Clear"></div>
+            <div class="fgroup"><label>재질</label><input type="text" id="p_material" placeholder="예: Carbon Fiber, Epoxy"></div>
+            <div class="fgroup"><label>원산지 (Country of Origin)</label><input type="text" id="p_origin" placeholder="예: South Korea, Japan"></div>
+          </div>
+        </div>
+
+        <!-- Tab 5: 재고 & 납기 -->
+        <div class="tab-pane" id="tab_pane_5">
+          <div class="form-grid">
+            <div class="fgroup"><label>현재 재고 수량</label><input type="number" id="p_stock" placeholder="0"></div>
+            <div class="fgroup"><label>리드타임 (일수)</label><input type="number" id="p_leadtime" placeholder="예: 14"></div>
+            <div class="fgroup"><label>보관 위치</label><input type="text" id="p_location" placeholder="예: A-동 3열 창고"></div>
+            <div class="fgroup"><label>보관 온도 조건</label><input type="text" id="p_temp" placeholder="예: 실온 (15~25도)"></div>
+            <div class="fgroup"><label>보관 습도 조건</label><input type="text" id="p_humidity" placeholder="예: 45% 이하"></div>
+          </div>
+        </div>
+
+        <!-- Tab 6: 품질 & 규제 -->
+        <div class="tab-pane" id="tab_pane_6">
+          <div class="form-grid">
+            <div class="fgroup"><label>제조사명</label><input type="text" id="p_manufacturer" placeholder="제조공장/브랜드명"></div>
+            <div class="fgroup"><label>제조일자</label><input type="date" id="p_mfg_date"></div>
+            <div class="fgroup"><label>품질유효 종료일</label><input type="date" id="p_exp_date"></div>
+            <div class="fgroup">
+              <label>안전정보_MSDS관리대상여부</label>
+              <select id="p_msds">
+                <option>N</option><option>Y</option>
+              </select>
+            </div>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>인증 정보 (Certifications)</label>
+            <textarea id="p_certs" rows="3" placeholder="예: ISO 9001, RoHS, REACH, CE 등 규정 인증사항"></textarea>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeProdModal()">취소</button>
+      <button class="btn btn-primary" id="save_btn" onclick="saveProduct()">✔ 저장</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
