@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <title>Proforma Invoice 목록 - YSACC TMS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     :root{--bg:#0f1117;--surface:#1a1d2e;--surface2:#222638;--border:#2e3248;--accent:#6c63ff;--accent2:#00d4ff;--green:#00e676;--yellow:#ffd740;--red:#ff5252;--text:#e8eaf6;--text-muted:#8892b0;}
     *{box-sizing:border-box;margin:0;padding:0;}
@@ -271,7 +276,9 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeNewPI()">취소</button>
-      <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI()">✔ 저장</button>
+      <button class="btn btn-outline" style="border-color:#00a86b;color:#00a86b" onclick="nExportExcel()">📊 Excel 저장</button>
+      <button class="btn btn-outline" style="border-color:#e74c3c;color:#e74c3c" onclick="nExportPDF()">📄 PDF 저장</button>
+      <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI()">✔ Firestore 저장</button>
     </div>
   </div>
 </div>
@@ -677,6 +684,242 @@
     await loadCustomerMap();
     subscribePIs();
   });
+
+  // ════════════════════════════════════════
+  // 헬퍼: 폼에서 현재 데이터 수집
+  // ════════════════════════════════════════
+  function nGetFormData() {
+    const rate       = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    const customerId = document.getElementById("n_customer").value;
+    const custOpt    = document.getElementById("n_customer").selectedOptions[0];
+    const custName   = custOpt?.textContent || "-";
+    const piDate     = document.getElementById("n_pi_date").value || new Date().toISOString().split("T")[0];
+    const year       = new Date(piDate).getFullYear();
+    // PI number preview (not yet saved)
+    const piNum      = `PI-YSACC-${year}-DRAFT`;
+    const items = nItems.map((item, i) => {
+      const cu = item.cost / rate;
+      const sp = item.margin < 100 ? cu / (1 - item.margin / 100) : cu;
+      const tot = sp * item.qty;
+      return {
+        no: i + 1, desc: item.desc || "-", qty: item.qty, unit: item.unit,
+        costKrw: item.cost, margin: item.margin,
+        saleUsd: +sp.toFixed(4), totalUsd: +tot.toFixed(2)
+      };
+    });
+    const subtotal  = items.reduce((s, i) => s + i.totalUsd, 0);
+    const handling  = parseFloat(document.getElementById("n_handling").value)||0;
+    const freight   = parseFloat(document.getElementById("n_freight").value)||0;
+    const insurance = parseFloat(document.getElementById("n_insurance").value)||0;
+    const grand     = subtotal + handling + freight + insurance;
+    return {
+      piNum, piDate,
+      validUntil:   document.getElementById("n_valid_until").value,
+      customer:     custName,
+      contact:      document.getElementById("n_contact").value,
+      email:        document.getElementById("n_email").value,
+      incoterms:    document.getElementById("n_incoterms").value,
+      destination:  document.getElementById("n_dest").value,
+      payment:      document.getElementById("n_payment").value,
+      shipping:     document.getElementById("n_shipping").value,
+      rate, remarks: document.getElementById("n_remarks").value,
+      items, subtotal, handling, freight, insurance, grand
+    };
+  }
+
+  // ════════════════════════════════════════
+  // 📊 Excel 저장 (SheetJS)
+  // ════════════════════════════════════════
+  window.nExportExcel = function() {
+    if (!window.XLSX) { alert("Excel 라이브러리 로딩 중..."); return; }
+    const d = nGetFormData();
+    if (!d.items.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
+
+    const wb = XLSX.utils.book_new();
+
+    // ── 시트 1: PI 헤더 정보 ──
+    const headerData = [
+      ["YSACC PROFORMA INVOICE"],
+      [],
+      ["PI Number",      d.piNum],
+      ["Date",           d.piDate],
+      ["Valid Until",    d.validUntil],
+      ["Customer",       d.customer],
+      ["Contact",        d.contact],
+      ["Email",          d.email],
+      [],
+      ["Incoterms",      d.incoterms],
+      ["Destination",    d.destination],
+      ["Payment Terms",  d.payment],
+      ["Shipping",       d.shipping],
+      ["Exchange Rate",  `₩${d.rate.toLocaleString()}/USD`],
+      ["Remarks",        d.remarks],
+    ];
+    const wsHeader = XLSX.utils.aoa_to_sheet(headerData);
+    wsHeader["!cols"] = [{wch:18},{wch:55}];
+    XLSX.utils.book_append_sheet(wb, wsHeader, "PI Info");
+
+    // ── 시트 2: Line Items ──
+    const liHeader = [["#","Description","Qty","Unit","Cost (KRW)","Margin %","Sale Price (USD)","Total (USD)"]];
+    const liRows   = d.items.map(i => [i.no, i.desc, i.qty, i.unit, i.costKrw, i.margin, i.saleUsd, i.totalUsd]);
+    const liFooter = [
+      [],
+      ["","","","","","","Subtotal (USD)",    +d.subtotal.toFixed(2)],
+      ["","","","","","","Handling (USD)",    d.handling],
+      ["","","","","","","Freight (USD)",     d.freight],
+      ["","","","","","","Insurance (USD)",   d.insurance],
+      ["","","","","","","GRAND TOTAL (USD)", +d.grand.toFixed(2)],
+    ];
+    const wsLI = XLSX.utils.aoa_to_sheet([...liHeader, ...liRows, ...liFooter]);
+    wsLI["!cols"] = [{wch:4},{wch:40},{wch:8},{wch:6},{wch:14},{wch:10},{wch:17},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsLI, "Line Items");
+
+    const fileName = `${d.piNum.replace(/[^a-zA-Z0-9-]/g,"_")}_${d.piDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  // ════════════════════════════════════════
+  // 📄 PDF 저장 (jsPDF + AutoTable)
+  // ════════════════════════════════════════
+  window.nExportPDF = function() {
+    if (!window.jspdf) { alert("PDF 라이브러리 로딩 중..."); return; }
+    const d = nGetFormData();
+    if (!d.items.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
+    const PAGE_W = 210;
+    const M      = 15; // margin
+
+    // ── 헤더 배경 ──
+    doc.setFillColor(15, 17, 23);
+    doc.rect(0, 0, PAGE_W, 32, "F");
+
+    // ── 회사명 ──
+    doc.setFontSize(18); doc.setTextColor(108, 99, 255); doc.setFont("helvetica","bold");
+    doc.text("YSACC CO., LTD.", M, 13);
+    doc.setFontSize(9); doc.setTextColor(136, 146, 176); doc.setFont("helvetica","normal");
+    doc.text("Trade Management System", M, 20);
+
+    // ── PROFORMA INVOICE 타이틀 ──
+    doc.setFontSize(14); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
+    doc.text("PROFORMA INVOICE", PAGE_W - M, 14, {align:"right"});
+    doc.setFontSize(9); doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
+    doc.text(`Date: ${d.piDate}`, PAGE_W - M, 20, {align:"right"});
+    doc.text(`Valid Until: ${d.validUntil}`, PAGE_W - M, 25, {align:"right"});
+
+    let y = 38;
+
+    // ── PI 번호 ──
+    doc.setFillColor(34, 38, 56);
+    doc.roundedRect(M, y, PAGE_W - M*2, 9, 2, 2, "F");
+    doc.setFontSize(10); doc.setTextColor(108, 99, 255); doc.setFont("helvetica","bold");
+    doc.text(`PI No: ${d.piNum}`, M+3, y+6);
+    y += 14;
+
+    // ── 두 컬럼: Bill To / Shipment Info ──
+    const colW = (PAGE_W - M*2 - 5) / 2;
+    const boxH = 32;
+
+    // Bill To
+    doc.setFillColor(26, 29, 46);
+    doc.roundedRect(M, y, colW, boxH, 2, 2, "F");
+    doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
+    doc.text("BILL TO", M+3, y+6);
+    doc.setTextColor(232,234,246); doc.setFont("helvetica","normal");
+    doc.setFontSize(9);
+    doc.text(d.customer, M+3, y+13, {maxWidth: colW-6});
+    doc.setFontSize(8); doc.setTextColor(136,146,176);
+    if (d.contact) doc.text(`Contact: ${d.contact}`, M+3, y+21);
+    if (d.email)   doc.text(`Email: ${d.email}`,     M+3, y+27);
+
+    // Shipment Info
+    const rx = M + colW + 5;
+    doc.setFillColor(26, 29, 46);
+    doc.roundedRect(rx, y, colW, boxH, 2, 2, "F");
+    doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
+    doc.text("SHIPMENT INFO", rx+3, y+6);
+    doc.setTextColor(232,234,246); doc.setFont("helvetica","normal");
+    const si = [
+      ["Incoterms",   d.incoterms],
+      ["Destination", d.destination],
+      ["Payment",     d.payment.length > 28 ? d.payment.substring(0,28)+"…" : d.payment],
+      ["Shipping",    d.shipping],
+    ];
+    si.forEach(([lbl,val], i) => {
+      doc.setFontSize(7.5); doc.setTextColor(136,146,176);
+      doc.text(lbl+":", rx+3, y+13+i*5);
+      doc.setTextColor(232,234,246);
+      doc.text(val||"-", rx+25, y+13+i*5);
+    });
+    y += boxH + 6;
+
+    // ── Line Items 테이블 ──
+    doc.autoTable({
+      startY: y,
+      head: [["#","Description","Qty","Unit","Unit Price (USD)","Total (USD)"]],
+      body: d.items.map(i => [i.no, i.desc, i.qty, i.unit,
+        `$${i.saleUsd.toFixed(4)}`, `$${i.totalUsd.toFixed(2)}`]),
+      styles:      { fontSize:8.5, cellPadding:3, textColor:[232,234,246], fillColor:[26,29,46], lineColor:[46,50,72], lineWidth:0.3 },
+      headStyles:  { fillColor:[34,38,56], textColor:[108,99,255], fontStyle:"bold", fontSize:8 },
+      alternateRowStyles: { fillColor:[22,25,40] },
+      columnStyles: {
+        0: { cellWidth:8,  halign:"center" },
+        1: { cellWidth:70 },
+        2: { cellWidth:16, halign:"center" },
+        3: { cellWidth:14, halign:"center" },
+        4: { cellWidth:32, halign:"right" },
+        5: { cellWidth:30, halign:"right" },
+      },
+      margin: { left:M, right:M },
+    });
+
+    y = doc.lastAutoTable.finalY + 6;
+
+    // ── 합계 박스 ──
+    const totals = [
+      ["Subtotal",            `$${d.subtotal.toFixed(2)}`],
+      ["Handling Charges",    `$${d.handling.toFixed(2)}`],
+      ["Freight Charges",     `$${d.freight.toFixed(2)}`],
+      ["Insurance Charges",   `$${d.insurance.toFixed(2)}`],
+    ];
+    const totW = 80; const totX = PAGE_W - M - totW;
+    doc.setFillColor(26, 29, 46);
+    doc.roundedRect(totX, y, totW, totals.length*7+16, 2, 2, "F");
+    totals.forEach(([lbl, val], i) => {
+      doc.setFontSize(8); doc.setTextColor(136,146,176);
+      doc.text(lbl+":", totX+4, y+6+i*7);
+      doc.setTextColor(232,234,246);
+      doc.text(val, totX+totW-4, y+6+i*7, {align:"right"});
+    });
+    // Grand Total 강조
+    const gtY = y + totals.length*7 + 6;
+    doc.setFontSize(11); doc.setFont("helvetica","bold");
+    doc.setTextColor(0, 230, 118);
+    doc.text("GRAND TOTAL:", totX+4, gtY);
+    doc.text(`USD $${d.grand.toFixed(2)}`, totX+totW-4, gtY, {align:"right"});
+
+    // ── Remarks ──
+    if (d.remarks) {
+      y = gtY + 10;
+      doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
+      doc.text("REMARKS:", M, y);
+      doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
+      doc.text(d.remarks, M, y+6, {maxWidth: PAGE_W - M*2});
+    }
+
+    // ── 푸터 ──
+    const fY = 287;
+    doc.setDrawColor(46, 50, 72); doc.setLineWidth(0.3);
+    doc.line(M, fY-3, PAGE_W-M, fY-3);
+    doc.setFontSize(7.5); doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
+    doc.text("YSACC CO., LTD.  |  Trade Management System", M, fY);
+    doc.text(`Exchange Rate: ₩${d.rate.toLocaleString()}/USD`, PAGE_W-M, fY, {align:"right"});
+
+    const fileName = `${d.piNum.replace(/[^a-zA-Z0-9-]/g,"_")}_${d.piDate}.pdf`;
+    doc.save(fileName);
+  };
 </script>
+
 </body>
 </html>
