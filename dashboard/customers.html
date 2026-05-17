@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>YSACC TMS - Customers Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, getDocs, onSnapshot,
+      setDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+      authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+      projectId:         "tradingmanagement-c1cf4",
+      storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+      messagingSenderId: "1033735327012",
+      appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const COMPANY_ID = "YSACC";
+
+    let allCustomers = [];
+    let editCustId = null;
+
+    // ── 실시간 고객 리스트 구독 ──
+    function subscribeCustomers() {
+      const custCol = collection(doc(db,"companies",COMPANY_ID),"customers");
+      onSnapshot(custCol, (snap) => {
+        allCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // 고객코드 순 정렬
+        allCustomers.sort((a,b) => (a.customerCode || "").localeCompare(b.customerCode || ""));
+        renderCustomers();
+      }, (err) => {
+        console.error("고객 DB 로딩 오류:", err);
+      });
+    }
+
+    // ── 화면 렌더링 ──
+    function renderCustomers() {
+      const q = document.getElementById("search_input").value.toLowerCase();
+      const statusFilter = document.getElementById("status_filter").value;
+      const gradeFilter = document.getElementById("grade_filter").value;
+
+      const filtered = allCustomers.filter(c => {
+        const matchesSearch = 
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.customerCode || "").toLowerCase().includes(q) ||
+          (c.countryName || "").toLowerCase().includes(q) ||
+          (c.nameKo || "").toLowerCase().includes(q);
+        
+        const matchesStatus = !statusFilter || c.tradeStatus === statusFilter;
+        const matchesGrade = !gradeFilter || c.tradeGrade === gradeFilter;
+
+        return matchesSearch && matchesStatus && matchesGrade;
+      });
+
+      document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+
+      const tbody = document.getElementById("cust_table_body");
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 고객이 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(c => {
+        const badgeStatus = { Active:"active", Inactive:"inactive", Blocked:"blocked" }[c.tradeStatus] || "active";
+        return `
+          <tr>
+            <td><strong style="color:var(--accent2)">${c.customerCode || "-"}</strong></td>
+            <td>
+              <div style="font-weight:600;font-size:13px;color:var(--text)">${c.name || "-"}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${c.nameKo || "-"}</div>
+            </td>
+            <td>
+              <div style="font-size:12px;">${c.countryName || "-"}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${c.city || "-"}</div>
+            </td>
+            <td>${c.representative || "-"}</td>
+            <td>
+              <div style="font-size:12px;">${c.contactPerson || "-"}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">${c.email || c.phone || "-"}</div>
+            </td>
+            <td>${c.paymentTerms || "-"}</td>
+            <td style="text-align:center"><span style="font-weight:700;color:var(--yellow);">${c.tradeGrade || "A"}</span></td>
+            <td><span class="badge ${badgeStatus}">${c.tradeStatus || "Active"}</span></td>
+            <td style="text-align:right;white-space:nowrap;">
+              <button class="action-btn edit-btn" onclick="openEditModal('${c.id}')">✏ 수정</button>
+              <button class="action-btn delete-btn" onclick="deleteCustomer('${c.id}', '${c.name}')">✕ 삭제</button>
+            </td>
+          </tr>`;
+      }).join("");
+    }
+
+    // ── 저장 / 수정 처리 ──
+    window.saveCustomer = async function() {
+      const code = document.getElementById("c_code").value.trim();
+      const name = document.getElementById("c_name").value.trim();
+      if (!code) { alert("고객코드는 필수 입력사항입니다."); return; }
+      if (!name) { alert("고객명 (영문)은 필수 입력사항입니다."); return; }
+
+      const btn = document.getElementById("save_btn");
+      btn.disabled = true; btn.textContent = "저장 중...";
+
+      // 36개 대규모 사양 객체 매핑
+      const customerData = {
+        // 1. 기본 정보
+        customerCode: code,
+        name: name,
+        nameKo: document.getElementById("c_name_ko").value.trim(),
+        customerType: document.getElementById("c_type").value,
+        countryCode: document.getElementById("c_country_code").value.trim().toUpperCase(),
+        countryName: document.getElementById("c_country_name").value.trim(),
+        city: document.getElementById("c_city").value.trim(),
+        representative: document.getElementById("c_rep").value.trim(),
+        industryType: document.getElementById("c_industry").value.trim(),
+
+        // 2. 연락처 정보
+        phone: document.getElementById("c_phone").value.trim(),
+        fax: document.getElementById("c_fax").value.trim(),
+        email: document.getElementById("c_email").value.trim(),
+        website: document.getElementById("c_website").value.trim(),
+
+        // 3. 주소 정보
+        addressEn: document.getElementById("c_addr").value.trim(),
+        zipCode: document.getElementById("c_zip").value.trim(),
+        shippingAddressEn: document.getElementById("c_ship_addr").value.trim(),
+        shippingZipCode: document.getElementById("c_ship_zip").value.trim(),
+
+        // 4. 담당자 정보
+        contactPerson: document.getElementById("c_contact").value.trim(),
+        contactPhone: document.getElementById("c_contact_phone").value.trim(),
+        contactEmail: document.getElementById("c_contact_email").value.trim(),
+
+        // 5. 거래 정보
+        tradeStartDate: document.getElementById("c_trade_start").value,
+        tradeStatus: document.getElementById("c_trade_status").value,
+        tradeGrade: document.getElementById("c_trade_grade").value,
+        paymentTerms: document.getElementById("c_payment").value.trim(),
+        creditLimit: parseFloat(document.getElementById("c_credit").value) || 0,
+        currency: document.getElementById("c_currency").value,
+        tradeTeam: document.getElementById("c_team").value.trim(),
+
+        // 6. 세금/법률 정보
+        taxId: document.getElementById("c_tax_id").value.trim(),
+        businessLicense: document.getElementById("c_license").value.trim(),
+        entityType: document.getElementById("c_entity_type").value,
+
+        // 7. 결제/금융 정보
+        bankName: document.getElementById("c_bank").value.trim(),
+        bankAccount: document.getElementById("c_account").value.trim(),
+        swiftCode: document.getElementById("c_swift").value.trim(),
+        iban: document.getElementById("c_iban").value.trim(),
+        bankHolder: document.getElementById("c_holder").value.trim(),
+
+        // 8. 배송/물류 정보
+        shippingPort: document.getElementById("c_port").value.trim(),
+        preferredIncoterms: document.getElementById("c_incoterms").value,
+        customsBroker: document.getElementById("c_broker").value.trim(),
+        customsInfo: document.getElementById("c_customs_info").value.trim(),
+        hsCodeManaged: document.getElementById("c_hs_managed").value,
+
+        // 9. 기타 정보
+        registrar: document.getElementById("c_registrar").value.trim(),
+        remarks: document.getElementById("c_remarks").value.trim(),
+        updatedAt: serverTimestamp()
+      };
+
+      if (!editCustId) {
+        customerData.createdAt = serverTimestamp();
+      }
+
+      try {
+        const docId = editCustId || code; // 수정 시 기존 ID 사용, 신규 시 고객코드를 ID로 지정하여 키 정합성 확보!
+        await setDoc(doc(db, "companies", COMPANY_ID, "customers", docId), customerData);
+        closeCustModal();
+        alert("✅ 성공적으로 저장되었습니다.");
+      } catch (e) {
+        alert("❌ 저장 실패: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✔ 저장";
+      }
+    };
+
+    // ── 삭제 처리 ──
+    window.deleteCustomer = async function(id, name) {
+      if (!confirm(`⚠️ 정말로 고객 [${name}]을(를) DB에서 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        await deleteDoc(doc(db, "companies", COMPANY_ID, "customers", id));
+        alert("✅ 성공적으로 삭제되었습니다.");
+      } catch (e) {
+        alert("❌ 삭제 실패: " + e.message);
+      }
+    };
+
+    // ── 모달 제어 ──
+    window.openNewCustModal = function() {
+      editCustId = null;
+      document.getElementById("modal_title").textContent = "Add New Customer";
+      document.getElementById("modal_sub").textContent = "해외 바이어/거래처 신규 등록 (36개 필수 필드 탑재)";
+      document.getElementById("cust_form").reset();
+      document.getElementById("c_code").readOnly = false;
+      
+      // 등록일자 오늘 자동 셋팅
+      document.getElementById("c_trade_start").value = new Date().toISOString().split("T")[0];
+      
+      switchTab(1);
+      document.getElementById("cust_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.openEditModal = function(id) {
+      editCustId = id;
+      const c = allCustomers.find(x => x.id === id);
+      if (!c) return;
+
+      document.getElementById("modal_title").textContent = "Edit Customer Specs";
+      document.getElementById("modal_sub").textContent = `고객 정보 및 거래 사양 수정 (${c.name})`;
+      
+      // 기본 정보
+      document.getElementById("c_code").value = c.customerCode || "";
+      document.getElementById("c_code").readOnly = true; // 코드는 수정 불가 처리
+      document.getElementById("c_name").value = c.name || "";
+      document.getElementById("c_name_ko").value = c.nameKo || "";
+      document.getElementById("c_type").value = c.customerType || "Buyer";
+      document.getElementById("c_country_code").value = c.countryCode || "";
+      document.getElementById("c_country_name").value = c.countryName || "";
+      document.getElementById("c_city").value = c.city || "";
+      document.getElementById("c_rep").value = c.representative || "";
+      document.getElementById("c_industry").value = c.industryType || "";
+
+      // 연락처 정보
+      document.getElementById("c_phone").value = c.phone || "";
+      document.getElementById("c_fax").value = c.fax || "";
+      document.getElementById("c_email").value = c.email || "";
+      document.getElementById("c_website").value = c.website || "";
+
+      // 주소 정보
+      document.getElementById("c_addr").value = c.addressEn || "";
+      document.getElementById("c_zip").value = c.zipCode || "";
+      document.getElementById("c_ship_addr").value = c.shippingAddressEn || "";
+      document.getElementById("c_ship_zip").value = c.shippingZipCode || "";
+
+      // 담당자 정보
+      document.getElementById("c_contact").value = c.contactPerson || "";
+      document.getElementById("c_contact_phone").value = c.contactPhone || "";
+      document.getElementById("c_contact_email").value = c.contactEmail || "";
+
+      // 거래 정보
+      document.getElementById("c_trade_start").value = c.tradeStartDate || "";
+      document.getElementById("c_trade_status").value = c.tradeStatus || "Active";
+      document.getElementById("c_trade_grade").value = c.tradeGrade || "A";
+      document.getElementById("c_payment").value = c.paymentTerms || "";
+      document.getElementById("c_credit").value = c.creditLimit || 0;
+      document.getElementById("c_currency").value = c.currency || "USD";
+      document.getElementById("c_team").value = c.tradeTeam || "";
+
+      // 세금/법률 정보
+      document.getElementById("c_tax_id").value = c.taxId || "";
+      document.getElementById("c_license").value = c.businessLicense || "";
+      document.getElementById("c_entity_type").value = c.entityType || "Corporation";
+
+      // 결제/금융 정보
+      document.getElementById("c_bank").value = c.bankName || "";
+      document.getElementById("c_account").value = c.bankAccount || "";
+      document.getElementById("c_swift").value = c.swiftCode || "";
+      document.getElementById("c_iban").value = c.iban || "";
+      document.getElementById("c_holder").value = c.bankHolder || "";
+
+      // 배송/물류 정보
+      document.getElementById("c_port").value = c.shippingPort || "";
+      document.getElementById("c_incoterms").value = c.preferredIncoterms || "FOB";
+      document.getElementById("c_broker").value = c.customsBroker || "";
+      document.getElementById("c_customs_info").value = c.customsInfo || "";
+      document.getElementById("c_hs_managed").value = c.hsCodeManaged || "N";
+
+      // 기타 정보
+      document.getElementById("c_registrar").value = c.registrar || "";
+      document.getElementById("c_remarks").value = c.remarks || "";
+
+      switchTab(1);
+      document.getElementById("cust_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.closeCustModal = function() {
+      document.getElementById("cust_overlay").classList.remove("open");
+      document.body.style.overflow = "";
+    };
+
+    // ── 탭 제어 ──
+    window.switchTab = function(idx) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+
+      document.getElementById(`tab_btn_${idx}`).classList.add("active");
+      document.getElementById(`tab_pane_${idx}`).classList.add("active");
+    };
+
+    window.filterCustomers = renderCustomers;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      subscribeCustomers();
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d2e; --surface2:#222638;
+      --border:#2e3248; --accent:#6c63ff; --accent2:#00d4ff;
+      --green:#00e676; --yellow:#ffd740; --red:#ff5252;
+      --text:#e8eaf6; --text-muted:#8892b0;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); }
+
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .logo { padding:0 24px 24px; font-size:18px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--border); }
+    .logo span { color:var(--text-muted); font-size:11px; display:block; margin-top:2px; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 24px; font-size:13px; color:var(--text-muted); cursor:pointer; transition:all .2s; }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active { background:var(--surface2); color:var(--text); border-left:3px solid var(--accent); padding-left:21px; }
+
+    .main { margin-left:220px; padding:32px; flex:1; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-title { font-size:24px; font-weight:700; }
+    .page-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; transition:all .2s; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { opacity:.85; transform:translateY(-1px); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .btn-outline:hover { background:var(--surface2); }
+
+    /* Toolbar */
+    .toolbar { display:flex; gap:12px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:20px; }
+    .search-box { position:relative; flex:1; }
+    .search-box span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; }
+    .search-box input { width:100%; padding:10px 10px 10px 38px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; transition:all .2s; }
+    .search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,99,255,.15); }
+    .filter { padding:10px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; cursor:pointer; }
+    .filter:focus { border-color:var(--accent); }
+    .result-count { font-size:12px; color:var(--text-muted); font-weight:500; padding:0 8px; }
+
+    /* Table Card */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; padding:12px; color:var(--text-muted); font-size:11px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; }
+    td { padding:14px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--surface2); }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; text-align:center; }
+    .badge.active   { background:rgba(0,230,118,.15); color:var(--green); }
+    .badge.inactive { background:rgba(255,215,64,.15); color:var(--yellow); }
+    .badge.blocked  { background:rgba(255,82,82,.15); color:var(--red); }
+
+    .action-btn { background:transparent; border:none; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; border-radius:4px; transition:all .2s; }
+    .edit-btn { color:var(--accent2); background:rgba(0,212,255,.08); margin-right:4px; }
+    .edit-btn:hover { background:rgba(0,212,255,.18); }
+    .delete-btn { color:var(--red); background:rgba(255,82,82,.08); }
+    .delete-btn:hover { background:rgba(255,82,82,.18); }
+
+    /* Overlay / Modal Drawer */
+    .overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,11,18,.8); backdrop-filter:blur(6px); display:flex; justify-content:center; align-items:center; z-index:1000; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+    .overlay.open { opacity:1; pointer-events:auto; }
+    .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:95%; max-width:980px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 48px rgba(0,0,0,.4); transform:scale(.95); transition:transform .3s ease; }
+    .overlay.open .modal-box { transform:scale(1); }
+    .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .modal-close { background:transparent; border:none; color:var(--text-muted); font-size:24px; cursor:pointer; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:24px; overflow-y:auto; flex:1; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg); }
+
+    /* Tabs UI */
+    .tabs-nav { display:flex; gap:6px; background:var(--bg); border:1px solid var(--border); padding:4px; border-radius:10px; margin-bottom:24px; }
+    .tab-btn { flex:1; text-align:center; padding:10px; font-size:12px; font-weight:600; color:var(--text-muted); border-radius:8px; cursor:pointer; border:none; background:transparent; transition:all .2s; }
+    .tab-btn:hover { color:var(--text); background:var(--surface); }
+    .tab-btn.active { color:#fff; background:var(--accent); }
+
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; animation:fadeIn .2s ease; }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Grid Form */
+    .form-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .form-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    .form-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .fgroup { display:flex; flex-direction:column; gap:6px; }
+    .fgroup label { font-size:11px; font-weight:600; color:var(--text-muted); }
+    .fgroup input, .fgroup select, .fgroup textarea { padding:10px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; outline:none; transition:border-color .2s; }
+    .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus { border-color:var(--accent); }
+    .fgroup input[readonly] { background:rgba(46,50,72,.3); color:var(--text-muted); cursor:not-allowed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <nav style="padding-top:16px;">
+      <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
+      <div class="nav-item" onclick="location.href='proforma_invoices.html'">📋 Proforma Invoice</div>
+      <div class="nav-item">📦 Purchase Order</div>
+      <div class="nav-item">🤝 Negotiations</div>
+      <div class="nav-item active" onclick="location.href='customers.html'">👥 Customers</div>
+      <div class="nav-item">🏭 Suppliers</div>
+      <div class="nav-item">📈 Reports</div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">고객사 관리 (Customers)</div>
+        <div class="page-sub">해외 거래처 정보 조회, 등록 및 36개 세부 무역 스펙 관리 도구</div>
+      </div>
+      <button class="btn btn-primary" onclick="openNewCustModal()">＋ New Customer</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search_input" placeholder="고객명(영문/현지어), 고객코드, 국가명 검색..." oninput="filterCustomers()">
+      </div>
+      <select class="filter" id="status_filter" onchange="filterCustomers()">
+        <option value="">전체 상태</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+        <option value="Blocked">Blocked</option>
+      </select>
+      <select class="filter" id="grade_filter" onchange="filterCustomers()">
+        <option value="">전체 등급</option>
+        <option value="S">S 등급</option>
+        <option value="A">A 등급</option>
+        <option value="B">B 등급</option>
+        <option value="C">C 등급</option>
+      </select>
+      <span class="result-count" id="result_count">총 0건</span>
+    </div>
+
+    <!-- Card Table -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>고객코드</th>
+              <th>고객명 (영문/현지어)</th>
+              <th>국가 / 도시</th>
+              <th>대표자</th>
+              <th>주 담당자 / 연락망</th>
+              <th>결제 조건</th>
+              <th style="text-align:center">등급</th>
+              <th>거래 상태</th>
+              <th style="text-align:right">작업</th>
+            </tr>
+          </thead>
+          <tbody id="cust_table_body">
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">Firestore 실시간 DB 로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── 고객 등록/수정 모달 ── -->
+<div class="overlay" id="cust_overlay" onclick="if(event.target===this) closeCustModal()">
+  <div class="modal-box">
+    
+    <div class="modal-header">
+      <div>
+        <div id="modal_title" style="font-size:18px;font-weight:700;color:var(--text)">Add New Customer</div>
+        <div id="modal_sub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">해외 거래처 등록 및 무역정보 연동</div>
+      </div>
+      <button class="modal-close" onclick="closeCustModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- 5-Tabs Navigation -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tab_btn_1" onclick="switchTab(1)">📑 1. 기본 정보</button>
+        <button class="tab-btn" id="tab_btn_2" onclick="switchTab(2)">📞 2. 연락처 & 주소</button>
+        <button class="tab-btn" id="tab_btn_3" onclick="switchTab(3)">💼 3. 거래 & 세무</button>
+        <button class="tab-btn" id="tab_btn_4" onclick="switchTab(4)">🏦 4. 금융 & 물류</button>
+        <button class="tab-btn" id="tab_btn_5" onclick="switchTab(5)">📝 5. 기타 & 비고</button>
+      </div>
+
+      <form id="cust_form" onsubmit="event.preventDefault();">
+        
+        <!-- Tab 1: 기본 정보 -->
+        <div class="tab-pane active" id="tab_pane_1">
+          <div class="form-grid">
+            <div class="fgroup"><label>고객코드 (필수) ★</label><input type="text" id="c_code" placeholder="예: CUST-001"></div>
+            <div class="fgroup"><label>고객명_영문 (필수) ★</label><input type="text" id="c_name" placeholder="예: AL SHIRAWAI CO."></div>
+            <div class="fgroup"><label>고객명_현지어/한글</label><input type="text" id="c_name_ko" placeholder="예: 알 시라와이"></div>
+            <div class="fgroup">
+              <label>고객 유형</label>
+              <select id="c_type">
+                <option>Buyer</option><option>Agent</option><option>Distributor</option><option>Partner</option>
+              </select>
+            </div>
+            <div class="fgroup"><label>국가코드 (2자리)</label><input type="text" id="c_country_code" placeholder="예: AE"></div>
+            <div class="fgroup"><label>국가명</label><input type="text" id="c_country_name" placeholder="예: UAE"></div>
+            <div class="fgroup"><label>도시</label><input type="text" id="c_city" placeholder="예: DUBAI"></div>
+            <div class="fgroup"><label>대표자명</label><input type="text" id="c_rep" placeholder="대표이사 성명"></div>
+            <div class="fgroup"><label>업종분류</label><input type="text" id="c_industry" placeholder="예: 복합소재, 무역업"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 연락처 & 주소 -->
+        <div class="tab-pane" id="tab_pane_2">
+          <div class="form-grid">
+            <div class="fgroup"><label>국제전화번호</label><input type="text" id="c_phone" placeholder="+971-4-XXX-XXXX"></div>
+            <div class="fgroup"><label>팩스번호</label><input type="text" id="c_fax" placeholder="+971-4-XXX-XXXX"></div>
+            <div class="fgroup"><label>이메일</label><input type="email" id="c_email" placeholder="info@buyer.com"></div>
+            <div class="fgroup"><label>웹사이트 URL</label><input type="text" id="c_website" placeholder="https://"></div>
+          </div>
+          <div class="form-grid-2" style="margin-top:16px;">
+            <div class="fgroup"><label>주소_영문</label><input type="text" id="c_addr" placeholder="영문 주소"></div>
+            <div class="fgroup"><label>우편번호</label><input type="text" id="c_zip" placeholder="Zip Code"></div>
+            <div class="fgroup"><label>배송지주소_영문</label><input type="text" id="c_ship_addr" placeholder="실제 배송 영문지"></div>
+            <div class="fgroup"><label>배송지우편번호</label><input type="text" id="c_ship_zip" placeholder="Zip Code"></div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 거래 & 세무 -->
+        <div class="tab-pane" id="tab_pane_3">
+          <div class="form-grid-4">
+            <div class="fgroup"><label>거래시작일</label><input type="date" id="c_trade_start"></div>
+            <div class="fgroup">
+              <label>거래 상태</label>
+              <select id="c_trade_status">
+                <option>Active</option><option>Inactive</option><option>Blocked</option>
+              </select>
+            </div>
+            <div class="fgroup">
+              <label>거래 등급</label>
+              <select id="c_trade_grade">
+                <option>S</option><option>A</option><option>B</option><option>C</option>
+              </select>
+            </div>
+            <div class="fgroup">
+              <label>거래 통화</label>
+              <select id="c_currency">
+                <option>USD</option><option>EUR</option><option>AED</option><option>KRW</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-top:16px;">
+            <div class="fgroup"><label>결제 조건 (상세)</label><input type="text" id="c_payment" placeholder="예: 100% LC 90days at sight"></div>
+            <div class="fgroup"><label>신용한도 (USD)</label><input type="number" id="c_credit" placeholder="0"></div>
+            <div class="fgroup"><label>거래담당팀</label><input type="text" id="c_team" placeholder="예: 해외영업2팀"></div>
+            <div class="fgroup"><label>세금ID_VAT번호</label><input type="text" id="c_tax_id" placeholder="VAT Number"></div>
+            <div class="fgroup"><label>사업자등록증 번호</label><input type="text" id="c_license" placeholder="Business License No"></div>
+            <div class="fgroup">
+              <label>법인/개인구분</label>
+              <select id="c_entity_type">
+                <option>Corporation</option><option>Individual</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: 금융 & 물류 -->
+        <div class="tab-pane" id="tab_pane_4">
+          <div class="form-grid">
+            <div class="fgroup"><label>은행명</label><input type="text" id="c_bank" placeholder="예: HSBC Dubai"></div>
+            <div class="fgroup"><label>계좌번호</label><input type="text" id="c_account" placeholder="Bank Account Number"></div>
+            <div class="fgroup"><label>SWIFT코드</label><input type="text" id="c_swift" placeholder="SWIFT Code"></div>
+            <div class="fgroup"><label>IBAN</label><input type="text" id="c_iban" placeholder="IBAN Code"></div>
+            <div class="fgroup"><label>예금주명_영문</label><input type="text" id="c_holder" placeholder="Account Holder Name"></div>
+            <div class="fgroup"><label>기본 배송지 / 인도처</label><input type="text" id="c_port" placeholder="예: JEBEL ALI PORT"></div>
+            <div class="fgroup">
+              <label>배송방법_Incoterms</label>
+              <select id="c_incoterms">
+                <option>FOB</option><option>CIF</option><option>EXW</option><option>DDP</option><option>DAP</option>
+              </select>
+            </div>
+            <div class="fgroup"><label>통관담당자명</label><input type="text" id="c_broker" placeholder="Customs Broker"></div>
+            <div class="fgroup">
+              <label>HS코드관리여부</label>
+              <select id="c_hs_managed">
+                <option>N</option><option>Y</option>
+              </select>
+            </div>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>통관정보 / 선적 특기사항</label>
+            <textarea id="c_customs_info" rows="2" placeholder="통관 진행 시 필요 서류 및 고유 정보"></textarea>
+          </div>
+        </div>
+
+        <!-- Tab 5: 기타 & 비고 -->
+        <div class="tab-pane" id="tab_pane_5">
+          <div class="form-grid-2">
+            <div class="fgroup"><label>등록담당자명</label><input type="text" id="c_registrar" placeholder="YSACC 담당 직원 성명"></div>
+          </div>
+          <div class="fgroup" style="margin-top:16px;">
+            <label>비고 / 고객 상세 프로필</label>
+            <textarea id="c_remarks" rows="5" placeholder="기타 히스토리, 협상 경과, 중요 특이사항 기재"></textarea>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeCustModal()">취소</button>
+      <button class="btn btn-primary" id="save_btn" onclick="saveCustomer()">✔ 저장</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
