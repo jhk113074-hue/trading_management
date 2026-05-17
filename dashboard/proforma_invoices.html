@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Proforma Invoice 목록 - YSACC TMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#0f1117;--surface:#1a1d2e;--surface2:#222638;--border:#2e3248;--accent:#6c63ff;--accent2:#00d4ff;--green:#00e676;--yellow:#ffd740;--red:#ff5252;--text:#e8eaf6;--text-muted:#8892b0;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+    .layout{display:flex;min-height:100vh;}
+    .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;position:fixed;top:0;bottom:0;}
+    .logo{padding:0 24px 24px;font-size:18px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);}
+    .logo span{color:var(--text-muted);font-size:11px;display:block;margin-top:2px;}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all .2s;}
+    .nav-item:hover{background:var(--surface2);color:var(--text);}
+    .nav-item.active{background:var(--surface2);color:var(--text);border-left:3px solid var(--accent);padding-left:21px;}
+    .main{margin-left:220px;padding:32px;flex:1;}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+    .page-title{font-size:22px;font-weight:700;}
+    .page-sub{color:var(--text-muted);font-size:13px;margin-top:4px;}
+    .btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s;text-decoration:none;display:inline-block;}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{opacity:.85;}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-muted);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* Search & Filter Bar */
+    .toolbar{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
+    .search-box{display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 12px;gap:8px;flex:1;max-width:400px;}
+    .search-box input{background:transparent;border:none;color:var(--text);font-size:13px;padding:9px 0;outline:none;width:100%;}
+    .search-box input::placeholder{color:var(--text-muted);}
+    select.filter{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;cursor:pointer;outline:none;}
+    select.filter option{background:var(--surface2);}
+    .result-count{color:var(--text-muted);font-size:13px;margin-left:auto;}
+
+    /* Table */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{text-align:left;padding:12px 14px;color:var(--text-muted);font-size:11px;font-weight:600;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap;}
+    td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr.pi-row:hover td{background:rgba(108,99,255,.06);cursor:pointer;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;}
+    .badge.confirmed{background:rgba(0,230,118,.15);color:var(--green);}
+    .badge.sent{background:rgba(0,212,255,.15);color:var(--accent2);}
+    .badge.draft{background:rgba(108,99,255,.15);color:var(--accent);}
+    .badge.expired{background:rgba(255,82,82,.15);color:var(--red);}
+    .amount{text-align:right;font-weight:600;}
+    .pi-num{color:var(--accent);font-weight:600;}
+    .empty{text-align:center;padding:60px;color:var(--text-muted);}
+
+    /* ── Modal Overlay ── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:900px;max-width:95vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+    .modal-title{font-size:16px;font-weight:700;}
+    .modal-sub{color:var(--text-muted);font-size:12px;margin-top:3px;}
+    .modal-close{background:transparent;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;}
+    .modal-close:hover{background:var(--surface2);color:var(--text);}
+    .modal-body{overflow-y:auto;padding:24px;flex:1;}
+    .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;}
+
+    /* Modal Content Sections */
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+    .detail-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+    .detail-section h4{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:700;}
+    .detail-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+    .detail-row:last-child{border-bottom:none;}
+    .detail-label{color:var(--text-muted);}
+    .detail-value{font-weight:500;text-align:right;max-width:60%;}
+    .detail-section.full{grid-column:1/-1;}
+
+    /* Line Items in modal */
+    .li-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+    .li-table th{background:var(--bg);padding:8px 10px;text-align:left;color:var(--text-muted);font-size:11px;border-bottom:1px solid var(--border);}
+    .li-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);}
+    .li-table tr:last-child td{border-bottom:none;}
+    .li-table .num{text-align:right;}
+
+    /* Status badge in modal header */
+    .status-badge-lg{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-left:10px;}
+    .total-highlight{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:right;margin-top:16px;}
+    .total-highlight .grand{font-size:20px;font-weight:700;color:var(--green);margin-top:4px;}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <nav style="padding-top:16px;">
+      <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
+      <div class="nav-item active">📋 Proforma Invoice</div>
+      <div class="nav-item">📦 Purchase Order</div>
+      <div class="nav-item">🤝 Negotiations</div>
+      <div class="nav-item">👥 Customers</div>
+      <div class="nav-item">🏭 Suppliers</div>
+      <div class="nav-item">📈 Reports</div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Proforma Invoice</div>
+        <div class="page-sub">전체 PI 목록 · Firestore 실시간 연동</div>
+      </div>
+      <a href="create_pi.html" class="btn btn-primary">＋ New PI</a>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search_input" placeholder="PI번호, 고객명, 목적지 검색..." oninput="filterPIs()">
+      </div>
+      <select class="filter" id="status_filter" onchange="filterPIs()">
+        <option value="">전체 상태</option>
+        <option value="draft">Draft</option>
+        <option value="sent">Sent</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="expired">Expired</option>
+      </select>
+      <select class="filter" id="incoterms_filter" onchange="filterPIs()">
+        <option value="">전체 Incoterms</option>
+        <option value="CIF">CIF</option>
+        <option value="FOB">FOB</option>
+        <option value="EXW">EXW</option>
+        <option value="DDP">DDP</option>
+        <option value="DOOR TO DOOR">DOOR TO DOOR</option>
+      </select>
+      <span class="result-count" id="result_count"></span>
+    </div>
+
+    <!-- PI Table -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>PI Number</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Incoterms</th>
+              <th>Destination</th>
+              <th>Payment Terms</th>
+              <th>Ver.</th>
+              <th>Status</th>
+              <th style="text-align:right">Total (USD)</th>
+              <th>Valid Until</th>
+            </tr>
+          </thead>
+          <tbody id="pi_tbody">
+            <tr><td colspan="10" class="empty">Firestore에서 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════ PI 상세 모달 ═══════════════ -->
+<div class="modal-overlay" id="modal_overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="pi_modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal_pi_number">PI-YSACC-2026-00</div>
+        <div class="modal-sub" id="modal_pi_sub">불러오는 중...</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="badge status-badge-lg" id="modal_status_badge">draft</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal_body">
+      <!-- JS로 동적 생성 -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">닫기</button>
+      <button class="btn btn-outline" id="btn_mark_sent" onclick="updateStatus('sent')">📨 Sent로 변경</button>
+      <button class="btn btn-primary" id="btn_mark_confirmed" onclick="updateStatus('confirmed')">✔ Confirmed</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc, getDocs, onSnapshot,
+    updateDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:"AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+    authDomain:"tradingmanagement-c1cf4.firebaseapp.com",
+    projectId:"tradingmanagement-c1cf4",
+    storageBucket:"tradingmanagement-c1cf4.firebasestorage.app",
+    messagingSenderId:"1033735327012",
+    appId:"1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const COMPANY_ID = "YSACC";
+
+  const customerMap = {};
+  let allPIs = [];
+  let currentPIId = null;
+
+  // ── 고객맵 로드 ──
+  async function loadCustomerMap() {
+    const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"customers"));
+    snap.docs.forEach(d => { customerMap[d.id] = d.data(); });
+  }
+
+  // ── PI 실시간 구독 ──
+  function subscribePIs() {
+    const piCol = collection(doc(db,"companies",COMPANY_ID),"proforma_invoices");
+    onSnapshot(piCol, snap => {
+      allPIs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allPIs.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+      filterPIs();
+    });
+  }
+
+  // ── 검색 & 필터 ──
+  window.filterPIs = function() {
+    const q      = document.getElementById("search_input").value.toLowerCase();
+    const status = document.getElementById("status_filter").value;
+    const inco   = document.getElementById("incoterms_filter").value;
+
+    const filtered = allPIs.filter(p => {
+      const custName = (customerMap[p.customerId]?.name || "").toLowerCase();
+      const matchQ = !q || (p.piNumber||"").toLowerCase().includes(q)
+                       || custName.includes(q)
+                       || (p.destinationPort||"").toLowerCase().includes(q)
+                       || (p.paymentTerms||"").toLowerCase().includes(q);
+      const matchS = !status || p.status === status;
+      const matchI = !inco   || p.incoterms === inco;
+      return matchQ && matchS && matchI;
+    });
+
+    renderTable(filtered);
+    document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+  };
+
+  // ── 테이블 렌더링 ──
+  function renderTable(pis) {
+    const tbody = document.getElementById("pi_tbody");
+    if (!pis.length) {
+      tbody.innerHTML = `<tr><td colspan="10" class="empty">검색 결과가 없습니다</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = pis.map(p => {
+      const badge = p.status || "draft";
+      const cust  = customerMap[p.customerId]?.name || "-";
+      const date  = p.piDate || "-";
+      const valid = p.validUntilDate || "-";
+      const expired = valid !== "-" && new Date(valid) < new Date() && p.status !== "confirmed";
+      return `<tr class="pi-row" onclick="openModal('${p.id}')">
+        <td class="pi-num">${p.piNumber||"-"}</td>
+        <td>${date}</td>
+        <td>${cust}</td>
+        <td>${p.incoterms||"-"}</td>
+        <td>${p.destinationPort||"-"}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.paymentTerms||"-"}</td>
+        <td style="text-align:center">${p.currentVersion||"A"}</td>
+        <td><span class="badge ${badge}">${p.status||"draft"}</span></td>
+        <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="color:${expired?"var(--red)":"var(--text-muted)"}">${valid}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  // ── 모달 열기 ──
+  window.openModal = async function(piId) {
+    currentPIId = piId;
+    const p = allPIs.find(x => x.id === piId);
+    if (!p) return;
+    const cust = customerMap[p.customerId] || {};
+
+    // 헤더
+    document.getElementById("modal_pi_number").textContent = p.piNumber || "-";
+    document.getElementById("modal_pi_sub").textContent =
+      `${p.piDate || "-"} · ${cust.name || "-"} · ${p.destinationPort || "-"}`;
+    const sb = document.getElementById("modal_status_badge");
+    sb.textContent = p.status || "draft";
+    sb.className = `badge status-badge-lg ${p.status||"draft"}`;
+
+    // Line items 불러오기
+    let lineItemsHTML = "<tr><td colspan='6' style='text-align:center;padding:16px;color:var(--text-muted);'>라인 아이템 없음</td></tr>";
+    try {
+      const revSnap = await getDocs(collection(doc(db,"companies",COMPANY_ID,"proforma_invoices",piId),"revisions"));
+      if (!revSnap.empty) {
+        const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+        const liSnap = await getDocs(collection(latestRev.ref,"line_items"));
+        if (!liSnap.empty) {
+          const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
+          lineItemsHTML = items.map((item,i) => `
+            <tr>
+              <td>${item.lineNumber||i+1}</td>
+              <td>${item.description||"-"}</td>
+              <td class="num">${item.quantity||0}</td>
+              <td>${item.unit||"-"}</td>
+              <td class="num">$${(item.salePriceUsd||0).toFixed(4)}</td>
+              <td class="num" style="color:var(--green)">$${(item.lineTotalUsd||0).toFixed(2)}</td>
+            </tr>`).join("");
+        }
+      }
+    } catch(e) { console.error(e); }
+
+    // 모달 바디
+    document.getElementById("modal_body").innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>📋 PI 정보</h4>
+          <div class="detail-row"><span class="detail-label">PI Number</span><span class="detail-value">${p.piNumber||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">PI Date</span><span class="detail-value">${p.piDate||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Valid Until</span><span class="detail-value">${p.validUntilDate||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Version</span><span class="detail-value">${p.currentVersion||"A"}</span></div>
+          <div class="detail-row"><span class="detail-label">Exchange Rate</span><span class="detail-value">₩${(p.exchangeRate||0).toLocaleString()}/USD</span></div>
+        </div>
+        <div class="detail-section">
+          <h4>👤 고객 정보</h4>
+          <div class="detail-row"><span class="detail-label">Company</span><span class="detail-value">${cust.name||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Country</span><span class="detail-value">${cust.country||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Contact</span><span class="detail-value">${cust.contactPerson||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${cust.email||"-"}</span></div>
+        </div>
+        <div class="detail-section">
+          <h4>🚢 거래 조건</h4>
+          <div class="detail-row"><span class="detail-label">Incoterms</span><span class="detail-value">${p.incoterms||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Destination</span><span class="detail-value">${p.destinationPort||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Payment Terms</span><span class="detail-value">${p.paymentTerms||"-"}</span></div>
+          <div class="detail-row"><span class="detail-label">Shipping</span><span class="detail-value">${p.shippingMethod||"-"}</span></div>
+        </div>
+        <div class="detail-section">
+          <h4>💰 금액 요약</h4>
+          <div class="detail-row"><span class="detail-label">Subtotal</span><span class="detail-value">$${(p.subtotalUsd||0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Handling</span><span class="detail-value">$${(p.handlingCharges||0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Freight</span><span class="detail-value">$${(p.freightCharges||0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Insurance</span><span class="detail-value">$${(p.insuranceCharges||0).toFixed(2)}</span></div>
+        </div>
+        <div class="detail-section full">
+          <h4>📦 상품 라인 (Line Items · ${p.currentVersion||"A"} 버전)</h4>
+          <table class="li-table">
+            <thead>
+              <tr><th>#</th><th>Description</th><th style="text-align:right">Qty</th><th>Unit</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th></tr>
+            </thead>
+            <tbody>${lineItemsHTML}</tbody>
+          </table>
+          <div class="total-highlight">
+            <div style="color:var(--text-muted);font-size:12px;">GRAND TOTAL</div>
+            <div class="grand">USD $${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          </div>
+        </div>
+        ${p.remarks ? `<div class="detail-section full"><h4>📝 비고</h4><div style="font-size:13px;color:var(--text-muted);padding-top:4px;">${p.remarks}</div></div>` : ""}
+      </div>`;
+
+    document.getElementById("modal_overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+  };
+
+  // ── 상태 업데이트 ──
+  window.updateStatus = async function(newStatus) {
+    if (!currentPIId) return;
+    try {
+      const piRef = doc(db,"companies",COMPANY_ID,"proforma_invoices",currentPIId);
+      const updates = { status: newStatus, updatedAt: serverTimestamp() };
+      if (newStatus === "confirmed") updates.confirmedAt = serverTimestamp();
+      if (newStatus === "sent")      updates.sentAt      = serverTimestamp();
+      await updateDoc(piRef, updates);
+      closeModal();
+      alert(`✅ 상태가 "${newStatus}"으로 변경되었습니다.`);
+    } catch(e) {
+      alert("❌ 변경 실패: " + e.message);
+    }
+  };
+
+  // ── 모달 닫기 ──
+  window.closeModal = function() {
+    document.getElementById("modal_overlay").classList.remove("open");
+    document.body.style.overflow = "";
+    currentPIId = null;
+  };
+  window.closeModalOnOverlay = function(e) {
+    if (e.target === document.getElementById("modal_overlay")) closeModal();
+  };
+
+  // ── ESC 키로 닫기 ──
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+  // ── 초기화 ──
+  window.addEventListener("DOMContentLoaded", async () => {
+    await loadCustomerMap();
+    subscribePIs();
+  });
+</script>
+</body>
+</html>
