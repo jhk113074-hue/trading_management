@@ -94,11 +94,28 @@
             <td style="text-align:center;font-weight:600;color:var(--yellow);">${p.stockQty || 0}</td>
             <td><span style="font-size:11px;color:var(--text-muted);">${p.origin || "-"}</span></td>
             <td style="text-align:right;white-space:nowrap;">
-              <button class="action-btn edit-btn" onclick="openEditModal('${p.id}')">✏ 수정</button>
-              <button class="action-btn delete-btn" onclick="deleteProduct('${p.id}', '${p.nameKo}')">✕ 삭제</button>
+              <button class="action-btn edit-btn" data-id="${p.id}">✏ 수정</button>
+              <button class="action-btn delete-btn" data-id="${p.id}" data-name="${(p.nameKo || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}">✕ 삭제</button>
             </td>
           </tr>`;
       }).join("");
+
+      // ── 동적 이벤트 리스너 안전 바인딩 (특수문자/공백/따옴표 깨짐 방지) ──
+      tbody.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          openEditModal(id);
+        });
+      });
+      tbody.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          const name = btn.getAttribute("data-name");
+          deleteProduct(id, name);
+        });
+      });
     }
 
     // ── 상품 등록 / 수정 저장 ──

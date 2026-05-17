@@ -89,11 +89,28 @@
             <td style="text-align:center"><span style="font-weight:700;color:var(--yellow);">${c.tradeGrade || "A"}</span></td>
             <td><span class="badge ${badgeStatus}">${c.tradeStatus || "Active"}</span></td>
             <td style="text-align:right;white-space:nowrap;">
-              <button class="action-btn edit-btn" onclick="openEditModal('${c.id}')">✏ 수정</button>
-              <button class="action-btn delete-btn" onclick="deleteCustomer('${c.id}', '${c.name}')">✕ 삭제</button>
+              <button class="action-btn edit-btn" data-id="${c.id}">✏ 수정</button>
+              <button class="action-btn delete-btn" data-id="${c.id}" data-name="${(c.name || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}">✕ 삭제</button>
             </td>
           </tr>`;
       }).join("");
+
+      // ── 동적 이벤트 리스너 안전 바인딩 (특수문자/공백/따옴표 깨짐 방지) ──
+      tbody.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          openEditModal(id);
+        });
+      });
+      tbody.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          const name = btn.getAttribute("data-name");
+          deleteCustomer(id, name);
+        });
+      });
     }
 
     // ── 저장 / 수정 처리 ──

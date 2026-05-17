@@ -75,11 +75,28 @@
             </td>
             <td><div style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--text-muted);">${s.address || "-"}</div></td>
             <td style="text-align:right;white-space:nowrap;">
-              <button class="action-btn edit-btn" onclick="openEditModal('${s.id}')">✏ 수정</button>
-              <button class="action-btn delete-btn" onclick="deleteSupplier('${s.id}', '${s.name}')">✕ 삭제</button>
+              <button class="action-btn edit-btn" data-id="${s.id}">✏ 수정</button>
+              <button class="action-btn delete-btn" data-id="${s.id}" data-name="${(s.name || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}">✕ 삭제</button>
             </td>
           </tr>`;
       }).join("");
+
+      // ── 동적 이벤트 리스너 안전 바인딩 (특수문자/공백/따옴표 깨짐 방지) ──
+      tbody.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          openEditModal(id);
+        });
+      });
+      tbody.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const id = btn.getAttribute("data-id");
+          const name = btn.getAttribute("data-name");
+          deleteSupplier(id, name);
+        });
+      });
     }
 
     // ── 공급업체 저장 ──
