@@ -620,19 +620,31 @@
         if (!liSnap.empty) {
           const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
           nItems = items.map((item, i) => {
-            const costK = item.costKrw || 0;
+            let costK = item.costKrw || 0;
             const r     = item.exchangeRate || p.exchangeRate || 1468.96;
-            const costU = item.costUsd || 0;
+            let costU = item.costUsd || 0;
+            const margin = item.profitMargin || 0;
+            const salePrice = item.salePriceUsd || 0;
+            
+            // 💊 자가 치유(Self-Healing) 엔진: 원가 데이터가 둘 다 0인 비정상 데이터 복원
+            if (costK === 0 && costU === 0 && salePrice > 0) {
+              const mDiv = margin < 100 ? (1 - margin / 100) : 1;
+              costU = +(salePrice * mDiv).toFixed(4);
+            }
             
             let baseCurr = "KRW";
-            let cK = costK;
-            let cU = costU;
             if (costU > 0 && costK === 0) {
               baseCurr = "USD";
-              cK = 0;
+              costK = 0;
+            } else if (costK > 0 && costU === 0) {
+              baseCurr = "KRW";
+              costU = 0;
+            } else if (costK > 0 && costU > 0) {
+              // 양방향 모두 들어있는 구형 데이터는 안전하게 원화 기준으로 정리
+              baseCurr = "KRW";
+              costU = 0;
             } else {
               baseCurr = "KRW";
-              cU = 0;
             }
             
             return {
@@ -640,10 +652,10 @@
               desc: item.description || "",
               qty: item.quantity || 1,
               unit: item.unit || "KG",
-              cost: cK,
+              cost: costK,
               rate: r,
-              costUsd: cU,
-              margin: item.profitMargin || 0,
+              costUsd: costU,
+              margin: margin,
               _baseCurrency: baseCurr
             };
           });
