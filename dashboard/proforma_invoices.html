@@ -259,8 +259,8 @@
       <div class="form-section">
         <h4>④ 상품 라인</h4>
         <table class="li-form-table">
-          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Cost (USD)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
-          <tbody id="n_li_body"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
+          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Rate (환율)</th><th>Cost (USD)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
+          <tbody id="n_li_body"><tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
         </table>
         <button class="btn btn-outline" style="margin-top:10px;font-size:12px;" onclick="nAddItem()">＋ 상품 추가</button>
       </div>
@@ -598,7 +598,7 @@
 
     // Line Items 가져오기
     nItems = []; nCounter = 0;
-    document.getElementById("n_li_body").innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">불러오는 중...</td></tr>';
+    document.getElementById("n_li_body").innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">불러오는 중...</td></tr>';
 
     try {
       const revSnap = await getDocs(collection(doc(db,"companies",COMPANY_ID,"proforma_invoices",editPIId),"revisions"));
@@ -609,14 +609,16 @@
           const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
           nItems = items.map((item, i) => {
             const costK = item.costKrw || 0;
+            const r     = item.exchangeRate || p.exchangeRate || 1468.96;
             // DB에 costUsd 필드가 이미 있는 경우 우선 사용, 없으면 환율로 계산
-            const costU = item.costUsd || +(costK / (p.exchangeRate || 1468.96)).toFixed(4);
+            const costU = item.costUsd || +(costK / r).toFixed(4);
             return {
               id: ++nCounter,
               desc: item.description || "",
               qty: item.quantity || 1,
               unit: item.unit || "KG",
               cost: costK,
+              rate: r,
               costUsd: costU,
               margin: item.profitMargin || 0
             };
@@ -667,13 +669,15 @@
   // ── 라인 아이템 ──
   let nItems=[], nCounter=0;
   window.nAddItem = function() {
-    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,costUsd:0,margin:10});
+    const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,rate:globalRate,costUsd:0,margin:10});
     nRenderItems();
   };
   function nCalcItem(item) {
-    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    const r = item.rate || globalRate;
     if (!item.costUsd && item.cost) {
-      item.costUsd = +(item.cost/rate).toFixed(4);
+      item.costUsd = +(item.cost/r).toFixed(4);
     }
     const cu   = item.costUsd || 0;
     const sp   = item.margin<100 ? cu/(1-item.margin/100) : cu;
@@ -681,7 +685,7 @@
   }
   function nRenderItems() {
     const tbody = document.getElementById("n_li_body");
-    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
+    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
     tbody.innerHTML = nItems.map((item,i) => {
       nCalcItem(item);
       const units = ["KG","BOX","M","M2","M3","BL","SET","EA"].map(u=>`<option${item.unit===u?" selected":""}>${u}</option>`).join("");
@@ -691,6 +695,7 @@
         <td><input type="number" value="${item.qty}" min="0.01" step="0.01" style="width:70px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'qty',this.value)"></td>
         <td><select style="width:75px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'unit',this.value)">${units}</select></td>
         <td><input type="number" value="${item.cost}" min="0" style="width:90px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'cost',this.value)"></td>
+        <td><input type="number" value="${item.rate}" min="0.01" step="0.01" style="width:85px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'rate',this.value)"></td>
         <td><input type="number" value="${(item.costUsd||0).toFixed(4)}" min="0" step="0.0001" style="width:95px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'costUsd',this.value)"></td>
         <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
         <td class="calc-cell">${(item._sale||0).toFixed(4)}</td>
@@ -702,13 +707,24 @@
   }
   window.nUpdateItem = function(id,field,val) {
     const item = nItems.find(i=>i.id===id); if(!item) return;
-    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
-    if (field === "cost") {
-      item.cost = parseFloat(val)||0;
-      item.costUsd = +(item.cost/rate).toFixed(4);
+    const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    const currentVal = parseFloat(val)||0;
+    
+    if (field === "rate") {
+      item.rate = currentVal || globalRate;
+      if (item.cost) {
+        item.costUsd = +(item.cost / item.rate).toFixed(4);
+      } else if (item.costUsd) {
+        item.cost = Math.round(item.costUsd * item.rate);
+      }
+    } else if (field === "cost") {
+      item.cost = currentVal;
+      const r = item.rate || globalRate;
+      item.costUsd = +(item.cost/r).toFixed(4);
     } else if (field === "costUsd") {
-      item.costUsd = parseFloat(val)||0;
-      item.cost = Math.round(item.costUsd * rate);
+      item.costUsd = currentVal;
+      const r = item.rate || globalRate;
+      item.cost = Math.round(item.costUsd * r);
     } else {
       item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
     }
@@ -716,9 +732,9 @@
   };
   window.nDeleteItem = function(id) { nItems=nItems.filter(i=>i.id!==id); nRenderItems(); };
   window.nRecalc    = function() {
-    // 환율 변환에 따른 costUsd 업데이트
     const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
     nItems.forEach(item => {
+      item.rate = rate;
       if (item.cost) {
         item.costUsd = +(item.cost/rate).toFixed(4);
       }
@@ -755,9 +771,10 @@
       const processedItems = nItems.map((item,i)=>{
         nCalcItem(item);
         subtotal+=item._total||0;
+        const itemRate = item.rate || rate;
         return {lineNumber:i+1,description:item.desc,costKrw:item.cost,quantity:item.qty,unit:item.unit,
-                exchangeRate:rate,profitMargin:item.margin,
-                costUsd:+(item.cost/rate).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
+                exchangeRate:itemRate,profitMargin:item.margin,
+                costUsd:+(item.cost/itemRate).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
       });
       const hand    = parseFloat(document.getElementById("n_handling").value)||0;
       const frt     = parseFloat(document.getElementById("n_freight").value)||0;
