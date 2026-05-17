@@ -26,21 +26,29 @@
     const db  = getFirestore(app);
     const COMPANY_ID = "YSACC";
 
-    // ── 고객 목록 로드 ──
+    // ── 고객 목록 로드 (단순 쿼리 - 복합 인덱스 불필요) ──
     async function loadCustomers() {
-      const snap = await getDocs(
-        query(collection(doc(db,"companies",COMPANY_ID),"customers"),
-              where("status","==","active"), orderBy("name"))
-      );
-      const sel = document.getElementById("customer_select");
-      snap.docs.forEach(d => {
-        const c = d.data();
-        const opt = document.createElement("option");
-        opt.value = d.id;
-        opt.dataset.info = JSON.stringify(c);
-        opt.textContent = c.name;
-        sel.appendChild(opt);
-      });
+      try {
+        const snap = await getDocs(
+          collection(doc(db,"companies",COMPANY_ID),"customers")
+        );
+        const sel = document.getElementById("customer_select");
+        sel.innerHTML = '<option value="">-- 고객 선택 --</option>';
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        list.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+        list.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.dataset.info = JSON.stringify(c);
+          opt.textContent = c.name;
+          sel.appendChild(opt);
+        });
+        console.log(`✅ 고객 ${list.length}명 로드 완료`);
+      } catch(e) {
+        console.error("❌ 고객 로드 실패:", e.message);
+        document.getElementById("customer_select").innerHTML =
+          '<option value="">-- 로드 실패 (콘솔 확인) --</option>';
+      }
     }
 
     // ── 고객 선택 이벤트 ──
@@ -258,7 +266,7 @@
         <div class="form-group">
           <label>Customer ★</label>
           <select id="customer_select" onchange="onCustomerSelected()">
-            <option value="">-- 로딩 중... --</option>
+            <option value="">-- 불러오는 중... --</option>
           </select>
         </div>
         <div class="form-group">
