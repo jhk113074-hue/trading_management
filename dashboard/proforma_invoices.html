@@ -622,17 +622,29 @@
           nItems = items.map((item, i) => {
             const costK = item.costKrw || 0;
             const r     = item.exchangeRate || p.exchangeRate || 1468.96;
-            // DB에 costUsd 필드가 이미 있는 경우 우선 사용, 없으면 환율로 계산
-            const costU = item.costUsd || +(costK / r).toFixed(4);
+            const costU = item.costUsd || 0;
+            
+            let baseCurr = "KRW";
+            let cK = costK;
+            let cU = costU;
+            if (costU > 0 && costK === 0) {
+              baseCurr = "USD";
+              cK = 0;
+            } else {
+              baseCurr = "KRW";
+              cU = 0;
+            }
+            
             return {
               id: ++nCounter,
               desc: item.description || "",
               qty: item.quantity || 1,
               unit: item.unit || "KG",
-              cost: costK,
+              cost: cK,
               rate: r,
-              costUsd: costU,
-              margin: item.profitMargin || 0
+              costUsd: cU,
+              margin: item.profitMargin || 0,
+              _baseCurrency: baseCurr
             };
           });
         }
@@ -810,7 +822,7 @@
         const itemRate = item.rate || rate;
         return {lineNumber:i+1,description:item.desc,costKrw:item.cost,quantity:item.qty,unit:item.unit,
                 exchangeRate:itemRate,profitMargin:item.margin,
-                costUsd:+(item.cost/itemRate).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
+                costUsd:+(item.costUsd||0).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4)};
       });
       const hand    = parseFloat(document.getElementById("n_handling").value)||0;
       const frt     = parseFloat(document.getElementById("n_freight").value)||0;
