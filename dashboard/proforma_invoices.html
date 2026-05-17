@@ -235,12 +235,18 @@
           </div>
           <div class="fgroup"><label>Destination Port ★</label><input type="text" id="n_dest" placeholder="예: JEBEL ALI"></div>
           <div class="fgroup"><label>Payment Terms ★</label>
-            <select id="n_payment">
-              <option value="">-- 선택 --</option>
-              <option>100% LC 90 days from BL date</option>
-              <option>TT in advance</option>
-              <option>LC at sight</option>
-            </select>
+            <input type="text" id="n_payment" list="payment_presets" placeholder="선택 또는 직접 입력 (TT/LC 혼합 가능)" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+            <datalist id="payment_presets">
+              <option value="100% T/T in advance">
+              <option value="T/T 30% deposit, 70% balance against B/L copy">
+              <option value="100% L/C at sight">
+              <option value="L/C 30 days from B/L date">
+              <option value="L/C 60 days from B/L date">
+              <option value="L/C 90 days from B/L date">
+              <option value="L/C 120 days from B/L date">
+              <option value="T/T 30% deposit, 70% L/C at sight">
+              <option value="T/T 50% deposit, 50% L/C at sight">
+            </datalist>
           </div>
           <div class="fgroup"><label>Shipping Method</label>
             <select id="n_shipping"><option>Sea Freight</option><option>Air Freight</option><option>Truck</option></select>
@@ -253,7 +259,7 @@
       <div class="form-section">
         <h4>④ 상품 라인</h4>
         <table class="li-form-table">
-          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Description / 상품명</th><th>Qty</th><th>Unit</th><th>Cost (KRW)</th><th>Cost (USD)</th><th>Margin %</th><th style="text-align:right">Sale USD</th><th style="text-align:right">Total USD</th><th></th></tr></thead>
           <tbody id="n_li_body"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr></tbody>
         </table>
         <button class="btn btn-outline" style="margin-top:10px;font-size:12px;" onclick="nAddItem()">＋ 상품 추가</button>
@@ -601,14 +607,20 @@
         const liSnap = await getDocs(collection(latestRev.ref,"line_items"));
         if (!liSnap.empty) {
           const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
-          nItems = items.map((item, i) => ({
-            id: ++nCounter,
-            desc: item.description || "",
-            qty: item.quantity || 1,
-            unit: item.unit || "KG",
-            cost: item.costKrw || 0,
-            margin: item.profitMargin || 0
-          }));
+          nItems = items.map((item, i) => {
+            const costK = item.costKrw || 0;
+            // DB에 costUsd 필드가 이미 있는 경우 우선 사용, 없으면 환율로 계산
+            const costU = item.costUsd || +(costK / (p.exchangeRate || 1468.96)).toFixed(4);
+            return {
+              id: ++nCounter,
+              desc: item.description || "",
+              qty: item.quantity || 1,
+              unit: item.unit || "KG",
+              cost: costK,
+              costUsd: costU,
+              margin: item.profitMargin || 0
+            };
+          });
         }
       }
     } catch(e) {
@@ -649,35 +661,38 @@
     document.getElementById("n_dest").value    = c.preferredPort||"";
     const iSel = document.getElementById("n_incoterms");
     for (let o of iSel.options) if (o.value===c.preferredIncoterms) { iSel.value=o.value; break; }
-    const pSel = document.getElementById("n_payment");
-    for (let o of pSel.options) if (o.value===c.paymentTerms) { pSel.value=o.value; break; }
+    document.getElementById("n_payment").value = c.paymentTerms || "";
   };
 
   // ── 라인 아이템 ──
   let nItems=[], nCounter=0;
   window.nAddItem = function() {
-    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,margin:10});
+    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,costUsd:0,margin:10});
     nRenderItems();
   };
   function nCalcItem(item) {
     const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
-    const cu   = item.cost/rate;
+    if (!item.costUsd && item.cost) {
+      item.costUsd = +(item.cost/rate).toFixed(4);
+    }
+    const cu   = item.costUsd || 0;
     const sp   = item.margin<100 ? cu/(1-item.margin/100) : cu;
     item._sale = sp; item._total = sp*item.qty;
   }
   function nRenderItems() {
     const tbody = document.getElementById("n_li_body");
-    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
+    if (!nItems.length) { tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
     tbody.innerHTML = nItems.map((item,i) => {
       nCalcItem(item);
       const units = ["KG","BOX","M","M2","M3","BL","SET","EA"].map(u=>`<option${item.unit===u?" selected":""}>${u}</option>`).join("");
       return `<tr>
         <td>${i+1}</td>
-        <td><input type="text" value="${item.desc}" placeholder="상품명/규격" onchange="nUpdateItem(${item.id},'desc',this.value)"></td>
-        <td><input type="number" value="${item.qty}" min="0.01" step="0.01" style="width:70px" onchange="nUpdateItem(${item.id},'qty',this.value)"></td>
-        <td><select style="width:75px" onchange="nUpdateItem(${item.id},'unit',this.value)">${units}</select></td>
-        <td><input type="number" value="${item.cost}" min="0" style="width:100px" onchange="nUpdateItem(${item.id},'cost',this.value)"></td>
-        <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
+        <td><input type="text" value="${item.desc}" placeholder="상품명/규격" onchange="nUpdateItem(${item.id},'desc',this.value)" style="width:100%;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)"></td>
+        <td><input type="number" value="${item.qty}" min="0.01" step="0.01" style="width:70px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'qty',this.value)"></td>
+        <td><select style="width:75px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'unit',this.value)">${units}</select></td>
+        <td><input type="number" value="${item.cost}" min="0" style="width:90px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'cost',this.value)"></td>
+        <td><input type="number" value="${(item.costUsd||0).toFixed(4)}" min="0" step="0.0001" style="width:95px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'costUsd',this.value)"></td>
+        <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
         <td class="calc-cell">${(item._sale||0).toFixed(4)}</td>
         <td class="calc-cell">${(item._total||0).toFixed(2)}</td>
         <td><button style="background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px" onclick="nDeleteItem(${item.id})">✕</button></td>
@@ -687,11 +702,29 @@
   }
   window.nUpdateItem = function(id,field,val) {
     const item = nItems.find(i=>i.id===id); if(!item) return;
-    item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
+    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    if (field === "cost") {
+      item.cost = parseFloat(val)||0;
+      item.costUsd = +(item.cost/rate).toFixed(4);
+    } else if (field === "costUsd") {
+      item.costUsd = parseFloat(val)||0;
+      item.cost = Math.round(item.costUsd * rate);
+    } else {
+      item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
+    }
     nRenderItems();
   };
   window.nDeleteItem = function(id) { nItems=nItems.filter(i=>i.id!==id); nRenderItems(); };
-  window.nRecalc    = function() { nRenderItems(); };
+  window.nRecalc    = function() {
+    // 환율 변환에 따른 costUsd 업데이트
+    const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
+    nItems.forEach(item => {
+      if (item.cost) {
+        item.costUsd = +(item.cost/rate).toFixed(4);
+      }
+    });
+    nRenderItems();
+  };
   function nRecalcTotals() {
     const sub  = nItems.reduce((s,i)=>s+(i._total||0),0);
     const hand = parseFloat(document.getElementById("n_handling").value)||0;
