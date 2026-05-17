@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>YSACC TMS - Suppliers Management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, getDocs, onSnapshot,
+      setDoc, deleteDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+      authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+      projectId:         "tradingmanagement-c1cf4",
+      storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+      messagingSenderId: "1033735327012",
+      appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const COMPANY_ID = "YSACC";
+
+    let allSuppliers = [];
+    let editSupId = null;
+
+    // ── 실시간 공급업체 구독 ──
+    function subscribeSuppliers() {
+      const supCol = collection(doc(db,"companies",COMPANY_ID),"suppliers");
+      onSnapshot(supCol, (snap) => {
+        allSuppliers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // 공급업체코드 정렬
+        allSuppliers.sort((a,b) => (a.supplierCode || "").localeCompare(b.supplierCode || ""));
+        renderSuppliers();
+      }, (err) => {
+        console.error("공급업체 DB 로딩 오류:", err);
+      });
+    }
+
+    // ── 화면 렌더링 ──
+    function renderSuppliers() {
+      const q = document.getElementById("search_input").value.toLowerCase();
+
+      const filtered = allSuppliers.filter(s => {
+        return (s.name || "").toLowerCase().includes(q) ||
+               (s.supplierCode || "").toLowerCase().includes(q) ||
+               (s.bizNumber || "").toLowerCase().includes(q) ||
+               (s.managerName || "").toLowerCase().includes(q);
+      });
+
+      document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+
+      const tbody = document.getElementById("sup_table_body");
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 공급업체가 DB에 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => {
+        return `
+          <tr>
+            <td><strong style="color:var(--accent2)">${s.supplierCode || "-"}</strong></td>
+            <td>
+              <div style="font-weight:600;font-size:13px;color:var(--text)">${s.name || "-"}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">대표: ${s.representative || "-"}</div>
+            </td>
+            <td>${s.bizNumber || "-"}</td>
+            <td>${s.phone || "-"}</td>
+            <td>
+              <div style="font-size:12px;">${s.managerName || "-"}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:1.5px;">${s.managerPhone || "-"}</div>
+            </td>
+            <td><div style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--text-muted);">${s.address || "-"}</div></td>
+            <td style="text-align:right;white-space:nowrap;">
+              <button class="action-btn edit-btn" onclick="openEditModal('${s.id}')">✏ 수정</button>
+              <button class="action-btn delete-btn" onclick="deleteSupplier('${s.id}', '${s.name}')">✕ 삭제</button>
+            </td>
+          </tr>`;
+      }).join("");
+    }
+
+    // ── 공급업체 저장 ──
+    window.saveSupplier = async function() {
+      const code = document.getElementById("s_code").value.trim();
+      const name = document.getElementById("s_name").value.trim();
+      if (!code) { alert("공급업체코드는 필수 입력사항입니다."); return; }
+      if (!name) { alert("공급업체명은 필수 입력사항입니다."); return; }
+
+      const btn = document.getElementById("save_btn");
+      btn.disabled = true; btn.textContent = "저장 중...";
+
+      // 요구된 8개 핵심 상세 정보 매핑
+      const supplierData = {
+        // 1. 기본 정보
+        supplierCode: code,
+        name: name,
+        bizNumber: document.getElementById("s_biz_num").value.trim(),
+        representative: document.getElementById("s_rep").value.trim(),
+
+        // 2. 연락처 정보
+        phone: document.getElementById("s_phone").value.trim(),
+        purchaseEmail: document.getElementById("s_email").value.trim(),
+
+        // 3. 주소 정보
+        address: document.getElementById("s_addr").value.trim(),
+
+        // 4. 담당자 정보
+        managerName: document.getElementById("s_mgr_name").value.trim(),
+        managerPhone: document.getElementById("s_mgr_phone").value.trim(),
+
+        updatedAt: serverTimestamp()
+      };
+
+      if (!editSupId) {
+        supplierData.createdAt = serverTimestamp();
+      }
+
+      try {
+        const docId = editSupId || code; // 수정 시 기존 ID, 신규 시 공급업체코드로 지정
+        await setDoc(doc(db, "companies", COMPANY_ID, "suppliers", docId), supplierData);
+        closeSupModal();
+        alert("✅ 성공적으로 저장되었습니다.");
+      } catch (e) {
+        alert("❌ 저장 실패: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "✔ 저장";
+      }
+    };
+
+    // ── 공급업체 삭제 ──
+    window.deleteSupplier = async function(id, name) {
+      if (!confirm(`⚠️ 정말로 공급업체 [${name}]을(를) DB에서 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+      try {
+        await deleteDoc(doc(db, "companies", COMPANY_ID, "suppliers", id));
+        alert("✅ 성공적으로 삭제되었습니다.");
+      } catch (e) {
+        alert("❌ 삭제 실패: " + e.message);
+      }
+    };
+
+    // ── 모달 제어 ──
+    window.openNewSupModal = function() {
+      editSupId = null;
+      document.getElementById("modal_title").textContent = "Add New Supplier";
+      document.getElementById("modal_sub").textContent = "공급업체(원자재/제조사) 신규 등록 및 정보 스펙 기입";
+      document.getElementById("sup_form").reset();
+      document.getElementById("s_code").readOnly = false;
+
+      document.getElementById("sup_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.openEditModal = function(id) {
+      editSupId = id;
+      const s = allSuppliers.find(x => x.id === id);
+      if (!s) return;
+
+      document.getElementById("modal_title").textContent = "Edit Supplier Details";
+      document.getElementById("modal_sub").textContent = `공급업체 정보 및 담당 사양 수정 (${s.name})`;
+
+      document.getElementById("s_code").value = s.supplierCode || "";
+      document.getElementById("s_code").readOnly = true; // 코드는 ID이므로 수정불가
+      document.getElementById("s_name").value = s.name || "";
+      document.getElementById("s_biz_num").value = s.bizNumber || "";
+      document.getElementById("s_rep").value = s.representative || "";
+
+      document.getElementById("s_phone").value = s.phone || "";
+      document.getElementById("s_email").value = s.purchaseEmail || "";
+      document.getElementById("s_addr").value = s.address || "";
+
+      document.getElementById("s_mgr_name").value = s.managerName || "";
+      document.getElementById("s_mgr_phone").value = s.managerPhone || "";
+
+      document.getElementById("sup_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    };
+
+    window.closeSupModal = function() {
+      document.getElementById("sup_overlay").classList.remove("open");
+      document.body.style.overflow = "";
+    };
+
+    window.filterSuppliers = renderSuppliers;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      subscribeSuppliers();
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d2e; --surface2:#222638;
+      --border:#2e3248; --accent:#6c63ff; --accent2:#00d4ff;
+      --green:#00e676; --yellow:#ffd740; --red:#ff5252;
+      --text:#e8eaf6; --text-muted:#8892b0;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); }
+
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .logo { padding:0 24px 24px; font-size:18px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--border); }
+    .logo span { color:var(--text-muted); font-size:11px; display:block; margin-top:2px; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 24px; font-size:13px; color:var(--text-muted); cursor:pointer; transition:all .2s; }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active { background:var(--surface2); color:var(--text); border-left:3px solid var(--accent); padding-left:21px; }
+
+    .main { margin-left:220px; padding:32px; flex:1; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-title { font-size:24px; font-weight:700; }
+    .page-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; transition:all .2s; }
+    .btn-primary { background:var(--accent); color:#fff; }
+    .btn-primary:hover { opacity:.85; transform:translateY(-1px); }
+    .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+    .btn-outline:hover { background:var(--surface2); }
+
+    /* Toolbar */
+    .toolbar { display:flex; gap:12px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:20px; }
+    .search-box { position:relative; flex:1; }
+    .search-box span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; }
+    .search-box input { width:100%; padding:10px 10px 10px 38px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; transition:all .2s; }
+    .search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(108,99,255,.15); }
+    .result-count { font-size:12px; color:var(--text-muted); font-weight:500; padding:0 8px; }
+
+    /* Table Card */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; padding:12px; color:var(--text-muted); font-size:11px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; }
+    td { padding:14px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--surface2); }
+
+    .action-btn { background:transparent; border:none; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; border-radius:4px; transition:all .2s; }
+    .edit-btn { color:var(--accent2); background:rgba(0,212,255,.08); margin-right:4px; }
+    .edit-btn:hover { background:rgba(0,212,255,.18); }
+    .delete-btn { color:var(--red); background:rgba(255,82,82,.08); }
+    .delete-btn:hover { background:rgba(255,82,82,.18); }
+
+    /* Overlay / Modal Drawer */
+    .overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,11,18,.8); backdrop-filter:blur(6px); display:flex; justify-content:center; align-items:center; z-index:1000; opacity:0; pointer-events:none; transition:opacity .3s ease; }
+    .overlay.open { opacity:1; pointer-events:auto; }
+    .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; width:95%; max-width:650px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 48px rgba(0,0,0,.4); transform:scale(.95); transition:transform .3s ease; }
+    .overlay.open .modal-box { transform:scale(1); }
+    .modal-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .modal-close { background:transparent; border:none; color:var(--text-muted); font-size:24px; cursor:pointer; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:24px; overflow-y:auto; flex:1; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; background:var(--bg); }
+
+    /* Form Group Grid */
+    .form-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .fgroup { display:flex; flex-direction:column; gap:6px; }
+    .fgroup label { font-size:11px; font-weight:600; color:var(--text-muted); }
+    .fgroup input, .fgroup select, .fgroup textarea { padding:10px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; outline:none; transition:border-color .2s; }
+    .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus { border-color:var(--accent); }
+    .fgroup input[readonly] { background:rgba(46,50,72,.3); color:var(--text-muted); cursor:not-allowed; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <nav style="padding-top:16px;">
+      <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
+      <div class="nav-item" onclick="location.href='proforma_invoices.html'">📋 Proforma Invoice</div>
+      <div class="nav-item" onclick="location.href='products.html'">📦 Products DB</div>
+      <div class="nav-item" onclick="location.href='customers.html'">👥 Customers</div>
+      <div class="nav-item active" onclick="location.href='suppliers.html'">🏭 Suppliers</div>
+      <div class="nav-item">🤝 Negotiations</div>
+      <div class="nav-item">📈 Reports</div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">공급업체 관리 (Suppliers)</div>
+        <div class="page-sub">원소재 제조사 및 국내외 공급처 마스터 정보와 핵심 스펙 관리</div>
+      </div>
+      <button class="btn btn-primary" onclick="openNewSupModal()">＋ New Supplier</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="search_input" placeholder="공급업체명, 공급코드, 사업자번호, 담당자 검색..." oninput="filterSuppliers()">
+      </div>
+      <span class="result-count" id="result_count">총 0건</span>
+    </div>
+
+    <!-- Card Table -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>공급업체코드</th>
+              <th>공급업체명 (대표자)</th>
+              <th>사업자등록번호</th>
+              <th>대표전화번호</th>
+              <th>구매담당자 (연락처)</th>
+              <th>본사 주소</th>
+              <th style="text-align:right">작업</th>
+            </tr>
+          </thead>
+          <tbody id="sup_table_body">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Firestore 실시간 공급업체 DB 로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── 공급업체 등록/수정 모달 ── -->
+<div class="overlay" id="sup_overlay" onclick="if(event.target===this) closeSupModal()">
+  <div class="modal-box">
+    
+    <div class="modal-header">
+      <div>
+        <div id="modal_title" style="font-size:18px;font-weight:700;color:var(--text)">Add New Supplier</div>
+        <div id="modal_sub" style="font-size:12px;color:var(--text-muted);margin-top:2px;">공급처 사양 기입 및 담당 마스터 등록</div>
+      </div>
+      <button class="modal-close" onclick="closeSupModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="sup_form" onsubmit="event.preventDefault();">
+        
+        <div style="font-weight:700;font-size:12.5px;color:var(--accent2);margin-bottom:12px;border-left:3px solid var(--accent2);padding-left:8px;">🏭 공급업체 기본정보</div>
+        <div class="form-grid" style="margin-bottom:24px;">
+          <div class="fgroup"><label>공급업체코드 (필수) ★</label><input type="text" id="s_code" placeholder="예: SUP-001"></div>
+          <div class="fgroup"><label>공급업체명 (필수) ★</label><input type="text" id="s_name" placeholder="예: 국도화학 주식회사"></div>
+          <div class="fgroup"><label>사업자등록번호</label><input type="text" id="s_biz_num" placeholder="000-00-00000"></div>
+          <div class="fgroup"><label>대표자명</label><input type="text" id="s_rep" placeholder="대표이사 성명"></div>
+        </div>
+
+        <div style="font-weight:700;font-size:12.5px;color:var(--accent2);margin-bottom:12px;border-left:3px solid var(--accent2);padding-left:8px;">📞 연락처정보</div>
+        <div class="form-grid" style="margin-bottom:24px;">
+          <div class="fgroup"><label>대표전화번호</label><input type="text" id="s_phone" placeholder="02-XXX-XXXX"></div>
+          <div class="fgroup"><label>구매담당 이메일</label><input type="email" id="s_email" placeholder="purchase@supplier.com"></div>
+        </div>
+
+        <div style="font-weight:700;font-size:12.5px;color:var(--accent2);margin-bottom:12px;border-left:3px solid var(--accent2);padding-left:8px;">📍 주소정보</div>
+        <div class="fgroup" style="margin-bottom:24px;">
+          <label>본사주소</label>
+          <input type="text" id="s_addr" placeholder="도로명 주소 또는 영문 주소">
+        </div>
+
+        <div style="font-weight:700;font-size:12.5px;color:var(--accent2);margin-bottom:12px;border-left:3px solid var(--accent2);padding-left:8px;">👥 담당자정보</div>
+        <div class="form-grid">
+          <div class="fgroup"><label>구매담당자명</label><input type="text" id="s_mgr_name" placeholder="담당 대리/과장 성명"></div>
+          <div class="fgroup"><label>구매담당자 연락처</label><input type="text" id="s_mgr_phone" placeholder="휴대폰 또는 직통번호"></div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSupModal()">취소</button>
+      <button class="btn btn-primary" id="save_btn" onclick="saveSupplier()">✔ 저장</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
