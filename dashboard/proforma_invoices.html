@@ -334,6 +334,7 @@
   const COMPANY_ID = "YSACC";
 
   const customerMap = {};
+  const productMap  = {};
   let allPIs = [];
   let currentPIId = null;
   let editPIId = null;
@@ -342,6 +343,17 @@
   async function loadCustomerMap() {
     const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"customers"));
     snap.docs.forEach(d => { customerMap[d.id] = d.data(); });
+  }
+
+  // ── 상품 마스터 로드 ──
+  async function loadProductMap() {
+    try {
+      const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"products"));
+      snap.docs.forEach(d => { productMap[d.id] = d.data(); });
+      console.log("✅ 상품 마스터 캐싱 완료:", Object.keys(productMap).length, "개");
+    } catch(e) {
+      console.error("❌ 상품 마스터 로드 실패:", e);
+    }
   }
 
   // ── PI 실시간 구독 ──
@@ -670,28 +682,40 @@
   let nItems=[], nCounter=0;
   window.nAddItem = function() {
     const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
-    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,rate:globalRate,costUsd:0,margin:10});
+    nItems.push({id:++nCounter,desc:"",qty:1,unit:"KG",cost:0,rate:globalRate,costUsd:0,margin:10,_baseCurrency:"KRW"});
     nRenderItems();
   };
   function nCalcItem(item) {
     const globalRate = parseFloat(document.getElementById("n_rate").value)||1468.96;
     const r = item.rate || globalRate;
-    if (!item.costUsd && item.cost) {
-      item.costUsd = +(item.cost/r).toFixed(4);
+    const mDiv = item.margin<100 ? (1 - item.margin/100) : 1;
+    
+    let sp = 0;
+    if (item._baseCurrency === "USD") {
+      sp = (item.costUsd || 0) / mDiv;
+    } else {
+      sp = ((item.cost || 0) / r) / mDiv;
     }
-    const cu   = item.costUsd || 0;
-    const sp   = item.margin<100 ? cu/(1-item.margin/100) : cu;
     item._sale = sp; item._total = sp*item.qty;
   }
   function nRenderItems() {
     const tbody = document.getElementById("n_li_body");
     if (!nItems.length) { tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">아래 버튼을 눌러 상품을 추가하세요</td></tr>'; nRecalcTotals(); return; }
+    
+    // 상품 마스터 Datalist 옵션 빌드
+    const productOptions = Object.entries(productMap).map(([id, p]) => {
+      return `<option value="[${id}] ${p.nameKo} (${p.nameEn || ''})">`;
+    }).join("");
+
     tbody.innerHTML = nItems.map((item,i) => {
       nCalcItem(item);
       const units = ["KG","BOX","M","M2","M3","BL","SET","EA"].map(u=>`<option${item.unit===u?" selected":""}>${u}</option>`).join("");
       return `<tr>
         <td>${i+1}</td>
-        <td><input type="text" value="${item.desc}" placeholder="상품명/규격" onchange="nUpdateItem(${item.id},'desc',this.value)" style="width:100%;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)"></td>
+        <td>
+          <input type="text" value="${item.desc}" placeholder="[코드] 입력 또는 직접입력" onchange="nUpdateItem(${item.id},'desc',this.value)" list="products_preset_${item.id}" style="width:100%;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)">
+          <datalist id="products_preset_${item.id}">${productOptions}</datalist>
+        </td>
         <td><input type="number" value="${item.qty}" min="0.01" step="0.01" style="width:70px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'qty',this.value)"></td>
         <td><select style="width:75px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'unit',this.value)">${units}</select></td>
         <td><input type="number" value="${item.cost}" min="0" style="width:90px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'cost',this.value)"></td>
@@ -712,19 +736,32 @@
     
     if (field === "rate") {
       item.rate = currentVal || globalRate;
-      if (item.cost) {
-        item.costUsd = +(item.cost / item.rate).toFixed(4);
-      } else if (item.costUsd) {
-        item.cost = Math.round(item.costUsd * item.rate);
-      }
     } else if (field === "cost") {
       item.cost = currentVal;
-      const r = item.rate || globalRate;
-      item.costUsd = +(item.cost/r).toFixed(4);
+      item._baseCurrency = "KRW";
     } else if (field === "costUsd") {
       item.costUsd = currentVal;
-      const r = item.rate || globalRate;
-      item.cost = Math.round(item.costUsd * r);
+      item._baseCurrency = "USD";
+    } else if (field === "desc") {
+      item.desc = val;
+      const match = val.match(/\[(PROD-[^\]]+)\]/);
+      if (match) {
+        const productCode = match[1];
+        const prod = productMap[productCode];
+        if (prod) {
+          item.desc = `[${prod.productCode}] ${prod.nameEn || prod.nameKo}`;
+          item.unit = prod.unit || "KG";
+          if (prod.currency === "USD") {
+            item.costUsd = prod.purchasePrice || 0;
+            item.cost = 0;
+            item._baseCurrency = "USD";
+          } else {
+            item.cost = prod.purchasePrice || 0;
+            item.costUsd = 0;
+            item._baseCurrency = "KRW";
+          }
+        }
+      }
     } else {
       item[field] = (field==="desc"||field==="unit") ? val : (parseFloat(val)||0);
     }
@@ -735,9 +772,6 @@
     const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
     nItems.forEach(item => {
       item.rate = rate;
-      if (item.cost) {
-        item.costUsd = +(item.cost/rate).toFixed(4);
-      }
     });
     nRenderItems();
   };
@@ -871,6 +905,7 @@
   // ── 초기화 ──
   window.addEventListener("DOMContentLoaded", async () => {
     await loadCustomerMap();
+    await loadProductMap();
     subscribePIs();
   });
 
