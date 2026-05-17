@@ -4,141 +4,261 @@
   <meta charset="UTF-8">
   <title>Create Proforma Invoice - YSACC TMS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK (CDN - 설정값만 교체하면 바로 작동) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, addDoc, getDocs,
+      query, where, orderBy, serverTimestamp, runTransaction
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ⚠️ 여기에 Firebase 프로젝트 설정값 입력
+    const firebaseConfig = {
+      apiKey:            "YOUR_API_KEY",
+      authDomain:        "YOUR_PROJECT.firebaseapp.com",
+      projectId:         "YOUR_PROJECT_ID",
+      storageBucket:     "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId:             "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const COMPANY_ID = "YSACC";
+
+    // ── 고객 목록 로드 ──
+    async function loadCustomers() {
+      const snap = await getDocs(
+        query(collection(doc(db,"companies",COMPANY_ID),"customers"),
+              where("status","==","active"), orderBy("name"))
+      );
+      const sel = document.getElementById("customer_select");
+      snap.docs.forEach(d => {
+        const c = d.data();
+        const opt = document.createElement("option");
+        opt.value = d.id;
+        opt.dataset.info = JSON.stringify(c);
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ── 고객 선택 이벤트 ──
+    window.onCustomerSelected = function() {
+      const sel = document.getElementById("customer_select");
+      const opt = sel.selectedOptions[0];
+      if (!opt || !opt.dataset.info) return;
+      const c = JSON.parse(opt.dataset.info);
+      document.getElementById("contact_person").value  = c.contactPerson || "";
+      document.getElementById("customer_email").value  = c.email || "";
+      document.getElementById("destination_port").value= c.preferredPort || "";
+      // Incoterms 자동 선택
+      const iSel = document.getElementById("incoterms");
+      for (let o of iSel.options) { if (o.value === c.preferredIncoterms) { iSel.value = o.value; break; } }
+      // Payment Terms 자동 선택
+      const pSel = document.getElementById("payment_terms");
+      for (let o of pSel.options) { if (o.value === c.paymentTerms) { pSel.value = o.value; break; } }
+      document.getElementById("customer_address_wrap").style.display = "block";
+      document.getElementById("customer_info_card").innerHTML =
+        `<strong>${c.name}</strong><br>${c.address || ""}<br>📞 ${c.phone||""} | ✉ ${c.email||""}`;
+      calcValidUntil();
+    };
+
+    // ── PI Number 자동 생성 ──
+    async function generatePINumber(piDate) {
+      const year    = new Date(piDate).getFullYear();
+      const metaRef = doc(db,"companies",COMPANY_ID,"meta","pi_counter");
+      let num;
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(metaRef);
+        const cur  = snap.exists() ? (snap.data()[`count_${year}`]||0) : 0;
+        num = cur + 1;
+        tx.set(metaRef, { [`count_${year}`]: num }, { merge: true });
+      });
+      return `PI-${COMPANY_ID}-${year}-${String(num).padStart(2,"0")}`;
+    }
+
+    // ── PI 저장 ──
+    window.savePI = async function() {
+      const btn = document.getElementById("btn_save");
+      btn.disabled = true; btn.textContent = "저장 중...";
+      try {
+        const piDate       = document.getElementById("pi_date").value;
+        const exchangeRate = parseFloat(document.getElementById("exchange_rate").value);
+        const customerId   = document.getElementById("customer_select").value;
+
+        if (!customerId) { alert("고객을 선택해 주세요."); btn.disabled=false; btn.textContent="✔ 확정 저장"; return; }
+        if (!lineItems.length) { alert("상품을 1개 이상 추가해 주세요."); btn.disabled=false; btn.textContent="✔ 확정 저장"; return; }
+
+        // PI 번호 생성
+        const piNumber = await generatePINumber(piDate);
+
+        // 금액 계산
+        let subtotal = 0;
+        const processedItems = lineItems.map((item, i) => {
+          const costUsd   = item.cost_krw / exchangeRate;
+          const margin    = item.margin / 100;
+          const salePrice = costUsd / (1 - margin);
+          const lineTotal = salePrice * item.quantity;
+          subtotal += lineTotal;
+          return { lineNumber: i+1, description: item.description,
+                   costKrw: item.cost_krw, quantity: item.quantity, unit: item.unit,
+                   exchangeRate, profitMargin: item.margin,
+                   costUsd: +costUsd.toFixed(4), salePriceUsd: +salePrice.toFixed(4),
+                   lineTotalUsd: +lineTotal.toFixed(4) };
+        });
+
+        const handling   = parseFloat(document.getElementById("handling_charges").value)||0;
+        const freight    = parseFloat(document.getElementById("freight_charges").value)||0;
+        const insurance  = parseFloat(document.getElementById("insurance_charges").value)||0;
+        const grandTotal = subtotal + handling + freight + insurance;
+
+        const validUntil = document.getElementById("valid_until").value;
+
+        // Firestore 저장 (트랜잭션)
+        const companyDocRef = doc(db, "companies", COMPANY_ID);
+        let newPiId;
+        await runTransaction(db, async tx => {
+          const piRef = doc(collection(companyDocRef, "proforma_invoices"));
+          newPiId = piRef.id;
+          tx.set(piRef, {
+            piNumber, piDate, customerId,
+            incoterms:        document.getElementById("incoterms").value,
+            destinationPort:  document.getElementById("destination_port").value,
+            paymentTerms:     document.getElementById("payment_terms").value,
+            shippingMethod:   document.getElementById("shipping_method").value,
+            exchangeRate, validityDays: parseInt(document.getElementById("validity_days").value)||30,
+            validUntilDate:   validUntil,
+            remarks:          document.getElementById("remarks").value,
+            handlingCharges:  handling, freightCharges: freight, insuranceCharges: insurance,
+            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
+            currentVersion: "A", status: "draft",
+            createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+          });
+          const revRef = doc(collection(piRef, "revisions"));
+          tx.set(revRef, {
+            version:"A", revisionNumber:1, status:"draft",
+            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
+            createdAt: serverTimestamp()
+          });
+          processedItems.forEach(item => {
+            tx.set(doc(collection(revRef,"line_items")), item);
+          });
+        });
+
+        alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grandTotal.toFixed(2)}`);
+        window.location.href = `index.html`;
+      } catch(e) {
+        alert("❌ 저장 실패: " + e.message);
+        console.error(e);
+      } finally {
+        btn.disabled = false; btn.textContent = "✔ 확정 저장";
+      }
+    };
+
+    // 페이지 로드 시 고객 목록 불러오기
+    window.addEventListener("DOMContentLoaded", loadCustomers);
+  </script>
+
   <style>
-    :root {
-      --bg: #0f1117; --surface: #1a1d2e; --surface2: #222638;
-      --border: #2e3248; --accent: #6c63ff; --green: #00e676;
-      --yellow: #ffd740; --text: #e8eaf6; --text-muted: #8892b0;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
-
-    .layout { display: flex; min-height: 100vh; }
-    .sidebar {
-      width: 220px; background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 24px 0; flex-shrink: 0;
-    }
-    .logo { padding: 0 24px 24px; font-size: 18px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border); }
-    .logo span { color: var(--text-muted); font-size: 11px; display: block; margin-top: 2px; }
-    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 24px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
-    .nav-item.active { background: var(--surface2); color: var(--text); border-left: 3px solid var(--accent); padding-left: 21px; }
-
-    .main { flex: 1; padding: 32px; overflow-y: auto; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .page-title { font-size: 22px; font-weight: 700; }
-    .btn-row { display: flex; gap: 10px; }
-    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity .2s; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { opacity: .85; }
-    .btn-success { background: var(--green); color: #000; }
-
-    /* Sections */
-    .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
-    .section-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 18px; text-transform: uppercase; letter-spacing: .5px; }
-    .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .form-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-group.full { grid-column: 1/-1; }
-    label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-    input, select, textarea {
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 9px 12px;
-      color: var(--text); font-size: 13px; font-family: inherit;
-      transition: border-color .2s; width: 100%;
-    }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
-    input[readonly] { color: var(--text-muted); cursor: default; }
-    select option { background: var(--surface2); }
-
-    /* Auto-loaded badge */
-    .auto-badge {
-      font-size: 10px; color: var(--green); background: rgba(0,230,118,.1);
-      border-radius: 4px; padding: 2px 6px; margin-left: 6px;
-    }
-
-    /* Line Items Table */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { text-align: left; padding: 10px 8px; color: var(--text-muted); font-size: 11px; font-weight: 500; border-bottom: 1px solid var(--border); }
-    td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-    td input, td select { padding: 6px 8px; font-size: 12px; }
-    .td-calc { color: var(--green); font-weight: 600; text-align: right; }
-    .btn-del { background: rgba(255,82,82,.15); color: #ff5252; border: none; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; }
-
-    /* Totals */
-    .totals { display: flex; justify-content: flex-end; }
-    .totals-box { width: 320px; }
-    .total-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-    .total-row.grand { font-size: 16px; font-weight: 700; color: var(--green); border-bottom: none; padding-top: 12px; }
-
-    /* Customer Info Card */
-    .info-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 12px; color: var(--text-muted); line-height: 1.8; }
-    .info-card strong { color: var(--text); }
+    :root { --bg:#0f1117;--surface:#1a1d2e;--surface2:#222638;--border:#2e3248;--accent:#6c63ff;--green:#00e676;--yellow:#ffd740;--text:#e8eaf6;--text-muted:#8892b0; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+    .layout{display:flex;min-height:100vh;}
+    .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;}
+    .logo{padding:0 24px 24px;font-size:18px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);}
+    .logo span{color:var(--text-muted);font-size:11px;display:block;margin-top:2px;}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;font-size:13px;color:var(--text-muted);cursor:pointer;}
+    .nav-item.active{background:var(--surface2);color:var(--text);border-left:3px solid var(--accent);padding-left:21px;}
+    .main{flex:1;padding:32px;overflow-y:auto;}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
+    .page-title{font-size:22px;font-weight:700;}
+    .btn-row{display:flex;gap:10px;}
+    .btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s;}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-muted);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-success{background:var(--green);color:#000;}
+    .btn-success:disabled{opacity:.5;cursor:not-allowed;}
+    .section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
+    .section-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:18px;text-transform:uppercase;letter-spacing:.5px;}
+    .auto-badge{font-size:10px;color:var(--green);background:rgba(0,230,118,.1);border-radius:4px;padding:2px 6px;margin-left:6px;}
+    .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    .form-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+    .form-group{display:flex;flex-direction:column;gap:6px;}
+    .form-group.full{grid-column:1/-1;}
+    label{font-size:11px;color:var(--text-muted);font-weight:500;}
+    input,select,textarea{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;transition:border-color .2s;width:100%;}
+    input:focus,select:focus{outline:none;border-color:var(--accent);}
+    input[readonly]{color:var(--text-muted);cursor:default;}
+    select option{background:var(--surface2);}
+    .table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{text-align:left;padding:10px 8px;color:var(--text-muted);font-size:11px;font-weight:500;border-bottom:1px solid var(--border);}
+    td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+    td input,td select{padding:6px 8px;font-size:12px;}
+    .td-calc{color:var(--green);font-weight:600;text-align:right;}
+    .btn-del{background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;}
+    .totals{display:flex;justify-content:flex-end;}
+    .totals-box{width:320px;}
+    .total-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+    .total-row.grand{font-size:16px;font-weight:700;color:var(--green);border-bottom:none;padding-top:12px;}
+    .info-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text-muted);line-height:1.8;}
+    .info-card strong{color:var(--text);}
   </style>
 </head>
 <body>
 <div class="layout">
-
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo">YSACC TMS <span>Trade Management</span></div>
     <nav style="padding-top:16px;">
-      <div class="nav-item">📊 Dashboard</div>
+      <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
       <div class="nav-item active">📋 Proforma Invoice</div>
       <div class="nav-item">📦 Purchase Order</div>
       <div class="nav-item">🤝 Negotiations</div>
       <div class="nav-item">👥 Customers</div>
       <div class="nav-item">🏭 Suppliers</div>
-      <div class="nav-item">📈 Reports</div>
     </nav>
   </aside>
 
-  <!-- Main -->
   <main class="main">
     <div class="page-header">
       <div>
         <div class="page-title">New Proforma Invoice</div>
-        <div style="color:var(--text-muted);font-size:13px;margin-top:4px;">견적서 작성 · Version A</div>
+        <div style="color:var(--text-muted);font-size:13px;margin-top:4px;">Firebase Firestore 연동 · Version A</div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-outline">임시저장</button>
-        <button class="btn btn-outline" onclick="generatePDF()">📄 PDF 미리보기</button>
-        <button class="btn btn-success" onclick="savePI()">✔ 확정 저장</button>
+        <button class="btn btn-outline" onclick="location.href='index.html'">← 뒤로</button>
+        <button class="btn btn-success" id="btn_save" onclick="savePI()">✔ 확정 저장</button>
       </div>
     </div>
 
-    <!-- Section 1: PI 기본 정보 -->
+    <!-- PI 기본 정보 -->
     <div class="section">
       <div class="section-title">① PI 기본 정보</div>
       <div class="form-grid">
         <div class="form-group">
-          <label>PI Number (자동생성)</label>
-          <input type="text" id="pi_number" value="PI-YSACC-2026-" readonly>
+          <label>PI Date</label>
+          <input type="date" id="pi_date" onchange="calcValidUntil()">
         </div>
         <div class="form-group">
-          <label>PI Date</label>
-          <input type="date" id="pi_date" value="2026-05-17" onchange="calcValidUntil()">
+          <label>Validity (Days)</label>
+          <input type="number" id="validity_days" value="30" onchange="calcValidUntil()">
         </div>
         <div class="form-group">
           <label>Valid Until (자동계산)</label>
-          <input type="text" id="valid_until" readonly placeholder="날짜 선택 시 자동계산">
+          <input type="text" id="valid_until" readonly>
         </div>
       </div>
     </div>
 
-    <!-- Section 2: 고객 선택 -->
+    <!-- 고객 선택 -->
     <div class="section">
-      <div class="section-title">② 고객 선택 <span class="auto-badge">거래조건 자동로드</span></div>
+      <div class="section-title">② 고객 선택 <span class="auto-badge">Firestore 자동로드</span></div>
       <div class="form-grid">
         <div class="form-group">
           <label>Customer ★</label>
           <select id="customer_select" onchange="onCustomerSelected()">
-            <option value="">-- 고객 선택 --</option>
-            <option value="thermoset">THERMOSET TECHNOLOGIES MIDDLE EAST L.L.C</option>
-            <option value="epp">EPP COMPOSITES PVT. LTD.</option>
+            <option value="">-- 로딩 중... --</option>
           </select>
         </div>
         <div class="form-group">
@@ -155,24 +275,22 @@
       </div>
     </div>
 
-    <!-- Section 3: 거래 조건 -->
+    <!-- 거래 조건 -->
     <div class="section">
-      <div class="section-title">③ 거래 조건 <span class="auto-badge">고객 선택 시 자동로드</span></div>
+      <div class="section-title">③ 거래 조건</div>
       <div class="form-grid">
         <div class="form-group">
           <label>Incoterms ★</label>
-          <select id="incoterms" onchange="onIncotermsChanged()">
+          <select id="incoterms">
             <option value="">-- 선택 --</option>
-            <option value="CIF">CIF (Cost, Insurance & Freight)</option>
-            <option value="FOB">FOB (Free On Board)</option>
-            <option value="EXW">EXW (Ex Works)</option>
-            <option value="DDP">DDP (Delivered Duty Paid)</option>
+            <option value="CIF">CIF</option><option value="FOB">FOB</option>
+            <option value="EXW">EXW</option><option value="DDP">DDP</option>
             <option value="DOOR TO DOOR">DOOR TO DOOR</option>
           </select>
         </div>
         <div class="form-group">
           <label>Destination Port ★</label>
-          <input type="text" id="destination_port" placeholder="예: JEBEL ALI, DUBAI">
+          <input type="text" id="destination_port" placeholder="예: JEBEL ALI">
         </div>
         <div class="form-group">
           <label>Payment Terms ★</label>
@@ -180,73 +298,41 @@
             <option value="">-- 선택 --</option>
             <option value="100% LC 90 days from BL date">100% LC 90 days from BL date</option>
             <option value="TT in advance">TT in advance</option>
-            <option value="30% TT, 70% before shipment">30% TT, 70% before shipment</option>
             <option value="LC at sight">LC at sight</option>
           </select>
         </div>
         <div class="form-group">
           <label>Shipping Method</label>
           <select id="shipping_method">
-            <option value="Sea Freight">Sea Freight (해상운송)</option>
-            <option value="Air Freight">Air Freight (항공운송)</option>
-            <option value="Truck">Truck (육로운송)</option>
+            <option value="Sea Freight">Sea Freight</option>
+            <option value="Air Freight">Air Freight</option>
+            <option value="Truck">Truck</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Validity (Days)</label>
-          <input type="number" id="validity_days" value="30" onchange="calcValidUntil()">
-        </div>
-        <div class="form-group">
-          <label>Remarks</label>
-          <input type="text" id="remarks" placeholder="특이사항 입력">
-        </div>
-      </div>
-    </div>
-
-    <!-- Section 4: 환율 & 이익률 -->
-    <div class="section">
-      <div class="section-title">④ 환율 & 이익률</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Exchange Rate (KRW/USD) ★</label>
+          <label>Exchange Rate (KRW/USD)</label>
           <input type="number" id="exchange_rate" value="1468.96" step="0.01" onchange="recalculateAll()">
         </div>
         <div class="form-group">
-          <label>Default Profit Margin (%)</label>
-          <input type="number" id="default_margin" value="10" step="0.1" onchange="recalculateAll()">
-        </div>
-        <div class="form-group">
-          <label>참고 원화 환산</label>
-          <input type="text" id="total_krw_display" readonly placeholder="Grand Total × 환율">
+          <label>Remarks</label>
+          <input type="text" id="remarks" placeholder="특이사항">
         </div>
       </div>
     </div>
 
-    <!-- Section 5: 상품 라인 -->
+    <!-- 상품 라인 -->
     <div class="section">
-      <div class="section-title">⑤ 상품 라인 (Line Items)</div>
+      <div class="section-title">④ 상품 라인</div>
       <div class="table-wrap">
-        <table id="line_items_table">
+        <table>
           <thead>
             <tr>
-              <th>#</th>
-              <th style="min-width:160px;">Product</th>
-              <th style="min-width:180px;">Description / Spec</th>
-              <th style="width:70px;">Qty</th>
-              <th style="width:80px;">Unit</th>
-              <th style="width:100px;">Cost (KRW)</th>
-              <th style="width:70px;">Margin%</th>
-              <th style="width:100px;">Sale Price (USD)</th>
-              <th style="width:110px;">Total (USD)</th>
-              <th></th>
+              <th>#</th><th>Product / Description</th><th>Qty</th><th>Unit</th>
+              <th>Cost (KRW)</th><th>Margin %</th><th>Sale Price (USD)</th><th>Total (USD)</th><th></th>
             </tr>
           </thead>
           <tbody id="line_items_body">
-            <tr id="no_items_row">
-              <td colspan="10" style="text-align:center; color:var(--text-muted); padding:30px;">
-                아래 버튼을 눌러 상품을 추가하세요.
-              </td>
-            </tr>
+            <tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px;">+ 상품 추가 버튼을 누르세요</td></tr>
           </tbody>
         </table>
       </div>
@@ -255,189 +341,101 @@
       </div>
     </div>
 
-    <!-- Section 6: 추가 비용 & 합계 -->
+    <!-- 추가 비용 & 합계 -->
     <div class="section">
-      <div class="section-title">⑥ 추가 비용 & 합계</div>
+      <div class="section-title">⑤ 추가 비용 & 합계</div>
       <div class="form-grid-2" style="margin-bottom:24px;">
-        <div class="form-group">
-          <label>Handling / Packaging Charges (USD)</label>
-          <input type="number" id="handling_charges" value="0" step="0.01" onchange="recalculateTotals()">
-        </div>
-        <div class="form-group">
-          <label id="freight_label">Freight Charges (USD)</label>
-          <input type="number" id="freight_charges" value="0" step="0.01" onchange="recalculateTotals()">
-        </div>
-        <div class="form-group">
-          <label id="insurance_label">Insurance Charges (USD)</label>
-          <input type="number" id="insurance_charges" value="0" step="0.01" onchange="recalculateTotals()">
-        </div>
+        <div class="form-group"><label>Handling Charges (USD)</label><input type="number" id="handling_charges" value="0" step="0.01" onchange="recalculateTotals()"></div>
+        <div class="form-group"><label>Freight Charges (USD)</label><input type="number" id="freight_charges" value="0" step="0.01" onchange="recalculateTotals()"></div>
+        <div class="form-group"><label>Insurance Charges (USD)</label><input type="number" id="insurance_charges" value="0" step="0.01" onchange="recalculateTotals()"></div>
+        <div class="form-group"><label>참고 원화 환산</label><input type="text" id="total_krw_display" readonly></div>
       </div>
       <div class="totals">
         <div class="totals-box">
-          <div class="total-row"><span>Subtotal:</span> <span>USD <b id="subtotal">0.00</b></span></div>
-          <div class="total-row"><span>Handling:</span> <span>USD <b id="t_handling">0.00</b></span></div>
-          <div class="total-row"><span>Freight:</span> <span>USD <b id="t_freight">0.00</b></span></div>
-          <div class="total-row"><span>Insurance:</span> <span>USD <b id="t_insurance">0.00</b></span></div>
-          <div class="total-row grand"><span>GRAND TOTAL:</span> <span>USD <b id="grand_total">0.00</b></span></div>
+          <div class="total-row"><span>Subtotal:</span><span>USD <b id="subtotal">0.00</b></span></div>
+          <div class="total-row"><span>Handling:</span><span>USD <b id="t_handling">0.00</b></span></div>
+          <div class="total-row"><span>Freight:</span><span>USD <b id="t_freight">0.00</b></span></div>
+          <div class="total-row"><span>Insurance:</span><span>USD <b id="t_insurance">0.00</b></span></div>
+          <div class="total-row grand"><span>GRAND TOTAL:</span><span>USD <b id="grand_total">0.00</b></span></div>
         </div>
       </div>
     </div>
-
   </main>
 </div>
 
 <script>
-// ── 고객 데이터 (실제 운영 시 DB 연동) ──
-const CUSTOMERS = {
-  thermoset: {
-    name: 'THERMOSET TECHNOLOGIES MIDDLE EAST L.L.C',
-    contact_person: 'Contact Name',
-    email: 'contact@thermoset.ae',
-    phone: '+971 4 885228',
-    address: 'P.O BOX 118157, 37 STREET, DUBAI INVESTMENT PARK - 1, DUBAI, UAE',
-    payment_terms: '100% LC 90 days from BL date',
-    preferred_incoterms: 'DOOR TO DOOR',
-    preferred_port: 'JEBEL ALI',
-  },
-  epp: {
-    name: 'EPP COMPOSITES PVT. LTD.',
-    contact_person: 'Manager',
-    email: 'purchase@epp.in',
-    phone: '+91 281 1234567',
-    address: 'Plot No. 2646, GIDC Lodhika, Rajkot, INDIA',
-    payment_terms: 'TT in advance',
-    preferred_incoterms: 'EXW',
-    preferred_port: 'NHAVA SHEVA',
+  let lineItems = [], lineCounter = 0;
+
+  // 오늘 날짜 기본값
+  document.getElementById("pi_date").value = new Date().toISOString().split("T")[0];
+  calcValidUntil();
+
+  function calcValidUntil() {
+    const d = document.getElementById("pi_date").value;
+    const days = parseInt(document.getElementById("validity_days").value)||30;
+    if (!d) return;
+    const date = new Date(d); date.setDate(date.getDate()+days);
+    document.getElementById("valid_until").value = date.toISOString().split("T")[0];
   }
-};
 
-let lineItems = [];
-let lineCounter = 0;
-
-// ── 고객 선택 시 거래조건 자동로드 ──
-function onCustomerSelected() {
-  const key = document.getElementById('customer_select').value;
-  if (!key) return;
-  const c = CUSTOMERS[key];
-  document.getElementById('contact_person').value = c.contact_person;
-  document.getElementById('customer_email').value = c.email;
-  document.getElementById('customer_address_wrap').style.display = 'block';
-  document.getElementById('customer_info_card').innerHTML =
-    `<strong>${c.name}</strong><br>${c.address}<br>📞 ${c.phone} | ✉ ${c.email}`;
-
-  // 거래조건 자동 채우기
-  const incoSel = document.getElementById('incoterms');
-  for (let o of incoSel.options) { if (o.value === c.preferred_incoterms) { incoSel.value = o.value; break; } }
-  document.getElementById('destination_port').value = c.preferred_port;
-  const ptSel = document.getElementById('payment_terms');
-  for (let o of ptSel.options) { if (o.value === c.payment_terms) { ptSel.value = o.value; break; } }
-  onIncotermsChanged();
-}
-
-// ── Incoterms 변경 시 운송/보험료 라벨 변경 ──
-function onIncotermsChanged() {
-  const val = document.getElementById('incoterms').value;
-  const isCIF = ['CIF','DOOR TO DOOR'].includes(val);
-  document.getElementById('freight_label').textContent = `Freight Charges (USD)${isCIF ? ' — CIF 포함' : ''}`;
-  document.getElementById('insurance_label').textContent = `Insurance Charges (USD)${isCIF ? ' — CIF 포함' : ''}`;
-}
-
-// ── 유효기간 자동계산 ──
-function calcValidUntil() {
-  const d = document.getElementById('pi_date').value;
-  const days = parseInt(document.getElementById('validity_days').value) || 30;
-  if (!d) return;
-  const date = new Date(d);
-  date.setDate(date.getDate() + days);
-  document.getElementById('valid_until').value = date.toISOString().split('T')[0];
-}
-
-// ── 상품 추가 ──
-function addLineItem() {
-  const id = ++lineCounter;
-  lineItems.push({ id, product:'', description:'', quantity:1, unit:'KG', cost_krw:0, margin:10, sale_price:0, total:0 });
-  renderLineItems();
-}
-
-function renderLineItems() {
-  const tbody = document.getElementById('line_items_body');
-  if (lineItems.length === 0) {
-    tbody.innerHTML = `<tr id="no_items_row"><td colspan="10" style="text-align:center;color:var(--text-muted);padding:30px;">아래 버튼을 눌러 상품을 추가하세요.</td></tr>`;
-    return;
+  function addLineItem() {
+    lineItems.push({ id: ++lineCounter, description:"", quantity:1, unit:"KG", cost_krw:0, margin:10 });
+    renderLineItems();
   }
-  tbody.innerHTML = lineItems.map((item, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td><input type="text" value="${item.product}" placeholder="상품명" onchange="updateItem(${item.id},'product',this.value)"></td>
-      <td><input type="text" value="${item.description}" placeholder="규격/설명" onchange="updateItem(${item.id},'description',this.value)"></td>
-      <td><input type="number" value="${item.quantity}" min="0.01" step="0.01" onchange="updateItem(${item.id},'quantity',this.value)"></td>
-      <td>
-        <select onchange="updateItem(${item.id},'unit',this.value)">
-          ${['KG','BOX','M','M2','M3','BL','SET','EA'].map(u=>`<option${item.unit===u?' selected':''}>${u}</option>`).join('')}
-        </select>
-      </td>
-      <td><input type="number" value="${item.cost_krw}" min="0" onchange="updateItem(${item.id},'cost_krw',this.value)"></td>
-      <td><input type="number" value="${item.margin}" min="0" max="100" step="0.1" onchange="updateItem(${item.id},'margin',this.value)"></td>
-      <td class="td-calc">${item.sale_price.toFixed(4)}</td>
-      <td class="td-calc">${item.total.toFixed(2)}</td>
-      <td><button class="btn-del" onclick="deleteItem(${item.id})">✕</button></td>
-    </tr>
-  `).join('');
-  recalculateTotals();
-}
 
-function updateItem(id, field, value) {
-  const item = lineItems.find(i => i.id === id);
-  if (!item) return;
-  item[field] = (field === 'product' || field === 'description' || field === 'unit') ? value : parseFloat(value) || 0;
-  calcItemPrice(item);
-  renderLineItems();
-}
+  function renderLineItems() {
+    const tbody = document.getElementById("line_items_body");
+    if (!lineItems.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:24px;">+ 상품 추가 버튼을 누르세요</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = lineItems.map((item,i) => {
+      const rate = parseFloat(document.getElementById("exchange_rate").value)||1468.96;
+      const costUsd = item.cost_krw / rate;
+      const sale    = item.margin < 100 ? costUsd / (1 - item.margin/100) : costUsd;
+      const total   = sale * item.quantity;
+      item._sale = sale; item._total = total;
+      return `<tr>
+        <td>${i+1}</td>
+        <td><input type="text" value="${item.description}" placeholder="상품명/규격" onchange="updateItem(${item.id},'description',this.value)"></td>
+        <td><input type="number" value="${item.quantity}" min="0.01" step="0.01" style="width:70px;" onchange="updateItem(${item.id},'quantity',this.value)"></td>
+        <td><select style="width:80px;" onchange="updateItem(${item.id},'unit',this.value)">
+          ${["KG","BOX","M","M2","M3","BL","SET","EA"].map(u=>`<option${item.unit===u?" selected":""}>${u}</option>`).join("")}
+        </select></td>
+        <td><input type="number" value="${item.cost_krw}" min="0" style="width:100px;" onchange="updateItem(${item.id},'cost_krw',this.value)"></td>
+        <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;" onchange="updateItem(${item.id},'margin',this.value)"></td>
+        <td class="td-calc">${sale.toFixed(4)}</td>
+        <td class="td-calc">${total.toFixed(2)}</td>
+        <td><button class="btn-del" onclick="deleteItem(${item.id})">✕</button></td>
+      </tr>`;
+    }).join("");
+    recalculateTotals();
+  }
 
-function calcItemPrice(item) {
-  const rate = parseFloat(document.getElementById('exchange_rate').value) || 1468.96;
-  const margin = item.margin / 100;
-  const costUsd = item.cost_krw / rate;
-  item.sale_price = margin < 1 ? costUsd / (1 - margin) : costUsd;
-  item.total = item.sale_price * item.quantity;
-}
+  function updateItem(id, field, value) {
+    const item = lineItems.find(i=>i.id===id);
+    if (!item) return;
+    item[field] = (field==="description"||field==="unit") ? value : parseFloat(value)||0;
+    renderLineItems();
+  }
 
-function deleteItem(id) {
-  lineItems = lineItems.filter(i => i.id !== id);
-  renderLineItems();
-}
+  function deleteItem(id) { lineItems = lineItems.filter(i=>i.id!==id); renderLineItems(); }
+  function recalculateAll() { renderLineItems(); }
 
-function recalculateAll() {
-  lineItems.forEach(item => calcItemPrice(item));
-  renderLineItems();
-}
-
-function recalculateTotals() {
-  const subtotal = lineItems.reduce((sum, i) => sum + i.total, 0);
-  const handling = parseFloat(document.getElementById('handling_charges').value) || 0;
-  const freight  = parseFloat(document.getElementById('freight_charges').value)  || 0;
-  const insurance= parseFloat(document.getElementById('insurance_charges').value)|| 0;
-  const grand    = subtotal + handling + freight + insurance;
-  const rate     = parseFloat(document.getElementById('exchange_rate').value) || 1468.96;
-
-  document.getElementById('subtotal').textContent   = subtotal.toFixed(2);
-  document.getElementById('t_handling').textContent = handling.toFixed(2);
-  document.getElementById('t_freight').textContent  = freight.toFixed(2);
-  document.getElementById('t_insurance').textContent= insurance.toFixed(2);
-  document.getElementById('grand_total').textContent= grand.toFixed(2);
-  document.getElementById('total_krw_display').value= `₩ ${(grand * rate).toLocaleString()}`;
-}
-
-function savePI() {
-  alert('저장 완료! (AntiGravity 연동 시 DB에 실제 저장됩니다)\nPI Number: ' + document.getElementById('pi_number').value);
-}
-
-function generatePDF() {
-  alert('PDF 미리보기 (AntiGravity 연동 시 PDF가 생성됩니다)');
-}
-
-// 초기 유효기간 계산
-calcValidUntil();
+  function recalculateTotals() {
+    const subtotal  = lineItems.reduce((s,i)=>s+(i._total||0),0);
+    const handling  = parseFloat(document.getElementById("handling_charges").value)||0;
+    const freight   = parseFloat(document.getElementById("freight_charges").value)||0;
+    const insurance = parseFloat(document.getElementById("insurance_charges").value)||0;
+    const grand     = subtotal + handling + freight + insurance;
+    const rate      = parseFloat(document.getElementById("exchange_rate").value)||1468.96;
+    document.getElementById("subtotal").textContent    = subtotal.toFixed(2);
+    document.getElementById("t_handling").textContent  = handling.toFixed(2);
+    document.getElementById("t_freight").textContent   = freight.toFixed(2);
+    document.getElementById("t_insurance").textContent = insurance.toFixed(2);
+    document.getElementById("grand_total").textContent = grand.toFixed(2);
+    document.getElementById("total_krw_display").value = `₩ ${(grand*rate).toLocaleString()}`;
+  }
 </script>
 </body>
 </html>
