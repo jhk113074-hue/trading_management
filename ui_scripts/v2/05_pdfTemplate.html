@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* A4 사이즈 및 인쇄 설정 */
+    @page {
+      size: A4 portrait;
+      margin: 15mm 20mm; /* 상하 15mm, 좌우 20mm 여백 */
+    }
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body { 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      font-size: 11px; /* A4에 맞게 폰트 크기 살짝 조정 */
+      color: #222; 
+      margin: 0 auto; /* 브라우저 마진 제거 */
+      padding: 0;
+      line-height: 1.4;
+      background-color: white;
+    }
+    
+    .header { text-align: center; margin-bottom: 25px; }
+    .title { font-size: 26px; font-weight: bold; text-decoration: underline; letter-spacing: 2px; margin-bottom: 10px; }
+    .pi-info { font-size: 12px; margin-top: 10px; }
+    
+    .info-box { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .box { width: 48%; border: 1.5px solid #333; padding: 12px; border-radius: 4px; }
+    .box-title { font-weight: bold; font-size: 12px; background: #f4f4f4; padding: 6px; margin: -12px -12px 12px -12px; border-bottom: 1px solid #333; border-radius: 3px 3px 0 0; }
+    
+    .terms { margin-bottom: 20px; border: 1.5px solid #333; padding: 12px; border-radius: 4px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+    th, td { border: 1px solid #666; padding: 8px 6px; text-align: center; }
+    th { background-color: #f4f4f4; font-weight: bold; border-top: 1.5px solid #333; border-bottom: 1.5px solid #333; }
+    td:nth-child(2) { text-align: left; } /* Description은 좌측 정렬 */
+    td:nth-child(5), td:nth-child(6) { text-align: right; } /* 금액은 우측 정렬 */
+    
+    .total-box { width: 320px; float: right; border: 1.5px solid #333; padding: 12px; margin-bottom: 20px; border-radius: 4px; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .grand-total { font-weight: bold; font-size: 14px; border-top: 1.5px solid #333; padding-top: 8px; margin-top: 8px; }
+    
+    .footer { clear: both; margin-top: 30px; font-size: 11px; }
+    .banking { border: 1px solid #ccc; padding: 10px; width: 60%; float: left; border-radius: 4px; background-color: #fafafa; }
+    
+    .signature { margin-top: 20px; border-top: 1px solid #333; width: 220px; text-align: center; padding-top: 8px; float: right; }
+    
+    /* 페이지 나뉨 방지 (테이블 행이 잘리지 않도록) */
+    tr { page-break-inside: avoid; }
+    .total-box { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">PROFORMA INVOICE</div>
+    <div class="pi-info">
+      <strong>PI No:</strong> {{ piData.pi_number }} &nbsp;&nbsp;&nbsp;
+      <strong>Date:</strong> {{ piData.pi_date }} &nbsp;&nbsp;&nbsp;
+      <strong>Valid Until:</strong> {{ piData.valid_until_date }}
+    </div>
+  </div>
+
+  <div class="info-box">
+    <div class="box">
+      <div class="box-title">FROM (Seller)</div>
+      <strong>(주)와이에스에이씨씨 YSACC CO., LTD.</strong><br>
+      청주시 흥덕구 오송읍 생명과학로 ...<br>
+      Tel: +82-43-1234-5678<br>
+      Email: contact@ysacc.co.kr<br>
+      Web: www.ysacc.co.kr
+    </div>
+    <div class="box">
+      <div class="box-title">TO (Buyer)</div>
+      <strong>{{ customerData.name }}</strong><br>
+      {{ customerData.address }}<br>
+      {{ customerData.country }}, {{ customerData.city }}<br>
+      Contact: {{ customerData.contact_person }}<br>
+      Email: {{ customerData.email }}
+    </div>
+  </div>
+
+  <div class="terms">
+    <div class="box-title">TRADE TERMS & CONDITIONS</div>
+    <table style="border:none; margin:0; width:100%;">
+      <tr style="border:none;">
+        <td style="border:none; text-align:left; padding:4px 0;"><strong>Incoterms:</strong> {{ piData.incoterms }}</td>
+        <td style="border:none; text-align:left; padding:4px 0;"><strong>Payment Terms:</strong> {{ piData.payment_terms }}</td>
+      </tr>
+      <tr style="border:none;">
+        <td style="border:none; text-align:left; padding:4px 0;"><strong>Destination:</strong> {{ piData.destination_port }}, {{ piData.destination_country }}</td>
+        <td style="border:none; text-align:left; padding:4px 0;"><strong>Shipping Method:</strong> {{ piData.shipping_method }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th width="5%">No.</th>
+        <th width="45%">Product & Description</th>
+        <th width="10%">Qty</th>
+        <th width="10%">Unit</th>
+        <th width="15%">Unit Price (USD)</th>
+        <th width="15%">Total (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each lineItems}}
+      <tr>
+        <td>{{ @index_plus_1 }}</td>
+        <td><strong>{{ this.product_name }}</strong><br><span style="color:#555; font-size:10px;">{{ this.description }}</span></td>
+        <td>{{ this.quantity }}</td>
+        <td>{{ this.unit }}</td>
+        <td>{{ this.sale_price_usd }}</td>
+        <td>{{ this.line_total_usd }}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="total-box">
+    <div class="total-row"><span>Subtotal:</span> <span>USD {{ piData.subtotal_usd }}</span></div>
+    <div class="total-row"><span>Freight ({{ piData.incoterms }}):</span> <span>USD {{ piData.freight_charges }}</span></div>
+    <div class="total-row"><span>Insurance ({{ piData.incoterms }}):</span> <span>USD {{ piData.insurance_charges }}</span></div>
+    <div class="total-row grand-total"><span>GRAND TOTAL:</span> <span>USD {{ piData.total_usd }}</span></div>
+  </div>
+
+  <div class="footer">
+    <div class="banking">
+      <strong>BANKING INFORMATION:</strong><br><br>
+      <strong>Bank Name:</strong> Industrial Bank of Korea (IBK)<br>
+      <strong>Account Name:</strong> YSACC CO., LTD<br>
+      <strong>Account No:</strong> 143-129260-56-00012<br>
+      <strong>Swift Code:</strong> IBKOKRSEXXX
+    </div>
+    
+    <div class="signature">
+      Authorized Signature<br><br>
+      <span style="font-size:14px; font-weight:bold;">YSACC CO., LTD.</span>
+    </div>
+  </div>
+</body>
+</html>

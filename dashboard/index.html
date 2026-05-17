@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YSACC Trade Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --surface2: #222638;
+      --border: #2e3248;
+      --accent: #6c63ff;
+      --accent2: #00d4ff;
+      --green: #00e676;
+      --yellow: #ffd740;
+      --red: #ff5252;
+      --text: #e8eaf6;
+      --text-muted: #8892b0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: 220px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 24px 0;
+    }
+    .logo {
+      padding: 0 24px 24px;
+      font-size: 18px; font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo span { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; margin-top: 2px; }
+    .nav { padding: 16px 0; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 24px; font-size: 13px;
+      color: var(--text-muted); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item:hover, .nav-item.active { background: var(--surface2); color: var(--text); }
+    .nav-item.active { border-left: 3px solid var(--accent); padding-left: 21px; }
+    .nav-icon { font-size: 16px; }
+
+    /* ── Main ── */
+    .main {
+      margin-left: 220px;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px;
+    }
+    .page-title { font-size: 24px; font-weight: 700; }
+    .page-sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 10px 20px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .kpi-card.blue::before { background: var(--accent); }
+    .kpi-card.cyan::before { background: var(--accent2); }
+    .kpi-card.green::before { background: var(--green); }
+    .kpi-card.yellow::before { background: var(--yellow); }
+    .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 500; }
+    .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
+    .kpi-value.blue { color: var(--accent); }
+    .kpi-value.cyan { color: var(--accent2); }
+    .kpi-value.green { color: var(--green); }
+    .kpi-value.yellow { color: var(--yellow); }
+    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+    .kpi-change { font-size: 11px; margin-top: 8px; }
+    .kpi-change.up { color: var(--green); }
+    .kpi-change.down { color: var(--red); }
+
+    /* ── Chart Row ── */
+    .chart-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    /* Bar Chart (CSS only) */
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+    .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 6px; height: 100%; }
+    .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; transition: opacity 0.2s; }
+    .bar:hover { opacity: 0.8; }
+    .bar.confirmed { background: linear-gradient(to top, var(--accent), #9c94ff); }
+    .bar.draft     { background: var(--surface2); border: 1px solid var(--border); }
+    .bar-label { font-size: 10px; color: var(--text-muted); }
+
+    /* Donut Chart (CSS) */
+    .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .donut {
+      width: 120px; height: 120px; border-radius: 50%;
+      background: conic-gradient(
+        var(--green)   0deg 126deg,
+        var(--accent)  126deg 198deg,
+        var(--yellow)  198deg 252deg,
+        var(--red)     252deg 360deg
+      );
+      position: relative;
+    }
+    .donut::after {
+      content: '68%';
+      position: absolute; inset: 25px;
+      background: var(--surface); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: var(--green);
+    }
+    .legend { width: 100%; }
+    .legend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; display: inline-block; }
+
+    /* ── PI Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      text-align: left; padding: 10px 12px;
+      color: var(--text-muted); font-weight: 500; font-size: 11px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 12px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: 20px; font-size: 10px; font-weight: 600;
+    }
+    .badge.confirmed { background: rgba(0,230,118,.15); color: var(--green); }
+    .badge.sent      { background: rgba(0,212,255,.15); color: var(--accent2); }
+    .badge.draft     { background: rgba(108,99,255,.15); color: var(--accent); }
+    .badge.expired   { background: rgba(255,82,82,.15);  color: var(--red); }
+
+    .amount { text-align: right; font-weight: 600; }
+    .btn-sm {
+      padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+    }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+  <nav class="nav">
+    <div class="nav-item active"><span class="nav-icon">📊</span> Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> Proforma Invoice</div>
+    <div class="nav-item"><span class="nav-icon">📦</span> Purchase Order</div>
+    <div class="nav-item"><span class="nav-icon">🤝</span> Negotiations</div>
+    <div class="nav-item"><span class="nav-icon">👥</span> Customers</div>
+    <div class="nav-item"><span class="nav-icon">🏭</span> Suppliers</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Reports</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> Settings</div>
+  </nav>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">2026년 5월 17일 · YSACC CO., LTD.</div>
+    </div>
+    <button class="btn-primary">+ New Proforma Invoice</button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">이번 달 견적 건수</div>
+      <div class="kpi-value blue">14</div>
+      <div class="kpi-sub">건 (PI Draft + Sent + Confirmed)</div>
+      <div class="kpi-change up">▲ 3건 (지난달 대비)</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-label">확정 매출 (Confirmed)</div>
+      <div class="kpi-value cyan">$42,580</div>
+      <div class="kpi-sub">USD · 이번 달 누계</div>
+      <div class="kpi-change up">▲ 12.4% vs 지난달</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">수주율 (Win Rate)</div>
+      <div class="kpi-value green">68%</div>
+      <div class="kpi-sub">Confirmed / Total PI</div>
+      <div class="kpi-change up">▲ 5%p vs 지난달</div>
+    </div>
+    <div class="kpi-card yellow">
+      <div class="kpi-label">평균 마진율</div>
+      <div class="kpi-value yellow">11.2%</div>
+      <div class="kpi-sub">전체 라인 아이템 기준</div>
+      <div class="kpi-change down">▼ 0.3%p vs 지난달</div>
+    </div>
+  </div>
+
+  <!-- Chart Row -->
+  <div class="chart-row">
+
+    <!-- Monthly Bar Chart -->
+    <div class="card">
+      <div class="card-title">월별 매출 현황 (USD) · 최근 6개월</div>
+      <div class="bar-chart">
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:55%"></div>
+          <div class="bar-label">12월</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:40%"></div>
+          <div class="bar-label">1월</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:70%"></div>
+          <div class="bar-label">2월</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:60%"></div>
+          <div class="bar-label">3월</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:85%"></div>
+          <div class="bar-label">4월</div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar confirmed" style="height:100%"></div>
+          <div class="bar-label" style="color:var(--accent);">5월 ★</div>
+        </div>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:16px;">
+        <span style="font-size:11px;"><span style="color:var(--accent);">■</span> Confirmed Revenue</span>
+      </div>
+    </div>
+
+    <!-- Win Rate Donut -->
+    <div class="card">
+      <div class="card-title">PI 상태 분포</div>
+      <div class="donut-wrap">
+        <div class="donut"></div>
+        <div class="legend">
+          <div class="legend-item">
+            <span><span class="legend-dot" style="background:var(--green)"></span>Confirmed</span>
+            <span style="font-weight:600;">35%</span>
+          </div>
+          <div class="legend-item">
+            <span><span class="legend-dot" style="background:var(--accent)"></span>Sent</span>
+            <span style="font-weight:600;">20%</span>
+          </div>
+          <div class="legend-item">
+            <span><span class="legend-dot" style="background:var(--yellow)"></span>Draft</span>
+            <span style="font-weight:600;">30%</span>
+          </div>
+          <div class="legend-item">
+            <span><span class="legend-dot" style="background:var(--red)"></span>Expired</span>
+            <span style="font-weight:600;">15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PI List Table -->
+  <div class="card">
+    <div class="card-title">최근 Proforma Invoice 목록</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>PI Number</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Incoterms</th>
+            <th>Destination</th>
+            <th>Payment Terms</th>
+            <th>Version</th>
+            <th>Status</th>
+            <th style="text-align:right">Total (USD)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>PI-YSACC-2026-05</strong></td>
+            <td>2026-05-17</td>
+            <td>THERMOSET</td>
+            <td>DOOR TO DOOR</td>
+            <td>JEBEL ALI</td>
+            <td>LC 90 days</td>
+            <td>A</td>
+            <td><span class="badge draft">Draft</span></td>
+            <td class="amount">$2,506.90</td>
+            <td><button class="btn-sm">열기</button></td>
+          </tr>
+          <tr>
+            <td><strong>PI-YSACC-2026-04</strong></td>
+            <td>2026-05-10</td>
+            <td>EPP</td>
+            <td>EXW</td>
+            <td>INDIA</td>
+            <td>TT in advance</td>
+            <td>B</td>
+            <td><span class="badge sent">Sent</span></td>
+            <td class="amount">$8,340.00</td>
+            <td><button class="btn-sm">열기</button></td>
+          </tr>
+          <tr>
+            <td><strong>PI-YSACC-2026-03</strong></td>
+            <td>2026-05-02</td>
+            <td>THERMOSET</td>
+            <td>CIF</td>
+            <td>DUBAI</td>
+            <td>LC 90 days</td>
+            <td>C</td>
+            <td><span class="badge confirmed">Confirmed</span></td>
+            <td class="amount">$15,200.00</td>
+            <td><button class="btn-sm">열기</button></td>
+          </tr>
+          <tr>
+            <td><strong>PI-YSACC-2026-02</strong></td>
+            <td>2026-04-20</td>
+            <td>EPP</td>
+            <td>FOB</td>
+            <td>NHAVA SHEVA</td>
+            <td>TT in advance</td>
+            <td>A</td>
+            <td><span class="badge expired">Expired</span></td>
+            <td class="amount">$4,100.00</td>
+            <td><button class="btn-sm">열기</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+</body>
+</html>
