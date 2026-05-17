@@ -2,391 +2,428 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YSACC Trade Dashboard</title>
+  <title>YSACC TMS - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc, getDocs, onSnapshot,
+      query, orderBy, limit
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+      authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+      projectId:         "tradingmanagement-c1cf4",
+      storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+      messagingSenderId: "1033735327012",
+      appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    const COMPANY_ID = "YSACC";
+
+    // ── 고객 맵 (id → name) ──
+    const customerMap = {};
+
+    async function loadCustomerMap() {
+      const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"customers"));
+      snap.docs.forEach(d => { customerMap[d.id] = d.data().name || "Unknown"; });
+    }
+
+    // ── PI 목록 실시간 구독 (onSnapshot) ──
+    function subscribePIs() {
+      const piCol = collection(doc(db,"companies",COMPANY_ID),"proforma_invoices");
+
+      onSnapshot(piCol, (snap) => {
+        const pis = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // 최신순 정렬
+        pis.sort((a,b) => {
+          const ta = a.createdAt?.seconds || 0;
+          const tb = b.createdAt?.seconds || 0;
+          return tb - ta;
+        });
+
+        updateKPIs(pis);
+        updateChart(pis);
+        updateTable(pis);
+      }, (err) => {
+        console.error("Firestore 구독 오류:", err);
+      });
+    }
+
+    // ── KPI 카드 업데이트 ──
+    function updateKPIs(pis) {
+      const now = new Date();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+
+      const thisMonthPIs   = pis.filter(p => (p.piDate||"").startsWith(thisMonth));
+      const confirmedPIs   = pis.filter(p => p.status === "confirmed");
+      const confirmedRev   = confirmedPIs.reduce((s,p) => s + (p.totalUsd||0), 0);
+      const winRate        = pis.length ? Math.round(confirmedPIs.length / pis.length * 100) : 0;
+
+      // 전체 라인 마진 평균 (단순 추정)
+      document.getElementById("kpi_count").textContent  = thisMonthPIs.length;
+      document.getElementById("kpi_revenue").textContent= `$${confirmedRev.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+      document.getElementById("kpi_winrate").textContent= `${winRate}%`;
+      document.getElementById("kpi_total").textContent  = pis.length;
+    }
+
+    // ── 월별 바 차트 업데이트 ──
+    function updateChart(pis) {
+      const months = {};
+      pis.forEach(p => {
+        if (!p.piDate) return;
+        const ym = p.piDate.substring(0,7);
+        if (!months[ym]) months[ym] = { total:0, confirmed:0 };
+        months[ym].total++;
+        if (p.status === "confirmed") months[ym].confirmed += (p.totalUsd||0);
+      });
+
+      const sorted = Object.keys(months).sort().slice(-6);
+      const maxVal = Math.max(...sorted.map(m => months[m].confirmed), 1);
+      const chartEl = document.getElementById("bar_chart");
+      chartEl.innerHTML = sorted.map(ym => {
+        const m = months[ym];
+        const pct = Math.max(Math.round((m.confirmed / maxVal) * 100), 4);
+        const label = ym.substring(5) + "월";
+        return `
+          <div class="bar-wrap">
+            <div class="bar confirmed" style="height:${pct}%" title="USD ${m.confirmed.toFixed(0)}"></div>
+            <div class="bar-label">${label}</div>
+          </div>`;
+      }).join("") || '<div style="color:var(--text-muted);padding:40px 0;font-size:13px;">저장된 PI 데이터가 없습니다</div>';
+    }
+
+    // ── PI 목록 테이블 업데이트 ──
+    function updateTable(pis) {
+      const tbody = document.getElementById("pi_table_body");
+      if (!pis.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);">저장된 PI가 없습니다. <a href="create_pi.html" style="color:var(--accent);">새 PI 작성하기 →</a></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = pis.slice(0, 20).map(p => {
+        const badgeClass = { confirmed:"confirmed", sent:"sent", draft:"draft", expired:"expired" }[p.status] || "draft";
+        const custName = customerMap[p.customerId] || p.customerId?.substring(0,8) || "-";
+        const createdDate = p.piDate || (p.createdAt?.seconds ? new Date(p.createdAt.seconds*1000).toISOString().split("T")[0] : "-");
+        return `
+          <tr>
+            <td><strong>${p.piNumber || "-"}</strong></td>
+            <td>${createdDate}</td>
+            <td>${custName}</td>
+            <td>${p.incoterms || "-"}</td>
+            <td>${p.destinationPort || "-"}</td>
+            <td>${p.paymentTerms || "-"}</td>
+            <td>${p.currentVersion || "A"}</td>
+            <td><span class="badge ${badgeClass}">${p.status || "draft"}</span></td>
+            <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+          </tr>`;
+      }).join("");
+    }
+
+    // ── 초기화 ──
+    window.addEventListener("DOMContentLoaded", async () => {
+      await loadCustomerMap();
+      subscribePIs();
+    });
+  </script>
+
   <style>
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d2e;
-      --surface2: #222638;
-      --border: #2e3248;
-      --accent: #6c63ff;
-      --accent2: #00d4ff;
-      --green: #00e676;
-      --yellow: #ffd740;
-      --red: #ff5252;
-      --text: #e8eaf6;
-      --text-muted: #8892b0;
+      --bg:#0f1117; --surface:#1a1d2e; --surface2:#222638;
+      --border:#2e3248; --accent:#6c63ff; --accent2:#00d4ff;
+      --green:#00e676; --yellow:#ffd740; --red:#ff5252;
+      --text:#e8eaf6; --text-muted:#8892b0;
     }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
+    .logo { padding:0 24px 24px; font-size:18px; font-weight:700; color:var(--accent); border-bottom:1px solid var(--border); }
+    .logo span { color:var(--text-muted); font-size:11px; display:block; margin-top:2px; }
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 24px; font-size:13px; color:var(--text-muted); cursor:pointer; transition:all .2s; }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active { background:var(--surface2); color:var(--text); border-left:3px solid var(--accent); padding-left:21px; }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+    .main { margin-left:220px; padding:32px; flex:1; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+    .page-title { font-size:24px; font-weight:700; }
+    .page-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
+    .btn-primary { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; }
+    .btn-primary:hover { opacity:.85; }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      position: fixed; left: 0; top: 0; bottom: 0;
-      width: 220px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      padding: 24px 0;
-    }
-    .logo {
-      padding: 0 24px 24px;
-      font-size: 18px; font-weight: 700;
-      color: var(--accent);
-      border-bottom: 1px solid var(--border);
-    }
-    .logo span { color: var(--text-muted); font-weight: 400; font-size: 11px; display: block; margin-top: 2px; }
-    .nav { padding: 16px 0; flex: 1; }
-    .nav-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 24px; font-size: 13px;
-      color: var(--text-muted); cursor: pointer;
-      transition: all 0.2s;
-    }
-    .nav-item:hover, .nav-item.active { background: var(--surface2); color: var(--text); }
-    .nav-item.active { border-left: 3px solid var(--accent); padding-left: 21px; }
-    .nav-icon { font-size: 16px; }
+    /* KPI */
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
+    .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .kpi-card.blue::before { background:var(--accent); }
+    .kpi-card.cyan::before { background:var(--accent2); }
+    .kpi-card.green::before { background:var(--green); }
+    .kpi-card.yellow::before { background:var(--yellow); }
+    .kpi-label { font-size:12px; color:var(--text-muted); margin-bottom:10px; font-weight:500; }
+    .kpi-value { font-size:28px; font-weight:700; line-height:1; }
+    .kpi-value.blue { color:var(--accent); }
+    .kpi-value.cyan { color:var(--accent2); }
+    .kpi-value.green { color:var(--green); }
+    .kpi-value.yellow { color:var(--yellow); }
+    .kpi-sub { font-size:11px; color:var(--text-muted); margin-top:8px; }
 
-    /* ── Main ── */
-    .main {
-      margin-left: 220px;
-      padding: 32px;
-      min-height: 100vh;
-    }
+    /* Chart */
+    .chart-row { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:28px; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    .card-title { font-size:14px; font-weight:600; margin-bottom:20px; }
+    .live-badge { font-size:10px; color:var(--green); background:rgba(0,230,118,.12); border-radius:4px; padding:2px 8px; margin-left:8px; }
 
-    .page-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 28px;
-    }
-    .page-title { font-size: 24px; font-weight: 700; }
-    .page-sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
-    .btn-primary {
-      background: var(--accent); color: #fff;
-      border: none; border-radius: 8px;
-      padding: 10px 20px; font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: opacity 0.2s;
-    }
-    .btn-primary:hover { opacity: 0.85; }
+    .bar-chart { display:flex; align-items:flex-end; gap:8px; height:140px; }
+    .bar-wrap { display:flex; flex-direction:column; align-items:center; flex:1; gap:6px; height:100%; }
+    .bar { width:100%; border-radius:4px 4px 0 0; min-height:4px; transition:height .5s ease; }
+    .bar:hover { opacity:.8; }
+    .bar.confirmed { background:linear-gradient(to top, var(--accent), #9c94ff); }
+    .bar-label { font-size:10px; color:var(--text-muted); }
 
-    /* ── KPI Cards ── */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      margin-bottom: 28px;
-    }
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      position: relative;
-      overflow: hidden;
-    }
-    .kpi-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    }
-    .kpi-card.blue::before { background: var(--accent); }
-    .kpi-card.cyan::before { background: var(--accent2); }
-    .kpi-card.green::before { background: var(--green); }
-    .kpi-card.yellow::before { background: var(--yellow); }
-    .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; font-weight: 500; }
-    .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
-    .kpi-value.blue { color: var(--accent); }
-    .kpi-value.cyan { color: var(--accent2); }
-    .kpi-value.green { color: var(--green); }
-    .kpi-value.yellow { color: var(--yellow); }
-    .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
-    .kpi-change { font-size: 11px; margin-top: 8px; }
-    .kpi-change.up { color: var(--green); }
-    .kpi-change.down { color: var(--red); }
+    /* Status summary */
+    .status-list { display:flex; flex-direction:column; gap:10px; }
+    .status-item { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+    .status-dot { width:8px; height:8px; border-radius:50%; margin-right:8px; display:inline-block; }
 
-    /* ── Chart Row ── */
-    .chart-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      margin-bottom: 28px;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-    }
-    .card-title {
-      font-size: 14px; font-weight: 600;
-      margin-bottom: 20px;
-      color: var(--text);
-    }
-
-    /* Bar Chart (CSS only) */
-    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
-    .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 6px; height: 100%; }
-    .bar { width: 100%; border-radius: 4px 4px 0 0; min-height: 4px; transition: opacity 0.2s; }
-    .bar:hover { opacity: 0.8; }
-    .bar.confirmed { background: linear-gradient(to top, var(--accent), #9c94ff); }
-    .bar.draft     { background: var(--surface2); border: 1px solid var(--border); }
-    .bar-label { font-size: 10px; color: var(--text-muted); }
-
-    /* Donut Chart (CSS) */
-    .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-    .donut {
-      width: 120px; height: 120px; border-radius: 50%;
-      background: conic-gradient(
-        var(--green)   0deg 126deg,
-        var(--accent)  126deg 198deg,
-        var(--yellow)  198deg 252deg,
-        var(--red)     252deg 360deg
-      );
-      position: relative;
-    }
-    .donut::after {
-      content: '68%';
-      position: absolute; inset: 25px;
-      background: var(--surface); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 700; color: var(--green);
-    }
-    .legend { width: 100%; }
-    .legend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; }
-    .legend-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; display: inline-block; }
-
-    /* ── PI Table ── */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th {
-      text-align: left; padding: 10px 12px;
-      color: var(--text-muted); font-weight: 500; font-size: 11px;
-      border-bottom: 1px solid var(--border);
-    }
-    td { padding: 12px; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface2); }
-
-    .badge {
-      display: inline-block; padding: 3px 10px;
-      border-radius: 20px; font-size: 10px; font-weight: 600;
-    }
-    .badge.confirmed { background: rgba(0,230,118,.15); color: var(--green); }
-    .badge.sent      { background: rgba(0,212,255,.15); color: var(--accent2); }
-    .badge.draft     { background: rgba(108,99,255,.15); color: var(--accent); }
-    .badge.expired   { background: rgba(255,82,82,.15);  color: var(--red); }
-
-    .amount { text-align: right; font-weight: 600; }
-    .btn-sm {
-      padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
-      border: 1px solid var(--border); background: var(--surface2);
-      color: var(--text-muted); cursor: pointer; transition: all 0.2s;
-    }
-    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+    /* Table */
+    .card-table { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    .table-wrap { overflow-x:auto; margin-top:4px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th { text-align:left; padding:10px 12px; color:var(--text-muted); font-size:11px; font-weight:500; border-bottom:1px solid var(--border); white-space:nowrap; }
+    td { padding:12px; border-bottom:1px solid var(--border); }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--surface2); }
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; }
+    .badge.confirmed { background:rgba(0,230,118,.15); color:var(--green); }
+    .badge.sent      { background:rgba(0,212,255,.15); color:var(--accent2); }
+    .badge.draft     { background:rgba(108,99,255,.15); color:var(--accent); }
+    .badge.expired   { background:rgba(255,82,82,.15); color:var(--red); }
+    .amount { text-align:right; font-weight:600; }
   </style>
 </head>
 <body>
+<div class="layout">
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="logo">YSACC TMS <span>Trade Management System</span></div>
-  <nav class="nav">
-    <div class="nav-item active"><span class="nav-icon">📊</span> Dashboard</div>
-    <div class="nav-item"><span class="nav-icon">📋</span> Proforma Invoice</div>
-    <div class="nav-item"><span class="nav-icon">📦</span> Purchase Order</div>
-    <div class="nav-item"><span class="nav-icon">🤝</span> Negotiations</div>
-    <div class="nav-item"><span class="nav-icon">👥</span> Customers</div>
-    <div class="nav-item"><span class="nav-icon">🏭</span> Suppliers</div>
-    <div class="nav-item"><span class="nav-icon">📈</span> Reports</div>
-    <div class="nav-item"><span class="nav-icon">⚙️</span> Settings</div>
-  </nav>
-</aside>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <nav style="padding-top:16px;">
+      <div class="nav-item active">📊 Dashboard</div>
+      <div class="nav-item" onclick="location.href='create_pi.html'">📋 Proforma Invoice</div>
+      <div class="nav-item">📦 Purchase Order</div>
+      <div class="nav-item">🤝 Negotiations</div>
+      <div class="nav-item">👥 Customers</div>
+      <div class="nav-item">🏭 Suppliers</div>
+      <div class="nav-item">📈 Reports</div>
+    </nav>
+  </aside>
 
-<!-- Main -->
-<main class="main">
+  <!-- Main -->
+  <main class="main">
 
-  <!-- Header -->
-  <div class="page-header">
-    <div>
-      <div class="page-title">Dashboard</div>
-      <div class="page-sub">2026년 5월 17일 · YSACC CO., LTD.</div>
-    </div>
-    <button class="btn-primary">+ New Proforma Invoice</button>
-  </div>
-
-  <!-- KPI Cards -->
-  <div class="kpi-grid">
-    <div class="kpi-card blue">
-      <div class="kpi-label">이번 달 견적 건수</div>
-      <div class="kpi-value blue">14</div>
-      <div class="kpi-sub">건 (PI Draft + Sent + Confirmed)</div>
-      <div class="kpi-change up">▲ 3건 (지난달 대비)</div>
-    </div>
-    <div class="kpi-card cyan">
-      <div class="kpi-label">확정 매출 (Confirmed)</div>
-      <div class="kpi-value cyan">$42,580</div>
-      <div class="kpi-sub">USD · 이번 달 누계</div>
-      <div class="kpi-change up">▲ 12.4% vs 지난달</div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">수주율 (Win Rate)</div>
-      <div class="kpi-value green">68%</div>
-      <div class="kpi-sub">Confirmed / Total PI</div>
-      <div class="kpi-change up">▲ 5%p vs 지난달</div>
-    </div>
-    <div class="kpi-card yellow">
-      <div class="kpi-label">평균 마진율</div>
-      <div class="kpi-value yellow">11.2%</div>
-      <div class="kpi-sub">전체 라인 아이템 기준</div>
-      <div class="kpi-change down">▼ 0.3%p vs 지난달</div>
-    </div>
-  </div>
-
-  <!-- Chart Row -->
-  <div class="chart-row">
-
-    <!-- Monthly Bar Chart -->
-    <div class="card">
-      <div class="card-title">월별 매출 현황 (USD) · 최근 6개월</div>
-      <div class="bar-chart">
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:55%"></div>
-          <div class="bar-label">12월</div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:40%"></div>
-          <div class="bar-label">1월</div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:70%"></div>
-          <div class="bar-label">2월</div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:60%"></div>
-          <div class="bar-label">3월</div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:85%"></div>
-          <div class="bar-label">4월</div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar confirmed" style="height:100%"></div>
-          <div class="bar-label" style="color:var(--accent);">5월 ★</div>
-        </div>
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="current_date">로딩 중...</div>
       </div>
-      <div style="margin-top:16px; display:flex; gap:16px;">
-        <span style="font-size:11px;"><span style="color:var(--accent);">■</span> Confirmed Revenue</span>
+      <a href="create_pi.html" class="btn-primary">+ New Proforma Invoice</a>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">이번 달 PI 건수</div>
+        <div class="kpi-value blue" id="kpi_count">-</div>
+        <div class="kpi-sub">건 (이번 달 작성)</div>
+      </div>
+      <div class="kpi-card cyan">
+        <div class="kpi-label">확정 매출 (Confirmed)</div>
+        <div class="kpi-value cyan" id="kpi_revenue">-</div>
+        <div class="kpi-sub">USD · 전체 누계</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">수주율 (Win Rate)</div>
+        <div class="kpi-value green" id="kpi_winrate">-</div>
+        <div class="kpi-sub">Confirmed / 전체 PI</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">전체 PI 건수</div>
+        <div class="kpi-value yellow" id="kpi_total">-</div>
+        <div class="kpi-sub">Draft 포함 누계</div>
       </div>
     </div>
 
-    <!-- Win Rate Donut -->
-    <div class="card">
-      <div class="card-title">PI 상태 분포</div>
-      <div class="donut-wrap">
-        <div class="donut"></div>
-        <div class="legend">
-          <div class="legend-item">
-            <span><span class="legend-dot" style="background:var(--green)"></span>Confirmed</span>
-            <span style="font-weight:600;">35%</span>
-          </div>
-          <div class="legend-item">
-            <span><span class="legend-dot" style="background:var(--accent)"></span>Sent</span>
-            <span style="font-weight:600;">20%</span>
-          </div>
-          <div class="legend-item">
-            <span><span class="legend-dot" style="background:var(--yellow)"></span>Draft</span>
-            <span style="font-weight:600;">30%</span>
-          </div>
-          <div class="legend-item">
-            <span><span class="legend-dot" style="background:var(--red)"></span>Expired</span>
-            <span style="font-weight:600;">15%</span>
-          </div>
+    <!-- Chart Row -->
+    <div class="chart-row">
+      <div class="card">
+        <div class="card-title">월별 확정 매출 (USD) <span class="live-badge">● LIVE</span></div>
+        <div class="bar-chart" id="bar_chart">
+          <div style="color:var(--text-muted);font-size:13px;padding:40px 0;">Firestore에서 불러오는 중...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">PI 상태 현황 <span class="live-badge">● LIVE</span></div>
+        <div class="status-list" id="status_list">
+          <div style="color:var(--text-muted);font-size:13px;">불러오는 중...</div>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- PI List Table -->
-  <div class="card">
-    <div class="card-title">최근 Proforma Invoice 목록</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>PI Number</th>
-            <th>Date</th>
-            <th>Customer</th>
-            <th>Incoterms</th>
-            <th>Destination</th>
-            <th>Payment Terms</th>
-            <th>Version</th>
-            <th>Status</th>
-            <th style="text-align:right">Total (USD)</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>PI-YSACC-2026-05</strong></td>
-            <td>2026-05-17</td>
-            <td>THERMOSET</td>
-            <td>DOOR TO DOOR</td>
-            <td>JEBEL ALI</td>
-            <td>LC 90 days</td>
-            <td>A</td>
-            <td><span class="badge draft">Draft</span></td>
-            <td class="amount">$2,506.90</td>
-            <td><button class="btn-sm">열기</button></td>
-          </tr>
-          <tr>
-            <td><strong>PI-YSACC-2026-04</strong></td>
-            <td>2026-05-10</td>
-            <td>EPP</td>
-            <td>EXW</td>
-            <td>INDIA</td>
-            <td>TT in advance</td>
-            <td>B</td>
-            <td><span class="badge sent">Sent</span></td>
-            <td class="amount">$8,340.00</td>
-            <td><button class="btn-sm">열기</button></td>
-          </tr>
-          <tr>
-            <td><strong>PI-YSACC-2026-03</strong></td>
-            <td>2026-05-02</td>
-            <td>THERMOSET</td>
-            <td>CIF</td>
-            <td>DUBAI</td>
-            <td>LC 90 days</td>
-            <td>C</td>
-            <td><span class="badge confirmed">Confirmed</span></td>
-            <td class="amount">$15,200.00</td>
-            <td><button class="btn-sm">열기</button></td>
-          </tr>
-          <tr>
-            <td><strong>PI-YSACC-2026-02</strong></td>
-            <td>2026-04-20</td>
-            <td>EPP</td>
-            <td>FOB</td>
-            <td>NHAVA SHEVA</td>
-            <td>TT in advance</td>
-            <td>A</td>
-            <td><span class="badge expired">Expired</span></td>
-            <td class="amount">$4,100.00</td>
-            <td><button class="btn-sm">열기</button></td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- PI Table -->
+    <div class="card-table">
+      <div class="card-title">
+        최근 Proforma Invoice 목록
+        <span class="live-badge">● Firestore 실시간</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>PI Number</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Incoterms</th>
+              <th>Destination</th>
+              <th>Payment Terms</th>
+              <th>Ver.</th>
+              <th>Status</th>
+              <th style="text-align:right">Total (USD)</th>
+            </tr>
+          </thead>
+          <tbody id="pi_table_body">
+            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);">Firestore에서 불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-</main>
+  </main>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc, getDocs, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+    authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
+    projectId:         "tradingmanagement-c1cf4",
+    storageBucket:     "tradingmanagement-c1cf4.firebasestorage.app",
+    messagingSenderId: "1033735327012",
+    appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const COMPANY_ID = "YSACC";
+  const customerMap = {};
+
+  // 날짜 표시
+  document.getElementById("current_date").textContent =
+    new Date().toLocaleDateString("ko-KR", { year:"numeric", month:"long", day:"numeric", weekday:"long" }) + " · YSACC CO., LTD.";
+
+  async function loadCustomerMap() {
+    const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"customers"));
+    snap.docs.forEach(d => { customerMap[d.id] = d.data().name || "Unknown"; });
+  }
+
+  function updateKPIs(pis) {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    const thisMonthPIs = pis.filter(p => (p.piDate||"").startsWith(thisMonth));
+    const confirmedPIs = pis.filter(p => p.status === "confirmed");
+    const confirmedRev = confirmedPIs.reduce((s,p) => s + (p.totalUsd||0), 0);
+    const winRate      = pis.length ? Math.round(confirmedPIs.length / pis.length * 100) : 0;
+
+    document.getElementById("kpi_count").textContent   = thisMonthPIs.length;
+    document.getElementById("kpi_revenue").textContent = `$${confirmedRev.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+    document.getElementById("kpi_winrate").textContent = `${winRate}%`;
+    document.getElementById("kpi_total").textContent   = pis.length;
+  }
+
+  function updateStatusSummary(pis) {
+    const counts = { draft:0, sent:0, confirmed:0, expired:0 };
+    pis.forEach(p => { if (counts[p.status] !== undefined) counts[p.status]++; else counts.draft++; });
+    const colors = { confirmed:"#00e676", sent:"#00d4ff", draft:"#6c63ff", expired:"#ff5252" };
+    const labels = { confirmed:"Confirmed", sent:"Sent", draft:"Draft", expired:"Expired" };
+    document.getElementById("status_list").innerHTML = Object.keys(counts).map(k => `
+      <div class="status-item">
+        <span><span class="status-dot" style="background:${colors[k]}"></span>${labels[k]}</span>
+        <span style="font-weight:600;color:${colors[k]}">${counts[k]}건</span>
+      </div>`).join("");
+  }
+
+  function updateChart(pis) {
+    const months = {};
+    pis.forEach(p => {
+      if (!p.piDate) return;
+      const ym = p.piDate.substring(0,7);
+      if (!months[ym]) months[ym] = 0;
+      if (p.status === "confirmed") months[ym] += (p.totalUsd||0);
+    });
+    const sorted = Object.keys(months).sort().slice(-6);
+    const maxVal = Math.max(...sorted.map(m => months[m]), 1);
+    const chartEl = document.getElementById("bar_chart");
+    if (!sorted.length) {
+      chartEl.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:40px 0;text-align:center;width:100%;">PI를 작성하면 차트가 표시됩니다</div>';
+      return;
+    }
+    chartEl.innerHTML = sorted.map(ym => {
+      const pct = Math.max(Math.round((months[ym] / maxVal) * 100), 4);
+      const label = ym.substring(5) + "월";
+      return `<div class="bar-wrap">
+        <div class="bar confirmed" style="height:${pct}%" title="USD ${months[ym].toFixed(0)}"></div>
+        <div class="bar-label">${label}</div>
+      </div>`;
+    }).join("");
+  }
+
+  function updateTable(pis) {
+    const tbody = document.getElementById("pi_table_body");
+    if (!pis.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);">
+        저장된 PI가 없습니다. <a href="create_pi.html" style="color:var(--accent);">새 PI 작성하기 →</a>
+      </td></tr>`;
+      return;
+    }
+    tbody.innerHTML = pis.slice(0,20).map(p => {
+      const badge = { confirmed:"confirmed", sent:"sent", draft:"draft", expired:"expired" }[p.status] || "draft";
+      const cust  = customerMap[p.customerId] || "-";
+      const date  = p.piDate || (p.createdAt?.seconds ? new Date(p.createdAt.seconds*1000).toISOString().split("T")[0] : "-");
+      return `<tr>
+        <td><strong>${p.piNumber||"-"}</strong></td>
+        <td>${date}</td>
+        <td>${cust}</td>
+        <td>${p.incoterms||"-"}</td>
+        <td>${p.destinationPort||"-"}</td>
+        <td>${p.paymentTerms||"-"}</td>
+        <td>${p.currentVersion||"A"}</td>
+        <td><span class="badge ${badge}">${p.status||"draft"}</span></td>
+        <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  // 실시간 구독
+  window.addEventListener("DOMContentLoaded", async () => {
+    await loadCustomerMap();
+    const piCol = collection(doc(db,"companies",COMPANY_ID),"proforma_invoices");
+    onSnapshot(piCol, (snap) => {
+      const pis = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      pis.sort((a,b) => ((b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)));
+      updateKPIs(pis);
+      updateStatusSummary(pis);
+      updateChart(pis);
+      updateTable(pis);
+    }, err => console.error("구독 오류:", err));
+  });
+</script>
 </body>
 </html>
