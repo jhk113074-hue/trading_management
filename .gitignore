@@ -4,3 +4,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 dist/
+.firebase/
+# Firebase 서비스 계정 키 (절대 GitHub에 올리지 마세요!)
+*firebase-adminsdk*.json
+serviceAccountKey.json
