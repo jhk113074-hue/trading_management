@@ -830,7 +830,7 @@
     if (!opt?.dataset.info) return;
     const c = JSON.parse(opt.dataset.info);
     document.getElementById("n_contact").value = c.contactPerson||"";
-    document.getElementById("n_email").value   = c.email||"";
+    document.getElementById("n_email").value   = c.contactEmail || c.email || "";
     document.getElementById("n_dest").value    = c.preferredPort||"";
     const iSel = document.getElementById("n_incoterms");
     for (let o of iSel.options) if (o.value===c.preferredIncoterms) { iSel.value=o.value; break; }
