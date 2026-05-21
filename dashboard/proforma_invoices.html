@@ -27,16 +27,16 @@
       --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
     }
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Inter',sans-serif;background:#f9fafb;color:var(--text);font-size:14px;}
+    body{font-family:'Inter',sans-serif;background:#f9fafb;color:var(--text);font-size:15px;}
     .layout{display:flex;min-height:100vh;}
     .sidebar{width:240px;background:#fff;border-right:1px solid var(--border);flex-shrink:0;position:fixed;top:0;bottom:0;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);}
     .logo{padding:20px 16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:center;align-items:center;min-height:80px;cursor:pointer;}
     .logo img{max-width:100%;max-height:52px;object-fit:contain;}
     .nav-section-label{padding:20px 20px 6px;font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.08em;text-transform:uppercase;}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s;margin:1px 8px;border-radius:6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:14px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s;margin:1px 8px;border-radius:6px;}
     .nav-item:hover{background:#f3f4f6;color:var(--text);}
     .nav-item.active{background:var(--nav-active-bg);color:var(--nav-active-text);font-weight:600;}
-    .nav-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;}
+    .nav-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;}
     .main{margin-left:240px;padding:32px 36px;flex:1;background:#f9fafb;}
     .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
     .page-title{font-size:22px;font-weight:700;letter-spacing:-.02em;}
@@ -60,8 +60,8 @@
     /* Table */
     .card{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm);}
     .table-wrap{overflow-x:auto;}
-    table{width:100%;border-collapse:collapse;font-size:12px;}
-    th{text-align:left;padding:11px 14px;color:var(--text-muted);font-size:11px;font-weight:600;border-bottom:1px solid var(--border);background:#fafafa;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{text-align:left;padding:12px 14px;color:var(--text-muted);font-size:12px;font-weight:600;border-bottom:1px solid var(--border);background:#fafafa;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
     td{padding:13px 14px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
     tr:last-child td{border-bottom:none;}
     tr.pi-row:hover td{background:#f9fafb;cursor:pointer;}
@@ -346,7 +346,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal()">닫기</button>
-      <button class="btn btn-outline" style="border-color:#ffd740;color:#ffd740" onclick="openEditModal()">✏ 수정</button>
+      <button class="btn btn-outline" style="border-color:var(--accent);color:var(--accent);background:rgba(37,99,235,0.05);" onclick="openEditModal()">✏ 수정</button>
       <button class="btn btn-outline" id="btn_mark_sent" onclick="updateStatus('sent')">📨 Sent</button>
       <button class="btn btn-primary" id="btn_mark_confirmed" onclick="updateStatus('confirmed')">✔ Confirmed</button>
     </div>
