@@ -5,7 +5,8 @@
   <title>Proforma Invoice 목록 - YSACC TMS</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <!-- PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -1041,111 +1042,104 @@
   }
 
   // ================================================
-  // Excel (SheetJS) - YSACC Proforma Invoice Format
+  // Excel (ExcelJS) - 템플릿 연동 방식
   // ================================================
-  window.nExportExcel = function() {
-    if (!window.XLSX) { alert("Excel 라이브러리 로딩 중..."); return; }
+  window.nExportExcel = async function() {
+    if (!window.ExcelJS) { alert("Excel 라이브러리 로딩 중..."); return; }
     var d = nGetFormData();
     if (!d.items.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
-    var custId   = document.getElementById("n_customer").value;
-    var custInfo = customerMap[custId] || {};
-    var custAddr = custInfo.address || custInfo.addressEn || "";
-    var aoa = [];
-    // Row 1-7: Company header
-    aoa.push(["YSACC CO.,LTD","","","","Date:",d.piDate,"",""]);
-    aoa.push(["302 Ho,180, SEONGBONG-RO, SEOWON-GU,","","","","Your Ref:","",""]);
-    aoa.push(["CHEONGJU-SI, CHUNGCHEONGBUK-DO , 28616, KOREA","","","","No.:",d.piNum||"",""]);
-    aoa.push(["TEL : +82-70-4141-2927   FAX : +82-303-3444-1130","","","","","","",""]);
-    aoa.push(["TEL : +82-10-7361-1130","","","","","","",""]);
-    aoa.push(["E-mail : jhkim1130@ysacc.co.kr","","","","","","",""]);
-    aoa.push(["Contact Point : Ju Han, Kim","","","","","","",""]);
-    // Row 8: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 9: Title
-    aoa.push(["","","","Proforma Invoice","","","",""]);
-    // Row 10: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 11: Customer
-    aoa.push(["Messers : "+d.customer,"","","","","","",""]);
-    // Row 12: Customer address
-    aoa.push(["    "+custAddr,"","","","","","",""]);
-    // Row 13: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 14: Greeting
-    aoa.push(["Gentlemen, We are very pleased to offer you as Follows;","","","","","","",""]);
-    // Row 15: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 16-19: Trade conditions
-    aoa.push(["DEPARTURE PORT :","Busan, Korea","","","INCOTERMS :",d.incoterms,"",""]);
-    aoa.push(["PACKAGING SPEC. :","Export Standard Packaging.","","","DESTINATION :",d.destination,"",""]);
-    aoa.push(["VALIDITY :","4 weeks from the offered date","","","ORIGIN :","KOREA","",""]);
-    aoa.push(["Payment Term :",d.payment,"","","DELIVERY TERM","10 weeks after 50% T/T acceptance","",""]);
-    // Row 20: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 21-25: Bank Info
-    aoa.push(["Bank Info. :","1. Bank Name : INDUSTRIAL BANK OF KOREA, SEOUL,KOREA","","","","","",""]);
-    aoa.push(["","2. Bank Account No. : 143-129260-56-00012","","","","","",""]);
-    aoa.push(["","3. Bank Address : 50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA","","","","","",""]);
-    aoa.push(["","4. Beneficiary : YSACC Co.,LTD","","","","","",""]);
-    aoa.push(["","5. Swift Code : IBKOKRSEXXX","","","","","",""]);
-    // Row 26: blank
-    aoa.push(["","","","","","","",""]);
-    // Row 27: Product table header
-    aoa.push(["","PRODUCT","SPEC","PRICE / KG/mtr/qty","Qty","TOTAL AMOUNT","Remark",""]);
-    // Product rows
-    var grandTotal = 0;
-    var rowNum = 1;
-    d.items.forEach(function(item) {
-      var sp = item.saleUsd || 0;
-      var qty = item.qty || 0;
-      var lineTotal = Math.round(sp * qty * 100) / 100;
-      grandTotal += lineTotal;
-      aoa.push([rowNum++, item.desc||"-", item.spec||"", sp, qty, lineTotal, item.remarks||"", ""]);
-    });
-    // Extra charges row
-    var extraCharges = (d.handling||0) + (d.freight||0) + (d.insurance||0);
-    if (extraCharges > 0) {
-      grandTotal += extraCharges;
-      aoa.push(["","CIF Charges","","",1,extraCharges,"Ocean Freight+THC+DOC.FEE",""]);
-    }
-    // blank
-    aoa.push(["","","","","","","",""]);
-    // Grand total
-    aoa.push(["","","","","GRAND TOTAL","US$ "+grandTotal.toFixed(2),"",""]);
-    // blank x2
-    aoa.push(["","","","","","","",""]);
-    aoa.push(["","","","","","","",""]);
-    // Notes
-    aoa.push(["1. This is basic price. This can be changed as following your added requests.","","","","","","",""]);
-    aoa.push(["2. Shipping cost can be changed every month as following the condition of shipping company.","","","","","","",""]);
-    // blank x2
-    aoa.push(["","","","","","","",""]);
-    aoa.push(["","","","","","","",""]);
-    // Signature block
-    aoa.push(["","","","","","","YS ACC",""]);
-    aoa.push(["","","","","","","",""]);
-    aoa.push(["","","","","","","",""]);
-    aoa.push(["Accepted by :","","","","","","Managing Director  JU HAN, KIM",""]);
-    aoa.push(["_____________________","","","","","","___________________________",""]);
 
-    // Build sheet
-    var ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{wch:22},{wch:30},{wch:20},{wch:18},{wch:10},{wch:16},{wch:36},{wch:5}];
-    ws["!rows"] = [];
-    ws["!rows"][8] = {hpt:28};
-    ws["!merges"] = [
-      {s:{r:0,c:0},e:{r:0,c:3}},{s:{r:1,c:0},e:{r:1,c:3}},{s:{r:2,c:0},e:{r:2,c:3}},
-      {s:{r:3,c:0},e:{r:3,c:3}},{s:{r:4,c:0},e:{r:4,c:3}},{s:{r:5,c:0},e:{r:5,c:3}},{s:{r:6,c:0},e:{r:6,c:3}},
-      {s:{r:0,c:5},e:{r:0,c:7}},{s:{r:1,c:5},e:{r:1,c:7}},{s:{r:2,c:5},e:{r:2,c:7}},
-      {s:{r:8,c:0},e:{r:8,c:7}},{s:{r:10,c:0},e:{r:10,c:7}},{s:{r:11,c:0},e:{r:11,c:7}},{s:{r:13,c:0},e:{r:13,c:7}},
-      {s:{r:15,c:1},e:{r:15,c:3}},{s:{r:16,c:1},e:{r:16,c:3}},{s:{r:17,c:1},e:{r:17,c:3}},{s:{r:18,c:1},e:{r:18,c:3}},
-      {s:{r:15,c:5},e:{r:15,c:7}},{s:{r:16,c:5},e:{r:16,c:7}},{s:{r:17,c:5},e:{r:17,c:7}},{s:{r:18,c:5},e:{r:18,c:7}},
-      {s:{r:20,c:1},e:{r:20,c:7}},{s:{r:21,c:1},e:{r:21,c:7}},{s:{r:22,c:1},e:{r:22,c:7}},{s:{r:23,c:1},e:{r:23,c:7}},{s:{r:24,c:1},e:{r:24,c:7}}
-    ];
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Proforma Invoice");
-    var fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
-    XLSX.writeFile(wb, fileName);
+    var btn = document.querySelector("button[onclick='nExportExcel()']");
+    if(btn) { btn.disabled = true; btn.innerHTML = "⏳ 엑셀 생성 중..."; }
+
+    try {
+      // 1. 템플릿 파일 로드
+      const response = await fetch('/TEMPLATE.xlsx');
+      if (!response.ok) throw new Error("템플릿 파일을 찾을 수 없습니다.");
+      const arrayBuffer = await response.arrayBuffer();
+
+      // 2. 워크북 열기
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+      const ws = workbook.getWorksheet(1); // 첫 번째 시트
+
+      // 3. 기본 정보 입력 (고정 셀 좌표)
+      ws.getCell('G3').value = d.piDate;
+      ws.getCell('G5').value = d.piNum || "";
+      
+      const custId = document.getElementById("n_customer").value;
+      const custInfo = customerMap[custId] || {};
+      const custAddr = custInfo.address || custInfo.addressEn || "";
+      
+      ws.getCell('A12').value = "Messers : " + d.customer;
+      ws.getCell('A13').value = "    " + custAddr;
+
+      ws.getCell('G16').value = d.incoterms;
+      ws.getCell('G17').value = d.destination;
+      ws.getCell('C19').value = d.payment;
+
+      // 4. 상품 라인 입력 (28행부터 34행까지)
+      let currentRow = 28;
+      let grandTotal = 0;
+      d.items.forEach(function(item, index) {
+        if (currentRow > 34) return; // 템플릿 한계 초과 시 무시
+
+        var sp = item.saleUsd || 0;
+        var qty = item.qty || 0;
+        var lineTotal = Math.round(sp * qty * 100) / 100;
+        grandTotal += lineTotal;
+
+        ws.getCell('A'+currentRow).value = index + 1;
+        ws.getCell('B'+currentRow).value = item.desc || "-";
+        ws.getCell('C'+currentRow).value = item.spec || "";
+        ws.getCell('D'+currentRow).value = sp;
+        ws.getCell('E'+currentRow).value = qty;
+        ws.getCell('F'+currentRow).value = lineTotal;
+        ws.getCell('G'+currentRow).value = item.remarks || "";
+        currentRow++;
+      });
+
+      // 기존 템플릿에 남아있는 행 지우기 (상품이 7개 미만인 경우)
+      for (let i = currentRow; i <= 34; i++) {
+        ws.getCell('A'+i).value = "";
+        ws.getCell('B'+i).value = "";
+        ws.getCell('C'+i).value = "";
+        ws.getCell('D'+i).value = "";
+        ws.getCell('E'+i).value = "";
+        ws.getCell('F'+i).value = "";
+        ws.getCell('G'+i).value = "";
+      }
+
+      // 5. 추가 비용 입력 (35행)
+      var extraCharges = (d.handling||0) + (d.freight||0) + (d.insurance||0);
+      if (extraCharges > 0) {
+        grandTotal += extraCharges;
+        ws.getCell('E35').value = 1; // qty
+        ws.getCell('F35').value = extraCharges; // price & total
+      } else {
+        // 추가비용 없으면 비우기
+        ws.getCell('A35').value = "";
+        ws.getCell('E35').value = "";
+        ws.getCell('F35').value = "";
+        ws.getCell('G35').value = "";
+      }
+
+      // 6. 합계 입력 (36행 F열)
+      // 템플릿의 수식을 덮어쓸 수 있도록 값을 직접 입력합니다.
+      ws.getCell('F36').value = grandTotal;
+
+      // 파일 다운로드
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
+      saveAs(blob, fileName);
+
+    } catch (e) {
+      alert("엑셀 저장 중 오류가 발생했습니다: " + e.message);
+      console.error(e);
+    } finally {
+      if(btn) { btn.disabled = false; btn.innerHTML = "📊 Excel 저장"; }
+    }
   };
 
   // ════════════════════════════════════════
