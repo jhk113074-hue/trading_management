@@ -327,7 +327,7 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeNewPI()">취소</button>
       <button class="btn btn-outline" style="border-color:#00a86b;color:#00a86b" onclick="nExportExcel()">📊 Excel 저장</button>
-      <button class="btn btn-outline" style="border-color:#e74c3c;color:#e74c3c" onclick="nExportPDF()">📄 PDF 저장</button>
+      <button class="btn btn-outline" style="border-color:#e74c3c;color:#e74c3c" onclick="nExportPDF()">📄 미리보기 (PDF)</button>
       <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI()">✔ Firestore 저장</button>
     </div>
   </div>
@@ -1345,10 +1345,55 @@
       doc.text("YS ACC", PAGE_W - M - 20, y+5, {align:"right"});
 
       const fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
-      doc.save(fileName);
+      
+      window._currentPdfDoc = doc;
+      window._currentPdfFileName = fileName;
+      
+      const blobUrl = doc.output("bloburl");
+      document.getElementById("pdf_iframe").src = blobUrl;
+      document.getElementById("pdf_preview_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  window.closePdfPreview = function(e) {
+    if (e && e.type === "click" && e.target !== document.getElementById("pdf_preview_overlay")) return;
+    document.getElementById("pdf_preview_overlay").classList.remove("open");
+    document.getElementById("pdf_iframe").src = "";
+    document.body.style.overflow = "";
+  };
+
+  window.downloadPdfPreview = function() {
+    if (window._currentPdfDoc) window._currentPdfDoc.save(window._currentPdfFileName);
+  };
+
+  window.printPdfPreview = function() {
+    const iframe = document.getElementById("pdf_iframe");
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
     }
   };
 </script>
 
+<!-- ═══════════════ PDF 미리보기 모달 ═══════════════ -->
+<div class="modal-overlay" id="pdf_preview_overlay" onclick="closePdfPreview(event)">
+  <div class="modal" style="max-width:900px; width:90%; height:90vh; display:flex; flex-direction:column; background:#f9fafb; padding:0;" onclick="event.stopPropagation()">
+    <div class="modal-header" style="background:#fff; border-bottom:1px solid var(--border); padding:15px 25px;">
+      <div>
+        <h3 style="margin:0;font-size:18px;color:var(--text);font-weight:600">📄 PDF 미리보기</h3>
+      </div>
+      <button class="modal-close" onclick="closePdfPreview()" style="top:15px;right:25px;">✕</button>
+    </div>
+    <div class="modal-body" style="flex:1; padding:0; overflow:hidden;">
+      <iframe id="pdf_iframe" style="width:100%; height:100%; border:none; background:#525659;"></iframe>
+    </div>
+    <div class="modal-footer" style="background:#fff; padding:15px 25px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid var(--border);">
+      <button class="btn btn-outline" onclick="closePdfPreview()">닫기</button>
+      <button class="btn btn-outline" style="border-color:#2563eb;color:#2563eb" onclick="printPdfPreview()">🖨 인쇄</button>
+      <button class="btn btn-primary" onclick="downloadPdfPreview()">📄 PDF 저장</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
