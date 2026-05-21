@@ -1161,31 +1161,18 @@
     doc.rect(0, 0, PAGE_W, PAGE_H, "F");
 
     // ── 1. Letterhead 이미지 삽입 ──
-    // 사용자가 'logo.png' (또는 letterhead)를 서버에 올렸다고 가정합니다.
-    // 기존에 dashboard 디렉토리에 있는 logo.png를 사용해 봅니다.
     var img = new Image();
-    img.src = "logo.png";
+    img.src = "letterhead.png"; // 유첨해주신 레터헤드 파일 이름
     img.crossOrigin = "Anonymous";
     
     img.onload = function() {
-      // 이미지 크기 조정 (가로 최대 PAGE_W - M*2, 세로 최대 30mm 제한)
-      const maxWidth = PAGE_W - M*2;
+      // 레터헤드는 A4 폭(210mm)을 꽉 채우도록 설정
       const imgRatio = img.height / img.width;
+      const lhWidth = PAGE_W;
+      const lhHeight = lhWidth * imgRatio;
       
-      let drawWidth = maxWidth;
-      let drawHeight = drawWidth * imgRatio;
-      
-      // 높이가 너무 크면 높이 기준으로 다시 축소
-      if (drawHeight > 35) {
-          drawHeight = 35;
-          drawWidth = drawHeight / imgRatio;
-      }
-      
-      // 가운데 정렬을 위해 X 좌표 계산
-      const xPos = (PAGE_W - drawWidth) / 2;
-      
-      doc.addImage(img, 'PNG', xPos, 10, drawWidth, drawHeight);
-      drawPdfContent(drawHeight + 20);
+      doc.addImage(img, 'PNG', 0, 0, lhWidth, lhHeight);
+      drawPdfContent(lhHeight + 10);
     };
     img.onerror = function() {
       // 이미지가 없을 경우 대체 텍스트
@@ -1232,6 +1219,8 @@
 
       // Shipment Info Box
       const rx = M + colW + 5;
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(255, 255, 255);
       doc.rect(rx, y, colW, boxH, "DF");
       doc.setFontSize(9); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
       doc.text("SHIPMENT INFO", rx+3, y+6);
