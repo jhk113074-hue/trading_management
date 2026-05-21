@@ -1142,6 +1142,7 @@
       {s:{r:15,c:5},e:{r:15,c:7}},{s:{r:16,c:5},e:{r:16,c:7}},{s:{r:17,c:5},e:{r:17,c:7}},{s:{r:18,c:5},e:{r:18,c:7}},
       {s:{r:20,c:1},e:{r:20,c:7}},{s:{r:21,c:1},e:{r:21,c:7}},{s:{r:22,c:1},e:{r:22,c:7}},{s:{r:23,c:1},e:{r:23,c:7}},{s:{r:24,c:1},e:{r:24,c:7}}
     ];
+    var wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Proforma Invoice");
     var fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
     XLSX.writeFile(wb, fileName);
