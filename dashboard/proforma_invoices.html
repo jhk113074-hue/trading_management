@@ -1061,7 +1061,7 @@
       // 2. 워크북 열기
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
-      const ws = workbook.getWorksheet(1); // 첫 번째 시트
+      const ws = workbook.worksheets[0]; // 첫 번째 시트 (안전한 방식)
 
       // 3. 기본 정보 입력 (고정 셀 좌표)
       ws.getCell('G3').value = d.piDate;
