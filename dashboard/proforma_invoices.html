@@ -275,6 +275,9 @@
             </select>
           </div>
           <div class="fgroup"><label>Destination Port ★</label><input type="text" id="n_dest" placeholder="예: JEBEL ALI"></div>
+          <div class="fgroup"><label>Departure Port</label><input type="text" id="n_departurePort" value="Busan, Korea" placeholder="예: Busan, Korea"></div>
+          <div class="fgroup"><label>Packaging Spec.</label><input type="text" id="n_packagingSpec" value="Export Standard Packaging." placeholder="예: Export Standard Packaging."></div>
+          <div class="fgroup"><label>Validity Description</label><input type="text" id="n_validityDesc" value="4 weeks from the offered date" placeholder="예: 4 weeks from the offered date"></div>
           <div class="fgroup"><label>Payment Terms ★</label>
             <input type="text" id="n_payment" list="payment_presets" placeholder="선택 또는 직접 입력 (TT/LC 혼합 가능)" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text)">
             <datalist id="payment_presets">
@@ -606,6 +609,9 @@
     document.getElementById("n_freight").value = 0;
     document.getElementById("n_insurance").value = 0;
     document.getElementById("n_remarks").value = "";
+    document.getElementById("n_departurePort").value = "Busan, Korea";
+    document.getElementById("n_packagingSpec").value = "Export Standard Packaging.";
+    document.getElementById("n_validityDesc").value = "4 weeks from the offered date";
 
     nRecalcTotals();
     document.getElementById("new_pi_overlay").classList.add("open");
@@ -663,6 +669,9 @@
     document.getElementById("n_dest").value = p.destinationPort || "";
     document.getElementById("n_payment").value = p.paymentTerms || "";
     document.getElementById("n_shipping").value = p.shippingMethod || "Sea Freight";
+    document.getElementById("n_departurePort").value = p.departurePort || "Busan, Korea";
+    document.getElementById("n_packagingSpec").value = p.packagingSpec || "Export Standard Packaging.";
+    document.getElementById("n_validityDesc").value = p.validityDesc || "4 weeks from the offered date";
     document.getElementById("n_rate").value = p.exchangeRate || 1468.96;
     document.getElementById("n_remarks").value = p.remarks || "";
     document.getElementById("n_handling").value = p.handlingCharges || 0;
@@ -1036,6 +1045,9 @@
       destination:  document.getElementById("n_dest").value,
       payment:      document.getElementById("n_payment").value,
       shipping:     document.getElementById("n_shipping").value,
+      departurePort: document.getElementById("n_departurePort").value,
+      packagingSpec: document.getElementById("n_packagingSpec").value,
+      validityDesc: document.getElementById("n_validityDesc").value,
       rate, remarks: document.getElementById("n_remarks").value,
       items, subtotal, handling, freight, insurance, grand
     };
@@ -1074,8 +1086,12 @@
       ws.getCell('A12').value = "Messers : " + d.customer;
       ws.getCell('A13').value = "    " + custAddr;
 
+      ws.getCell('C16').value = d.departurePort;
       ws.getCell('G16').value = d.incoterms;
+      ws.getCell('C17').value = d.packagingSpec;
       ws.getCell('G17').value = d.destination;
+      ws.getCell('C18').value = d.validityDesc;
+      ws.getCell('G18').value = "KOREA";
       ws.getCell('C19').value = d.payment;
 
       // 4. 상품 라인 입력 (28행부터 34행까지)
@@ -1227,16 +1243,19 @@
       doc.setFont("helvetica","normal");
       
       const si = [
+        ["Departure",   d.departurePort],
+        ["Packaging",   d.packagingSpec.length > 25 ? d.packagingSpec.substring(0,25)+"..." : d.packagingSpec],
+        ["Validity",    d.validityDesc.length > 25 ? d.validityDesc.substring(0,25)+"..." : d.validityDesc],
         ["Incoterms",   d.incoterms],
         ["Destination", d.destination],
-        ["Payment",     d.payment.length > 28 ? d.payment.substring(0,28)+"..." : d.payment],
+        ["Payment",     d.payment.length > 25 ? d.payment.substring(0,25)+"..." : d.payment],
         ["Shipping",    d.shipping],
       ];
       si.forEach((row, i) => {
         doc.setTextColor(100,100,100);
-        doc.text(row[0]+":", rx+3, y+13+i*6);
+        doc.text(row[0]+":", rx+3, y+11+i*4);
         doc.setTextColor(0,0,0);
-        doc.text(row[1]||"-", rx+25, y+13+i*6);
+        doc.text(row[1]||"-", rx+22, y+11+i*4);
       });
       y += boxH + 8;
 
