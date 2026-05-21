@@ -493,8 +493,8 @@
               <td>${item.description||"-"}</td>
               <td class="num">${item.quantity||0}</td>
               <td>${item.unit||"-"}</td>
-              <td class="num">$${(item.salePriceUsd||0).toFixed(2)}</td>
-              <td class="num" style="color:var(--green)">$${(item.lineTotalUsd||0).toFixed(2)}</td>
+              <td class="num">$${Number(item.salePriceUsd||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td class="num" style="color:var(--green)">$${Number(item.lineTotalUsd||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
               <td>${item.remarks||"-"}</td>
             </tr>`).join("");
         }
@@ -528,10 +528,10 @@
         </div>
         <div class="detail-section">
           <h4>💰 금액 요약</h4>
-          <div class="detail-row"><span class="detail-label">Subtotal</span><span class="detail-value">$${(p.subtotalUsd||0).toFixed(2)}</span></div>
-          <div class="detail-row"><span class="detail-label">Handling</span><span class="detail-value">$${(p.handlingCharges||0).toFixed(2)}</span></div>
-          <div class="detail-row"><span class="detail-label">Freight</span><span class="detail-value">$${(p.freightCharges||0).toFixed(2)}</span></div>
-          <div class="detail-row"><span class="detail-label">Insurance</span><span class="detail-value">$${(p.insuranceCharges||0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Subtotal</span><span class="detail-value">$${Number(p.subtotalUsd||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+          <div class="detail-row"><span class="detail-label">Handling</span><span class="detail-value">$${Number(p.handlingCharges||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+          <div class="detail-row"><span class="detail-label">Freight</span><span class="detail-value">$${Number(p.freightCharges||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+          <div class="detail-row"><span class="detail-label">Insurance</span><span class="detail-value">$${Number(p.insuranceCharges||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
         </div>
         <div class="detail-section full">
           <h4>📦 상품 라인 (Line Items · ${p.currentVersion||"A"} 버전)</h4>
@@ -817,8 +817,8 @@
         <td><input type="number" value="${item.rate}" min="0.01" step="0.01" style="width:85px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'rate',this.value)"></td>
         <td><input type="number" value="${item.costUsd ? (item.costUsd).toFixed(4) : ''}" min="0" step="0.0001" style="width:95px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'costUsd',this.value)"></td>
         <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
-        <td class="calc-cell">${(item._sale||0).toFixed(2)}</td>
-        <td class="calc-cell">${(item._total||0).toFixed(2)}</td>
+        <td class="calc-cell">${Number(item._sale||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="calc-cell">${Number(item._total||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
         <td><input type="text" value="${item.remarks || ''}" placeholder="비고" style="width:110px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'remarks',this.value)"></td>
         <td><button style="background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px" onclick="nDeleteItem(${item.id})">✕</button></td>
       </tr>`;
@@ -880,9 +880,9 @@
     const ins  = parseFloat(document.getElementById("n_insurance").value)||0;
     const grand= sub+hand+frt+ins;
     const rate = parseFloat(document.getElementById("n_rate").value)||1468.96;
-    document.getElementById("n_sub").textContent    = sub.toFixed(2);
-    document.getElementById("n_extras").textContent = (hand+frt+ins).toFixed(2);
-    document.getElementById("n_grand").textContent  = "USD "+grand.toFixed(2);
+    document.getElementById("n_sub").textContent    = sub.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById("n_extras").textContent = (hand+frt+ins).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById("n_grand").textContent  = "USD "+grand.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById("n_krw").value          = "₩ "+(grand*rate).toLocaleString();
   }
   window.nRecalcTotals = nRecalcTotals;
@@ -994,7 +994,7 @@
         });
 
         closeNewPI();
-        alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grand.toFixed(2)}`);
+        alert(`✅ 저장 완료!\nPI Number: ${piNumber}\nGrand Total: USD ${grand.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`);
       }
     } catch(e) {
       alert("❌ 저장 실패: "+e.message); console.error(e);
@@ -1273,8 +1273,8 @@
           i.spec || "-",
           i.qty, 
           i.unit, 
-          "$" + Number(i.saleUsd||0).toFixed(2), 
-          "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toFixed(2)
+          "$" + Number(i.saleUsd||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), 
+          "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
         ]),
         margin: { left: M, right: M }
       });
@@ -1291,13 +1291,13 @@
 
       doc.setFontSize(9); doc.setTextColor(80,80,80);
       doc.text("Handling Charges:", sumX+5, y+8);
-      doc.text("$" + Number(d.handling||0).toFixed(2), sumX+sumW-5, y+8, {align:"right"});
+      doc.text("$" + Number(d.handling||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+8, {align:"right"});
       
       doc.text("Freight Charges:", sumX+5, y+15);
-      doc.text("$" + Number(d.freight||0).toFixed(2), sumX+sumW-5, y+15, {align:"right"});
+      doc.text("$" + Number(d.freight||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+15, {align:"right"});
       
       doc.text("Insurance Charges:", sumX+5, y+22);
-      doc.text("$" + Number(d.insurance||0).toFixed(2), sumX+sumW-5, y+22, {align:"right"});
+      doc.text("$" + Number(d.insurance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+22, {align:"right"});
 
       // Grand Total 계산
       let itemSum = 0;
@@ -1307,7 +1307,7 @@
       doc.setFontSize(11); doc.setTextColor(0, 0, 0); doc.setFont("helvetica","bold");
       doc.text("GRAND TOTAL:", sumX+5, y+30);
       doc.setTextColor(0, 100, 0);
-      doc.text("USD $" + gt.toFixed(2), sumX+sumW-5, y+30, {align:"right"});
+      doc.text("USD $" + gt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+30, {align:"right"});
 
       // ── Remarks (좌측 하단) ──
       if(d.remarks) {
