@@ -456,6 +456,7 @@
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
         <td style="color:${expired?"var(--red)":"var(--text-muted)"}">${valid}</td>
         <td style="white-space:nowrap;">
+          <button class="action-btn" style="border-color:#e74c3c;color:#e74c3c" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}', true)">📄 미리보기</button>
           <button class="action-btn edit-btn" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}')">✏ 수정</button>
           <button class="btn-del" onclick="event.stopPropagation(); window.deletePI('${p.id}')">✕ 삭제</button>
         </td>
@@ -618,9 +619,9 @@
     document.body.style.overflow = "hidden";
   };
 
-  window.openEditModalPI = function(piId) {
+  window.openEditModalPI = function(piId, autoPdf = false) {
     currentPIId = piId;
-    openEditModal();
+    openEditModal(autoPdf);
   };
 
   window.deletePI = async function(id) {
@@ -634,7 +635,7 @@
   };
 
   // ── 기존 PI 수정 모달 열기 ──
-  window.openEditModal = async function() {
+  window.openEditModal = async function(autoPdf = false) {
     if (!currentPIId) return;
     editPIId = currentPIId;
     const p = allPIs.find(x => x.id === editPIId);
@@ -738,9 +739,13 @@
 
     nRenderItems(); // 렌더링 및 금액 합계 리계산 실행
 
-    // 모달 열기
-    document.getElementById("new_pi_overlay").classList.add("open");
-    document.body.style.overflow = "hidden";
+    // 모달 열기 또는 PDF 자동 생성
+    if (autoPdf) {
+      window.nExportPDF();
+    } else {
+      document.getElementById("new_pi_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
   };
   window.closeNewPI = function() {
     document.getElementById("new_pi_overlay").classList.remove("open");
