@@ -357,7 +357,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getFirestore, collection, doc, getDocs, onSnapshot,
-    updateDoc, serverTimestamp, runTransaction, deleteDoc
+    updateDoc, serverTimestamp, runTransaction, deleteDoc, setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -989,6 +989,39 @@
       const grand   = subtotal+hand+frt+ins;
       const validUntil = document.getElementById("n_valid_until").value;
       const itemsSummary = processedItems.slice(0,3).map(i => `${i.description||'-'} (${i.quantity||0}${i.unit||''})`);
+
+      // 🚀 신규 상품 자동 DB 등록
+      for (const item of processedItems) {
+        if (!item.description || item.description.trim() === "") continue;
+        const match = item.description.match(/\[([^\]]+)\]/);
+        if (match) continue; // 이미 상품 코드가 지정된 항목은 패스
+        
+        const existing = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
+        if (existing) continue; // 이름이 동일한 상품이 이미 존재하면 패스
+
+        // 신규 상품코드 생성 및 DB 등록
+        const dt = new Date();
+        const yymmdd = String(dt.getFullYear()).slice(2) + String(dt.getMonth()+1).padStart(2,'0') + String(dt.getDate()).padStart(2,'0');
+        const rand = Math.floor(Math.random()*1000).toString().padStart(3,'0');
+        const newCode = `PROD-${yymmdd}-${rand}`;
+        
+        const baseCurr = item.costUsd > 0 && item.costKrw === 0 ? "USD" : "KRW";
+        const purchasePrice = baseCurr === "USD" ? item.costUsd : item.costKrw;
+
+        const newProd = {
+          productCode: newCode,
+          nameKo: item.description,
+          nameEn: item.description,
+          unit: item.unit || "KG",
+          currency: baseCurr,
+          purchasePrice: purchasePrice,
+          categoryLarge: "Auto-Generated",
+          createdAt: serverTimestamp()
+        };
+        await setDoc(doc(db, "companies", COMPANY_ID, "products", newCode), newProd);
+        productMap[newCode] = newProd; // 로컬 캐시 즉시 업데이트
+        item.description = `[${newCode}] ${item.description}`; // PI 저장 시 신규 발번된 코드 매핑
+      }
 
       if (editPIId) {
         // 기존 PI 수정 및 새 버전 발행
