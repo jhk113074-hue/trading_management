@@ -1102,7 +1102,8 @@
       return {
         no: i + 1, desc: item.desc || "-", qty: item.qty, unit: item.unit,
         costKrw: item.cost, margin: item.margin,
-        saleUsd: +(sp.toFixed(2)), totalUsd: +(+(sp.toFixed(2)) * item.qty).toFixed(2)
+        saleUsd: +(sp.toFixed(2)), totalUsd: +(+(sp.toFixed(2)) * item.qty).toFixed(2),
+        remarks: item.remarks || ""
       };
     });
     const subtotal  = items.reduce((s, i) => s + i.totalUsd, 0);
@@ -1345,7 +1346,7 @@
           5: { halign: 'right' },
           6: { halign: 'right' }
         },
-        head: [["#","Description","Spec","Qty","Unit","Unit Price","Total (USD)"]],
+        head: [["#","Description","Spec","Qty","Unit","Unit Price","Total (USD)","Remarks"]],
         body: d.items.map(i => [
           i.no, 
           i.desc, 
@@ -1353,7 +1354,8 @@
           i.qty, 
           i.unit, 
           "$" + Number(i.saleUsd||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), 
-          "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+          "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}),
+          i.remarks || ""
         ]),
         margin: { left: M, right: M }
       });
