@@ -218,6 +218,7 @@
               <th>Status</th>
               <th style="text-align:right">Total (USD)</th>
               <th>Valid Until</th>
+              <th>작업</th>
             </tr>
           </thead>
           <tbody id="pi_tbody">
@@ -357,7 +358,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
     getFirestore, collection, doc, getDocs, onSnapshot,
-    updateDoc, serverTimestamp, runTransaction
+    updateDoc, serverTimestamp, runTransaction, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -450,6 +451,10 @@
         <td><span class="badge ${badge}">${p.status||"draft"}</span></td>
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
         <td style="color:${expired?"var(--red)":"var(--text-muted)"}">${valid}</td>
+        <td style="white-space:nowrap;">
+          <button class="action-btn edit-btn" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}')">✏ 수정</button>
+          <button class="btn-del" onclick="event.stopPropagation(); window.deletePI('${p.id}')">✕ 삭제</button>
+        </td>
       </tr>`;
     }).join("");
   }
@@ -604,6 +609,21 @@
     nRecalcTotals();
     document.getElementById("new_pi_overlay").classList.add("open");
     document.body.style.overflow = "hidden";
+  };
+
+  window.openEditModalPI = function(piId) {
+    currentPIId = piId;
+    openEditModal();
+  };
+
+  window.deletePI = async function(id) {
+    if(!confirm("이 Proforma Invoice를 정말 삭제하시겠습니까?")) return;
+    try {
+      await deleteDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", id));
+      alert("삭제되었습니다.");
+    } catch (e) {
+      alert("삭제 실패: " + e.message);
+    }
   };
 
   // ── 기존 PI 수정 모달 열기 ──
