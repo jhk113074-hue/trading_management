@@ -1153,135 +1153,182 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:"portrait", unit:"mm", format:"a4" });
     const PAGE_W = 210;
-    const M      = 15; // margin
+    const PAGE_H = 297;
+    const M = 15; // margin
 
-    // ── 헤더 배경 ──
-    doc.setFillColor(15, 17, 23);
-    doc.rect(0, 0, PAGE_W, 32, "F");
+    // 배경을 하얀색으로 칠하기 (jsPDF 기본값이 흰색이지만 혹시 몰라 명시)
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, PAGE_W, PAGE_H, "F");
 
-    // ── 회사명 ──
-    doc.setFontSize(18); doc.setTextColor(108, 99, 255); doc.setFont("helvetica","bold");
-    doc.text("YSACC CO., LTD.", M, 13);
-    doc.setFontSize(9); doc.setTextColor(136, 146, 176); doc.setFont("helvetica","normal");
-    doc.text("Trade Management System", M, 20);
+    // ── 1. Letterhead 이미지 삽입 ──
+    // 사용자가 'logo.png' (또는 letterhead)를 서버에 올렸다고 가정합니다.
+    // 기존에 dashboard 디렉토리에 있는 logo.png를 사용해 봅니다.
+    var img = new Image();
+    img.src = "logo.png";
+    img.crossOrigin = "Anonymous";
+    
+    img.onload = function() {
+      // 비율 유지하며 상단에 삽입
+      const imgRatio = img.height / img.width;
+      // 전체 폭을 다 쓰거나, 양옆 여백을 남기거나. 
+      // 레터헤드이므로 여백 없이 폭 210을 다 씁니다.
+      const lhHeight = PAGE_W * imgRatio;
+      
+      doc.addImage(img, 'PNG', 0, 0, PAGE_W, lhHeight);
+      drawPdfContent(lhHeight + 10);
+    };
+    img.onerror = function() {
+      // 이미지가 없을 경우 대체 텍스트
+      doc.setFontSize(22); doc.setTextColor(0, 0, 0); doc.setFont("helvetica","bold");
+      doc.text("YSACC CO., LTD.", M, 20);
+      drawPdfContent(35);
+    };
 
-    // ── PROFORMA INVOICE 타이틀 ──
-    doc.setFontSize(14); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold");
-    doc.text("PROFORMA INVOICE", PAGE_W - M, 14, {align:"right"});
-    doc.setFontSize(9); doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
-    doc.text(`Date: ${d.piDate}`, PAGE_W - M, 20, {align:"right"});
-    doc.text(`Valid Until: ${d.validUntil}`, PAGE_W - M, 25, {align:"right"});
+    function drawPdfContent(startY) {
+      let y = startY;
 
-    let y = 38;
+      // ── 타이틀 및 날짜 ──
+      doc.setFontSize(16); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+      doc.text("PROFORMA INVOICE", PAGE_W - M, y, {align:"right"});
+      y += 6;
+      doc.setFontSize(10); doc.setTextColor(80,80,80); doc.setFont("helvetica","normal");
+      doc.text(`Date: ${d.piDate}`, PAGE_W - M, y, {align:"right"});
+      y += 5;
+      doc.text(`Valid Until: ${d.validUntil}`, PAGE_W - M, y, {align:"right"});
+      y += 10;
 
-    // ── PI 번호 ──
-    doc.setFillColor(34, 38, 56);
-    doc.roundedRect(M, y, PAGE_W - M*2, 9, 2, 2, "F");
-    doc.setFontSize(10); doc.setTextColor(108, 99, 255); doc.setFont("helvetica","bold");
-    doc.text(`PI No: ${d.piNum}`, M+3, y+6);
-    y += 14;
+      // ── PI 번호 ──
+      doc.setFillColor(245, 245, 245);
+      doc.rect(M, y, PAGE_W - M*2, 10, "F");
+      doc.setFontSize(11); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+      doc.text(`PI No: ${d.piNum}`, M+3, y+7);
+      y += 15;
 
-    // ── 두 컬럼: Bill To / Shipment Info ──
-    const colW = (PAGE_W - M*2 - 5) / 2;
-    const boxH = 32;
+      // ── Bill To & Shipment Info ──
+      const colW = (PAGE_W - M*2 - 5) / 2;
+      const boxH = 38;
 
-    // Bill To
-    doc.setFillColor(26, 29, 46);
-    doc.roundedRect(M, y, colW, boxH, 2, 2, "F");
-    doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
-    doc.text("BILL TO", M+3, y+6);
-    doc.setTextColor(232,234,246); doc.setFont("helvetica","normal");
-    doc.setFontSize(9);
-    doc.text(d.customer, M+3, y+13, {maxWidth: colW-6});
-    doc.setFontSize(8); doc.setTextColor(136,146,176);
-    if (d.contact) doc.text(`Contact: ${d.contact}`, M+3, y+21);
-    if (d.email)   doc.text(`Email: ${d.email}`,     M+3, y+27);
+      // Bill To Box
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(M, y, colW, boxH, "DF");
+      doc.setFontSize(9); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+      doc.text("BILL TO", M+3, y+6);
+      doc.setFont("helvetica","normal");
+      doc.text(d.customer, M+3, y+12, {maxWidth: colW-6});
+      doc.setTextColor(80,80,80);
+      if (d.contact) doc.text(`Contact: ${d.contact}`, M+3, y+20);
+      if (d.email)   doc.text(`Email: ${d.email}`, M+3, y+26);
 
-    // Shipment Info
-    const rx = M + colW + 5;
-    doc.setFillColor(26, 29, 46);
-    doc.roundedRect(rx, y, colW, boxH, 2, 2, "F");
-    doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
-    doc.text("SHIPMENT INFO", rx+3, y+6);
-    doc.setTextColor(232,234,246); doc.setFont("helvetica","normal");
-    const si = [
-      ["Incoterms",   d.incoterms],
-      ["Destination", d.destination],
-      ["Payment",     d.payment.length > 28 ? d.payment.substring(0,28)+"…" : d.payment],
-      ["Shipping",    d.shipping],
-    ];
-    si.forEach(([lbl,val], i) => {
-      doc.setFontSize(7.5); doc.setTextColor(136,146,176);
-      doc.text(lbl+":", rx+3, y+13+i*5);
-      doc.setTextColor(232,234,246);
-      doc.text(val||"-", rx+25, y+13+i*5);
-    });
-    y += boxH + 6;
+      // Shipment Info Box
+      const rx = M + colW + 5;
+      doc.rect(rx, y, colW, boxH, "DF");
+      doc.setFontSize(9); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+      doc.text("SHIPMENT INFO", rx+3, y+6);
+      doc.setFont("helvetica","normal");
+      
+      const si = [
+        ["Incoterms",   d.incoterms],
+        ["Destination", d.destination],
+        ["Payment",     d.payment.length > 28 ? d.payment.substring(0,28)+"..." : d.payment],
+        ["Shipping",    d.shipping],
+      ];
+      si.forEach((row, i) => {
+        doc.setTextColor(100,100,100);
+        doc.text(row[0]+":", rx+3, y+13+i*6);
+        doc.setTextColor(0,0,0);
+        doc.text(row[1]||"-", rx+25, y+13+i*6);
+      });
+      y += boxH + 8;
 
-    // ── Line Items 테이블 ──
-    doc.autoTable({
-      startY: y,
-      head: [["#","Description","Qty","Unit","Unit Price (USD)","Total (USD)"]],
-      body: d.items.map(i => [i.no, i.desc, i.qty, i.unit,
-        `$${i.saleUsd.toFixed(4)}`, `$${i.totalUsd.toFixed(2)}`]),
-      styles:      { fontSize:8.5, cellPadding:3, textColor:[232,234,246], fillColor:[26,29,46], lineColor:[46,50,72], lineWidth:0.3 },
-      headStyles:  { fillColor:[34,38,56], textColor:[108,99,255], fontStyle:"bold", fontSize:8 },
-      alternateRowStyles: { fillColor:[22,25,40] },
-      columnStyles: {
-        0: { cellWidth:8,  halign:"center" },
-        1: { cellWidth:70 },
-        2: { cellWidth:16, halign:"center" },
-        3: { cellWidth:14, halign:"center" },
-        4: { cellWidth:32, halign:"right" },
-        5: { cellWidth:30, halign:"right" },
-      },
-      margin: { left:M, right:M },
-    });
+      // ── 테이블 ──
+      // Spec 등 빠짐없이 포함
+      doc.autoTable({
+        startY: y,
+        theme: 'grid',
+        headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+        styles: { fontSize: 8, textColor: [33, 33, 33] },
+        head: [["#","Description","Spec","Qty","Unit","Unit Price","Total (USD)"]],
+        body: d.items.map(i => [
+          i.no, 
+          i.desc, 
+          i.spec || "-",
+          i.qty, 
+          i.unit, 
+          "$" + Number(i.saleUsd||0).toFixed(4), 
+          "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toFixed(2)
+        ]),
+        margin: { left: M, right: M }
+      });
 
-    y = doc.lastAutoTable.finalY + 6;
+      y = doc.lastAutoTable.finalY + 8;
 
-    // ── 합계 박스 ──
-    const totals = [
-      ["Subtotal",            `$${d.subtotal.toFixed(2)}`],
-      ["Handling Charges",    `$${d.handling.toFixed(2)}`],
-      ["Freight Charges",     `$${d.freight.toFixed(2)}`],
-      ["Insurance Charges",   `$${d.insurance.toFixed(2)}`],
-    ];
-    const totW = 80; const totX = PAGE_W - M - totW;
-    doc.setFillColor(26, 29, 46);
-    doc.roundedRect(totX, y, totW, totals.length*7+16, 2, 2, "F");
-    totals.forEach(([lbl, val], i) => {
-      doc.setFontSize(8); doc.setTextColor(136,146,176);
-      doc.text(lbl+":", totX+4, y+6+i*7);
-      doc.setTextColor(232,234,246);
-      doc.text(val, totX+totW-4, y+6+i*7, {align:"right"});
-    });
-    // Grand Total 강조
-    const gtY = y + totals.length*7 + 6;
-    doc.setFontSize(11); doc.setFont("helvetica","bold");
-    doc.setTextColor(0, 230, 118);
-    doc.text("GRAND TOTAL:", totX+4, gtY);
-    doc.text(`USD $${d.grand.toFixed(2)}`, totX+totW-4, gtY, {align:"right"});
+      // ── 요약 박스 (우측 하단) ──
+      const sumW = 85;
+      const sumX = PAGE_W - M - sumW;
+      
+      doc.setFillColor(250, 250, 250);
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(sumX, y, sumW, 35, "DF");
 
-    // ── Remarks ──
-    if (d.remarks) {
-      y = gtY + 10;
-      doc.setFontSize(8); doc.setTextColor(108,99,255); doc.setFont("helvetica","bold");
-      doc.text("REMARKS:", M, y);
-      doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
-      doc.text(d.remarks, M, y+6, {maxWidth: PAGE_W - M*2});
+      doc.setFontSize(9); doc.setTextColor(80,80,80);
+      doc.text("Handling Charges:", sumX+5, y+8);
+      doc.text("$" + Number(d.handling||0).toFixed(2), sumX+sumW-5, y+8, {align:"right"});
+      
+      doc.text("Freight Charges:", sumX+5, y+15);
+      doc.text("$" + Number(d.freight||0).toFixed(2), sumX+sumW-5, y+15, {align:"right"});
+      
+      doc.text("Insurance Charges:", sumX+5, y+22);
+      doc.text("$" + Number(d.insurance||0).toFixed(2), sumX+sumW-5, y+22, {align:"right"});
+
+      // Grand Total 계산
+      let itemSum = 0;
+      d.items.forEach(i => { itemSum += Number(i.saleUsd||0) * Number(i.qty||0); });
+      let gt = itemSum + Number(d.handling||0) + Number(d.freight||0) + Number(d.insurance||0);
+
+      doc.setFontSize(11); doc.setTextColor(0, 0, 0); doc.setFont("helvetica","bold");
+      doc.text("GRAND TOTAL:", sumX+5, y+30);
+      doc.setTextColor(0, 100, 0);
+      doc.text("USD $" + gt.toFixed(2), sumX+sumW-5, y+30, {align:"right"});
+
+      // ── Remarks (좌측 하단) ──
+      if(d.remarks) {
+          doc.setFontSize(9); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+          doc.text("Remarks:", M, y+8);
+          doc.setFont("helvetica","normal"); doc.setTextColor(80,80,80);
+          
+          let splitRemarks = doc.splitTextToSize(d.remarks, PAGE_W - M*2 - sumW - 10);
+          doc.text(splitRemarks, M, y+14);
+      }
+      
+      y += 45;
+      
+      // ── 은행 정보 (아래로 밀릴 수 있으므로 페이지 넘어가면 새페이지)
+      if (y > PAGE_H - 40) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(10); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
+      doc.text("Bank Information", M, y);
+      y += 6;
+      doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(80,80,80);
+      doc.text("Bank Name : INDUSTRIAL BANK OF KOREA, SEOUL, KOREA", M, y); y += 5;
+      doc.text("Account No. : 143-129260-56-00012", M, y); y += 5;
+      doc.text("Beneficiary : YSACC Co.,LTD", M, y); y += 5;
+      doc.text("Swift Code : IBKOKRSEXXX", M, y); y += 15;
+
+      // ── 서명란 ──
+      doc.setFontSize(9); doc.setTextColor(0,0,0);
+      doc.text("Accepted by :", M, y);
+      doc.text("__________________________", M, y+10);
+      
+      doc.text("Managing Director  JU HAN, KIM", PAGE_W - M, y, {align:"right"});
+      doc.text("__________________________", PAGE_W - M, y+10, {align:"right"});
+      doc.text("YS ACC", PAGE_W - M - 20, y+5, {align:"right"});
+
+      const fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
+      doc.save(fileName);
     }
-
-    // ── 푸터 ──
-    const fY = 287;
-    doc.setDrawColor(46, 50, 72); doc.setLineWidth(0.3);
-    doc.line(M, fY-3, PAGE_W-M, fY-3);
-    doc.setFontSize(7.5); doc.setTextColor(136,146,176); doc.setFont("helvetica","normal");
-    doc.text("YSACC CO., LTD.  |  Trade Management System", M, fY);
-    doc.text(`Exchange Rate: ₩${d.rate.toLocaleString()}/USD`, PAGE_W-M, fY, {align:"right"});
-
-    const fileName = `${d.piNum.replace(/[^a-zA-Z0-9-]/g,"_")}_${d.piDate}.pdf`;
-    doc.save(fileName);
   };
 </script>
 
