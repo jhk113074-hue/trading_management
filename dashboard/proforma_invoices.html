@@ -180,26 +180,22 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="search-box">
-        <span>🔍</span>
-        <input type="text" id="search_input" placeholder="PI번호, 고객명, 목적지 검색..." oninput="filterPIs()">
+    <div class="search-bar">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="filter_date_start" onchange="filterPIs()" style="padding:6px;border:1px solid var(--border);border-radius:4px" title="시작일">
+        <span style="color:var(--text-muted)">~</span>
+        <input type="date" id="filter_date_end" onchange="filterPIs()" style="padding:6px;border:1px solid var(--border);border-radius:4px" title="종료일">
+        <select id="filter_customer" onchange="filterPIs()" style="padding:6px;border:1px solid var(--border);border-radius:4px;min-width:130px">
+          <option value="">전체 고객</option>
+        </select>
+        <input type="text" id="filter_pi_num" placeholder="PI Number 검색..." oninput="filterPIs()" style="padding:6px;border:1px solid var(--border);border-radius:4px;width:150px">
+        <select id="filter_status" onchange="filterPIs()" style="padding:6px;border:1px solid var(--border);border-radius:4px">
+          <option value="">전체 상태</option>
+          <option value="draft">draft</option>
+          <option value="confirmed">confirmed</option>
+          <option value="sent">sent</option>
+        </select>
       </div>
-      <select class="filter" id="status_filter" onchange="filterPIs()">
-        <option value="">전체 상태</option>
-        <option value="draft">Draft</option>
-        <option value="sent">Sent</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="expired">Expired</option>
-      </select>
-      <select class="filter" id="incoterms_filter" onchange="filterPIs()">
-        <option value="">전체 Incoterms</option>
-        <option value="CIF">CIF</option>
-        <option value="FOB">FOB</option>
-        <option value="EXW">EXW</option>
-        <option value="DDP">DDP</option>
-        <option value="DOOR TO DOOR">DOOR TO DOOR</option>
-      </select>
       <span class="result-count" id="result_count"></span>
     </div>
 
@@ -209,21 +205,18 @@
         <table>
           <thead>
             <tr>
-              <th>PI Number</th>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Incoterms</th>
-              <th>Destination</th>
-              <th>Payment Terms</th>
-              <th>Ver.</th>
-              <th>Status</th>
-              <th style="text-align:right">Total (USD)</th>
-              <th>Valid Until</th>
-              <th>작업</th>
+              <th onclick="sortPIs('piNumber')" style="cursor:pointer">PI NUMBER <span id="sort_piNumber"></span></th>
+              <th onclick="sortPIs('piDate')" style="cursor:pointer">DATE <span id="sort_piDate"></span></th>
+              <th onclick="sortPIs('customerName')" style="cursor:pointer">CUSTOMER <span id="sort_customerName"></span></th>
+              <th>ITEMS</th>
+              <th onclick="sortPIs('currentVersion')" style="cursor:pointer;text-align:center">VER. <span id="sort_currentVersion"></span></th>
+              <th onclick="sortPIs('status')" style="cursor:pointer;text-align:center">STATUS <span id="sort_status"></span></th>
+              <th onclick="sortPIs('totalUsd')" style="cursor:pointer;text-align:right">TOTAL (USD) <span id="sort_totalUsd"></span></th>
+              <th style="text-align:center">작업</th>
             </tr>
           </thead>
           <tbody id="pi_tbody">
-            <tr><td colspan="10" class="empty">Firestore에서 불러오는 중...</td></tr>
+            <tr><td colspan="8" class="empty">Firestore에서 불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -382,11 +375,23 @@
   let allPIs = [];
   let currentPIId = null;
   let editPIId = null;
+  let sortCol = "piDate";
+  let sortDir = "desc";
+  const oldItemsCache = {};
 
   // ── 고객맵 로드 ──
   async function loadCustomerMap() {
     const snap = await getDocs(collection(doc(db,"companies",COMPANY_ID),"customers"));
-    snap.docs.forEach(d => { customerMap[d.id] = d.data(); });
+    const sel = document.getElementById("filter_customer");
+    if (sel) sel.innerHTML = '<option value="">전체 고객</option>';
+    snap.docs.forEach(d => { 
+      customerMap[d.id] = d.data(); 
+      if (sel) {
+        const opt = document.createElement("option");
+        opt.value = d.id; opt.textContent = d.data().name || d.id;
+        sel.appendChild(opt);
+      }
+    });
   }
 
   // ── 상품 마스터 로드 ──
@@ -410,21 +415,47 @@
     });
   }
 
+  window.sortPIs = function(col) {
+    if (sortCol === col) sortDir = sortDir === "asc" ? "desc" : "asc";
+    else { sortCol = col; sortDir = "asc"; }
+    filterPIs();
+  };
+
   // ── 검색 & 필터 ──
   window.filterPIs = function() {
-    const q      = document.getElementById("search_input").value.toLowerCase();
-    const status = document.getElementById("status_filter").value;
-    const inco   = document.getElementById("incoterms_filter").value;
+    const dStart = document.getElementById("filter_date_start")?.value;
+    const dEnd   = document.getElementById("filter_date_end")?.value;
+    const cust   = document.getElementById("filter_customer")?.value;
+    const piNum  = document.getElementById("filter_pi_num")?.value.toLowerCase();
+    const stat   = document.getElementById("filter_status")?.value;
 
-    const filtered = allPIs.filter(p => {
-      const custName = (customerMap[p.customerId]?.name || "").toLowerCase();
-      const matchQ = !q || (p.piNumber||"").toLowerCase().includes(q)
-                       || custName.includes(q)
-                       || (p.destinationPort||"").toLowerCase().includes(q)
-                       || (p.paymentTerms||"").toLowerCase().includes(q);
-      const matchS = !status || p.status === status;
-      const matchI = !inco   || p.incoterms === inco;
-      return matchQ && matchS && matchI;
+    let filtered = allPIs.filter(p => {
+      if (dStart && p.piDate < dStart) return false;
+      if (dEnd && p.piDate > dEnd) return false;
+      if (cust && p.customerId !== cust) return false;
+      if (piNum && !(p.piNumber||"").toLowerCase().includes(piNum)) return false;
+      if (stat && p.status !== stat) return false;
+      return true;
+    });
+
+    // Sorting
+    filtered.sort((a, b) => {
+      let va = a[sortCol]; let vb = b[sortCol];
+      if (sortCol === "customerName") {
+        va = (customerMap[a.customerId]?.name || "").toLowerCase();
+        vb = (customerMap[b.customerId]?.name || "").toLowerCase();
+      } else if (sortCol === "piNumber" || sortCol === "piDate" || sortCol === "currentVersion" || sortCol === "status") {
+        va = (va || "").toLowerCase(); vb = (vb || "").toLowerCase();
+      }
+      if (va < vb) return sortDir === "asc" ? -1 : 1;
+      if (va > vb) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    // Update sort indicators
+    ["piNumber","piDate","customerName","currentVersion","status","totalUsd"].forEach(c => {
+      const el = document.getElementById("sort_"+c);
+      if (el) el.textContent = sortCol === c ? (sortDir==="asc" ? " ▲" : " ▼") : "";
     });
 
     renderTable(filtered);
@@ -435,33 +466,59 @@
   function renderTable(pis) {
     const tbody = document.getElementById("pi_tbody");
     if (!pis.length) {
-      tbody.innerHTML = `<tr><td colspan="10" class="empty">검색 결과가 없습니다</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">검색 결과가 없습니다</td></tr>`;
       return;
     }
     tbody.innerHTML = pis.map(p => {
       const badge = p.status || "draft";
       const cust  = customerMap[p.customerId]?.name || "-";
       const date  = p.piDate || "-";
-      const valid = p.validUntilDate || "-";
-      const expired = valid !== "-" && new Date(valid) < new Date() && p.status !== "confirmed";
+      
+      let itemsHtml = "불러오는 중...";
+      if (p.itemsSummary) {
+        itemsHtml = p.itemsSummary.join("<br>");
+      } else if (oldItemsCache[p.id]) {
+        itemsHtml = oldItemsCache[p.id];
+      } else {
+        fetchItemsForOldPI(p.id);
+      }
+
       return `<tr class="pi-row" onclick="openModal('${p.id}')">
         <td class="pi-num">${p.piNumber||"-"}</td>
         <td>${date}</td>
-        <td>${cust}</td>
-        <td>${p.incoterms||"-"}</td>
-        <td>${p.destinationPort||"-"}</td>
-        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.paymentTerms||"-"}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${cust}</td>
+        <td id="td_items_${p.id}" style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--text-muted);line-height:1.4;">${itemsHtml}</td>
         <td style="text-align:center">${p.currentVersion||"A"}</td>
-        <td><span class="badge ${badge}">${p.status||"draft"}</span></td>
+        <td style="text-align:center"><span class="badge status-${badge}">${p.status||"draft"}</span></td>
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-        <td style="color:${expired?"var(--red)":"var(--text-muted)"}">${valid}</td>
-        <td style="white-space:nowrap;">
+        <td style="white-space:nowrap;text-align:center">
           <button class="action-btn" style="border-color:#e74c3c;color:#e74c3c" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}', true)">📄 미리보기</button>
           <button class="action-btn edit-btn" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}')">✏ 수정</button>
           <button class="btn-del" onclick="event.stopPropagation(); window.deletePI('${p.id}')">✕ 삭제</button>
         </td>
       </tr>`;
     }).join("");
+  }
+
+  async function fetchItemsForOldPI(piId) {
+    try {
+      const revSnap = await getDocs(collection(doc(db,"companies",COMPANY_ID,"proforma_invoices",piId),"revisions"));
+      if (revSnap.empty) { oldItemsCache[piId] = "-"; }
+      else {
+        const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+        const liSnap = await getDocs(collection(latestRev.ref,"line_items"));
+        if (liSnap.empty) { oldItemsCache[piId] = "-"; }
+        else {
+          const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
+          const summary = items.slice(0,3).map(i => `${i.description||'-'} (${i.quantity||0}${i.unit||''})`).join("<br>");
+          oldItemsCache[piId] = summary + (items.length > 3 ? "<br>..." : "");
+        }
+      }
+    } catch(e) {
+      oldItemsCache[piId] = "오류 발생";
+    }
+    const td = document.getElementById("td_items_" + piId);
+    if (td) td.innerHTML = oldItemsCache[piId];
   }
 
   // ── 모달 열기 ──
@@ -919,6 +976,7 @@
       const ins     = parseFloat(document.getElementById("n_insurance").value)||0;
       const grand   = subtotal+hand+frt+ins;
       const validUntil = document.getElementById("n_valid_until").value;
+      const itemsSummary = processedItems.slice(0,3).map(i => `${i.description||'-'} (${i.quantity||0}${i.unit||''})`);
 
       if (editPIId) {
         // 기존 PI 수정 및 새 버전 발행
@@ -945,7 +1003,7 @@
             validUntilDate: validUntil, remarks: document.getElementById("n_remarks").value,
             handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
-            currentVersion: nextVer, updatedAt: serverTimestamp()
+            currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
           });
 
           // 2. 새 Revision 문서 등록
@@ -992,7 +1050,7 @@
             validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
             handlingCharges:hand,freightCharges:frt,insuranceCharges:ins,
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
-            currentVersion:"A",status:"draft",createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+            currentVersion:"A",status:"draft",itemsSummary,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
           tx.set(revRef,{version:"A",revisionNumber:1,status:"draft",
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
           processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });
