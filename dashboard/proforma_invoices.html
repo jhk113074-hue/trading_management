@@ -10,13 +10,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
-    :root{--bg:#0f1117;--surface:#1a1d2e;--surface2:#222638;--border:#2e3248;--accent:#6c63ff;--accent2:#00d4ff;--green:#00e676;--yellow:#ffd740;--red:#ff5252;--text:#e8eaf6;--text-muted:#8892b0;}
+    :root {
+      --bg: #f4f6fa;        /* 연한 블루그레이 배경색 */
+      --surface: #ffffff;   /* 카드, 헤더, 사이드바용 순백색 */
+      --surface2: #f8fafc;  /* 입력 폼, 호버 시 연한 회색 */
+      --border: #e2e8f0;    /* 그레이 경계선 */
+      --accent: #4f46e5;    /* 딥 인디고 포인트 */
+      --accent2: #0ea5e9;   /* 스카이 블루 세컨드 포인트 */
+      --green: #10b981;     /* 에메랄드 그린 */
+      --yellow: #f59e0b;    /* 골드 옐로우 */
+      --red: #ef4444;       /* 선명한 레드 */
+      --text: #0f172a;      /* 딥 네이비 텍스트 */
+      --text-muted: #64748b;/* 슬레이트 그레이 보조 텍스트 */
+    }
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
     .layout{display:flex;min-height:100vh;}
     .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;flex-shrink:0;position:fixed;top:0;bottom:0;}
-    .logo{padding:0 24px 24px;font-size:18px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);}
-    .logo span{color:var(--text-muted);font-size:11px;display:block;margin-top:2px;}
+    .logo { padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: center; display: flex; justify-content: center; align-items: center; min-height: 80px; cursor: pointer; }
+    .logo img { max-width: 100%; max-height: 52px; object-fit: contain; display: block; }
     .nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;font-size:13px;color:var(--text-muted);cursor:pointer;transition:all .2s;}
     .nav-item:hover{background:var(--surface2);color:var(--text);}
     .nav-item.active{background:var(--surface2);color:var(--text);border-left:3px solid var(--accent);padding-left:21px;}
@@ -57,7 +69,7 @@
     .empty{text-align:center;padding:60px;color:var(--text-muted);}
 
     /* ── Modal Overlay ── */
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15, 23, 42, 0.4);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
     .modal-overlay.open{display:flex;}
     .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:900px;max-width:95vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .25s ease;}
     @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -73,7 +85,7 @@
     .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
     .detail-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;}
     .detail-section h4{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;font-weight:700;}
-    .detail-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+    .detail-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(15, 23, 42, 0.05);}
     .detail-row:last-child{border-bottom:none;}
     .detail-label{color:var(--text-muted);}
     .detail-value{font-weight:500;text-align:right;max-width:60%;}
@@ -82,7 +94,7 @@
     /* Line Items in modal */
     .li-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
     .li-table th{background:var(--bg);padding:8px 10px;text-align:left;color:var(--text-muted);font-size:11px;border-bottom:1px solid var(--border);}
-    .li-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);}
+    .li-table td{padding:9px 10px;border-bottom:1px solid rgba(15, 23, 42, 0.05);}
     .li-table tr:last-child td{border-bottom:none;}
     .li-table .num{text-align:right;}
 
@@ -106,7 +118,7 @@
     .fgroup select option{background:var(--surface2);}
     .li-form-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
     .li-form-table th{padding:8px 6px;color:var(--text-muted);font-size:11px;font-weight:600;border-bottom:1px solid var(--border);text-align:left;}
-    .li-form-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);}
+    .li-form-table td{padding:6px 4px;border-bottom:1px solid rgba(15, 23, 42, 0.05);}
     .li-form-table input,.li-form-table select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 7px;color:var(--text);font-size:12px;width:100%;outline:none;}
     .li-form-table input:focus,.li-form-table select:focus{border-color:var(--accent);}
     .calc-cell{color:var(--green);font-weight:600;text-align:right;padding:6px 8px;}
@@ -118,7 +130,7 @@
 <body>
 <div class="layout">
   <aside class="sidebar">
-    <div class="logo">YSACC TMS <span>Trade Management System</span></div>
+    <div class="logo" onclick="location.href='index.html'"><img src="logo.png" alt="YSACC Logo"></div>
     <nav style="padding-top:16px;">
       <div class="nav-item" onclick="location.href='index.html'">📊 Dashboard</div>
       <div class="nav-item active">📋 Proforma Invoice</div>
