@@ -1168,14 +1168,24 @@
     img.crossOrigin = "Anonymous";
     
     img.onload = function() {
-      // 비율 유지하며 상단에 삽입
+      // 이미지 크기 조정 (가로 최대 PAGE_W - M*2, 세로 최대 30mm 제한)
+      const maxWidth = PAGE_W - M*2;
       const imgRatio = img.height / img.width;
-      // 전체 폭을 다 쓰거나, 양옆 여백을 남기거나. 
-      // 레터헤드이므로 여백 없이 폭 210을 다 씁니다.
-      const lhHeight = PAGE_W * imgRatio;
       
-      doc.addImage(img, 'PNG', 0, 0, PAGE_W, lhHeight);
-      drawPdfContent(lhHeight + 10);
+      let drawWidth = maxWidth;
+      let drawHeight = drawWidth * imgRatio;
+      
+      // 높이가 너무 크면 높이 기준으로 다시 축소
+      if (drawHeight > 35) {
+          drawHeight = 35;
+          drawWidth = drawHeight / imgRatio;
+      }
+      
+      // 가운데 정렬을 위해 X 좌표 계산
+      const xPos = (PAGE_W - drawWidth) / 2;
+      
+      doc.addImage(img, 'PNG', xPos, 10, drawWidth, drawHeight);
+      drawPdfContent(drawHeight + 20);
     };
     img.onerror = function() {
       // 이미지가 없을 경우 대체 텍스트
