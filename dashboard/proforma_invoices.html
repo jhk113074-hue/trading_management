@@ -493,7 +493,7 @@
               <td>${item.description||"-"}</td>
               <td class="num">${item.quantity||0}</td>
               <td>${item.unit||"-"}</td>
-              <td class="num">$${(item.salePriceUsd||0).toFixed(4)}</td>
+              <td class="num">$${(item.salePriceUsd||0).toFixed(2)}</td>
               <td class="num" style="color:var(--green)">$${(item.lineTotalUsd||0).toFixed(2)}</td>
               <td>${item.remarks||"-"}</td>
             </tr>`).join("");
@@ -791,7 +791,7 @@
     } else {
       sp = ((item.cost || 0) / r) / mDiv;
     }
-    item._sale = sp; item._total = sp*item.qty;
+    item._sale = +(sp.toFixed(2)); item._total = +(item._sale * item.qty).toFixed(2);
   }
   function nRenderItems() {
     const tbody = document.getElementById("n_li_body");
@@ -817,7 +817,7 @@
         <td><input type="number" value="${item.rate}" min="0.01" step="0.01" style="width:85px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'rate',this.value)"></td>
         <td><input type="number" value="${item.costUsd ? (item.costUsd).toFixed(4) : ''}" min="0" step="0.0001" style="width:95px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'costUsd',this.value)"></td>
         <td><input type="number" value="${item.margin}" min="0" max="99" step="0.1" style="width:60px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'margin',this.value)"></td>
-        <td class="calc-cell">${(item._sale||0).toFixed(4)}</td>
+        <td class="calc-cell">${(item._sale||0).toFixed(2)}</td>
         <td class="calc-cell">${(item._total||0).toFixed(2)}</td>
         <td><input type="text" value="${item.remarks || ''}" placeholder="비고" style="width:110px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text)" onchange="nUpdateItem(${item.id},'remarks',this.value)"></td>
         <td><button style="background:rgba(255,82,82,.15);color:#ff5252;border:none;border-radius:5px;padding:3px 9px;cursor:pointer;font-size:11px" onclick="nDeleteItem(${item.id})">✕</button></td>
@@ -906,7 +906,7 @@
         const itemRate = item.rate || rate;
         return {lineNumber:i+1,description:item.desc,costKrw:item.cost,quantity:item.qty,unit:item.unit,
                 exchangeRate:itemRate,profitMargin:item.margin,
-                costUsd:+(item.costUsd||0).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(4),lineTotalUsd:+(item._total||0).toFixed(4),
+                costUsd:+(item.costUsd||0).toFixed(4),salePriceUsd:+(item._sale||0).toFixed(2),lineTotalUsd:+(item._total||0).toFixed(2),
                 remarks:item.remarks||""};
       });
       const hand    = parseFloat(document.getElementById("n_handling").value)||0;
@@ -1027,7 +1027,7 @@
       return {
         no: i + 1, desc: item.desc || "-", qty: item.qty, unit: item.unit,
         costKrw: item.cost, margin: item.margin,
-        saleUsd: +sp.toFixed(4), totalUsd: +tot.toFixed(2)
+        saleUsd: +(sp.toFixed(2)), totalUsd: +(+(sp.toFixed(2)) * item.qty).toFixed(2)
       };
     });
     const subtotal  = items.reduce((s, i) => s + i.totalUsd, 0);
@@ -1273,7 +1273,7 @@
           i.spec || "-",
           i.qty, 
           i.unit, 
-          "$" + Number(i.saleUsd||0).toFixed(4), 
+          "$" + Number(i.saleUsd||0).toFixed(2), 
           "$" + (Number(i.saleUsd||0)*Number(i.qty||0)).toFixed(2)
         ]),
         margin: { left: M, right: M }
