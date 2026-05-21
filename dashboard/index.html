@@ -131,84 +131,144 @@
 
   <style>
     :root {
-      --bg: #ffffff;        /* 순백색 배경색 */
-      --surface: #ffffff;   /* 카드, 헤더, 사이드바용 순백색 */
-      --surface2: #f8fafc;  /* 입력 폼, 호버 시 연한 회색 */
-      --border: #e2e8f0;    /* 선명하고 부드러운 그레이 경계선 */
-      --accent: #4f46e5;    /* 딥 인디고 포인트 */
-      --accent2: #0ea5e9;   /* 스카이 블루 세컨드 포인트 */
-      --green: #10b981;     /* 안전/Active 상태용 에메랄드 그린 */
-      --yellow: #f59e0b;    /* 경고/등급용 골드 옐로우 */
-      --red: #ef4444;       /* 삭제/Blocked 상태용 선명한 레드 */
-      --text: #0f172a;      /* 시인성이 우수한 딥 네이비 텍스트 */
-      --text-muted: #64748b;/* 슬레이트 그레이 보조 텍스트 */
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --border: #e8ecf0;
+      --accent: #2563eb;
+      --accent2: #0891b2;
+      --green: #059669;
+      --yellow: #d97706;
+      --red: #dc2626;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --nav-active-bg: #eff6ff;
+      --nav-active-border: #2563eb;
+      --nav-active-text: #1d4ed8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.08);
     }
     * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); }
+    body { font-family:'Inter',sans-serif; background:#f9fafb; color:var(--text); font-size:14px; }
 
     .layout { display:flex; min-height:100vh; }
-    .sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); padding:24px 0; flex-shrink:0; position:fixed; top:0; bottom:0; }
-    .logo { padding: 16px 20px; border-bottom: 1px solid var(--border); text-align: center; display: flex; justify-content: center; align-items: center; min-height: 80px; cursor: pointer; }
-    .logo img { max-width: 100%; max-height: 52px; object-fit: contain; display: block; }
-    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 24px; font-size:13px; color:var(--text-muted); cursor:pointer; transition:all .2s; }
-    .nav-item:hover { background:var(--surface2); color:var(--text); }
-    .nav-item.active { background:var(--surface2); color:var(--text); border-left:3px solid var(--accent); padding-left:21px; }
 
-    .main { margin-left:220px; padding:32px; flex:1; }
+    /* ── Sidebar ── */
+    .sidebar {
+      width:240px; background:#fff; border-right:1px solid var(--border);
+      flex-shrink:0; position:fixed; top:0; bottom:0;
+      display:flex; flex-direction:column;
+      box-shadow:var(--shadow-sm);
+    }
+    .logo {
+      padding:20px 16px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex; justify-content:center; align-items:center;
+      min-height:80px; cursor:pointer;
+      background:#fff;
+    }
+    .logo img { max-width:100%; max-height:52px; object-fit:contain; }
+    .nav-section-label {
+      padding:20px 20px 6px;
+      font-size:10px; font-weight:700; color:#9ca3af;
+      letter-spacing:.08em; text-transform:uppercase;
+    }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 20px; font-size:13px; font-weight:500;
+      color:var(--text-muted); cursor:pointer;
+      transition:all .15s; border-radius:0; margin:1px 8px;
+      border-radius:6px;
+    }
+    .nav-item:hover { background:#f3f4f6; color:var(--text); }
+    .nav-item.active {
+      background:var(--nav-active-bg); color:var(--nav-active-text);
+      font-weight:600;
+    }
+    .nav-icon {
+      width:18px; height:18px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-style:normal; font-size:14px;
+    }
+
+    /* ── Main ── */
+    .main { margin-left:240px; padding:32px 36px; flex:1; background:#f9fafb; }
     .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
-    .page-title { font-size:24px; font-weight:700; }
-    .page-sub { color:var(--text-muted); font-size:13px; margin-top:4px; }
-    .btn-primary { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; }
-    .btn-primary:hover { opacity:.85; }
+    .page-title { font-size:22px; font-weight:700; color:var(--text); letter-spacing:-.02em; }
+    .page-sub { color:var(--text-muted); font-size:13px; margin-top:3px; }
+    .btn-primary {
+      background:var(--accent); color:#fff; border:none; border-radius:7px;
+      padding:9px 18px; font-size:13px; font-weight:600; cursor:pointer;
+      text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+      transition:background .15s; letter-spacing:-.01em;
+    }
+    .btn-primary:hover { background:#1d4ed8; }
 
-    /* KPI */
-    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
-    .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
+    /* ── KPI ── */
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+    .kpi-card {
+      background:#fff; border:1px solid var(--border); border-radius:10px;
+      padding:18px 20px; position:relative; overflow:hidden;
+      box-shadow:var(--shadow-sm);
+    }
     .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
-    .kpi-card.blue::before { background:var(--accent); }
-    .kpi-card.cyan::before { background:var(--accent2); }
+    .kpi-card.blue::before  { background:var(--accent); }
+    .kpi-card.cyan::before  { background:var(--accent2); }
     .kpi-card.green::before { background:var(--green); }
-    .kpi-card.yellow::before { background:var(--yellow); }
-    .kpi-label { font-size:12px; color:var(--text-muted); margin-bottom:10px; font-weight:500; }
-    .kpi-value { font-size:28px; font-weight:700; line-height:1; }
-    .kpi-value.blue { color:var(--accent); }
-    .kpi-value.cyan { color:var(--accent2); }
-    .kpi-value.green { color:var(--green); }
+    .kpi-card.yellow::before{ background:var(--yellow); }
+    .kpi-label { font-size:12px; color:var(--text-muted); margin-bottom:8px; font-weight:500; }
+    .kpi-value { font-size:26px; font-weight:700; line-height:1; letter-spacing:-.02em; }
+    .kpi-value.blue   { color:var(--accent); }
+    .kpi-value.cyan   { color:var(--accent2); }
+    .kpi-value.green  { color:var(--green); }
     .kpi-value.yellow { color:var(--yellow); }
-    .kpi-sub { font-size:11px; color:var(--text-muted); margin-top:8px; }
+    .kpi-sub { font-size:11px; color:var(--text-muted); margin-top:7px; }
 
-    /* Chart */
-    .chart-row { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:28px; }
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
-    .card-title { font-size:14px; font-weight:600; margin-bottom:20px; }
-    .live-badge { font-size:10px; color:var(--green); background:rgba(0,230,118,.12); border-radius:4px; padding:2px 8px; margin-left:8px; }
+    /* ── Chart ── */
+    .chart-row { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:24px; }
+    .card {
+      background:#fff; border:1px solid var(--border); border-radius:10px;
+      padding:20px; box-shadow:var(--shadow-sm);
+    }
+    .card-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:18px; }
+    .live-badge {
+      font-size:10px; color:var(--green);
+      background:rgba(5,150,105,.1); border-radius:4px;
+      padding:2px 7px; margin-left:8px; font-weight:600;
+    }
 
-    .bar-chart { display:flex; align-items:flex-end; gap:8px; height:140px; }
-    .bar-wrap { display:flex; flex-direction:column; align-items:center; flex:1; gap:6px; height:100%; }
-    .bar { width:100%; border-radius:4px 4px 0 0; min-height:4px; transition:height .5s ease; }
+    .bar-chart { display:flex; align-items:flex-end; gap:8px; height:130px; }
+    .bar-wrap { display:flex; flex-direction:column; align-items:center; flex:1; gap:5px; height:100%; }
+    .bar { width:100%; border-radius:3px 3px 0 0; min-height:4px; transition:height .5s ease; }
     .bar:hover { opacity:.8; }
-    .bar.confirmed { background:linear-gradient(to top, var(--accent), #818cf8); }
-    .bar-label { font-size:10px; color:var(--text-muted); }
+    .bar.confirmed { background:linear-gradient(to top,#2563eb,#60a5fa); }
+    .bar-label { font-size:10px; color:var(--text-muted); font-weight:500; }
 
-    /* Status summary */
+    /* ── Status ── */
     .status-list { display:flex; flex-direction:column; gap:10px; }
     .status-item { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
-    .status-dot { width:8px; height:8px; border-radius:50%; margin-right:8px; display:inline-block; }
+    .status-dot { width:7px; height:7px; border-radius:50%; margin-right:8px; display:inline-block; }
 
-    /* Table */
-    .card-table { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    /* ── Table ── */
+    .card-table { background:#fff; border:1px solid var(--border); border-radius:10px; padding:20px; box-shadow:var(--shadow-sm); }
     .table-wrap { overflow-x:auto; margin-top:4px; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
-    th { text-align:left; padding:10px 12px; color:var(--text-muted); font-size:11px; font-weight:500; border-bottom:1px solid var(--border); white-space:nowrap; }
-    td { padding:12px; border-bottom:1px solid var(--border); }
+    th {
+      text-align:left; padding:10px 12px;
+      color:var(--text-muted); font-size:11px; font-weight:600;
+      border-bottom:1px solid var(--border); white-space:nowrap;
+      text-transform:uppercase; letter-spacing:.04em;
+      background:#fafafa;
+    }
+    td { padding:12px; border-bottom:1px solid #f3f4f6; color:var(--text); }
     tr:last-child td { border-bottom:none; }
-    tr:hover td { background:var(--surface2); }
-    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:600; }
-    .badge.confirmed { background:rgba(0,230,118,.15); color:var(--green); }
-    .badge.sent      { background:rgba(0,212,255,.15); color:var(--accent2); }
-    .badge.draft     { background:rgba(108,99,255,.15); color:var(--accent); }
-    .badge.expired   { background:rgba(255,82,82,.15); color:var(--red); }
-    .amount { text-align:right; font-weight:600; }
+    tr:hover td { background:#f9fafb; }
+    .badge { display:inline-block; padding:3px 9px; border-radius:5px; font-size:11px; font-weight:600; }
+    .badge.confirmed { background:#d1fae5; color:#065f46; }
+    .badge.sent      { background:#e0f2fe; color:#0369a1; }
+    .badge.draft     { background:#ede9fe; color:#5b21b6; }
+    .badge.expired   { background:#fee2e2; color:#991b1b; }
+    .amount { text-align:right; font-weight:600; font-variant-numeric:tabular-nums; }
   </style>
 </head>
 <body>
@@ -217,14 +277,35 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo" onclick="location.href='index.html'"><img src="logo.png" alt="YSACC Logo"></div>
-    <nav style="padding-top:16px;">
-      <div class="nav-item active" onclick="location.href='index.html'">📊 Dashboard</div>
-      <div class="nav-item" onclick="location.href='proforma_invoices.html'">📋 Proforma Invoice</div>
-      <div class="nav-item" onclick="location.href='products.html'">📦 Products DB</div>
-      <div class="nav-item" onclick="location.href='customers.html'">👥 Customers</div>
-      <div class="nav-item" onclick="location.href='suppliers.html'">🏭 Suppliers</div>
-      <div class="nav-item">🤝 Negotiations</div>
-      <div class="nav-item">📈 Reports</div>
+    <div class="nav-section-label">메인 메뉴</div>
+    <nav>
+      <div class="nav-item active" onclick="location.href='index.html'">
+        <span class="nav-icon">⊞</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="location.href='proforma_invoices.html'">
+        <span class="nav-icon">≡</span> Proforma Invoice
+      </div>
+    </nav>
+    <div class="nav-section-label">DB 관리</div>
+    <nav>
+      <div class="nav-item" onclick="location.href='products.html'">
+        <span class="nav-icon">◫</span> 상품 DB
+      </div>
+      <div class="nav-item" onclick="location.href='customers.html'">
+        <span class="nav-icon">◎</span> 고객사 관리
+      </div>
+      <div class="nav-item" onclick="location.href='suppliers.html'">
+        <span class="nav-icon">◉</span> 공급업체 관리
+      </div>
+    </nav>
+    <div class="nav-section-label">업무</div>
+    <nav>
+      <div class="nav-item" style="opacity:.45;cursor:not-allowed;">
+        <span class="nav-icon">⇆</span> Negotiations
+      </div>
+      <div class="nav-item" style="opacity:.45;cursor:not-allowed;">
+        <span class="nav-icon">↑</span> Reports
+      </div>
     </nav>
   </aside>
 
