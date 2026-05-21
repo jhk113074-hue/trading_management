@@ -1329,6 +1329,10 @@
         theme: 'grid',
         headStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
         styles: { fontSize: 8, textColor: [33, 33, 33] },
+        columnStyles: {
+          5: { halign: 'right' },
+          6: { halign: 'right' }
+        },
         head: [["#","Description","Spec","Qty","Unit","Unit Price","Total (USD)"]],
         body: d.items.map(i => [
           i.no, 
