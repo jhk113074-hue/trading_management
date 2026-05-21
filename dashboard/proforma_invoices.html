@@ -999,11 +999,15 @@
         const existing = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
         if (existing) continue; // 이름이 동일한 상품이 이미 존재하면 패스
 
-        // 신규 상품코드 생성 및 DB 등록
-        const dt = new Date();
-        const yymmdd = String(dt.getFullYear()).slice(2) + String(dt.getMonth()+1).padStart(2,'0') + String(dt.getDate()).padStart(2,'0');
-        const rand = Math.floor(Math.random()*1000).toString().padStart(3,'0');
-        const newCode = `PROD-${yymmdd}-${rand}`;
+        // 신규 상품코드 생성 (P0001 ~ P9999 포맷) 및 DB 등록
+        let maxNum = 0;
+        Object.keys(productMap).forEach(code => {
+          if (/^P\d{4}$/.test(code)) {
+            const num = parseInt(code.substring(1), 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+        const newCode = `P${String(maxNum + 1).padStart(4, '0')}`;
         
         const baseCurr = item.costUsd > 0 && item.costKrw === 0 ? "USD" : "KRW";
         const purchasePrice = baseCurr === "USD" ? item.costUsd : item.costKrw;

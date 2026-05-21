@@ -203,6 +203,16 @@
       document.getElementById("prod_form").reset();
       document.getElementById("p_code").readOnly = false;
       
+      // 자동 상품 코드 발번 (P0001 포맷)
+      let maxNum = 0;
+      allProducts.forEach(p => {
+        if (/^P\d{4}$/.test(p.id)) {
+          const num = parseInt(p.id.substring(1), 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      document.getElementById("p_code").value = `P${String(maxNum + 1).padStart(4, '0')}`;
+      
       // 가격 유효 시작일 오늘 자동 세팅
       document.getElementById("p_valid_from").value = new Date().toISOString().split("T")[0];
 
