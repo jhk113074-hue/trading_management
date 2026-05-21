@@ -1040,54 +1040,110 @@
     };
   }
 
-  // ════════════════════════════════════════
-  // 📊 Excel 저장 (SheetJS)
-  // ════════════════════════════════════════
+  // ================================================
+  // Excel (SheetJS) - YSACC Proforma Invoice Format
+  // ================================================
   window.nExportExcel = function() {
     if (!window.XLSX) { alert("Excel 라이브러리 로딩 중..."); return; }
-    const d = nGetFormData();
+    var d = nGetFormData();
     if (!d.items.length) { alert("상품을 1개 이상 추가해 주세요."); return; }
+    var custId   = document.getElementById("n_customer").value;
+    var custInfo = customerMap[custId] || {};
+    var custAddr = custInfo.address || custInfo.addressEn || "";
+    var aoa = [];
+    // Row 1-7: Company header
+    aoa.push(["YSACC CO.,LTD","","","","Date:",d.piDate,"",""]);
+    aoa.push(["302 Ho,180, SEONGBONG-RO, SEOWON-GU,","","","","Your Ref:","",""]);
+    aoa.push(["CHEONGJU-SI, CHUNGCHEONGBUK-DO , 28616, KOREA","","","","No.:",d.piNum||"",""]);
+    aoa.push(["TEL : +82-70-4141-2927   FAX : +82-303-3444-1130","","","","","","",""]);
+    aoa.push(["TEL : +82-10-7361-1130","","","","","","",""]);
+    aoa.push(["E-mail : jhkim1130@ysacc.co.kr","","","","","","",""]);
+    aoa.push(["Contact Point : Ju Han, Kim","","","","","","",""]);
+    // Row 8: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 9: Title
+    aoa.push(["","","","Proforma Invoice","","","",""]);
+    // Row 10: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 11: Customer
+    aoa.push(["Messers : "+d.customer,"","","","","","",""]);
+    // Row 12: Customer address
+    aoa.push(["    "+custAddr,"","","","","","",""]);
+    // Row 13: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 14: Greeting
+    aoa.push(["Gentlemen, We are very pleased to offer you as Follows;","","","","","","",""]);
+    // Row 15: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 16-19: Trade conditions
+    aoa.push(["DEPARTURE PORT :","Busan, Korea","","","INCOTERMS :",d.incoterms,"",""]);
+    aoa.push(["PACKAGING SPEC. :","Export Standard Packaging.","","","DESTINATION :",d.destination,"",""]);
+    aoa.push(["VALIDITY :","4 weeks from the offered date","","","ORIGIN :","KOREA","",""]);
+    aoa.push(["Payment Term :",d.payment,"","","DELIVERY TERM","10 weeks after 50% T/T acceptance","",""]);
+    // Row 20: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 21-25: Bank Info
+    aoa.push(["Bank Info. :","1. Bank Name : INDUSTRIAL BANK OF KOREA, SEOUL,KOREA","","","","","",""]);
+    aoa.push(["","2. Bank Account No. : 143-129260-56-00012","","","","","",""]);
+    aoa.push(["","3. Bank Address : 50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA","","","","","",""]);
+    aoa.push(["","4. Beneficiary : YSACC Co.,LTD","","","","","",""]);
+    aoa.push(["","5. Swift Code : IBKOKRSEXXX","","","","","",""]);
+    // Row 26: blank
+    aoa.push(["","","","","","","",""]);
+    // Row 27: Product table header
+    aoa.push(["","PRODUCT","SPEC","PRICE / KG/mtr/qty","Qty","TOTAL AMOUNT","Remark",""]);
+    // Product rows
+    var grandTotal = 0;
+    var rowNum = 1;
+    d.items.forEach(function(item) {
+      var sp = item.saleUsd || 0;
+      var qty = item.qty || 0;
+      var lineTotal = Math.round(sp * qty * 100) / 100;
+      grandTotal += lineTotal;
+      aoa.push([rowNum++, item.desc||"-", item.spec||"", sp, qty, lineTotal, item.remarks||"", ""]);
+    });
+    // Extra charges row
+    var extraCharges = (d.handling||0) + (d.freight||0) + (d.insurance||0);
+    if (extraCharges > 0) {
+      grandTotal += extraCharges;
+      aoa.push(["","CIF Charges","","",1,extraCharges,"Ocean Freight+THC+DOC.FEE",""]);
+    }
+    // blank
+    aoa.push(["","","","","","","",""]);
+    // Grand total
+    aoa.push(["","","","","GRAND TOTAL","US$ "+grandTotal.toFixed(2),"",""]);
+    // blank x2
+    aoa.push(["","","","","","","",""]);
+    aoa.push(["","","","","","","",""]);
+    // Notes
+    aoa.push(["1. This is basic price. This can be changed as following your added requests.","","","","","","",""]);
+    aoa.push(["2. Shipping cost can be changed every month as following the condition of shipping company.","","","","","","",""]);
+    // blank x2
+    aoa.push(["","","","","","","",""]);
+    aoa.push(["","","","","","","",""]);
+    // Signature block
+    aoa.push(["","","","","","","YS ACC",""]);
+    aoa.push(["","","","","","","",""]);
+    aoa.push(["","","","","","","",""]);
+    aoa.push(["Accepted by :","","","","","","Managing Director  JU HAN, KIM",""]);
+    aoa.push(["_____________________","","","","","","___________________________",""]);
 
-    const wb = XLSX.utils.book_new();
-
-    // ── 시트 1: PI 헤더 정보 ──
-    const headerData = [
-      ["YSACC PROFORMA INVOICE"],
-      [],
-      ["PI Number",      d.piNum],
-      ["Date",           d.piDate],
-      ["Valid Until",    d.validUntil],
-      ["Customer",       d.customer],
-      ["Contact",        d.contact],
-      ["Email",          d.email],
-      [],
-      ["Incoterms",      d.incoterms],
-      ["Destination",    d.destination],
-      ["Payment Terms",  d.payment],
-      ["Shipping",       d.shipping],
-      ["Exchange Rate",  `₩${d.rate.toLocaleString()}/USD`],
-      ["Remarks",        d.remarks],
+    // Build sheet
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"] = [{wch:22},{wch:30},{wch:20},{wch:18},{wch:10},{wch:16},{wch:36},{wch:5}];
+    ws["!rows"] = [];
+    ws["!rows"][8] = {hpt:28};
+    ws["!merges"] = [
+      {s:{r:0,c:0},e:{r:0,c:3}},{s:{r:1,c:0},e:{r:1,c:3}},{s:{r:2,c:0},e:{r:2,c:3}},
+      {s:{r:3,c:0},e:{r:3,c:3}},{s:{r:4,c:0},e:{r:4,c:3}},{s:{r:5,c:0},e:{r:5,c:3}},{s:{r:6,c:0},e:{r:6,c:3}},
+      {s:{r:0,c:5},e:{r:0,c:7}},{s:{r:1,c:5},e:{r:1,c:7}},{s:{r:2,c:5},e:{r:2,c:7}},
+      {s:{r:8,c:0},e:{r:8,c:7}},{s:{r:10,c:0},e:{r:10,c:7}},{s:{r:11,c:0},e:{r:11,c:7}},{s:{r:13,c:0},e:{r:13,c:7}},
+      {s:{r:15,c:1},e:{r:15,c:3}},{s:{r:16,c:1},e:{r:16,c:3}},{s:{r:17,c:1},e:{r:17,c:3}},{s:{r:18,c:1},e:{r:18,c:3}},
+      {s:{r:15,c:5},e:{r:15,c:7}},{s:{r:16,c:5},e:{r:16,c:7}},{s:{r:17,c:5},e:{r:17,c:7}},{s:{r:18,c:5},e:{r:18,c:7}},
+      {s:{r:20,c:1},e:{r:20,c:7}},{s:{r:21,c:1},e:{r:21,c:7}},{s:{r:22,c:1},e:{r:22,c:7}},{s:{r:23,c:1},e:{r:23,c:7}},{s:{r:24,c:1},e:{r:24,c:7}}
     ];
-    const wsHeader = XLSX.utils.aoa_to_sheet(headerData);
-    wsHeader["!cols"] = [{wch:18},{wch:55}];
-    XLSX.utils.book_append_sheet(wb, wsHeader, "PI Info");
-
-    // ── 시트 2: Line Items ──
-    const liHeader = [["#","Description","Qty","Unit","Cost (KRW)","Margin %","Sale Price (USD)","Total (USD)"]];
-    const liRows   = d.items.map(i => [i.no, i.desc, i.qty, i.unit, i.costKrw, i.margin, i.saleUsd, i.totalUsd]);
-    const liFooter = [
-      [],
-      ["","","","","","","Subtotal (USD)",    +d.subtotal.toFixed(2)],
-      ["","","","","","","Handling (USD)",    d.handling],
-      ["","","","","","","Freight (USD)",     d.freight],
-      ["","","","","","","Insurance (USD)",   d.insurance],
-      ["","","","","","","GRAND TOTAL (USD)", +d.grand.toFixed(2)],
-    ];
-    const wsLI = XLSX.utils.aoa_to_sheet([...liHeader, ...liRows, ...liFooter]);
-    wsLI["!cols"] = [{wch:4},{wch:40},{wch:8},{wch:6},{wch:14},{wch:10},{wch:17},{wch:14}];
-    XLSX.utils.book_append_sheet(wb, wsLI, "Line Items");
-
-    const fileName = `${d.piNum.replace(/[^a-zA-Z0-9-]/g,"_")}_${d.piDate}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, "Proforma Invoice");
+    var fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
     XLSX.writeFile(wb, fileName);
   };
 
