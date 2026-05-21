@@ -1251,8 +1251,7 @@
         ["Departure",   d.departurePort],
         ["Packaging",   d.packagingSpec.length > 25 ? d.packagingSpec.substring(0,25)+"..." : d.packagingSpec],
         ["Validity",    d.validityDesc.length > 25 ? d.validityDesc.substring(0,25)+"..." : d.validityDesc],
-        ["Incoterms",   d.incoterms],
-        ["Destination", d.destination],
+        ["Incoterms",   d.incoterms + " " + d.destination],
         ["Payment",     d.payment.length > 25 ? d.payment.substring(0,25)+"..." : d.payment],
         ["Shipping",    d.shipping],
       ];
