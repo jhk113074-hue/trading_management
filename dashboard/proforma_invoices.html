@@ -1644,11 +1644,11 @@
       if (d.freightDetails && d.freightDetails.length > 0) {
         frtDetailsH = d.freightDetails.length * 5;
       }
-      const boxH = 35 + frtDetailsH;
+      const sumBoxH = 35 + frtDetailsH;
 
       doc.setFillColor(250, 250, 250);
       doc.setDrawColor(200, 200, 200);
-      doc.rect(sumX, y, sumW, boxH, "DF");
+      doc.rect(sumX, y, sumW, sumBoxH, "DF");
 
       doc.setFontSize(9); doc.setTextColor(80,80,80);
       let curY = y + 8;
