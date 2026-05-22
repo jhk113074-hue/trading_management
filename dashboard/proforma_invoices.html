@@ -386,9 +386,15 @@
     <h3 style="margin: 0; font-size:14px; display:flex; align-items:center; gap:8px;">🚛 컨테이너 적재 시뮬레이터 (드래그 이동)</h3>
     <button class="btn-del" style="padding:4px 8px; font-size:12px;" onclick="closePackerModal()">✕ 닫기</button>
   </div>
-  <div style="flex: 1; position: relative;">
+  <div id="packer_iframe_container" style="flex: 1; position: relative;">
     <iframe id="packer_iframe" style="width: 100%; height: 100%; border: none;" src="about:blank"></iframe>
   </div>
+  
+  <!-- Resize Handles -->
+  <div class="resize-handle resize-right" style="position:absolute; right:0; top:0; bottom:0; width:8px; cursor:ew-resize;"></div>
+  <div class="resize-handle resize-left" style="position:absolute; left:0; top:0; bottom:0; width:8px; cursor:ew-resize;"></div>
+  <div class="resize-handle resize-bottom" style="position:absolute; left:0; right:0; bottom:0; height:8px; cursor:ns-resize;"></div>
+  <div class="resize-handle resize-br" style="position:absolute; right:0; bottom:0; width:15px; height:15px; cursor:nwse-resize;"></div>
 </div>
 
 <script type="module">
@@ -710,9 +716,39 @@
     let dragOffsetY = 0;
 
     packerHeader.addEventListener("mousedown", (e) => {
+      if (e.target.closest('button')) return; // 버튼 클릭 시 드래그 무시
       isDragging = true;
       dragOffsetX = e.clientX - packerWin.getBoundingClientRect().left;
       dragOffsetY = e.clientY - packerWin.getBoundingClientRect().top;
+      showIframeShield();
+    });
+
+    // ── 크기 조절 (Resize) 로직 ──
+    let isResizing = false;
+    let resizeDir = "";
+    let startW = 0, startH = 0, startX = 0, startY = 0, startLeft = 0;
+
+    packerWin.querySelectorAll('.resize-handle').forEach(handle => {
+      handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        if (handle.classList.contains('resize-right')) resizeDir = 'r';
+        else if (handle.classList.contains('resize-left')) resizeDir = 'l';
+        else if (handle.classList.contains('resize-bottom')) resizeDir = 'b';
+        else if (handle.classList.contains('resize-br')) resizeDir = 'br';
+        
+        const rect = packerWin.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+        startLeft = rect.left;
+        startX = e.clientX;
+        startY = e.clientY;
+        showIframeShield();
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    function showIframeShield() {
       let shield = document.getElementById("iframe_shield");
       if(!shield) {
         shield = document.createElement("div");
@@ -720,21 +756,38 @@
         shield.style.position = "absolute";
         shield.style.top = "0"; shield.style.left = "0"; shield.style.right = "0"; shield.style.bottom = "0";
         shield.style.zIndex = "10001";
-        packerWin.appendChild(shield);
+        document.getElementById("packer_iframe_container").appendChild(shield);
       } else {
         shield.style.display = "block";
       }
-    });
+    }
 
     document.addEventListener("mousemove", (e) => {
-      if (!isDragging) return;
-      packerWin.style.left = (e.clientX - dragOffsetX) + "px";
-      packerWin.style.top = (e.clientY - dragOffsetY) + "px";
-      packerWin.style.margin = "0";
+      if (isDragging) {
+        packerWin.style.left = (e.clientX - dragOffsetX) + "px";
+        packerWin.style.top = (e.clientY - dragOffsetY) + "px";
+        packerWin.style.margin = "0";
+      } else if (isResizing) {
+        if (resizeDir === 'r' || resizeDir === 'br') {
+          packerWin.style.width = (startW + (e.clientX - startX)) + "px";
+        }
+        if (resizeDir === 'b' || resizeDir === 'br') {
+          packerWin.style.height = (startH + (e.clientY - startY)) + "px";
+        }
+        if (resizeDir === 'l') {
+          const newWidth = startW - (e.clientX - startX);
+          if (newWidth > 300) { // 최소 너비
+            packerWin.style.width = newWidth + "px";
+            packerWin.style.left = (startLeft + (e.clientX - startX)) + "px";
+            packerWin.style.margin = "0";
+          }
+        }
+      }
     });
 
     document.addEventListener("mouseup", () => {
       isDragging = false;
+      isResizing = false;
       let shield = document.getElementById("iframe_shield");
       if(shield) shield.style.display = "none";
     });
