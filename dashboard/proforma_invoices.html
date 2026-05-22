@@ -1626,8 +1626,8 @@
       doc.text("__________________________", PAGE_W - M, y+10, {align:"right"});
       doc.text("YS ACC", PAGE_W - M - 20, y+5, {align:"right"});
 
-      const fullPiNum = (d.piNum || "PI-YSACC") + (d.currentVersion || "");
-      const fileName = (fullPiNum.replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
+      const fullPiNumFile = (d.piNum || "PI-YSACC") + (d.currentVersion || "");
+      const fileName = (fullPiNumFile.replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
       
       window._currentPdfDoc = doc;
       window._currentPdfFileName = fileName;
