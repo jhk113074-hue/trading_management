@@ -738,9 +738,24 @@
             );
           }
           
+          let rawQty = item.qty || 1;
+          if (typeof rawQty === 'string') {
+            rawQty = parseInt(rawQty.replace(/,/g, ''), 10) || 1;
+          }
+          let finalQty = rawQty;
+
+          // 1. 비고(remarks)에 팔레트/박스 수량이 명시되어 있으면 최우선 적용
+          const rmMatch = (item.remarks || "").match(/(\d+)\s*(PLT|PLTS|Pallet|Pallets|CTN|Carton|Cartons|Box|Boxes)/i);
+          if (rmMatch) {
+            finalQty = parseInt(rmMatch[1], 10);
+          } else if (prod && prod.weight > 0 && item.unit === 'KG') {
+            // 2. 명시되어 있지 않고, 단위가 KG이며 순중량이 있으면 (총중량 / 순중량)으로 계산
+            finalQty = Math.ceil(rawQty / prod.weight);
+          }
+          
           return {
             desc: desc,
-            qty: item.qty || 1,
+            qty: finalQty,
             remarks: item.remarks || '',
             w: prod ? (prod.specWidth || 0) : 0,
             d: prod ? (prod.specLength || 0) : 0,
