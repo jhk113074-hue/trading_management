@@ -142,10 +142,14 @@
 
         // 4. 상품 규격
         unit: document.getElementById("p_unit").value,
+        packageType: document.getElementById("p_package_type") ? document.getElementById("p_package_type").value : 'Pallet',
         specWidth: parseFloat(document.getElementById("p_width").value) || 0,
         specLength: parseFloat(document.getElementById("p_length").value) || 0,
         specHeight: parseFloat(document.getElementById("p_height").value) || 0,
         weight: parseFloat(document.getElementById("p_weight").value) || 0,
+        grossWeight: parseFloat(document.getElementById("p_gross_weight") ? document.getElementById("p_gross_weight").value : 0) || 0,
+        stackable: document.getElementById("p_stackable") ? document.getElementById("p_stackable").value : 'Y',
+        rotation: document.getElementById("p_rotation") ? document.getElementById("p_rotation").value : 'Y',
         color: document.getElementById("p_color").value.trim(),
         material: document.getElementById("p_material").value.trim(),
         origin: document.getElementById("p_origin").value.trim(),
@@ -259,10 +263,14 @@
 
       // 상품 규격
       document.getElementById("p_unit").value = p.unit || "KG";
+      if(document.getElementById("p_package_type")) document.getElementById("p_package_type").value = p.packageType || "Pallet";
       document.getElementById("p_width").value = p.specWidth || 0;
       document.getElementById("p_length").value = p.specLength || 0;
       document.getElementById("p_height").value = p.specHeight || 0;
       document.getElementById("p_weight").value = p.weight || 0;
+      if(document.getElementById("p_gross_weight")) document.getElementById("p_gross_weight").value = p.grossWeight || 0;
+      if(document.getElementById("p_stackable")) document.getElementById("p_stackable").value = p.stackable || "Y";
+      if(document.getElementById("p_rotation")) document.getElementById("p_rotation").value = p.rotation || "Y";
       document.getElementById("p_color").value = p.color || "";
       document.getElementById("p_material").value = p.material || "";
       document.getElementById("p_origin").value = p.origin || "";
@@ -561,10 +569,33 @@
                 <option>KG</option><option>BOX</option><option>M</option><option>M2</option><option>M3</option><option>EA</option><option>SET</option>
               </select>
             </div>
+            <div class="fgroup">
+              <label>포장 형태 (Package Type)</label>
+              <select id="p_package_type">
+                <option value="Pallet">Pallet</option>
+                <option value="Carton">Carton</option>
+                <option value="Wooden Box">Wooden Box</option>
+                <option value="Drum">Drum</option>
+                <option value="None">None</option>
+              </select>
+            </div>
             <div class="fgroup"><label>규격_가로 (Width / mm)</label><input type="number" id="p_width" placeholder="0"></div>
             <div class="fgroup"><label>규격_세로 (Length / mm)</label><input type="number" id="p_length" placeholder="0"></div>
             <div class="fgroup"><label>규격_높이 (Height / mm)</label><input type="number" id="p_height" placeholder="0"></div>
-            <div class="fgroup"><label>무게 (Weight / kg)</label><input type="number" step="0.01" id="p_weight" placeholder="0.00"></div>
+            <div class="fgroup"><label>순중량 (Net Wt / kg)</label><input type="number" step="0.01" id="p_weight" placeholder="0.00"></div>
+            <div class="fgroup"><label>총중량 (Gross Wt / kg)</label><input type="number" step="0.01" id="p_gross_weight" placeholder="0.00"></div>
+            <div class="fgroup">
+              <label>다단 적재 허용 (Stackable)</label>
+              <select id="p_stackable">
+                <option value="Y">Y</option><option value="N">N</option>
+              </select>
+            </div>
+            <div class="fgroup">
+              <label>회전 허용 (Rotation)</label>
+              <select id="p_rotation">
+                <option value="Y">Y</option><option value="N">N</option>
+              </select>
+            </div>
             <div class="fgroup"><label>색상</label><input type="text" id="p_color" placeholder="예: Black, Clear"></div>
             <div class="fgroup"><label>재질</label><input type="text" id="p_material" placeholder="예: Carbon Fiber, Epoxy"></div>
             <div class="fgroup"><label>원산지 (Country of Origin)</label><input type="text" id="p_origin" placeholder="예: South Korea, Japan"></div>

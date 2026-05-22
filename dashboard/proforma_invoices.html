@@ -746,7 +746,10 @@
             d: prod ? (prod.specLength || 0) : 0,
             h: prod ? (prod.specHeight || 0) : 0,
             netWeight: prod ? (prod.weight || 0) : 0,
-            grossWeight: prod ? (prod.weight || 0) : 0
+            grossWeight: prod ? (prod.grossWeight || prod.weight || 0) : 0,
+            packageType: prod ? (prod.packageType || 'Pallet') : 'Pallet',
+            stackable: prod ? (prod.stackable !== 'N') : true,
+            rotation: prod ? (prod.rotation !== 'N') : true
           };
         })
       };
@@ -757,7 +760,7 @@
     };
 
     if (iframe.src === "about:blank" || iframe.src === "") {
-      iframe.src = "https://container-packer-1a187.web.app/?v=4";
+      iframe.src = "https://container-packer-1a187.web.app/?v=5";
       iframe.onload = () => {
         // slightly delay to ensure app.js listener is ready
         setTimeout(sendDataToPacker, 500);
