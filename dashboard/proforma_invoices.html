@@ -720,18 +720,26 @@
         date: date,
         items: nItems.map(item => {
           let prod = null;
-          // item.description format is typically: "[productCode] nameKo (nameEn)"
-          const foundId = Object.keys(productMap).find(id => item.description.startsWith(`[${id}]`));
-          if (foundId) {
-            prod = productMap[foundId];
-          } else {
-            // fallback: check by name or code directly
-            const fallback = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
-            if (fallback) prod = fallback;
+          const desc = item.description || "";
+          
+          // 1. Try to extract [Code] from "[Code] Name"
+          const match = desc.match(/^\[(.*?)\]/);
+          const extractedCode = match ? match[1] : null;
+
+          if (extractedCode) {
+            prod = productMap[extractedCode] || Object.values(productMap).find(p => p.productCode === extractedCode);
+          }
+          
+          // 2. Fallback check
+          if (!prod) {
+            prod = Object.values(productMap).find(p => 
+              desc.includes(p.productCode) || 
+              desc.includes(p.nameKo)
+            );
           }
           
           return {
-            desc: item.description,
+            desc: desc,
             qty: item.quantity,
             remarks: item.remarks || '',
             w: prod ? (prod.specWidth || 0) : 0,
