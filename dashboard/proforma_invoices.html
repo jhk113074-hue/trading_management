@@ -708,9 +708,15 @@
     const sendDataToPacker = () => {
       const customerId = document.getElementById("n_customer").value;
       const customer = customerMap[customerId]?.name || "";
-      let piNumber = document.getElementById("n_modal_title").innerText;
-      if (piNumber === "New Proforma Invoice") piNumber = "New PI";
-      else piNumber = piNumber.replace("Edit Proforma Invoice (", "").replace(")", "");
+      let piNumber = "New PI";
+      if (typeof editPIId !== 'undefined' && editPIId) {
+        const p = allPIs.find(x => x.id === editPIId);
+        if (p) piNumber = p.piNumber;
+      } else {
+        const subHtml = document.getElementById("n_modal_sub").innerText;
+        const match = subHtml.match(/\((PI-YSACC-.*?)\)/);
+        if (match) piNumber = match[1];
+      }
       const date = document.getElementById("n_pi_date").value;
       
       const containers = { '20GP': 0, '20RF': 0, '40GP': 0, '40HC': 0 };
@@ -790,7 +796,7 @@
     };
 
     if (iframe.src === "about:blank" || iframe.src === "") {
-      iframe.src = "https://container-packer-1a187.web.app/?v=11";
+      iframe.src = "https://container-packer-1a187.web.app/?v=12";
       iframe.onload = () => {
         // slightly delay to ensure app.js listener is ready
         setTimeout(sendDataToPacker, 500);
