@@ -790,7 +790,7 @@
     };
 
     if (iframe.src === "about:blank" || iframe.src === "") {
-      iframe.src = "https://container-packer-1a187.web.app/?v=10";
+      iframe.src = "https://container-packer-1a187.web.app/?v=11";
       iframe.onload = () => {
         // slightly delay to ensure app.js listener is ready
         setTimeout(sendDataToPacker, 500);
@@ -860,8 +860,10 @@
 
     document.addEventListener("mousemove", (e) => {
       if (isDragging) {
+        let newTop = (e.clientY - dragOffsetY);
+        if (newTop < 0) newTop = 0;
         packerWin.style.left = (e.clientX - dragOffsetX) + "px";
-        packerWin.style.top = (e.clientY - dragOffsetY) + "px";
+        packerWin.style.top = newTop + "px";
         packerWin.style.margin = "0";
       } else if (isResizing) {
         if (resizeDir === 'r' || resizeDir === 'br') {
@@ -886,6 +888,26 @@
       isResizing = false;
       let shield = document.getElementById("iframe_shield");
       if(shield) shield.style.display = "none";
+    });
+
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.type === 'PACKER_DRAG_START') {
+        window._packerIframeDragging = true;
+        showIframeShield();
+      }
+      if (e.data && e.data.type === 'PACKER_DRAG_MOVE' && window._packerIframeDragging) {
+        let newLeft = packerWin.offsetLeft + e.data.movementX;
+        let newTop = packerWin.offsetTop + e.data.movementY;
+        if (newTop < 0) newTop = 0;
+        packerWin.style.left = newLeft + "px";
+        packerWin.style.top = newTop + "px";
+        packerWin.style.margin = "0";
+      }
+      if (e.data && e.data.type === 'PACKER_DRAG_END') {
+        window._packerIframeDragging = false;
+        let shield = document.getElementById("iframe_shield");
+        if(shield) shield.style.display = "none";
+      }
     });
   }, 1000);
 
