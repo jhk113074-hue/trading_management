@@ -1297,15 +1297,27 @@
       item.costUsd = currentVal;
       item.cost = 0; // 원화 원가 리셋 (배타적 격리)
       item._baseCurrency = "USD";
+    } else if (field === "qty") {
+      item.qty = currentVal;
+      const match = (item.desc || "").match(/\[([^\]]+)\]/);
+      if (match) {
+        const prod = productMap[match[1]];
+        if (prod && prod.qtyPerPallet > 0) {
+          item.palletQty = Math.ceil(item.qty / prod.qtyPerPallet);
+        }
+      }
     } else if (field === "desc") {
       item.desc = val;
-      const match = val.match(/\[(PROD-[^\]]+)\]/);
+      const match = val.match(/\[([^\]]+)\]/);
       if (match) {
         const productCode = match[1];
         const prod = productMap[productCode];
         if (prod) {
           item.desc = `[${prod.productCode}] ${prod.nameEn || prod.nameKo}`;
           item.unit = prod.unit || "KG";
+          if (prod.qtyPerPallet > 0) {
+            item.palletQty = Math.ceil(item.qty / prod.qtyPerPallet);
+          }
           if (prod.currency === "USD") {
             item.costUsd = prod.purchasePrice || 0;
             item.cost = 0;

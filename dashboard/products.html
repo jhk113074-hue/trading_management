@@ -143,6 +143,7 @@
         // 4. 상품 규격
         unit: document.getElementById("p_unit").value,
         packageType: document.getElementById("p_package_type") ? document.getElementById("p_package_type").value : 'Pallet',
+        qtyPerPallet: parseFloat(document.getElementById("p_qty_per_pallet") ? document.getElementById("p_qty_per_pallet").value : 0) || 0,
         specWidth: parseFloat(document.getElementById("p_width").value) || 0,
         specLength: parseFloat(document.getElementById("p_length").value) || 0,
         specHeight: parseFloat(document.getElementById("p_height").value) || 0,
@@ -264,6 +265,7 @@
       // 상품 규격
       document.getElementById("p_unit").value = p.unit || "KG";
       if(document.getElementById("p_package_type")) document.getElementById("p_package_type").value = p.packageType || "Pallet";
+      if(document.getElementById("p_qty_per_pallet")) document.getElementById("p_qty_per_pallet").value = p.qtyPerPallet || 0;
       document.getElementById("p_width").value = p.specWidth || 0;
       document.getElementById("p_length").value = p.specLength || 0;
       document.getElementById("p_height").value = p.specHeight || 0;
@@ -579,6 +581,7 @@
                 <option value="None">None</option>
               </select>
             </div>
+            <div class="fgroup"><label>Pallet당 수량 (Qty per Pallet)</label><input type="number" id="p_qty_per_pallet" placeholder="0"></div>
             <div class="fgroup"><label>규격_가로 (Width / mm)</label><input type="number" id="p_width" placeholder="0"></div>
             <div class="fgroup"><label>규격_세로 (Length / mm)</label><input type="number" id="p_length" placeholder="0"></div>
             <div class="fgroup"><label>규격_높이 (Height / mm)</label><input type="number" id="p_height" placeholder="0"></div>
