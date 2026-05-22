@@ -740,7 +740,7 @@
           
           return {
             desc: desc,
-            qty: item.quantity,
+            qty: item.qty || 1,
             remarks: item.remarks || '',
             w: prod ? (prod.specWidth || 0) : 0,
             d: prod ? (prod.specLength || 0) : 0,
@@ -753,6 +753,8 @@
           };
         })
       };
+      
+      console.log("📦 SENDING PAYLOAD TO PACKER:", JSON.stringify(payload, null, 2));
       
       if (iframe.contentWindow) {
         iframe.contentWindow.postMessage(payload, "*");
