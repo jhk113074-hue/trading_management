@@ -704,8 +704,51 @@
   window.openPackerModal = function() {
     document.getElementById("packer_overlay").style.display = "flex";
     const iframe = document.getElementById("packer_iframe");
+    
+    const sendDataToPacker = () => {
+      const customerId = document.getElementById("n_customer").value;
+      const customer = customerMap[customerId]?.name || "";
+      let piNumber = document.getElementById("n_modal_title").innerText;
+      if (piNumber === "New Proforma Invoice") piNumber = "New PI";
+      else piNumber = piNumber.replace("Edit Proforma Invoice (", "").replace(")", "");
+      const date = document.getElementById("n_pi_date").value;
+      
+      const payload = {
+        type: 'LOAD_PI_DATA',
+        customer: customer,
+        piNumber: piNumber,
+        date: date,
+        items: nItems.map(item => {
+          let prod = null;
+          const found = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
+          if (found) prod = found;
+          
+          return {
+            desc: item.description,
+            qty: item.quantity,
+            remarks: item.remarks || '',
+            w: prod ? (prod.specWidth || 0) : 0,
+            d: prod ? (prod.specLength || 0) : 0,
+            h: prod ? (prod.specHeight || 0) : 0,
+            netWeight: prod ? (prod.weight || 0) : 0,
+            grossWeight: prod ? (prod.weight || 0) : 0
+          };
+        })
+      };
+      
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage(payload, "*");
+      }
+    };
+
     if (iframe.src === "about:blank" || iframe.src === "") {
       iframe.src = "https://container-packer-1a187.web.app/";
+      iframe.onload = () => {
+        // slightly delay to ensure app.js listener is ready
+        setTimeout(sendDataToPacker, 500);
+      };
+    } else {
+      sendDataToPacker();
     }
   };
   window.closePackerModal = function() {
