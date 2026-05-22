@@ -318,6 +318,16 @@
           <span>GRAND TOTAL: <strong id="n_grand">USD 0.00</strong></span>
         </div>
       </div>
+      <!-- ⑥ 리비전 정보 (수정 시에만 표시) -->
+      <div class="form-section" id="revision_section" style="display:none; border: 2px solid var(--accent); padding: 15px; border-radius: 8px; background: rgba(37,99,235,0.05);">
+        <h4>⑥ Revision Information</h4>
+        <div class="fg">
+          <div class="fgroup fg-full">
+            <label>Revision Reason (변경 사유) ★ <span style="color:var(--text-muted);font-weight:normal;font-size:12px;">(Revision 히스토리에 기록됩니다)</span></label>
+            <input type="text" id="n_rev_reason" placeholder="예: 고객 가격 협상에 의한 SFP-180 단가 인하" style="width:100%;padding:10px;background:#fff;border:1px solid var(--accent);border-radius:6px;color:var(--text);font-weight:500;">
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeNewPI()">취소</button>
@@ -494,6 +504,7 @@
         <td style="text-align:center"><span class="badge status-${badge}">${p.status||"draft"}</span></td>
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
         <td style="white-space:nowrap;text-align:center">
+          <button class="action-btn" style="border-color:#2563eb;color:#2563eb" onclick="event.stopPropagation(); window.openTimeline('${p.id}')">⏳ Timeline</button>
           <button class="action-btn" style="border-color:#e74c3c;color:#e74c3c" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}', true)">📄 미리보기</button>
           <button class="action-btn edit-btn" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}')">✏ 수정</button>
           <button class="btn-del" onclick="event.stopPropagation(); window.deletePI('${p.id}')">✕ 삭제</button>
@@ -706,7 +717,11 @@
     // 수정 모드 UI 변경
     document.getElementById("n_modal_title").textContent = "Edit Proforma Invoice";
     document.getElementById("n_modal_sub").textContent = `기존 견적서 수정 및 새로운 리비전 발행 (${p.piNumber})`;
-    document.getElementById("n_save_btn").textContent = "✔ 수정사항 저장";
+    document.getElementById("n_save_btn").textContent = "✔ 수정사항 저장 및 새 리비전 발행";
+    
+    // Revision Reason 초기화 및 표시
+    document.getElementById("revision_section").style.display = "block";
+    document.getElementById("n_rev_reason").value = "";
 
     // 고객 목록 채우기
     const sel = document.getElementById("n_customer");
@@ -1029,6 +1044,76 @@
 
       if (editPIId) {
         // 기존 PI 수정 및 새 버전 발행
+        
+        // 1. 이전 리비전 조회 (Diff 계산용)
+        const revsSnap = await getDocs(collection(db, "companies", COMPANY_ID, "proforma_invoices", editPIId, "revisions"));
+        let latestRevDoc = null;
+        let oldItems = [];
+        let oldData = {};
+        if (!revsSnap.empty) {
+          latestRevDoc = revsSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+          oldData = latestRevDoc.data();
+          const itemsSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+          oldItems = itemsSnap.docs.map(d => d.data());
+        }
+
+        const incotermsVal = document.getElementById("n_incoterms").value;
+        const destVal = document.getElementById("n_dest").value;
+        const paymentVal = document.getElementById("n_payment").value;
+        const shippingVal = document.getElementById("n_shipping").value;
+        const validityDaysVal = parseInt(document.getElementById("n_validity").value)||30;
+        const remarksVal = document.getElementById("n_remarks").value;
+        const revReasonVal = document.getElementById("n_rev_reason").value;
+        if (!revReasonVal.trim()) { alert("Revision Reason (변경 사유)를 입력해 주세요."); btn.disabled=false; btn.textContent="✔ 수정사항 저장 및 새 리비전 발행"; return; }
+
+        // Diff 계산 로직 (Change Log & changeType 도출)
+        const changeLogs = [];
+        let mainChangeType = "condition_change";
+        
+        if (oldData.incoterms !== incotermsVal) changeLogs.push({ fieldName: 'incoterms', oldValue: oldData.incoterms||"-", newValue: incotermsVal, changeDescription: `Incoterms changed: ${oldData.incoterms||"-"} → ${incotermsVal}` });
+        if (oldData.destinationPort !== destVal) changeLogs.push({ fieldName: 'destinationPort', oldValue: oldData.destinationPort||"-", newValue: destVal, changeDescription: `Destination changed: ${oldData.destinationPort||"-"} → ${destVal}` });
+        if (oldData.paymentTerms !== paymentVal) changeLogs.push({ fieldName: 'paymentTerms', oldValue: oldData.paymentTerms||"-", newValue: paymentVal, changeDescription: `Payment terms changed: ${oldData.paymentTerms||"-"} → ${paymentVal}` });
+        if (oldData.shippingMethod !== shippingVal) changeLogs.push({ fieldName: 'shippingMethod', oldValue: oldData.shippingMethod||"-", newValue: shippingVal, changeDescription: `Shipping method changed: ${oldData.shippingMethod||"-"} → ${shippingVal}` });
+
+        processedItems.forEach(newItem => {
+           const oldItem = oldItems.find(i => i.description === newItem.description);
+           if (!oldItem) {
+             newItem.isAddedInThisRevision = true;
+             newItem.isModifiedInThisRevision = false;
+             mainChangeType = "item_added";
+             changeLogs.push({ fieldName: 'item_added', oldValue: "NULL", newValue: newItem.description, changeDescription: `Added new item: ${newItem.description} (${newItem.quantity} ${newItem.unit} @ $${newItem.salePriceUsd})` });
+           } else {
+             newItem.isAddedInThisRevision = false;
+             let isMod = false;
+             if (oldItem.salePriceUsd !== newItem.salePriceUsd) {
+               isMod = true;
+               mainChangeType = "price_change";
+               const oldP = oldItem.salePriceUsd;
+               const newP = newItem.salePriceUsd;
+               const pct = oldP ? ((newP - oldP)/oldP*100).toFixed(2) : 0;
+               newItem.previousPriceUsd = oldP;
+               newItem.priceChangePercent = parseFloat(pct);
+               changeLogs.push({ fieldName: 'salePriceUsd', oldValue: String(oldP), newValue: String(newP), changeDescription: `${newItem.description}: $${oldP} → $${newP} (${pct>0?'+':''}${pct}%)` });
+             }
+             if (oldItem.quantity !== newItem.quantity) {
+               isMod = true;
+               if(mainChangeType !== "price_change") mainChangeType = "quantity_change";
+               newItem.previousQuantity = oldItem.quantity;
+               const pct = oldItem.quantity ? ((newItem.quantity - oldItem.quantity)/oldItem.quantity*100).toFixed(2) : 0;
+               newItem.quantityChangePercent = parseFloat(pct);
+               changeLogs.push({ fieldName: 'quantity', oldValue: String(oldItem.quantity), newValue: String(newItem.quantity), changeDescription: `${newItem.description} Qty: ${oldItem.quantity} → ${newItem.quantity}` });
+             }
+             newItem.isModifiedInThisRevision = isMod;
+           }
+        });
+
+        oldItems.forEach(oldItem => {
+           if (!processedItems.find(i => i.description === oldItem.description)) {
+             mainChangeType = "item_removed";
+             changeLogs.push({ fieldName: 'item_removed', oldValue: oldItem.description, newValue: "NULL", changeDescription: `Removed item: ${oldItem.description}` });
+           }
+        });
+
         await runTransaction(db, async tx => {
           const piRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", editPIId);
           const piSnap = await tx.get(piRef);
@@ -1044,12 +1129,12 @@
           // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
           tx.update(piRef, {
             piDate, customerId,
-            incoterms: document.getElementById("n_incoterms").value,
-            destinationPort: document.getElementById("n_dest").value,
-            paymentTerms: document.getElementById("n_payment").value,
-            shippingMethod: document.getElementById("n_shipping").value,
-            exchangeRate: rate, validityDays: parseInt(document.getElementById("n_validity").value)||30,
-            validUntilDate: validUntil, remarks: document.getElementById("n_remarks").value,
+            incoterms: incotermsVal,
+            destinationPort: destVal,
+            paymentTerms: paymentVal,
+            shippingMethod: shippingVal,
+            exchangeRate: rate, validityDays: validityDaysVal,
+            validUntilDate: validUntil, remarks: remarksVal,
             handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
             currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
@@ -1059,12 +1144,25 @@
           const revRef = doc(collection(piRef, "revisions"));
           tx.set(revRef, {
             version: nextVer, revisionNumber: nextRevNum, status: data.status || "draft",
+            incoterms: incotermsVal, destinationPort: destVal, paymentTerms: paymentVal, shippingMethod: shippingVal, exchangeRate: rate,
+            revisionReason: revReasonVal, changeType: mainChangeType,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4), createdAt: serverTimestamp()
           });
 
           // 3. 새 Revision 하위 Line items 등록
           processedItems.forEach(item => {
             tx.set(doc(collection(revRef, "line_items")), item);
+          });
+
+          // 4. Change Log 등록
+          changeLogs.forEach(cl => {
+            tx.set(doc(collection(revRef, "change_logs")), {
+               fieldName: cl.fieldName,
+               oldValue: cl.oldValue,
+               newValue: cl.newValue,
+               changeDescription: cl.changeDescription,
+               createdAt: serverTimestamp()
+            });
           });
         });
 
@@ -1492,7 +1590,105 @@
       iframe.contentWindow.print();
     }
   };
+
+  // ── Timeline 모달 ──
+  window.openTimeline = async function(piId) {
+    const p = allPIs.find(x => x.id === piId);
+    if (!p) return;
+    document.getElementById("tl_modal_sub").textContent = p.piNumber || "-";
+    document.getElementById("timeline_overlay").classList.add("open");
+    document.body.style.overflow = "hidden";
+    
+    const body = document.getElementById("timeline_body");
+    body.innerHTML = "<div style='text-align:center;padding:20px;'>불러오는 중...</div>";
+
+    try {
+      const revsSnap = await getDocs(collection(db, "companies", COMPANY_ID, "proforma_invoices", piId, "revisions"));
+      const revs = revsSnap.docs.map(d => ({id:d.id, ...d.data()}));
+      revs.sort((a,b) => (a.createdAt?.seconds||0) - (b.createdAt?.seconds||0));
+
+      if (revs.length === 0) {
+        body.innerHTML = "<div style='text-align:center;padding:20px;color:var(--text-muted);'>이전 Revision 데이터가 없습니다. (초기 작성된 PI)</div>";
+        return;
+      }
+
+      let html = `<div style="margin-bottom:15px; font-weight:600;">Current Version: ${p.currentVersion || "A"}</div>`;
+      html += `<div style="position:relative; padding-left:20px; border-left:2px solid #e2e8f0;">`;
+
+      for (const rev of revs) {
+        const dateStr = rev.createdAt?.seconds ? new Date(rev.createdAt.seconds*1000).toLocaleString() : "-";
+        let logsHtml = "";
+        
+        try {
+          const logsSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId, "revisions", rev.id), "change_logs"));
+          if (!logsSnap.empty) {
+            logsHtml += `<div style="margin-top:10px; font-size:12px; background:#fff; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">`;
+            logsHtml += `<div style="font-weight:600; margin-bottom:5px; color:#475569;">변경 내역 (Change Log)</div>`;
+            logsSnap.docs.forEach(ld => {
+              const log = ld.data();
+              logsHtml += `<div style="margin-bottom:3px;">• ${log.changeDescription}</div>`;
+            });
+            logsHtml += `</div>`;
+          }
+        } catch(e) { console.error(e); }
+
+        const reason = rev.revisionReason ? `<div style="color:#0f172a; font-weight:500; margin-top:5px;">Reason: ${rev.revisionReason}</div>` : "";
+        const badgeColor = rev.version === p.currentVersion ? "background:#2563eb;color:#fff;" : "background:#e2e8f0;color:#475569;";
+
+        html += `
+          <div style="position:relative; margin-bottom:20px;">
+            <div style="position:absolute; left:-27px; top:0; width:12px; height:12px; border-radius:50%; background:#2563eb; border:2px solid #fff;"></div>
+            <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:15px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:bold; font-size:15px; display:inline-block; padding:2px 8px; border-radius:4px; ${badgeColor}">Revision ${rev.version}</span>
+                <span style="font-size:12px; color:var(--text-muted);">${dateStr}</span>
+              </div>
+              ${reason}
+              <div style="margin-top:5px; font-size:13px; color:var(--text-muted);">
+                Total: $${(rev.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
+              </div>
+              ${logsHtml}
+            </div>
+          </div>
+        `;
+      }
+      html += `</div>`;
+      body.innerHTML = html;
+
+    } catch(e) {
+      body.innerHTML = `<div style="color:red;">Error: ${e.message}</div>`;
+    }
+  };
+
+  window.closeTimelineModal = function() {
+    document.getElementById("timeline_overlay").classList.remove("open");
+    document.body.style.overflow = "";
+  };
+  window.closeTimelineOnOverlay = function(e) {
+    if (e.target === document.getElementById("timeline_overlay")) closeTimelineModal();
+  };
 </script>
+
+<!-- ═══════════════ Timeline 모달 ═══════════════ -->
+<div class="modal-overlay" id="timeline_overlay" onclick="closeTimelineOnOverlay(event)">
+  <div class="modal" id="timeline_modal" style="max-width:700px; max-height:85vh; display:flex; flex-direction:column;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Revision Timeline</div>
+        <div class="modal-sub" id="tl_modal_sub">불러오는 중...</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="modal-close" onclick="closeTimelineModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="timeline_body" style="background:#f8fafc; padding:20px; overflow-y:auto; flex:1;">
+      <!-- JS로 동적 생성 -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeTimelineModal()">닫기</button>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════ PDF 미리보기 모달 ═══════════════ -->
 <div class="modal-overlay" id="pdf_preview_overlay" onclick="closePdfPreview(event)">
