@@ -1302,8 +1302,8 @@
       const match = (item.desc || "").match(/\[([^\]]+)\]/);
       if (match) {
         const prod = productMap[match[1]];
-        if (prod && prod.qtyPerPallet > 0) {
-          item.palletQty = Math.ceil(item.qty / prod.qtyPerPallet);
+        if (prod && prod.weight > 0) {
+          item.palletQty = Math.ceil(item.qty / prod.weight);
         }
       }
     } else if (field === "desc") {
@@ -1315,8 +1315,8 @@
         if (prod) {
           item.desc = `[${prod.productCode}] ${prod.nameEn || prod.nameKo}`;
           item.unit = prod.unit || "KG";
-          if (prod.qtyPerPallet > 0) {
-            item.palletQty = Math.ceil(item.qty / prod.qtyPerPallet);
+          if (prod.weight > 0) {
+            item.palletQty = Math.ceil(item.qty / prod.weight);
           }
           if (prod.currency === "USD") {
             item.costUsd = prod.purchasePrice || 0;
