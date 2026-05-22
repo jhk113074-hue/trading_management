@@ -720,8 +720,15 @@
         date: date,
         items: nItems.map(item => {
           let prod = null;
-          const found = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
-          if (found) prod = found;
+          // item.description format is typically: "[productCode] nameKo (nameEn)"
+          const foundId = Object.keys(productMap).find(id => item.description.startsWith(`[${id}]`));
+          if (foundId) {
+            prod = productMap[foundId];
+          } else {
+            // fallback: check by name or code directly
+            const fallback = Object.values(productMap).find(p => p.nameKo === item.description || p.nameEn === item.description || p.productCode === item.description);
+            if (fallback) prod = fallback;
+          }
           
           return {
             desc: item.description,
