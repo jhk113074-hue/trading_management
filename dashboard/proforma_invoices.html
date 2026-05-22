@@ -262,7 +262,7 @@
         <h4>③ 거래 조건</h4>
         <div class="fg">
           <div class="fgroup"><label>Incoterms ★</label>
-            <select id="n_incoterms">
+            <select id="n_incoterms" onchange="updateFreightTitle()">
               <option value="">-- 선택 --</option>
               <option>CIF</option><option>FOB</option><option>EXW</option><option>DDP</option><option>DOOR TO DOOR</option>
             </select>
@@ -308,7 +308,17 @@
         <h4>⑤ 추가 비용</h4>
         <div class="fg-2">
           <div class="fgroup"><label>Handling (USD)</label><input type="number" id="n_handling" value="0" step="0.01" onchange="nRecalcTotals()"></div>
-          <div class="fgroup"><label>Freight (USD)</label><input type="number" id="n_freight" value="0" step="0.01" onchange="nRecalcTotals()"></div>
+          <div class="fgroup" style="grid-column: 1 / -1; margin-top:10px; padding:15px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <label id="lbl_freight_title" style="margin:0; font-weight:600;">Freight Charges (USD)</label>
+              <button type="button" class="btn btn-outline" style="font-size:11px; padding:4px 8px;" onclick="nAddFreightRow()">＋ 운송비 추가</button>
+            </div>
+            <div id="freight_rows" style="display:flex; flex-direction:column; gap:8px;"></div>
+            <div style="text-align:right; font-weight:bold; margin-top:10px; font-size:13px; color:var(--text);">
+              Total: $<span id="freight_total_display">0.00</span>
+            </div>
+            <input type="hidden" id="n_freight" value="0">
+          </div>
           <div class="fgroup"><label>Insurance (USD)</label><input type="number" id="n_insurance" value="0" step="0.01" onchange="nRecalcTotals()"></div>
           <div class="fgroup"><label>원화 환산 (참고)</label><input type="text" id="n_krw" readonly></div>
         </div>
@@ -682,6 +692,7 @@
     // 추가비용 초기화
     document.getElementById("n_handling").value = 0;
     document.getElementById("n_freight").value = 0;
+    nFreightItems = []; nRenderFreightRows(); updateFreightTitle();
     document.getElementById("n_insurance").value = 0;
     document.getElementById("n_remarks").value = "";
     document.getElementById("n_departurePort").value = "Busan, Korea";
@@ -756,6 +767,8 @@
     document.getElementById("n_remarks").value = p.remarks || "";
     document.getElementById("n_handling").value = p.handlingCharges || 0;
     document.getElementById("n_freight").value = p.freightCharges || 0;
+    if (p.freightDetails) { nFreightItems = p.freightDetails; } else if (p.freightCharges) { nFreightItems = [{type:"LCL", qty:1, price:p.freightCharges}]; } else { nFreightItems = []; }
+    nRenderFreightRows(); updateFreightTitle();
     document.getElementById("n_insurance").value = p.insuranceCharges || 0;
 
     // Line Items 가져오기
@@ -979,6 +992,65 @@
     document.getElementById("n_grand").textContent  = "USD "+grand.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById("n_krw").value          = "₩ "+(grand*rate).toLocaleString();
   }
+  // ── Freight 다중 입력 로직 ──
+  let nFreightItems = [];
+  window.updateFreightTitle = function() {
+    const val = document.getElementById("n_incoterms").value;
+    const title = document.getElementById("lbl_freight_title");
+    if (title) {
+      if (val) title.textContent = val + " Charges (USD)";
+      else title.textContent = "Freight Charges (USD)";
+    }
+  };
+  window.nAddFreightRow = function(type="LCL", qty=1, price=0) {
+    nFreightItems.push({ type, qty, price });
+    nRenderFreightRows();
+  };
+  window.nRemoveFreightRow = function(idx) {
+    nFreightItems.splice(idx, 1);
+    nRenderFreightRows();
+  };
+  window.nUpdateFreightRow = function(idx, field, val) {
+    if (field === 'qty' || field === 'price') val = parseFloat(val)||0;
+    nFreightItems[idx][field] = val;
+    nRenderFreightRows();
+  };
+  window.nRenderFreightRows = function() {
+    const container = document.getElementById("freight_rows");
+    if (!container) return;
+    if (nFreightItems.length === 0) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:5px;">운송비 내역이 없습니다. (Total: $0.00)</div>';
+      document.getElementById("freight_total_display").textContent = "0.00";
+      document.getElementById("n_freight").value = 0;
+      nRecalcTotals();
+      return;
+    }
+    let ht = "";
+    let total = 0;
+    nFreightItems.forEach((f, i) => {
+      const rowTotal = f.qty * f.price;
+      total += rowTotal;
+      ht += `<div style="display:flex; gap:8px; align-items:center;">
+        <select style="flex:2; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" onchange="nUpdateFreightRow(${i}, 'type', this.value)">
+          <option value="LCL" ${f.type==="LCL"?"selected":""}>LCL</option>
+          <option value="20FT GP" ${f.type==="20FT GP"?"selected":""}>20FT GP</option>
+          <option value="20FT DG" ${f.type==="20FT DG"?"selected":""}>20FT DG</option>
+          <option value="40FT GP" ${f.type==="40FT GP"?"selected":""}>40FT GP</option>
+          <option value="40HQ" ${f.type==="40HQ"?"selected":""}>40HQ</option>
+          <option value="40 DG" ${f.type==="40 DG"?"selected":""}>40 DG</option>
+        </select>
+        <input type="number" style="flex:1; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Qty" value="${f.qty}" onchange="nUpdateFreightRow(${i}, 'qty', this.value)">
+        <input type="number" style="flex:1.5; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Unit Price" value="${f.price}" step="0.01" onchange="nUpdateFreightRow(${i}, 'price', this.value)">
+        <div style="flex:1.5; text-align:right; font-size:13px; font-weight:600; color:#0f172a;">$` + rowTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + `</div>
+        <button type="button" class="btn-del" style="padding:4px 8px; font-size:12px;" onclick="nRemoveFreightRow(${i})">✕</button>
+      </div>`;
+    });
+    container.innerHTML = ht;
+    document.getElementById("freight_total_display").textContent = total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById("n_freight").value = total;
+    nRecalcTotals();
+  };
+
   window.nRecalcTotals = nRecalcTotals;
 
   // ── PI 저장/수정 ──
@@ -1251,7 +1323,7 @@
             shippingMethod:document.getElementById("n_shipping").value,
             exchangeRate:rate,validityDays:parseInt(document.getElementById("n_validity").value)||30,
             validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
-            handlingCharges:hand,freightCharges:frt,insuranceCharges:ins,
+            handlingCharges:hand,freightCharges:frt,freightDetails:data.freightDetails,insuranceCharges:ins,
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
             currentVersion:"R1",status:"draft",itemsSummary,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
           tx.set(revRef,{version:"R1",revisionNumber:1,status:"draft",
@@ -1324,7 +1396,7 @@
       packagingSpec: document.getElementById("n_packagingSpec").value,
       validityDesc: document.getElementById("n_validityDesc").value,
       rate, remarks: document.getElementById("n_remarks").value,
-      items, subtotal, handling, freight, insurance, grand
+      items, subtotal, handling, freight, freightDetails: nFreightItems, insurance, grand
     };
   }
 
@@ -1575,7 +1647,7 @@
       doc.text("Handling Charges:", sumX+5, y+8);
       doc.text("$" + Number(d.handling||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+8, {align:"right"});
       
-      doc.text("Freight Charges:", sumX+5, y+15);
+      doc.text((d.incoterms||"Freight") + " Charges:", sumX+5, y+15);
       doc.text("$" + Number(d.freight||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+15, {align:"right"});
       
       doc.text("Insurance Charges:", sumX+5, y+22);
