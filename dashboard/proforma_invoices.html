@@ -720,7 +720,7 @@
         date: date,
         items: nItems.map(item => {
           let prod = null;
-          const desc = item.description || "";
+          const desc = item.desc || "";
           
           // 1. Try to extract [Code] from "[Code] Name"
           const match = desc.match(/^\[(.*?)\]/);
