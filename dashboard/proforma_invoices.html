@@ -1158,6 +1158,18 @@
               baseCurr = "KRW";
             }
             
+            let pQty = item.palletQty;
+            if (!pQty || pQty === 1) {
+              pQty = 1;
+              const match = (item.description || "").match(/\[([^\]]+)\]/);
+              if (match) {
+                const prod = productMap[match[1]];
+                if (prod && prod.weight > 0) {
+                  pQty = Math.ceil((item.quantity || 1) / prod.weight);
+                }
+              }
+            }
+            
             return {
               id: ++nCounter,
               desc: item.description || "",
@@ -1168,7 +1180,7 @@
               costUsd: costU,
               margin: margin,
               _baseCurrency: baseCurr,
-              palletQty: item.palletQty || 1,
+              palletQty: pQty,
               remarks: item.remarks || ""
             };
           });
