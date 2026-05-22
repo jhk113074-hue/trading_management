@@ -713,11 +713,24 @@
       else piNumber = piNumber.replace("Edit Proforma Invoice (", "").replace(")", "");
       const date = document.getElementById("n_pi_date").value;
       
+      const containers = { '20GP': 0, '20RF': 0, '40GP': 0, '40HC': 0 };
+      if (typeof nFreightItems !== 'undefined') {
+        nFreightItems.forEach(f => {
+           const type = (f.type || "").toUpperCase();
+           const q = parseInt(f.qty) || 0;
+           if (type.includes('20FT RF') || type.includes('20RF')) containers['20RF'] += q;
+           else if (type.includes('20FT')) containers['20GP'] += q;
+           else if (type.includes('40FT HC') || type.includes('40HC')) containers['40HC'] += q;
+           else if (type.includes('40FT')) containers['40GP'] += q;
+        });
+      }
+      
       const payload = {
         type: 'LOAD_PI_DATA',
         customer: customer,
         piNumber: piNumber,
         date: date,
+        containers: containers,
         items: nItems.map(item => {
           let prod = null;
           const desc = item.desc || "";
@@ -1505,7 +1518,7 @@
               shippingMethod: shippingVal,
               exchangeRate: rate, validityDays: validityDaysVal,
               validUntilDate: validUntil, remarks: remarksVal,
-              handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
+              handlingCharges: hand, freightCharges: frt, freightDetails: nFreightItems, insuranceCharges: ins,
               subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
               itemsSummary, updatedAt: serverTimestamp()
             });
@@ -1555,7 +1568,7 @@
               shippingMethod: shippingVal,
               exchangeRate: rate, validityDays: validityDaysVal,
               validUntilDate: validUntil, remarks: remarksVal,
-              handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
+              handlingCharges: hand, freightCharges: frt, freightDetails: nFreightItems, insuranceCharges: ins,
               subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
               currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
             });
@@ -1622,7 +1635,7 @@
             shippingMethod:document.getElementById("n_shipping").value,
             exchangeRate:rate,validityDays:parseInt(document.getElementById("n_validity").value)||30,
             validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
-            handlingCharges:hand,freightCharges:frt,freightDetails:data.freightDetails,insuranceCharges:ins,
+            handlingCharges:hand,freightCharges:frt,freightDetails:nFreightItems,insuranceCharges:ins,
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
             currentVersion:"R1",status:"draft",itemsSummary,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
           tx.set(revRef,{version:"R1",revisionNumber:1,status:"draft",
