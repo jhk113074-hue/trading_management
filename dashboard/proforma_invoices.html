@@ -333,7 +333,8 @@
       <button class="btn btn-outline" onclick="closeNewPI()">취소</button>
       <button class="btn btn-outline" style="border-color:#00a86b;color:#00a86b" onclick="nExportExcel()">📊 Excel 저장</button>
       <button class="btn btn-outline" style="border-color:#e74c3c;color:#e74c3c" onclick="nExportPDF()">📄 미리보기 (PDF)</button>
-      <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI()">✔ Firestore 저장</button>
+      <button class="btn btn-primary" id="n_save_draft_btn" onclick="nSavePI(false)" style="display:none; background:#475569; border-color:#475569;">✔ 단순 저장 (버전 유지)</button>
+      <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI(true)">✔ Firestore 저장</button>
     </div>
   </div>
 </div>
@@ -659,6 +660,9 @@
     document.getElementById("n_modal_title").textContent = "New Proforma Invoice";
     document.getElementById("n_modal_sub").textContent = "신규 견적서 작성 · Firebase Firestore 저장";
     document.getElementById("n_save_btn").textContent = "✔ Firestore 저장";
+    document.getElementById("n_save_draft_btn").style.display = "none";
+    document.getElementById("revision_section").style.display = "none";
+    document.getElementById("n_rev_reason").value = "";
 
     // 오늘 날짜 기본값
     document.getElementById("n_pi_date").value = new Date().toISOString().split("T")[0];
@@ -717,7 +721,8 @@
     // 수정 모드 UI 변경
     document.getElementById("n_modal_title").textContent = "Edit Proforma Invoice";
     document.getElementById("n_modal_sub").textContent = `기존 견적서 수정 및 새로운 리비전 발행 (${p.piNumber})`;
-    document.getElementById("n_save_btn").textContent = "✔ 수정사항 저장 및 새 리비전 발행";
+    document.getElementById("n_save_btn").textContent = "🚀 새 리비전 발행 (+버전업)";
+    document.getElementById("n_save_draft_btn").style.display = "inline-block";
     
     // Revision Reason 초기화 및 표시
     document.getElementById("revision_section").style.display = "block";
@@ -977,8 +982,8 @@
   window.nRecalcTotals = nRecalcTotals;
 
   // ── PI 저장/수정 ──
-  window.nSavePI = async function() {
-    const btn = document.getElementById("n_save_btn");
+  window.nSavePI = async function(isNewRevision = false) {
+    const btn = document.getElementById(isNewRevision ? "n_save_btn" : "n_save_draft_btn");
     const customerId = document.getElementById("n_customer").value;
     const piDate     = document.getElementById("n_pi_date").value;
     const rate       = parseFloat(document.getElementById("n_rate").value)||1468.96;
@@ -1114,63 +1119,104 @@
            }
         });
 
-        await runTransaction(db, async tx => {
-          const piRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", editPIId);
-          const piSnap = await tx.get(piRef);
-          if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
+        if (!isNewRevision) {
+          // 단순 저장 (버전 유지)
+          await runTransaction(db, async tx => {
+            const piRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", editPIId);
+            const piSnap = await tx.get(piRef);
+            if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
 
-          const data = piSnap.data();
-          const curVer = data.currentVersion || "A";
-          const nextVer = String.fromCharCode(curVer.charCodeAt(0) + 1);
+            tx.update(piRef, {
+              piDate, customerId,
+              incoterms: incotermsVal,
+              destinationPort: destVal,
+              paymentTerms: paymentVal,
+              shippingMethod: shippingVal,
+              exchangeRate: rate, validityDays: validityDaysVal,
+              validUntilDate: validUntil, remarks: remarksVal,
+              handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
+              subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
+              itemsSummary, updatedAt: serverTimestamp()
+            });
 
-          // 리비전 수 카운트 (간단히 버전 알파벳 차이로 번호 도출)
-          const nextRevNum = nextVer.charCodeAt(0) - 64; // A=1, B=2, C=3...
+            if (latestRevDoc) {
+              const revRef = latestRevDoc.ref;
+              tx.update(revRef, {
+                incoterms: incotermsVal, destinationPort: destVal, paymentTerms: paymentVal, shippingMethod: shippingVal, exchangeRate: rate,
+                subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4)
+              });
 
-          // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
-          tx.update(piRef, {
-            piDate, customerId,
-            incoterms: incotermsVal,
-            destinationPort: destVal,
-            paymentTerms: paymentVal,
-            shippingMethod: shippingVal,
-            exchangeRate: rate, validityDays: validityDaysVal,
-            validUntilDate: validUntil, remarks: remarksVal,
-            handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
-            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
-            currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
+              // 기존 line_items 삭제
+              const itemsSnap = await getDocs(collection(revRef, "line_items"));
+              itemsSnap.docs.forEach(d => tx.delete(d.ref));
+              // 새 line_items 추가
+              processedItems.forEach(item => {
+                tx.set(doc(collection(revRef, "line_items")), item);
+              });
+            }
           });
+          closeNewPI();
+          alert("✅ 수정 완료! (버전 유지)");
+        } else {
+          // 새 리비전 발행
+          await runTransaction(db, async tx => {
+            const piRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", editPIId);
+            const piSnap = await tx.get(piRef);
+            if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
 
-          // 2. 새 Revision 문서 등록
-          const revRef = doc(collection(piRef, "revisions"));
-          tx.set(revRef, {
-            version: nextVer, revisionNumber: nextRevNum, status: data.status || "draft",
-            incoterms: incotermsVal, destinationPort: destVal, paymentTerms: paymentVal, shippingMethod: shippingVal, exchangeRate: rate,
-            revisionReason: revReasonVal, changeType: mainChangeType,
-            subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4), createdAt: serverTimestamp()
-          });
+            const data = piSnap.data();
+            const curVer = data.currentVersion || "A";
+            const nextVer = String.fromCharCode(curVer.charCodeAt(0) + 1);
 
-          // 3. 새 Revision 하위 Line items 등록
-          processedItems.forEach(item => {
-            tx.set(doc(collection(revRef, "line_items")), item);
-          });
+            // 리비전 수 카운트 (간단히 버전 알파벳 차이로 번호 도출)
+            const nextRevNum = nextVer.charCodeAt(0) - 64; // A=1, B=2, C=3...
 
-          // 4. Change Log 등록
-          changeLogs.forEach(cl => {
-            tx.set(doc(collection(revRef, "change_logs")), {
-               fieldName: cl.fieldName,
-               oldValue: cl.oldValue,
-               newValue: cl.newValue,
-               changeDescription: cl.changeDescription,
-               createdAt: serverTimestamp()
+            // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
+            tx.update(piRef, {
+              piDate, customerId,
+              incoterms: incotermsVal,
+              destinationPort: destVal,
+              paymentTerms: paymentVal,
+              shippingMethod: shippingVal,
+              exchangeRate: rate, validityDays: validityDaysVal,
+              validUntilDate: validUntil, remarks: remarksVal,
+              handlingCharges: hand, freightCharges: frt, insuranceCharges: ins,
+              subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
+              currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
+            });
+
+            // 2. 새 Revision 문서 등록
+            const revRef = doc(collection(piRef, "revisions"));
+            tx.set(revRef, {
+              version: nextVer, revisionNumber: nextRevNum, status: data.status || "draft",
+              incoterms: incotermsVal, destinationPort: destVal, paymentTerms: paymentVal, shippingMethod: shippingVal, exchangeRate: rate,
+              revisionReason: revReasonVal, changeType: mainChangeType,
+              subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4), createdAt: serverTimestamp()
+            });
+
+            // 3. 새 Revision 하위 Line items 등록
+            processedItems.forEach(item => {
+              tx.set(doc(collection(revRef, "line_items")), item);
+            });
+
+            // 4. Change Log 등록
+            changeLogs.forEach(cl => {
+              tx.set(doc(collection(revRef, "change_logs")), {
+                 fieldName: cl.fieldName,
+                 oldValue: cl.oldValue,
+                 newValue: cl.newValue,
+                 changeDescription: cl.changeDescription,
+                 createdAt: serverTimestamp()
+              });
             });
           });
-        });
 
-        closeNewPI();
-        const curPIObj = allPIs.find(x => x.id === editPIId);
-        const curVerStr = curPIObj ? curPIObj.currentVersion || "A" : "A";
-        const nextVerStr = String.fromCharCode(curVerStr.charCodeAt(0) + 1);
-        alert(`✅ 수정 완료!\n새 리비전(${nextVerStr})이 발행되었습니다.`);
+          closeNewPI();
+          const curPIObj = allPIs.find(x => x.id === editPIId);
+          const curVerStr = curPIObj ? curPIObj.currentVersion || "A" : "A";
+          const nextVerStr = String.fromCharCode(curVerStr.charCodeAt(0) + 1);
+          alert(`✅ 수정 완료!\n새 리비전(${nextVerStr})이 발행되었습니다.`);
+        }
       } else {
         // 신규 PI 번호 발번 트랜잭션
         const year    = new Date(piDate).getFullYear();
