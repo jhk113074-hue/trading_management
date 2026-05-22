@@ -1002,8 +1002,8 @@
       else title.textContent = "Freight Charges (USD)";
     }
   };
-  window.nAddFreightRow = function(type="LCL", qty=1, price=0) {
-    nFreightItems.push({ type, qty, price });
+  window.nAddFreightRow = function(type="LCL", qty=1, price=0, remarks="") {
+    nFreightItems.push({ type, qty, price, remarks });
     nRenderFreightRows();
   };
   window.nRemoveFreightRow = function(idx) {
@@ -1031,7 +1031,7 @@
       const rowTotal = f.qty * f.price;
       total += rowTotal;
       ht += `<div style="display:flex; gap:8px; align-items:center;">
-        <select style="flex:2; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" onchange="nUpdateFreightRow(${i}, 'type', this.value)">
+        <select style="flex:1.5; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" onchange="nUpdateFreightRow(${i}, 'type', this.value)">
           <option value="LCL" ${f.type==="LCL"?"selected":""}>LCL</option>
           <option value="20FT GP" ${f.type==="20FT GP"?"selected":""}>20FT GP</option>
           <option value="20FT DG" ${f.type==="20FT DG"?"selected":""}>20FT DG</option>
@@ -1039,9 +1039,10 @@
           <option value="40HQ" ${f.type==="40HQ"?"selected":""}>40HQ</option>
           <option value="40 DG" ${f.type==="40 DG"?"selected":""}>40 DG</option>
         </select>
-        <input type="number" style="flex:1; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Qty" value="${f.qty}" onchange="nUpdateFreightRow(${i}, 'qty', this.value)">
-        <input type="number" style="flex:1.5; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Unit Price" value="${f.price}" step="0.01" onchange="nUpdateFreightRow(${i}, 'price', this.value)">
-        <div style="flex:1.5; text-align:right; font-size:13px; font-weight:600; color:#0f172a;">$` + rowTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + `</div>
+        <input type="number" style="flex:0.8; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Qty" value="${f.qty}" onchange="nUpdateFreightRow(${i}, 'qty', this.value)">
+        <input type="number" style="flex:1.2; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Unit Price" value="${f.price}" step="0.01" onchange="nUpdateFreightRow(${i}, 'price', this.value)">
+        <input type="text" style="flex:2; padding:6px; border:1px solid #cbd5e1; border-radius:4px;" placeholder="Remarks" value="${f.remarks||''}" onchange="nUpdateFreightRow(${i}, 'remarks', this.value)">
+        <div style="flex:1.2; text-align:right; font-size:13px; font-weight:600; color:#0f172a;">$` + rowTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + `</div>
         <button type="button" class="btn-del" style="padding:4px 8px; font-size:12px;" onclick="nRemoveFreightRow(${i})">✕</button>
       </div>`;
     });
@@ -1639,19 +1640,44 @@
       const sumW = 85;
       const sumX = PAGE_W - M - sumW;
       
+      let frtDetailsH = 0;
+      if (d.freightDetails && d.freightDetails.length > 0) {
+        frtDetailsH = d.freightDetails.length * 5;
+      }
+      const boxH = 35 + frtDetailsH;
+
       doc.setFillColor(250, 250, 250);
       doc.setDrawColor(200, 200, 200);
-      doc.rect(sumX, y, sumW, 35, "DF");
+      doc.rect(sumX, y, sumW, boxH, "DF");
 
       doc.setFontSize(9); doc.setTextColor(80,80,80);
-      doc.text("Handling Charges:", sumX+5, y+8);
-      doc.text("$" + Number(d.handling||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+8, {align:"right"});
+      let curY = y + 8;
+      doc.text("Handling Charges:", sumX+5, curY);
+      doc.text("$" + Number(d.handling||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, curY, {align:"right"});
+      curY += 7;
       
-      doc.text((d.incoterms||"Freight") + " Charges:", sumX+5, y+15);
-      doc.text("$" + Number(d.freight||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+15, {align:"right"});
+      doc.text((d.incoterms||"Freight") + " Charges:", sumX+5, curY);
+      doc.text("$" + Number(d.freight||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, curY, {align:"right"});
       
-      doc.text("Insurance Charges:", sumX+5, y+22);
-      doc.text("$" + Number(d.insurance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+22, {align:"right"});
+      if (d.freightDetails && d.freightDetails.length > 0) {
+        doc.setFontSize(7); doc.setTextColor(120,120,120);
+        d.freightDetails.forEach(f => {
+          curY += 5;
+          let remarkStr = f.remarks ? ` (${f.remarks})` : "";
+          let text = `- ${f.type} x ${f.qty}${remarkStr}`;
+          if (text.length > 45) text = text.substring(0, 43) + "...";
+          doc.text(text, sumX+5, curY);
+          doc.text("$" + (f.qty * f.price).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, curY, {align:"right"});
+        });
+        doc.setFontSize(9); doc.setTextColor(80,80,80);
+        curY += 3;
+      } else {
+        curY += 7;
+      }
+      
+      doc.text("Insurance Charges:", sumX+5, curY);
+      doc.text("$" + Number(d.insurance||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, curY, {align:"right"});
+      curY += 8;
 
       // Grand Total 계산
       let itemSum = 0;
@@ -1659,9 +1685,9 @@
       let gt = itemSum + Number(d.handling||0) + Number(d.freight||0) + Number(d.insurance||0);
 
       doc.setFontSize(11); doc.setTextColor(0, 0, 0); doc.setFont("helvetica","bold");
-      doc.text("GRAND TOTAL:", sumX+5, y+30);
+      doc.text("GRAND TOTAL:", sumX+5, curY);
       doc.setTextColor(0, 100, 0);
-      doc.text("USD $" + gt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, y+30, {align:"right"});
+      doc.text("USD $" + gt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), sumX+sumW-5, curY, {align:"right"});
 
       // ── Remarks (좌측 하단) ──
       if(d.remarks) {
