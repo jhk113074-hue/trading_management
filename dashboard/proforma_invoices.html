@@ -1285,7 +1285,15 @@
     const piDate     = document.getElementById("n_pi_date").value || new Date().toISOString().split("T")[0];
     const year       = new Date(piDate).getFullYear();
     // PI number preview (not yet saved)
-    const piNum      = `PI-YSACC-${year}-DRAFT`;
+    let piNum = `PI-YSACC-${year}-DRAFT`;
+    let currentVersion = "";
+    if (editPIId) {
+      const p = allPIs.find(x => x.id === editPIId);
+      if (p) {
+        piNum = p.piNumber || piNum;
+        currentVersion = p.currentVersion || "";
+      }
+    }
     const items = nItems.map((item, i) => {
       const cu = item.cost / rate;
       const sp = item.margin < 100 ? cu / (1 - item.margin / 100) : cu;
@@ -1303,7 +1311,7 @@
     const insurance = parseFloat(document.getElementById("n_insurance").value)||0;
     const grand     = subtotal + handling + freight + insurance;
     return {
-      piNum, piDate,
+      piNum, piDate, currentVersion,
       validUntil:   document.getElementById("n_valid_until").value,
       customer:     custName,
       contact:      document.getElementById("n_contact").value,
@@ -1344,8 +1352,9 @@
 
       // 3. 기본 정보 입력 (고정 셀 좌표)
       ws.getCell('G3').value = d.piDate;
-      ws.getCell('G5').value = d.piNum || "";
-      
+      const fullPiNum = (d.piNum || "") + (d.currentVersion || "");
+      ws.getCell('G5').value = fullPiNum;
+      ws.getCell('G5').alignment = { horizontal: 'right', vertical: 'middle' };    
       const custId = document.getElementById("n_customer").value;
       const custInfo = customerMap[custId] || {};
       const custAddr = custInfo.address || custInfo.addressEn || "";
@@ -1414,7 +1423,8 @@
       // 파일 다운로드
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
+      const fullPiNumFile = (d.piNum || "PI-YSACC") + (d.currentVersion || "");
+      const fileName = (fullPiNumFile.replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".xlsx";
       saveAs(blob, fileName);
 
     } catch (e) {
@@ -1471,8 +1481,7 @@
       doc.setFontSize(16); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
       doc.text("PROFORMA INVOICE", PAGE_W - M, y, {align:"right"});
       y += 6;
-      doc.setFontSize(10); doc.setTextColor(80,80,80); doc.setFont("helvetica","normal");
-      doc.text(`Date: ${d.piDate}`, PAGE_W - M, y, {align:"right"});
+      doc.text(`Date: ${d.piDate||"-"}`, PAGE_W - M, y, {align:"right"});
       y += 5;
       doc.text(`Valid Until: ${d.validUntil}`, PAGE_W - M, y, {align:"right"});
       y += 10;
@@ -1481,7 +1490,8 @@
       doc.setFillColor(245, 245, 245);
       doc.rect(M, y, PAGE_W - M*2, 10, "F");
       doc.setFontSize(11); doc.setTextColor(0,0,0); doc.setFont("helvetica","bold");
-      doc.text(`PI No: ${d.piNum}`, M+3, y+7);
+      const fullPiNum = (d.piNum || "") + (d.currentVersion || "");
+      doc.text(`PI No: ${fullPiNum}`, M+3, y+7);
       y += 15;
 
       // ── Bill To & Shipment Info ──
@@ -1616,7 +1626,8 @@
       doc.text("__________________________", PAGE_W - M, y+10, {align:"right"});
       doc.text("YS ACC", PAGE_W - M - 20, y+5, {align:"right"});
 
-      const fileName = ((d.piNum||"PI-YSACC").replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
+      const fullPiNum = (d.piNum || "PI-YSACC") + (d.currentVersion || "");
+      const fileName = (fullPiNum.replace(/[^a-zA-Z0-9-]/g,"_"))+"_"+d.piDate+".pdf";
       
       window._currentPdfDoc = doc;
       window._currentPdfFileName = fileName;
