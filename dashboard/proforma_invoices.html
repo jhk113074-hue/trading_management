@@ -225,9 +225,9 @@
 </div>
 
 <!-- ═══════════════ New PI 작성 모달 ═══════════════ -->
-<div class="modal-overlay" id="new_pi_overlay" onclick="closeNewPIOnOverlay(event)">
-  <div class="modal modal-wide">
-    <div class="modal-header">
+<div class="modal-overlay" id="new_pi_overlay" style="background:none; backdrop-filter:none; pointer-events:none;">
+  <div class="modal modal-wide" id="new_pi_modal_box" style="pointer-events:auto; position:absolute; margin:0; left:50%; top:50%; transform:translate(-50%, -50%); transition:none;">
+    <div class="modal-header" id="new_pi_header" style="cursor: move;">
       <div>
         <div class="modal-title" id="n_modal_title">New Proforma Invoice</div>
         <div class="modal-sub" id="n_modal_sub">신규 견적서 작성 · Firebase Firestore 저장</div>
@@ -353,6 +353,11 @@
       <button class="btn btn-primary" id="n_save_btn" onclick="nSavePI(true)">✔ Firestore 저장</button>
     </div>
   </div>
+  <!-- Resize Handles for PI Modal -->
+  <div class="resize-handle pi-resize-right" style="position:absolute; right:0; top:0; bottom:0; width:8px; cursor:ew-resize; pointer-events:auto;"></div>
+  <div class="resize-handle pi-resize-left" style="position:absolute; left:0; top:0; bottom:0; width:8px; cursor:ew-resize; pointer-events:auto;"></div>
+  <div class="resize-handle pi-resize-bottom" style="position:absolute; left:0; right:0; bottom:0; height:8px; cursor:ns-resize; pointer-events:auto;"></div>
+  <div class="resize-handle pi-resize-br" style="position:absolute; right:0; bottom:0; width:15px; height:15px; cursor:nwse-resize; pointer-events:auto;"></div>
 </div>
 
 <!-- ═══════════════ PI 상세 모달 ═══════════════ -->
@@ -790,6 +795,75 @@
       isResizing = false;
       let shield = document.getElementById("iframe_shield");
       if(shield) shield.style.display = "none";
+    });
+  }, 1000);
+
+  // ── New PI 모달 드래그 및 리사이즈 로직 ──
+  setTimeout(() => {
+    const piWin = document.getElementById("new_pi_modal_box");
+    const piHeader = document.getElementById("new_pi_header");
+    if (!piWin || !piHeader) return;
+    
+    let piIsDragging = false, piIsResizing = false, piResizeDir = "";
+    let piDragOffsetX = 0, piDragOffsetY = 0;
+    let piStartW = 0, piStartH = 0, piStartX = 0, piStartY = 0, piStartLeft = 0;
+
+    piHeader.addEventListener("mousedown", (e) => {
+      if (e.target.closest('button') || e.target.closest('input')) return;
+      piIsDragging = true;
+      piDragOffsetX = e.clientX - piWin.getBoundingClientRect().left;
+      piDragOffsetY = e.clientY - piWin.getBoundingClientRect().top;
+    });
+
+    document.getElementById("new_pi_overlay").querySelectorAll('.resize-handle').forEach(handle => {
+      handle.addEventListener('mousedown', (e) => {
+        piIsResizing = true;
+        if (handle.classList.contains('pi-resize-right')) piResizeDir = 'r';
+        else if (handle.classList.contains('pi-resize-left')) piResizeDir = 'l';
+        else if (handle.classList.contains('pi-resize-bottom')) piResizeDir = 'b';
+        else if (handle.classList.contains('pi-resize-br')) piResizeDir = 'br';
+        
+        const rect = piWin.getBoundingClientRect();
+        piStartW = rect.width;
+        piStartH = rect.height;
+        piStartLeft = rect.left;
+        piStartX = e.clientX;
+        piStartY = e.clientY;
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (piIsDragging) {
+        piWin.style.left = (e.clientX - piDragOffsetX) + "px";
+        piWin.style.top = (e.clientY - piDragOffsetY) + "px";
+        piWin.style.margin = "0";
+        piWin.style.transform = "none";
+      } else if (piIsResizing) {
+        piWin.style.transform = "none";
+        piWin.style.margin = "0";
+        piWin.style.maxWidth = "none";
+        piWin.style.maxHeight = "none";
+        if (piResizeDir === 'r' || piResizeDir === 'br') {
+          piWin.style.width = (piStartW + (e.clientX - piStartX)) + "px";
+        }
+        if (piResizeDir === 'b' || piResizeDir === 'br') {
+          piWin.style.height = (piStartH + (e.clientY - piStartY)) + "px";
+        }
+        if (piResizeDir === 'l') {
+          const newWidth = piStartW - (e.clientX - piStartX);
+          if (newWidth > 400) {
+            piWin.style.width = newWidth + "px";
+            piWin.style.left = (piStartLeft + (e.clientX - piStartX)) + "px";
+          }
+        }
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      piIsDragging = false;
+      piIsResizing = false;
     });
   }, 1000);
 
