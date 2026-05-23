@@ -1177,6 +1177,12 @@
       }
 
       // 3. Save new PI document
+      const sourceVersion = p.currentVersion || "R1";
+      let sourceRevNum = 1;
+      if (sourceVersion.startsWith("R")) {
+        sourceRevNum = parseInt(sourceVersion.substring(1)) || 1;
+      }
+
       await runTransaction(db, async tx => {
         const piRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
         const revRef = doc(collection(piRef, "revisions"));
@@ -1199,7 +1205,7 @@
           insuranceCharges: p.insuranceCharges || 0,
           subtotalUsd: p.subtotalUsd || 0,
           totalUsd: p.totalUsd || 0,
-          currentVersion: "R1",
+          currentVersion: sourceVersion,
           status: "draft",
           itemsSummary: p.itemsSummary || [],
           createdByUid: currentUserId || auth.currentUser?.uid || "",
@@ -1209,8 +1215,8 @@
         });
 
         tx.set(revRef, {
-          version: "R1",
-          revisionNumber: 1,
+          version: sourceVersion,
+          revisionNumber: sourceRevNum,
           status: "draft",
           subtotalUsd: p.subtotalUsd || 0,
           totalUsd: p.totalUsd || 0,
