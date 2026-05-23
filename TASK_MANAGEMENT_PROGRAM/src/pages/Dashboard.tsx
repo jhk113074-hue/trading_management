@@ -1,0 +1,399 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTasks } from '../contexts/TaskContext';
+import { useAuth } from '../contexts/AuthContext';
+import { TaskModal } from '../components/TaskModal';
+import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import type { Task, User } from '../types';
+
+export const Dashboard: React.FC = () => {
+  const location = useLocation();
+  const { tasks, addTask, updateTask, loading } = useTasks();
+  const [users, setUsers] = useState<User[]>([]);
+  const { userProfile } = useAuth();
+  
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersData: User[] = [];
+      snapshot.forEach(doc => {
+        usersData.push({ id: doc.id, ...doc.data() } as User);
+      });
+      usersData.sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dbTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return da - dbTime;
+      });
+      setUsers(usersData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const [filter, setFilter] = useState('내 업무');
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
+  
+  // Delegated Board State
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
+
+  const todoTasks = useMemo(() => tasks.filter(t => t.status === 'TODO'), [tasks]);
+  const unassignedTasks = todoTasks.filter(
+    t => !t.assigneeId || !users.find(m => m.id === t.assigneeId)
+  );
+  const tasksByMember = (memberId: string) => todoTasks.filter(t => t.assigneeId === memberId);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    setDraggingId(taskId);
+  };
+  const handleDragEnd = () => setDraggingId(null);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).style.background = 'var(--primary-light, #eff6ff)';
+  };
+  const handleDragLeave = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.background = '';
+  };
+  const handleDrop = async (e: React.DragEvent, memberId: string | null) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).style.background = '';
+    const taskId = e.dataTransfer.getData('taskId');
+    if (!taskId) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const targetUser = users.find(u => u.id === memberId);
+    if (!targetUser && memberId !== null) return;
+    const member = memberId ? users.find(m => m.id === memberId) : null;
+    try {
+      const { id, ...rest } = task;
+      await updateDoc(doc(db, 'tasks', id), {
+        ...rest,
+        assigneeId: memberId ?? '',
+        assigneeName: member?.name ?? '미배정',
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setDraggingId(null);
+  };
+
+  const handleDelegatedQuickAdd = async () => {
+    const trimmed = delegatedQuickTitle.trim();
+    if (!trimmed) return;
+    await addTask({
+      title: trimmed,
+      description: '',
+      status: 'TODO',
+      type: 'DELEGATED',
+      scheduleType: 'REQUESTED',
+      importance: 'B',
+      urgency: 5,
+      quadrant: 'Q2',
+      visibility: 'PUBLIC',
+      assigneeId: '',
+      assigneeName: '미배정',
+      createdAt: new Date().toISOString()
+    } as any);
+    setDelegatedQuickTitle('');
+  };
+
+  const quadrantColors: Record<string, string> = {
+    Q1: '#ef4444', Q2: '#3b82f6', Q3: '#f59e0b', Q4: '#94a3b8',
+  };
+
+  const TaskChip: React.FC<{ task: Task }> = ({ task }) => (
+    <div
+      draggable
+      onDragStart={e => handleDragStart(e, task.id)}
+      onDragEnd={handleDragEnd}
+      onClick={() => setEditingTask(task)}
+      style={{
+        background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px',
+        padding: '10px 12px', marginBottom: '8px', cursor: 'grab',
+        opacity: draggingId === task.id ? 0.4 : 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        transition: 'box-shadow 0.15s',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+        <span style={{ fontSize: '0.875rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
+        <span style={{
+          fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px',
+          color: '#fff', flexShrink: 0, background: quadrantColors[task.quadrant] || '#94a3b8',
+        }}>{task.quadrant}</span>
+      </div>
+      <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+        {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
+        {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
+        {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 5px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
+      </div>
+    </div>
+  );
+
+  const DropZone: React.FC<{ memberId: string | null; label: string; badge?: string; tasks: Task[]; color?: string }> = ({
+    memberId, label, badge, tasks: zoneTasks, color = '#f8fafc',
+  }) => (
+    <div style={{ flex: '0 0 220px', minWidth: '200px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: color, border: '1px solid var(--border-color)', borderRadius: '8px 8px 0 0', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          {badge && <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginBottom: '2px' }}>{badge}</div>}
+          <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{label}</div>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>총 {zoneTasks.length}건</div>
+        </div>
+        {zoneTasks.length > 0 && <div style={{ background: memberId ? '#3b82f6' : '#94a3b8', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>{zoneTasks.length}</div>}
+      </div>
+      <div
+        onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, memberId)}
+        style={{ flex: 1, minHeight: '120px', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#fff', transition: 'background 0.15s' }}
+      >
+        {zoneTasks.length === 0 ? (
+          <div style={{ height: '100%', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: '6px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', padding: '10px' }}>여기에 업무를<br />드래그하여 배정</div>
+        ) : (
+          zoneTasks.map(t => <TaskChip key={t.id} task={t} />)
+        )}
+      </div>
+    </div>
+  );
+
+  const filteredTasks = useMemo(() => {
+    let base = tasks || [];
+    const path = location.pathname;
+    
+    if (path === '/projects') base = base.filter(t => t.type === 'PROJECT');
+    if (path === '/daily') base = base.filter(t => t.type === 'DAILY' || (t.type as any) === 'ROUTINE');
+    if (path === '/delegated') base = base.filter(t => t.type === 'DELEGATED');
+    if (path === '/periodic') base = base.filter(t => t.type === 'PERIODIC');
+    
+    if (path.startsWith('/team/')) {
+      const teamId = path.split('/').pop();
+      if (teamId !== 'all') {
+        base = base.filter(t => t.assigneeId === teamId);
+      }
+    }
+
+    return base.filter(t => {
+      if (filter === '전체') return true;
+      if (filter === '내 업무') return t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name;
+      
+      const targetUser = users.find(u => u.id === filter);
+      if (targetUser) {
+        return t.assigneeId === targetUser.id || t.assigneeName === targetUser.name;
+      }
+      
+      return t.quadrant === filter;
+    });
+  }, [tasks, location.pathname, filter, userProfile, users]);
+
+  const stats = {
+    todayDue: filteredTasks.filter(t => t.dueDate === new Date().toISOString().split('T')[0] && t.status !== 'DONE').length,
+    doing: filteredTasks.filter(t => (t.status === 'IN_PROGRESS' || (t.status as any) === '진행중')).length,
+    delegated: filteredTasks.filter(t => t.type === 'DELEGATED' && t.status === 'TODO').length,
+    q1: filteredTasks.filter(t => t.quadrant === 'Q1').length
+  };
+
+  const baskets = [
+    { id: 'TODO', title: 'BASKET 1', subTitle: '업무대기', color: 'var(--q1-color)' },
+    { id: 'IN_PROGRESS', title: 'BASKET 2', subTitle: '업무중', color: 'var(--q2-color)' },
+    { id: 'DONE', title: 'BASKET 3', subTitle: '완료', color: 'var(--text-secondary)' },
+    { id: 'HOLDING', title: 'BASKET 4', subTitle: '보류 (Holding)', color: 'var(--text-muted)' }
+  ];
+
+  const handleQuickAdd = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && quickTaskTitle.trim()) {
+      await addTask({
+        title: quickTaskTitle,
+        status: 'TODO',
+        type: 'PROJECT',
+        scheduleType: 'SELF',
+        importance: 'B',
+        urgency: 5,
+        quadrant: 'Q2',
+        assigneeId: userProfile?.id || '',
+        assigneeName: userProfile?.name || '관리자',
+        createdAt: new Date().toISOString()
+      } as any);
+      setQuickTaskTitle('');
+    }
+  };
+
+  if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
+
+  return (
+    <>
+      <div className="top-section">
+        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px' }}>오늘 해야 할 일을 바로 시작하는 화면</h2>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+        <span style={{ fontWeight: '800' }}>📊 담당자 업무부하도</span>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {users.map(u => {
+            const mTasks = tasks.filter(t => t.assigneeId === u.id || t.assigneeName === u.name);
+            if (mTasks.length === 0) return null;
+            return (
+              <div key={u.id} style={{ display: 'flex', gap: '6px', background: '#f8fafc', padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+                <span style={{ fontWeight: '900', color: 'var(--text-primary)' }}>{u.name}</span>
+                <span style={{ fontSize: '0.7rem' }}>대기 <span style={{ color: '#3b82f6', fontWeight: 700 }}>{mTasks.filter(t => t.status === 'TODO').length}</span> · 진행 <span style={{ color: '#10b981', fontWeight: 700 }}>{mTasks.filter(t => t.status === 'IN_PROGRESS').length}</span> · 완료 <span style={{ color: '#6b7280', fontWeight: 700 }}>{mTasks.filter(t => t.status === 'DONE').length}</span></span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div className="filter-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <button onClick={() => setFilter('내 업무')} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === '내 업무' ? '#3b82f6' : 'white', color: filter === '내 업무' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>내 업무</button>
+          {users.filter(u => u.id !== userProfile?.id).map(u => (
+            <button key={u.id} onClick={() => setFilter(u.id)} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === u.id ? '#3b82f6' : 'white', color: filter === u.id ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>
+              {u.department ? `${u.department} ${u.name}` : u.name}
+            </button>
+          ))}
+          <button onClick={() => setFilter('전체')} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === '전체' ? '#3b82f6' : 'white', color: filter === '전체' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>전체</button>
+        </div>
+        <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>현재 {filteredTasks.length}개 업무가 표시됩니다. (Q1+Q2+Q3+Q4 순 정렬)</div>
+      </div>
+
+      {stats.todayDue > 0 && (
+        <div className="alert-banner alert-red" style={{ padding: '12px 20px', borderRadius: '8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2', marginBottom: '16px' }}>⚠️ 오늘 마감 예정인 업무가 {stats.todayDue}건 있습니다!</div>
+      )}
+      {stats.delegated > 0 && (
+        <div className="alert-banner alert-blue" style={{ padding: '12px 20px', borderRadius: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #dbeafe', marginBottom: '16px' }}>👤 처리 대기 중인 위임 업무가 {stats.delegated}건 있습니다.</div>
+      )}
+
+
+
+      <div className="board-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
+        {baskets.map(basket => (
+          <div key={basket.id} className="board-column" style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 4px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>{basket.title}</span>
+                {basket.subTitle}
+              </div>
+              <div style={{ background: '#fff', color: '#3b82f6', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                {filteredTasks.filter(t => {
+                  const s = t.status?.toUpperCase();
+                  if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                  if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
+                  if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
+                  return s === 'HOLDING' || s === '보류';
+                }).length}
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {filteredTasks.filter(t => {
+                const s = t.status?.toUpperCase();
+                if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
+                if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
+                return s === 'HOLDING' || s === '보류';
+              }).map(task => (
+                <div key={task.id} onClick={() => setEditingTask(task)} className="task-card" style={{ background: '#fff', borderRadius: '8px', padding: '12px', border: '1px solid #e2e8f0', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', flex: 1 }}>{task.title}</div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '8px' }}>{task.quadrant || 'Q2'}</div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>업무유형</div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.type === 'PROJECT' ? '프로젝트' : '일반'}</div>
+                    </div>
+                    <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>일정기반</div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>마감 {task.dueDate || '-'}</span>
+                      {(task.commentCount ?? 0) > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 6px', borderRadius: '10px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                      )}
+                    </div>
+                    <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
+                  </div>
+                </div>
+              ))}
+              
+              {basket.id === 'TODO' && filter === '내 업무' && (
+                <input 
+                  type="text" 
+                  placeholder="+ 업무명 입력 후 Enter" 
+                  value={quickTaskTitle}
+                  onChange={(e) => setQuickTaskTitle(e.target.value)}
+                  onKeyDown={handleQuickAdd}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px dashed #cbd5e1', background: 'transparent', fontSize: '0.85rem', outline: 'none' }} 
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 위임업무 배정 (Drag & Drop) */}
+      <div style={{ marginTop: '20px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <div>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', marginBottom: '2px' }}>🤝 위임업무 배정</h3>
+            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>미배정 업무를 담당자에게 드래그하여 배정하세요.</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px', alignItems: 'flex-start' }}>
+          <div style={{ flex: '0 0 220px', minWidth: '200px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ background: '#fef9c3', border: '1px solid var(--border-color)', borderRadius: '8px 8px 0 0', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginBottom: '2px' }}>배정 대기</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>미배정 업무</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>총 {unassignedTasks.length}건</div>
+              </div>
+              {unassignedTasks.length > 0 && <div style={{ background: '#94a3b8', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>{unassignedTasks.length}</div>}
+            </div>
+            <div
+              onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, null)}
+              style={{ flex: 1, minHeight: '120px', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0', background: '#fff', transition: 'background 0.15s' }}
+            >
+              {unassignedTasks.length === 0 ? (
+                <div style={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: '6px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', padding: '10px' }}>여기에 업무를<br />드래그하여 배정</div>
+              ) : (
+                unassignedTasks.map(t => <TaskChip key={t.id} task={t} />)
+              )}
+            </div>
+            <div style={{ border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '8px', background: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '8px 10px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '1rem' }}>＋</span>
+                <input
+                  value={delegatedQuickTitle}
+                  onChange={e => setDelegatedQuickTitle(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleDelegatedQuickAdd(); }}
+                  placeholder="업무명 입력 후 Enter"
+                  style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem', color: 'var(--text-primary)' }}
+                />
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', flexDirection: 'column', justifyContent: 'flex-start', paddingTop: '48px', flexShrink: 0 }}>
+            <div style={{ fontSize: '1.4rem', color: '#94a3b8' }}>→</div>
+          </div>
+          {users.map(member => (
+            <DropZone key={member.id} memberId={member.id} label={member.name} badge={member.department || '담당자'} tasks={tasksByMember(member.id)} color="#f0f9ff" />
+          ))}
+        </div>
+      </div>
+      {editingTask && (
+        <TaskModal
+          initialTask={editingTask}
+          onClose={() => setEditingTask(null)}
+          onSave={async (data) => {
+            await updateTask({ ...editingTask, ...data } as Task);
+            setEditingTask(null);
+          }}
+        />
+      )}
+    </>
+  );
+};

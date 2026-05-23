@@ -8,3 +8,5 @@ dist/
 # Firebase 서비스 계정 키 (절대 GitHub에 올리지 마세요!)
 *firebase-adminsdk*.json
 serviceAccountKey.json
+SDXC/
+

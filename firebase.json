@@ -20,6 +20,12 @@
           }
         ]
       }
+    ],
+    "rewrites": [
+      {
+        "source": "/tasks/**",
+        "destination": "/tasks/index.html"
+      }
     ]
   }
 }
