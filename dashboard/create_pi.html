@@ -185,14 +185,14 @@
             remarks:          document.getElementById("remarks").value,
             handlingCharges:  handling, freightCharges: freight, insuranceCharges: insurance,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
-            currentVersion: "A", status: "draft",
+            currentVersion: "", status: "draft",
             createdByUid: currentUserId || auth.currentUser?.uid || "",
             createdByName: (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown"),
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
           const revRef = doc(collection(piRef, "revisions"));
           tx.set(revRef, {
-            version:"A", revisionNumber:1, status:"draft",
+            version:"", revisionNumber:0, status:"draft",
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
             createdAt: serverTimestamp()
           });

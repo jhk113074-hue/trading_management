@@ -631,7 +631,7 @@
         <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${writer}">${writer}</td>
         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${cust}</td>
         <td id="td_items_${p.id}" style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--text-muted);line-height:1.4;">${itemsHtml}</td>
-        <td style="text-align:center">${p.currentVersion||"R1"}</td>
+        <td style="text-align:center">${p.currentVersion||""}</td>
         <td style="text-align:center"><span class="badge status-${badge}">${p.status||"draft"}</span></td>
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
         <td style="white-space:nowrap;text-align:center">
@@ -712,7 +712,7 @@
           <div class="detail-row"><span class="detail-label">PI Number</span><span class="detail-value">${p.piNumber||"-"}</span></div>
           <div class="detail-row"><span class="detail-label">PI Date</span><span class="detail-value">${p.piDate||"-"}</span></div>
           <div class="detail-row"><span class="detail-label">Valid Until</span><span class="detail-value">${p.validUntilDate||"-"}</span></div>
-          <div class="detail-row"><span class="detail-label">Revision</span><span class="detail-value">${p.currentVersion||"R1"}</span></div>
+          <div class="detail-row"><span class="detail-label">Revision</span><span class="detail-value">${p.currentVersion||"원본"}</span></div>
           <div class="detail-row"><span class="detail-label">Exchange Rate</span><span class="detail-value">₩${(p.exchangeRate||0).toLocaleString()}/USD</span></div>
         </div>
         <div class="detail-section">
@@ -737,7 +737,7 @@
           <div class="detail-row"><span class="detail-label">Insurance</span><span class="detail-value">$${Number(p.insuranceCharges||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
         </div>
         <div class="detail-section full">
-          <h4>📦 상품 라인 (Line Items · ${p.currentVersion||"R1"} 버전)</h4>
+          <h4>📦 상품 라인 (Line Items · ${p.currentVersion||"원본"} 버전)</h4>
           <table class="li-table">
             <thead>
               <tr><th>#</th><th>Description</th><th style="text-align:right">Qty</th><th>Unit</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Total</th><th>Remarks</th></tr>
@@ -1177,12 +1177,6 @@
       }
 
       // 3. Save new PI document
-      const sourceVersion = p.currentVersion || "R1";
-      let sourceRevNum = 1;
-      if (sourceVersion.startsWith("R")) {
-        sourceRevNum = parseInt(sourceVersion.substring(1)) || 1;
-      }
-
       await runTransaction(db, async tx => {
         const piRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
         const revRef = doc(collection(piRef, "revisions"));
@@ -1205,7 +1199,7 @@
           insuranceCharges: p.insuranceCharges || 0,
           subtotalUsd: p.subtotalUsd || 0,
           totalUsd: p.totalUsd || 0,
-          currentVersion: sourceVersion,
+          currentVersion: "",
           status: "draft",
           itemsSummary: p.itemsSummary || [],
           createdByUid: currentUserId || auth.currentUser?.uid || "",
@@ -1215,8 +1209,8 @@
         });
 
         tx.set(revRef, {
-          version: sourceVersion,
-          revisionNumber: sourceRevNum,
+          version: "",
+          revisionNumber: 0,
           status: "draft",
           subtotalUsd: p.subtotalUsd || 0,
           totalUsd: p.totalUsd || 0,
@@ -1247,7 +1241,7 @@
 
     // 수정 모드 UI 변경
     document.getElementById("n_modal_title").textContent = "Edit Proforma Invoice";
-    document.getElementById("n_modal_sub").innerHTML = `기존 견적서 수정 (${p.piNumber}) &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#2563eb;font-weight:bold;">현재 리비전: ${p.currentVersion || "R1"}</span> &nbsp;&nbsp;|&nbsp;&nbsp; <span class="badge status-${p.status||'draft'}">${p.status||'draft'}</span>`;
+    document.getElementById("n_modal_sub").innerHTML = `기존 견적서 수정 (${p.piNumber}) &nbsp;&nbsp;|&nbsp;&nbsp; <span style="color:#2563eb;font-weight:bold;">현재 리비전: ${p.currentVersion || "원본"}</span> &nbsp;&nbsp;|&nbsp;&nbsp; <span class="badge status-${p.status||'draft'}">${p.status||'draft'}</span>`;
     document.getElementById("n_save_btn").textContent = "🚀 새 리비전 발행 (+버전업)";
     document.getElementById("n_save_draft_btn").style.display = "inline-block";
     
@@ -1788,16 +1782,19 @@
             const piSnap = await tx.get(piRef);
             if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
 
-            const data = piSnap.data();
-            const curVer = data.currentVersion || "R1";
-            let num = 1;
-            if (curVer.startsWith("R")) {
-               num = parseInt(curVer.substring(1)) || 1;
-            } else if (curVer.length === 1 && curVer >= "A" && curVer <= "Z") {
-               num = curVer.charCodeAt(0) - 64;
+            const curVer = data.currentVersion || "";
+            let nextVer = "R1";
+            let nextRevNum = 1;
+            if (curVer) {
+               let num = 1;
+               if (curVer.startsWith("R")) {
+                  num = parseInt(curVer.substring(1)) || 1;
+               } else if (curVer.length === 1 && curVer >= "A" && curVer <= "Z") {
+                  num = curVer.charCodeAt(0) - 64;
+               }
+               nextVer = "R" + (num + 1);
+               nextRevNum = num + 1;
             }
-            const nextVer = "R" + (num + 1);
-            const nextRevNum = num + 1;
 
             // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
             const updateData = {
@@ -1848,14 +1845,17 @@
 
           closeNewPI();
           const curPIObj = allPIs.find(x => x.id === editPIId);
-          const curVerStr = curPIObj ? curPIObj.currentVersion || "R1" : "R1";
-          let nextVerStrNum = 1;
-          if (curVerStr.startsWith("R")) {
-             nextVerStrNum = parseInt(curVerStr.substring(1)) || 1;
-          } else if (curVerStr.length === 1 && curVerStr >= "A" && curVerStr <= "Z") {
-             nextVerStrNum = curVerStr.charCodeAt(0) - 64;
+          const curVerStr = curPIObj ? curPIObj.currentVersion || "" : "";
+          let nextVerStr = "R1";
+          if (curVerStr) {
+             let nextVerStrNum = 1;
+             if (curVerStr.startsWith("R")) {
+                nextVerStrNum = parseInt(curVerStr.substring(1)) || 1;
+             } else if (curVerStr.length === 1 && curVerStr >= "A" && curVerStr <= "Z") {
+                nextVerStrNum = curVerStr.charCodeAt(0) - 64;
+             }
+             nextVerStr = "R" + (nextVerStrNum + 1);
           }
-          const nextVerStr = "R" + (nextVerStrNum + 1);
           alert(`✅ 수정 완료!\n새 리비전(${nextVerStr})이 발행되었습니다.`);
         }
       } else {
@@ -1884,10 +1884,10 @@
             validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
             handlingCharges:hand,freightCharges:frt,freightDetails:nFreightItems,insuranceCharges:ins,
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
-            currentVersion:"R1",status:"draft",itemsSummary,
+            currentVersion:"",status:"draft",itemsSummary,
             createdByUid:currentUserId,createdByName:currentUserName,
             createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-          tx.set(revRef,{version:"R1",revisionNumber:1,status:"draft",
+          tx.set(revRef,{version:"",revisionNumber:0,status:"draft",
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
           processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });
         });
@@ -2337,7 +2337,7 @@
         return;
       }
 
-      let html = `<div style="margin-bottom:15px; font-weight:600;">Current Version: ${p.currentVersion || "R1"}</div>`;
+      let html = `<div style="margin-bottom:15px; font-weight:600;">Current Version: ${p.currentVersion || "원본"}</div>`;
       html += `<div style="position:relative; padding-left:20px; border-left:2px solid #e2e8f0;">`;
 
       for (const rev of revs) {
