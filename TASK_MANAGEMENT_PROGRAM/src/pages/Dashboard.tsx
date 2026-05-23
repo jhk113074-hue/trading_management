@@ -4,7 +4,7 @@ import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
 import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, tradingDb } from '../firebase';
 import type { Task, User } from '../types';
 
 export const Dashboard: React.FC = () => {
@@ -12,6 +12,11 @@ export const Dashboard: React.FC = () => {
   const { tasks, addTask, updateTask, loading } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile } = useAuth();
+  
+  // ── Trading Data States ──
+  const [pis, setPis] = useState<any[]>([]);
+  const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
+  const [tradingLoading, setTradingLoading] = useState(true);
   
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -29,11 +34,41 @@ export const Dashboard: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // ── Trading Real-time Subscriptions ──
+  useEffect(() => {
+    const COMPANY_ID = "YSACC";
+
+    const unsubCustomers = onSnapshot(collection(doc(tradingDb, "companies", COMPANY_ID), "customers"), (snapshot) => {
+      const cmap: Record<string, string> = {};
+      snapshot.forEach(doc => {
+        cmap[doc.id] = doc.data().name || "Unknown";
+      });
+      setCustomerMap(cmap);
+    });
+
+    const unsubPIs = onSnapshot(collection(doc(tradingDb, "companies", COMPANY_ID), "proforma_invoices"), (snapshot) => {
+      const piData: any[] = [];
+      snapshot.forEach(doc => {
+        piData.push({ id: doc.id, ...doc.data() });
+      });
+      piData.sort((a, b) => ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+      setPis(piData);
+      setTradingLoading(false);
+    }, (err) => {
+      console.error("PI subscription error:", err);
+      setTradingLoading(false);
+    });
+
+    return () => {
+      unsubCustomers();
+      unsubPIs();
+    };
+  }, []);
+
   const [filter, setFilter] = useState('내 업무');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   
-  // Delegated Board State
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
 
@@ -217,12 +252,225 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  // ── Trading Metrics Calculations ──
+  const tradingKPIs = useMemo(() => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const thisMonthPIs = pis.filter(p => (p.piDate || "").startsWith(thisMonth));
+    const confirmedPIs = pis.filter(p => p.status === "confirmed");
+    const confirmedRev = confirmedPIs.reduce((s, p) => s + (p.totalUsd || 0), 0);
+    const winRate = pis.length ? Math.round(confirmedPIs.length / pis.length * 100) : 0;
+
+    return {
+      thisMonthCount: thisMonthPIs.length,
+      confirmedRevenue: confirmedRev,
+      winRate,
+      totalCount: pis.length
+    };
+  }, [pis]);
+
+  const monthlyChartData = useMemo(() => {
+    const months: Record<string, number> = {};
+    pis.forEach(p => {
+      if (!p.piDate) return;
+      const ym = p.piDate.substring(0, 7);
+      if (!months[ym]) months[ym] = 0;
+      if (p.status === "confirmed") months[ym] += (p.totalUsd || 0);
+    });
+    const sorted = Object.keys(months).sort().slice(-6);
+    const maxVal = Math.max(...sorted.map(m => months[m]), 1);
+    
+    return sorted.map(ym => ({
+      label: ym.substring(5) + "월",
+      confirmed: months[ym],
+      pct: Math.max(Math.round((months[ym] / maxVal) * 100), 4)
+    }));
+  }, [pis]);
+
+  const statusSummary = useMemo(() => {
+    const counts: Record<string, number> = { draft: 0, sent: 0, confirmed: 0, expired: 0 };
+    pis.forEach(p => {
+      const s = (p.status || "draft").toLowerCase();
+      if (counts[s] !== undefined) counts[s]++;
+      else counts.draft++;
+    });
+    return counts;
+  }, [pis]);
+
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
     <>
+      <div className="top-section" style={{ marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>📊 무역 실시간 매출 및 PI 현황</span>
+          <span style={{ fontSize: '0.7rem', background: 'var(--primary-color)', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
+        </h2>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>YSACC CO., LTD. 실시간 Proforma Invoice 통계 및 매출 지표</p>
+      </div>
+
+      {tradingLoading ? (
+        <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#3b82f6' }} />
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>이번 달 PI 건수</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.thisMonthCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>건 (이번 달 작성)</div>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#0891b2' }} />
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>확정 매출 (Confirmed)</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#0891b2' }}>${tradingKPIs.confirmedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>USD · 전체 누계</div>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#10b981' }} />
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>수주율 (Win Rate)</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{tradingKPIs.winRate}%</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Confirmed / 전체 PI</div>
+            </div>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#f59e0b' }} />
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>전체 PI 건수</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{tradingKPIs.totalCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Draft 포함 누계</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '24px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
+                월별 확정 매출 (USD) <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '4px', marginLeft: '8px', fontWeight: 600 }}>● LIVE</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '130px' }}>
+                {monthlyChartData.length === 0 ? (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '40px 0', width: '100%', textAlign: 'center' }}>PI를 작성하면 차트가 표시됩니다</div>
+                ) : (
+                  monthlyChartData.map((m, idx) => (
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '5px', height: '100%' }}>
+                      <div 
+                        style={{ 
+                          width: '100%', 
+                          borderRadius: '3px 3px 0 0', 
+                          minHeight: '4px', 
+                          height: `${m.pct}%`, 
+                          background: 'linear-gradient(to top, #3b82f6, #60a5fa)',
+                          transition: 'height .5s ease' 
+                        }} 
+                        title={`USD ${m.confirmed.toFixed(0)}`}
+                      />
+                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>{m.label}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
+                  PI 상태 현황 <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '4px', marginLeft: '8px', fontWeight: 600 }}>● LIVE</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <span><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4f46e5', marginRight: '8px', display: 'inline-block' }} />Draft</span>
+                    <span style={{ fontWeight: 600, color: '#4f46e5' }}>{statusSummary.draft}건</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <span><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#0ea5e9', marginRight: '8px', display: 'inline-block' }} />Sent</span>
+                    <span style={{ fontWeight: 600, color: '#0ea5e9' }}>{statusSummary.sent}건</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <span><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', marginRight: '8px', display: 'inline-block' }} />Confirmed</span>
+                    <span style={{ fontWeight: 600, color: '#10b981' }}>{statusSummary.confirmed}건</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                    <span><span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444', marginRight: '8px', display: 'inline-block' }} />Expired</span>
+                    <span style={{ fontWeight: 600, color: '#ef4444' }}>{statusSummary.expired}건</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>글로벌 거래처 DB</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0891b2', marginTop: '2px' }}>{Object.keys(customerMap).length}개사 등록됨</div>
+                </div>
+                <a href="/customers.html" style={{ fontSize: '11px', padding: '6px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', textDecoration: 'none', color: 'var(--text-primary)', background: '#f8fafc', fontWeight: 600, display: 'inline-block', transition: 'all 0.2s' }}>👥 고객 관리 →</a>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
+              최근 Proforma Invoice 목록 <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '4px', marginLeft: '8px', fontWeight: 600 }}>● Firestore 실시간</span>
+            </div>
+            <div style={{ overflowX: 'auto', marginTop: '4px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc' }}>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>PI Number</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Customer</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Incoterms</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Destination</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Payment Terms</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Ver.</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Status</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Total (USD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pis.length === 0 ? (
+                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>저장된 PI가 없습니다.</td></tr>
+                  ) : (
+                    pis.slice(0, 5).map((p, idx) => {
+                      const badge = { confirmed: "confirmed", sent: "sent", draft: "draft", expired: "expired" }[p.status as string] || "draft";
+                      const badgeStyles: Record<string, any> = {
+                        confirmed: { background: '#d1fae5', color: '#065f46' },
+                        sent: { background: '#e0f2fe', color: '#0369a1' },
+                        draft: { background: '#ede9fe', color: '#5b21b6' },
+                        expired: { background: '#fee2e2', color: '#991b1b' }
+                      };
+                      const cust = customerMap[p.customerId] || p.customerId?.substring(0,8) || "-";
+                      const date = p.piDate || (p.createdAt?.seconds ? new Date(p.createdAt.seconds * 1000).toISOString().split("T")[0] : "-");
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '12px' }}><strong>{p.piNumber || "-"}</strong></td>
+                          <td style={{ padding: '12px' }}>{date}</td>
+                          <td style={{ padding: '12px' }}>{cust}</td>
+                          <td style={{ padding: '12px' }}>{p.incoterms || "-"}</td>
+                          <td style={{ padding: '12px' }}>{p.destinationPort || "-"}</td>
+                          <td style={{ padding: '12px' }}>{p.paymentTerms || "-"}</td>
+                          <td style={{ padding: '12px' }}>{p.currentVersion || "A"}</td>
+                          <td style={{ padding: '12px' }}>
+                            <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: 600, ...badgeStyles[badge] }}>
+                              {p.status || "draft"}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                            ${(p.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '32px 0 24px 0' }} />
+
       <div className="top-section">
-        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px' }}>오늘 해야 할 일을 바로 시작하는 화면</h2>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>📋 오늘 해야 할 일을 바로 시작하는 화면</span>
+          <span style={{ fontSize: '0.7rem', background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>실시간 칸반</span>
+        </h2>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
       </div>
 
@@ -262,8 +510,6 @@ export const Dashboard: React.FC = () => {
         <div className="alert-banner alert-blue" style={{ padding: '12px 20px', borderRadius: '8px', background: '#eff6ff', color: '#3b82f6', border: '1px solid #dbeafe', marginBottom: '16px' }}>👤 처리 대기 중인 위임 업무가 {stats.delegated}건 있습니다.</div>
       )}
 
-
-
       <div className="board-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
         {baskets.map(basket => (
           <div key={basket.id} className="board-column" style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px' }}>
@@ -296,7 +542,6 @@ export const Dashboard: React.FC = () => {
                     <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', flex: 1 }}>{task.title}</div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '8px' }}>{task.quadrant || 'Q2'}</div>
                   </div>
-                  
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
                     <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
                       <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>업무유형</div>
@@ -307,7 +552,6 @@ export const Dashboard: React.FC = () => {
                       <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}</div>
                     </div>
                   </div>
-
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>마감 {task.dueDate || '-'}</span>
@@ -319,7 +563,6 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ))}
-              
               {basket.id === 'TODO' && filter === '내 업무' && (
                 <input 
                   type="text" 
@@ -335,7 +578,6 @@ export const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* 위임업무 배정 (Drag & Drop) */}
       <div style={{ marginTop: '20px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div>
