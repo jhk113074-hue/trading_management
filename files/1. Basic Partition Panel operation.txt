@@ -1,0 +1,30 @@
+1. Basic Partition Panel operation & Design
+
+1) the function of the partition is not to stop water supply durcing cleaning of one-sided compartment.
+
+2) We have designed partition for only temporary use purpose for cleaning and mainternace issues.
+
+3) User have to do not occur the water level gap bettween each compartments.
+
+4) Hydrostatic performance of Partition panel (forward hydrostatic pressure performance)
+
+
+        forward hydrostatic pressure performance               reversese hydrostatic pressure performance
+                		  (100%)                                       		        (25%)
+	
+
+5) All grp panel tank supplier have same instruction for this.
+
+
+
+
+
+ In case of tank with partitions(the tank divided into each compartment), please do not occur the water level gap betten each compartments. because the function of the partition is not to stop water supply durcing cleaning of one-sided compartment. Please keep the water level is same of both compartments and apply the same application.
+
+2) In case of tank with partition(the tank divided into each compartment), please do not operate only one compartment being the other compartment with empty more tahn one week.
+
+
+
+So, Panel can not stand full height of water pressure.
+
+ 

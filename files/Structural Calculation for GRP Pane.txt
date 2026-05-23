@@ -1,0 +1,17 @@
+Structural Calculation for GRP Panel Tank                                                
+1) Introduction                                                        
+The calculation method shown here is a simple calculation method based on the Steel Structure Design Standards (Architectural Institute of Japan), and other highly accurate calculation methods obtained by FEM analysis and experiments may be adopted.                                                        
+2) Basic idea                                                        
+2-1) Target and study policy                                                    2-1-1) Idea of Target                                             
+- The target is a standard size steel skid with a water tank capacity of 50 TON or less installed on a solid foundation.
+- The steel skid stand shall be designed so that the bottom surface of the water tank can be supported with sufficient strength against the assumed external force.                                     
+- Anchor bolts are not included here because the strength calculation method is described in Chapter 3 of "FRP Water Tank Seismic Design Standards" (1994 edition).    
+                                                    
+2-2) Basic idea                                                        
+ 1) The seismic input acting   on the water tank is based on the "FRP Water Tank Seismic Design Standards" (1994 edition).    
+ 2) Various external forces act on steel skid, but it is assumed here that only static loads caused by water and dynamic loads caused by earthquakes act.    although steel skid for installing the water tank may have different specifications depending on the upper water tank, the assumed member arrangement is designed here.
+    In addition, the level of the surface should be given sufficient rigidity by the bottom of water tank.                
+ 3) Steel skid of the water tank should be manufactured so that horizontal movement does not occur due to sinking or rising.        
+ 4) In the standard structure calculation, the force acting on the structure against the seismic force acting on water tank is the value obtained from water tank as a rigid body.                                                
+ 5) The design of members is based on the Building Standards Law, the Enforcement Ordinance, and the "Steel Structure Design Standards" (edited by the Architectural Institute of Japan). In addition, the material shall satisfy JIS standards.            
+ 6) The examination here shall show only the selection of members, and it is assumed that the joint members, joints, etc. are fully considered for the acting load shown here.

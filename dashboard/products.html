@@ -70,7 +70,32 @@
 
       tbody.innerHTML = filtered.map(p => {
         const priceFormatted = p.purchasePrice ? p.purchasePrice.toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00";
-        const specStr = `${p.specWidth||'-'}x${p.specLength||'-'}x${p.specHeight||'-'} ${p.unit||'KG'}`;
+        
+        // 제품별 / 파렛트별 규격 구분 표시
+        const unitW = p.unitWidth !== undefined ? p.unitWidth : p.specWidth;
+        const unitL = p.unitLength !== undefined ? p.unitLength : p.specLength;
+        const unitH = p.unitHeight !== undefined ? p.unitHeight : p.specHeight;
+        const unitWt = p.unitWeight !== undefined ? p.unitWeight : p.weight;
+
+        const palletW = p.palletWidth !== undefined ? p.palletWidth : (p.packageType === 'Pallet' ? p.specWidth : 0);
+        const palletL = p.palletLength !== undefined ? p.palletLength : (p.packageType === 'Pallet' ? p.specLength : 0);
+        const palletH = p.palletHeight !== undefined ? p.palletHeight : (p.packageType === 'Pallet' ? p.specHeight : 0);
+        const palletWt = p.palletWeight !== undefined ? p.palletWeight : (p.packageType === 'Pallet' ? p.weight : 0);
+
+        const unitSpecHtml = `<div style="font-size:11px; margin-bottom: 2px; white-space:nowrap;"><span style="background:rgba(37,99,235,0.08); color:var(--accent); padding:1px 4px; border-radius:3px; font-weight:600; font-size:10px; margin-right:4px;">UNIT</span>${unitW||0}x${unitL||0}x${unitH||0} (${unitWt||0}kg)</div>`;
+        
+        const qtyPerPalletStr = p.qtyPerPallet ? `<span style="background:rgba(217,119,6,0.08); color:var(--yellow); padding:1px 4px; border-radius:3px; font-weight:600; font-size:10px; margin-right:4px;">적재</span><strong style="color:var(--text);">${p.qtyPerPallet}</strong> EA` : '';
+
+        let palletSpecHtml = '';
+        if (palletW || palletL || palletH || palletWt || p.qtyPerPallet) {
+          palletSpecHtml = `
+            <div style="font-size:11px; white-space:nowrap; margin-top:2px;"><span style="background:rgba(8,145,178,0.08); color:var(--accent2); padding:1px 4px; border-radius:3px; font-weight:600; font-size:10px; margin-right:4px;">PLT</span>${palletW||0}x${palletL||0}x${palletH||0} (${palletWt||0}kg)</div>
+            ${qtyPerPalletStr ? `<div style="font-size:11px; margin-top:2px;">${qtyPerPalletStr}</div>` : ''}
+          `;
+        }
+
+        const specHtml = `<div style="display:flex; flex-direction:column; gap:2px;">${unitSpecHtml}${palletSpecHtml}</div>`;
+
         return `
           <tr>
             <td><strong style="color:var(--accent2)">${p.productCode || "-"}</strong></td>
@@ -91,7 +116,7 @@
               <div style="font-size:12px;">${p.supplierName || "-"}</div>
               <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">코드: ${p.supplierCode || "-"}</div>
             </td>
-            <td>${specStr}</td>
+            <td>${specHtml}</td>
             <td style="text-align:center;font-weight:600;color:var(--yellow);">${p.stockQty || 0}</td>
             <td><span style="font-size:11px;color:var(--text-muted);">${p.origin || "-"}</span></td>
             <td style="text-align:right;white-space:nowrap;">
@@ -101,6 +126,52 @@
           </tr>`;
       }).join("");
     }
+
+    // ── 단가 이력 동적 행 추가 및 관리 ──
+    window.addPriceRow = function(data = {}) {
+      const tbody = document.getElementById("price_history_body");
+      const tr = document.createElement("tr");
+      tr.className = "price-history-row";
+      
+      const validFrom = data.validFrom || "";
+      const validTo = data.validTo || "";
+      const currency = data.currency || "USD";
+      const price = data.price !== undefined ? data.price : "";
+      const minQty = data.minQty !== undefined ? data.minQty : "";
+      const discountRate = data.discountRate !== undefined ? data.discountRate : "";
+      const remarks = data.remarks || "";
+
+      tr.innerHTML = `
+        <td style="padding: 6px 8px;"><input type="date" class="row-valid-from" value="${validFrom}" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px;"><input type="date" class="row-valid-to" value="${validTo}" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px;">
+          <select class="row-curr" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;">
+            <option ${currency === 'USD' ? 'selected' : ''}>USD</option>
+            <option ${currency === 'KRW' ? 'selected' : ''}>KRW</option>
+            <option ${currency === 'EUR' ? 'selected' : ''}>EUR</option>
+          </select>
+        </td>
+        <td style="padding: 6px 8px;"><input type="number" step="0.0001" class="row-price" value="${price}" placeholder="0.0000" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px;"><input type="number" class="row-moq" value="${minQty}" placeholder="0" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px;"><input type="number" step="0.1" class="row-discount" value="${discountRate}" placeholder="0.0" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px;"><input type="text" class="row-remarks" value="${remarks}" placeholder="조건/비고" style="width:100%; padding:4px 6px; font-size:12px; border:1px solid var(--border); border-radius:4px;"></td>
+        <td style="padding: 6px 8px; text-align:center; white-space:nowrap;">
+          <button type="button" class="action-btn edit-btn" style="border-color:var(--green); background:rgba(5,150,105,0.05); color:var(--green); margin-right:4px; padding:3px 6px;" onclick="window.applyRowAsBase(this)">⭐ 기준 적용</button>
+          <button type="button" class="action-btn delete-btn" style="padding:3px 6px;" onclick="this.closest('tr').remove()">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    };
+
+    window.applyRowAsBase = function(btn) {
+      const row = btn.closest("tr");
+      document.getElementById("p_price").value = row.querySelector(".row-price").value;
+      document.getElementById("p_curr").value = row.querySelector(".row-curr").value;
+      document.getElementById("p_valid_from").value = row.querySelector(".row-valid-from").value;
+      document.getElementById("p_valid_to").value = row.querySelector(".row-valid-to").value;
+      document.getElementById("p_discount").value = row.querySelector(".row-discount").value;
+      alert("✅ 선택한 단가 정보가 현재 기준 단가로 적용되었습니다.");
+    };
 
     // ── 상품 등록 / 수정 저장 ──
     window.saveProduct = async function() {
@@ -112,7 +183,52 @@
       const btn = document.getElementById("save_btn");
       btn.disabled = true; btn.textContent = "저장 중...";
 
-      // 6개 분류 스펙 데이터 매핑
+      // 포장형태에 따른 메인 규격(specWidth 등) 호환 세팅
+      const packageType = document.getElementById("p_package_type") ? document.getElementById("p_package_type").value : 'Pallet';
+      let specWidth = 0, specLength = 0, specHeight = 0, weight = 0, grossWeight = 0;
+      
+      const unitW = parseFloat(document.getElementById("p_unit_width").value) || 0;
+      const unitL = parseFloat(document.getElementById("p_unit_length").value) || 0;
+      const unitH = parseFloat(document.getElementById("p_unit_height").value) || 0;
+      const unitWt = parseFloat(document.getElementById("p_unit_weight").value) || 0;
+      const unitGwt = parseFloat(document.getElementById("p_unit_gross_weight").value) || 0;
+
+      const palletW = parseFloat(document.getElementById("p_pallet_width").value) || 0;
+      const palletL = parseFloat(document.getElementById("p_pallet_length").value) || 0;
+      const palletH = parseFloat(document.getElementById("p_pallet_height").value) || 0;
+      const palletWt = parseFloat(document.getElementById("p_pallet_weight").value) || 0;
+      const palletGwt = parseFloat(document.getElementById("p_pallet_gross_weight").value) || 0;
+
+      const qtyPerPallet = parseInt(document.getElementById("p_qty_per_pallet").value, 10) || 0;
+
+      if (packageType === 'Pallet') {
+        specWidth = palletW; specLength = palletL; specHeight = palletH;
+        weight = palletWt; grossWeight = palletGwt;
+      } else {
+        specWidth = unitW; specLength = unitL; specHeight = unitH;
+        weight = unitWt; grossWeight = unitGwt;
+      }
+
+      // 가격 이력 테이블 정보 수집
+      const purchasePrices = [];
+      document.querySelectorAll(".price-history-row").forEach(row => {
+        const pVal = parseFloat(row.querySelector(".row-price").value) || 0;
+        if (pVal > 0) {
+          purchasePrices.push({
+            validFrom: row.querySelector(".row-valid-from").value,
+            validTo: row.querySelector(".row-valid-to").value,
+            currency: row.querySelector(".row-curr").value,
+            price: pVal,
+            minQty: parseFloat(row.querySelector(".row-moq").value) || 0,
+            discountRate: parseFloat(row.querySelector(".row-discount").value) || 0,
+            remarks: row.querySelector(".row-remarks").value.trim()
+          });
+        }
+      });
+      // 시작일 기준 내림차순 정렬
+      purchasePrices.sort((a,b) => (b.validFrom || "").localeCompare(a.validFrom || ""));
+
+      // 스펙 데이터 매핑
       const productData = {
         // 1. 기본 정보
         productCode: code,
@@ -140,15 +256,34 @@
         priceValidTo: document.getElementById("p_valid_to").value,
         discountRate: parseFloat(document.getElementById("p_discount").value) || 0,
         freightIncluded: document.getElementById("p_freight_inc").value,
+        purchasePrices: purchasePrices, // 단가 이력 목록 추가
 
-        // 4. 상품 규격
+        // 4. 상품 규격 및 파렛트 적재 정보
         unit: document.getElementById("p_unit").value,
-        packageType: document.getElementById("p_package_type") ? document.getElementById("p_package_type").value : 'Pallet',
-        specWidth: parseFloat(document.getElementById("p_width").value) || 0,
-        specLength: parseFloat(document.getElementById("p_length").value) || 0,
-        specHeight: parseFloat(document.getElementById("p_height").value) || 0,
-        weight: parseFloat(document.getElementById("p_weight").value) || 0,
-        grossWeight: parseFloat(document.getElementById("p_gross_weight") ? document.getElementById("p_gross_weight").value : 0) || 0,
+        packageType: packageType,
+        qtyPerPallet: qtyPerPallet, // 파렛트당 적재 수량 추가 ★
+        
+        // 메인 사양 (하위 호환 유지)
+        specWidth: specWidth,
+        specLength: specLength,
+        specHeight: specHeight,
+        weight: weight,
+        grossWeight: grossWeight,
+
+        // 제품별 규격 분리 저장
+        unitWidth: unitW,
+        unitLength: unitL,
+        unitHeight: unitH,
+        unitWeight: unitWt,
+        unitGrossWeight: unitGwt,
+
+        // 파렛트별 규격 분리 저장
+        palletWidth: palletW,
+        palletLength: palletL,
+        palletHeight: palletH,
+        palletWeight: palletWt,
+        palletGrossWeight: palletGwt,
+
         stackable: document.getElementById("p_stackable") ? document.getElementById("p_stackable").value : 'Y',
         rotation: document.getElementById("p_rotation") ? document.getElementById("p_rotation").value : 'Y',
         color: document.getElementById("p_color").value.trim(),
@@ -221,6 +356,12 @@
       // 가격 유효 시작일 오늘 자동 세팅
       document.getElementById("p_valid_from").value = new Date().toISOString().split("T")[0];
 
+      // 가격 이력 테이블 클리어
+      document.getElementById("price_history_body").innerHTML = "";
+      
+      // 적재수량 클리어
+      document.getElementById("p_qty_per_pallet").value = "";
+
       switchTab(1);
       document.getElementById("prod_overlay").classList.add("open");
       document.body.style.overflow = "hidden";
@@ -262,14 +403,46 @@
       document.getElementById("p_discount").value = p.discountRate || 0;
       document.getElementById("p_freight_inc").value = p.freightIncluded || "N";
 
-      // 상품 규격
+      // 가격 이력 테이블 렌더링 (레거시 단가 마이그레이션 포함)
+      const historyBody = document.getElementById("price_history_body");
+      historyBody.innerHTML = "";
+      if (p.purchasePrices && p.purchasePrices.length > 0) {
+        p.purchasePrices.forEach(item => {
+          window.addPriceRow(item);
+        });
+      } else {
+        if (p.purchasePrice) {
+          window.addPriceRow({
+            validFrom: p.priceValidFrom || "",
+            validTo: p.priceValidTo || "",
+            currency: p.currency || "USD",
+            price: p.purchasePrice,
+            minQty: p.minOrderQty || 0,
+            discountRate: p.discountRate || 0,
+            remarks: "기본 단가 이관"
+          });
+        }
+      }
+
+      // 상품 규격 및 적재수량
       document.getElementById("p_unit").value = p.unit || "KG";
       if(document.getElementById("p_package_type")) document.getElementById("p_package_type").value = p.packageType || "Pallet";
-      document.getElementById("p_width").value = p.specWidth || 0;
-      document.getElementById("p_length").value = p.specLength || 0;
-      document.getElementById("p_height").value = p.specHeight || 0;
-      document.getElementById("p_weight").value = p.weight || 0;
-      if(document.getElementById("p_gross_weight")) document.getElementById("p_gross_weight").value = p.grossWeight || 0;
+      document.getElementById("p_qty_per_pallet").value = p.qtyPerPallet || "";
+      
+      // 제품별 규격 분리 로딩 (기본 필드 하위호환)
+      document.getElementById("p_unit_width").value = p.unitWidth || p.specWidth || 0;
+      document.getElementById("p_unit_length").value = p.unitLength || p.specLength || 0;
+      document.getElementById("p_unit_height").value = p.unitHeight || p.specHeight || 0;
+      document.getElementById("p_unit_weight").value = p.unitWeight || p.weight || 0;
+      document.getElementById("p_unit_gross_weight").value = p.unitGrossWeight || p.grossWeight || 0;
+
+      // 파렛트별 규격 분리 로딩
+      document.getElementById("p_pallet_width").value = p.palletWidth || (p.packageType === 'Pallet' ? p.specWidth : 0);
+      document.getElementById("p_pallet_length").value = p.palletLength || (p.packageType === 'Pallet' ? p.specLength : 0);
+      document.getElementById("p_pallet_height").value = p.palletHeight || (p.packageType === 'Pallet' ? p.specHeight : 0);
+      document.getElementById("p_pallet_weight").value = p.palletWeight || (p.packageType === 'Pallet' ? p.weight : 0);
+      document.getElementById("p_pallet_gross_weight").value = p.palletGrossWeight || (p.packageType === 'Pallet' ? p.grossWeight : 0);
+
       if(document.getElementById("p_stackable")) document.getElementById("p_stackable").value = p.stackable || "Y";
       if(document.getElementById("p_rotation")) document.getElementById("p_rotation").value = p.rotation || "Y";
       document.getElementById("p_color").value = p.color || "";
@@ -335,6 +508,20 @@
       { header: "배송비포함여부", key: "freightIncluded" },
       { header: "단위", key: "unit" },
       { header: "포장형태", key: "packageType" },
+      { header: "파렛트당적재수량", key: "qtyPerPallet" }, // 신규 적재수량 컬럼 매핑 ★
+      // 제품별 규격
+      { header: "제품가로(mm)", key: "unitWidth" },
+      { header: "제품세로(mm)", key: "unitLength" },
+      { header: "제품높이(mm)", key: "unitHeight" },
+      { header: "제품순중량(kg)", key: "unitWeight" },
+      { header: "제품총중량(kg)", key: "unitGrossWeight" },
+      // 파렛트별 규격
+      { header: "파렛트가로(mm)", key: "palletWidth" },
+      { header: "파렛트세로(mm)", key: "palletLength" },
+      { header: "파렛트높이(mm)", key: "palletHeight" },
+      { header: "파렛트순중량(kg)", key: "palletWeight" },
+      { header: "파렛트총중량(kg)", key: "palletGrossWeight" },
+      // 메인 규격 (호환용)
       { header: "가로(mm)", key: "specWidth" },
       { header: "세로(mm)", key: "specLength" },
       { header: "높이(mm)", key: "specHeight" },
@@ -396,7 +583,10 @@
             });
             
             // Number conversions
-            ['minOrderQty', 'purchasePrice', 'discountRate', 'specWidth', 'specLength', 'specHeight', 'weight', 'grossWeight', 'stockQty', 'leadTimeDays'].forEach(numKey => {
+            ['minOrderQty', 'purchasePrice', 'discountRate', 'specWidth', 'specLength', 'specHeight', 'weight', 'grossWeight', 'stockQty', 'leadTimeDays',
+             'unitWidth', 'unitLength', 'unitHeight', 'unitWeight', 'unitGrossWeight',
+             'palletWidth', 'palletLength', 'palletHeight', 'palletWeight', 'palletGrossWeight', 'qtyPerPallet'
+            ].forEach(numKey => {
                if (productData[numKey]) productData[numKey] = parseFloat(productData[numKey]) || 0;
             });
 
@@ -657,67 +847,121 @@
 
         <!-- Tab 3: 가격 정보 -->
         <div class="tab-pane" id="tab_pane_3">
-          <div class="form-grid-4">
-            <div class="fgroup"><label>구매가 (원가)</label><input type="number" step="0.0001" id="p_price" placeholder="0.0000"></div>
-            <div class="fgroup">
-              <label>구매 통화</label>
-              <select id="p_curr">
-                <option>USD</option><option>KRW</option><option>EUR</option>
-              </select>
+          <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px;">⭐ 현재 기준 단가 (Active Base Price)</h4>
+            <div class="form-grid-4">
+              <div class="fgroup"><label>구매가 (원가)</label><input type="number" step="0.0001" id="p_price" placeholder="0.0000"></div>
+              <div class="fgroup">
+                <label>구매 통화</label>
+                <select id="p_curr">
+                  <option>USD</option><option>KRW</option><option>EUR</option>
+                </select>
+              </div>
+              <div class="fgroup"><label>가격유효기간_시작일</label><input type="date" id="p_valid_from"></div>
+              <div class="fgroup"><label>가격유효기간_종료일</label><input type="date" id="p_valid_to"></div>
             </div>
-            <div class="fgroup"><label>가격유효기간_시작일</label><input type="date" id="p_valid_from"></div>
-            <div class="fgroup"><label>가격유효기간_종료일</label><input type="date" id="p_valid_to"></div>
+            <div class="form-grid-2" style="margin-top:14px;">
+              <div class="fgroup"><label>할인율 (%)</label><input type="number" step="0.1" id="p_discount" placeholder="0.0"></div>
+              <div class="fgroup">
+                <label>배송료 포함 여부</label>
+                <select id="p_freight_inc">
+                  <option>N</option><option>Y</option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div class="form-grid-2" style="margin-top:16px;">
-            <div class="fgroup"><label>할인율 (%)</label><input type="number" step="0.1" id="p_discount" placeholder="0.0"></div>
-            <div class="fgroup">
-              <label>배송료 포함 여부</label>
-              <select id="p_freight_inc">
-                <option>N</option><option>Y</option>
-              </select>
+
+          <!-- 단가 이력 관리 -->
+          <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="font-size: 13px; font-weight: 600; color: var(--text);">📋 단가 이력 및 조건 목록 (Purchase Price History & Tiers)</h4>
+              <button type="button" class="btn btn-outline" style="padding: 5px 12px; font-size: 11px; height: auto;" onclick="window.addPriceRow()">＋ 단가 추가</button>
+            </div>
+            <div style="overflow-x: auto; background: #fff; border: 1px solid var(--border); border-radius: 6px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;" id="price_history_table">
+                <thead>
+                  <tr style="background: var(--surface2); border-bottom: 1px solid var(--border);">
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left;">시작일</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left;">종료일</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left; width: 90px;">통화</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left; width: 110px;">단가</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left; width: 90px;">MOQ</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left; width: 80px;">할인율(%)</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: left;">비고 (계약/조건)</th>
+                    <th style="padding: 8px 10px; font-size: 11px; text-align: center; width: 140px;">작업</th>
+                  </tr>
+                </thead>
+                <tbody id="price_history_body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
         <!-- Tab 4: 상품 규격 -->
         <div class="tab-pane" id="tab_pane_4">
-          <div class="form-grid">
-            <div class="fgroup">
-              <label>단위</label>
-              <select id="p_unit">
-                <option>KG</option><option>BOX</option><option>M</option><option>M2</option><option>M3</option><option>EA</option><option>SET</option>
-              </select>
+          <!-- 공통 사양 -->
+          <div style="margin-bottom: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">📋 공통 사양 (Common Specs)</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div class="fgroup">
+                <label>단위</label>
+                <select id="p_unit">
+                  <option>KG</option><option>BOX</option><option>M</option><option>M2</option><option>M3</option><option>EA</option><option>SET</option>
+                </select>
+              </div>
+              <div class="fgroup">
+                <label>포장 형태 (Package Type)</label>
+                <select id="p_package_type">
+                  <option value="Pallet">Pallet</option>
+                  <option value="Carton">Carton</option>
+                  <option value="Wooden Box">Wooden Box</option>
+                  <option value="Drum">Drum</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+              <div class="fgroup">
+                <label>다단 적재 허용</label>
+                <select id="p_stackable">
+                  <option value="Y">Y</option><option value="N">N</option>
+                </select>
+              </div>
+              <div class="fgroup">
+                <label>회전 허용</label>
+                <select id="p_rotation">
+                  <option value="Y">Y</option><option value="N">N</option>
+                </select>
+              </div>
+              <div class="fgroup"><label>색상</label><input type="text" id="p_color" placeholder="예: Black, Clear"></div>
+              <div class="fgroup"><label>재질</label><input type="text" id="p_material" placeholder="예: Carbon Fiber, Epoxy"></div>
+              <div class="fgroup" style="grid-column: span 2;"><label>원산지 (Country of Origin)</label><input type="text" id="p_origin" placeholder="예: South Korea, Japan"></div>
             </div>
-            <div class="fgroup">
-              <label>포장 형태 (Package Type)</label>
-              <select id="p_package_type">
-                <option value="Pallet">Pallet</option>
-                <option value="Carton">Carton</option>
-                <option value="Wooden Box">Wooden Box</option>
-                <option value="Drum">Drum</option>
-                <option value="None">None</option>
-              </select>
+          </div>
+
+          <!-- 단품별 규격 -->
+          <div style="margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">📦 단품별 규격 (Per Unit / Product) <span style="font-size: 11px; font-weight: normal; color: var(--text-muted); margin-left: 6px;">제품 1개 기준 고유 물리 사양</span></h4>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+              <div class="fgroup"><label>단품 가로 (mm)</label><input type="number" id="p_unit_width" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>단품 세로 (mm)</label><input type="number" id="p_unit_length" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>단품 높이 (mm)</label><input type="number" id="p_unit_height" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>단품 순중량 (Net / kg)</label><input type="number" step="0.01" id="p_unit_weight" placeholder="0.00" style="width: 100%;"></div>
+              <div class="fgroup"><label>단품 총중량 (Gross / kg)</label><input type="number" step="0.01" id="p_unit_gross_weight" placeholder="0.00" style="width: 100%;"></div>
             </div>
-            <div class="fgroup"><label>규격_가로 (Width / mm)</label><input type="number" id="p_width" placeholder="0"></div>
-            <div class="fgroup"><label>규격_세로 (Length / mm)</label><input type="number" id="p_length" placeholder="0"></div>
-            <div class="fgroup"><label>규격_높이 (Height / mm)</label><input type="number" id="p_height" placeholder="0"></div>
-            <div class="fgroup"><label>순중량 (Net Wt / kg)</label><input type="number" step="0.01" id="p_weight" placeholder="0.00"></div>
-            <div class="fgroup"><label>총중량 (Gross Wt / kg)</label><input type="number" step="0.01" id="p_gross_weight" placeholder="0.00"></div>
-            <div class="fgroup">
-              <label>다단 적재 허용 (Stackable)</label>
-              <select id="p_stackable">
-                <option value="Y">Y</option><option value="N">N</option>
-              </select>
+          </div>
+
+          <!-- 파렛트별 적재 및 규격 -->
+          <div style="border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+            <h4 style="font-size: 13px; font-weight: 600; color: var(--accent2); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">🪵 파렛트별 적재 및 규격 (Per Pallet) <span style="font-size: 11px; font-weight: normal; color: var(--text-muted); margin-left: 6px;">선적 및 적재 작업 기준 사양</span></h4>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
+              <div class="fgroup"><label style="color:var(--yellow); font-weight:700;">적재 수량 (EA) ★</label><input type="number" id="p_qty_per_pallet" placeholder="예: 500" style="width: 100%; border-color: var(--yellow); font-weight: 600;"></div>
+              <div class="fgroup"><label>파렛트 가로 (mm)</label><input type="number" id="p_pallet_width" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>파렛트 세로 (mm)</label><input type="number" id="p_pallet_length" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>파렛트 높이 (mm)</label><input type="number" id="p_pallet_height" placeholder="0" style="width: 100%;"></div>
+              <div class="fgroup"><label>파렛트 순중량 (kg)</label><input type="number" step="0.01" id="p_pallet_weight" placeholder="0.00" style="width: 100%;"></div>
+              <div class="fgroup"><label>파렛트 총중량 (kg)</label><input type="number" step="0.01" id="p_pallet_gross_weight" placeholder="0.00" style="width: 100%;"></div>
             </div>
-            <div class="fgroup">
-              <label>회전 허용 (Rotation)</label>
-              <select id="p_rotation">
-                <option value="Y">Y</option><option value="N">N</option>
-              </select>
-            </div>
-            <div class="fgroup"><label>색상</label><input type="text" id="p_color" placeholder="예: Black, Clear"></div>
-            <div class="fgroup"><label>재질</label><input type="text" id="p_material" placeholder="예: Carbon Fiber, Epoxy"></div>
-            <div class="fgroup"><label>원산지 (Country of Origin)</label><input type="text" id="p_origin" placeholder="예: South Korea, Japan"></div>
           </div>
         </div>
 
