@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -60,14 +60,53 @@
 
     let allProducts = [];
     let editProdId = null;
+    let sortKey = "productCode";
+    let sortDir = 1; // 1=asc, -1=desc
+
+    // ── 카테고리 필터 동적 구성 ──
+    function buildCategoryFilters() {
+      const largeCats = [...new Set(allProducts.map(p => p.categoryLarge).filter(Boolean))].sort();
+      const mediumCats = [...new Set(allProducts.map(p => p.categoryMedium).filter(Boolean))].sort();
+
+      const largeSel = document.getElementById("cat_large_filter");
+      const mediumSel = document.getElementById("cat_medium_filter");
+
+      const curLarge = largeSel.value;
+      const curMedium = mediumSel.value;
+
+      largeSel.innerHTML = '<option value="">전체 대분류</option>' + largeCats.map(c => `<option value="${c}"${c===curLarge?" selected":""}>${c}</option>`).join("");
+      mediumSel.innerHTML = '<option value="">전체 중분류</option>' + mediumCats.map(c => `<option value="${c}"${c===curMedium?" selected":""}>${c}</option>`).join("");
+    }
+
+    // ── 정렬 헤더 클릭 ──
+    window.sortProducts = function(key) {
+      if (sortKey === key) {
+        sortDir *= -1;
+      } else {
+        sortKey = key;
+        sortDir = 1;
+      }
+      document.querySelectorAll("th[data-sort]").forEach(th => {
+        const k = th.getAttribute("data-sort");
+        const icon = th.querySelector(".sort-icon");
+        if (!icon) return;
+        if (k === key) {
+          icon.textContent = sortDir === 1 ? " ▲" : " ▼";
+          th.style.color = "var(--accent)";
+        } else {
+          icon.textContent = " ⇅";
+          th.style.color = "";
+        }
+      });
+      renderProducts();
+    };
 
     // ── 실시간 상품 마스터 DB 구독 ──
     function subscribeProducts() {
       const prodCol = collection(doc(db,"companies",COMPANY_ID),"products");
       onSnapshot(prodCol, (snap) => {
         allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        // 상품코드 정렬
-        allProducts.sort((a,b) => (a.productCode || "").localeCompare(b.productCode || ""));
+        buildCategoryFilters();
         renderProducts();
       }, (err) => {
         console.error("상품 DB 로딩 오류:", err);
@@ -77,20 +116,32 @@
     // ── 상품 화면 렌더링 ──
     function renderProducts() {
       const q = document.getElementById("search_input").value.toLowerCase();
-      const catFilter = document.getElementById("cat_filter").value;
+      const catLargeFilter = document.getElementById("cat_large_filter").value;
+      const catMediumFilter = document.getElementById("cat_medium_filter").value;
       const currFilter = document.getElementById("curr_filter").value;
 
-      const filtered = allProducts.filter(p => {
+      let filtered = allProducts.filter(p => {
         const matchesSearch = 
           (p.nameKo || "").toLowerCase().includes(q) ||
           (p.nameEn || "").toLowerCase().includes(q) ||
           (p.productCode || "").toLowerCase().includes(q) ||
           (p.supplierName || "").toLowerCase().includes(q);
         
-        const matchesCat = !catFilter || p.categoryLarge === catFilter;
+        const matchesLargeCat = !catLargeFilter || p.categoryLarge === catLargeFilter;
+        const matchesMediumCat = !catMediumFilter || p.categoryMedium === catMediumFilter;
         const matchesCurr = !currFilter || p.currency === currFilter;
 
-        return matchesSearch && matchesCat && matchesCurr;
+        return matchesSearch && matchesLargeCat && matchesMediumCat && matchesCurr;
+      });
+
+      // 정렬
+      filtered.sort((a, b) => {
+        let va = a[sortKey] ?? "";
+        let vb = b[sortKey] ?? "";
+        if (typeof va === "number" && typeof vb === "number") {
+          return (va - vb) * sortDir;
+        }
+        return String(va).localeCompare(String(vb), "ko") * sortDir;
       });
 
       document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
@@ -647,7 +698,41 @@
       reader.readAsArrayBuffer(file);
     };
 
+    
+    function initResizableColumns() {
+      const cols = document.querySelectorAll('th');
+      cols.forEach(col => {
+        if(col.querySelector('.resizer')) return;
+        const resizer = document.createElement('div');
+        resizer.classList.add('resizer');
+        col.appendChild(resizer);
+        
+        let x = 0;
+        let w = 0;
+        const mouseDownHandler = function(e) {
+          e.stopPropagation();
+          x = e.clientX;
+          const styles = window.getComputedStyle(col);
+          w = parseInt(styles.width, 10);
+          document.addEventListener('mousemove', mouseMoveHandler);
+          document.addEventListener('mouseup', mouseUpHandler);
+          resizer.classList.add('resizing');
+        };
+        const mouseMoveHandler = function(e) {
+          const dx = e.clientX - x;
+          col.style.width = `${w + dx}px`;
+        };
+        const mouseUpHandler = function() {
+          resizer.classList.remove('resizing');
+          document.removeEventListener('mousemove', mouseMoveHandler);
+          document.removeEventListener('mouseup', mouseUpHandler);
+        };
+        resizer.addEventListener('mousedown', mouseDownHandler);
+      });
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
+      initResizableColumns();
       subscribeProducts();
     });
   </script>
@@ -694,7 +779,22 @@
     .card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:0; overflow:hidden; box-shadow:var(--shadow-sm); }
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:12px; }
-    th { text-align:left; padding:11px 12px; color:var(--text-muted); font-size:11px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em; background:#fafafa; }
+
+    th { text-align:left; padding:11px 12px; color:var(--text-muted); font-size:11px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; text-transform:uppercase; letter-spacing:.04em; background:#fafafa; position: relative; }
+    .resizer {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      cursor: col-resize;
+      background-color: transparent;
+      z-index: 1;
+    }
+    .resizer:hover, .resizing {
+      background-color: var(--accent);
+    }
+
     td { padding:13px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
     tr:last-child td { border-bottom:none; }
     tr:hover td { background:#f9fafb; }
