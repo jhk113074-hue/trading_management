@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -230,6 +230,7 @@
               <th onclick="sortPIs('createdByName')" style="cursor:pointer">WRITER <span id="sort_createdByName"></span></th>
               <th onclick="sortPIs('customerName')" style="cursor:pointer">CUSTOMER <span id="sort_customerName"></span></th>
               <th>ITEMS</th>
+              <th style="text-align:center">ISSUER</th>
               <th onclick="sortPIs('currentVersion')" style="cursor:pointer;text-align:center">VER. <span id="sort_currentVersion"></span></th>
               <th onclick="sortPIs('status')" style="cursor:pointer;text-align:center">STATUS <span id="sort_status"></span></th>
               <th onclick="sortPIs('totalUsd')" style="cursor:pointer;text-align:right">TOTAL (USD) <span id="sort_totalUsd"></span></th>
@@ -237,7 +238,7 @@
             </tr>
           </thead>
           <tbody id="pi_tbody">
-            <tr><td colspan="9" class="empty">Firestore에서 불러오는 중...</td></tr>
+            <tr><td colspan="10" class="empty">Firestore에서 불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -257,6 +258,26 @@
       <button class="modal-close" onclick="closeNewPI()">✕</button>
     </div>
     <div class="modal-body">
+      <!-- ⓪ 견적 발행사 선택 -->
+      <div class="form-section" style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:2px solid #3b82f6;border-radius:10px;padding:16px 20px;margin-bottom:8px;">
+        <h4 style="color:#1d4ed8;margin-bottom:12px;">⓪ 견적 발행사 선택 ★</h4>
+        <div style="display:flex;gap:16px;align-items:stretch;">
+          <label id="issuing_ysacc_label" style="flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;border:2px solid #3b82f6;border-radius:8px;cursor:pointer;background:#fff;transition:all 0.2s;">
+            <input type="radio" name="n_issuing_company" id="n_issuing_ysacc" value="YSACC" checked onchange="nUpdateIssuingCompany()" style="width:18px;height:18px;accent-color:#3b82f6;">
+            <div>
+              <div style="font-weight:800;font-size:0.95rem;color:#1d4ed8;">(주)와이에스에이씨씨</div>
+              <div style="font-size:0.75rem;color:#64748b;">YSACC CO., LTD. &nbsp;·&nbsp; PI-YSACC-XXXX-XX</div>
+            </div>
+          </label>
+          <label id="issuing_ys_label" style="flex:1;display:flex;align-items:center;gap:12px;padding:14px 18px;border:2px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#fff;transition:all 0.2s;">
+            <input type="radio" name="n_issuing_company" id="n_issuing_ys" value="YS" onchange="nUpdateIssuingCompany()" style="width:18px;height:18px;accent-color:#10b981;">
+            <div>
+              <div style="font-weight:800;font-size:0.95rem;color:#059669;">영성ACC</div>
+              <div style="font-size:0.75rem;color:#64748b;">YS ACC &nbsp;·&nbsp; PI-YS-XXXX-XX</div>
+            </div>
+          </label>
+        </div>
+      </div>
       <!-- ① 기본 정보 -->
       <div class="form-section">
         <h4>① PI 기본 정보</h4>
@@ -625,12 +646,16 @@
         fetchItemsForOldPI(p.id);
       }
 
+      const issuer = p.issuingCompany === 'YS'
+        ? '<span style="font-size:0.7rem;font-weight:800;background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:10px;">영성ACC</span>'
+        : '<span style="font-size:0.7rem;font-weight:800;background:#dbeafe;color:#1e40af;padding:2px 7px;border-radius:10px;">YSACC</span>';
       return `<tr class="pi-row" onclick="openModal('${p.id}')">
         <td class="pi-num">${p.piNumber||"-"}</td>
         <td>${date}</td>
         <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${writer}">${writer}</td>
         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${cust}</td>
         <td id="td_items_${p.id}" style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--text-muted);line-height:1.4;">${itemsHtml}</td>
+        <td style="text-align:center">${issuer}</td>
         <td style="text-align:center">${p.currentVersion||""}</td>
         <td style="text-align:center"><span class="badge status-${badge}">${p.status||"draft"}</span></td>
         <td class="amount">$${(p.totalUsd||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
@@ -709,6 +734,7 @@
       <div class="detail-grid">
         <div class="detail-section">
           <h4>📋 PI 정보</h4>
+          <div class="detail-row"><span class="detail-label">견적 발행사</span><span class="detail-value" style="font-weight:800;color:${p.issuingCompany==='YS'?'#059669':'#2563eb'};">${p.issuingCompany==='YS'?'영성ACC (YS ACC)':'(주)와이에스에이씨씨 (YSACC CO.,LTD)'}</span></div>
           <div class="detail-row"><span class="detail-label">PI Number</span><span class="detail-value">${p.piNumber||"-"}</span></div>
           <div class="detail-row"><span class="detail-label">PI Date</span><span class="detail-value">${p.piDate||"-"}</span></div>
           <div class="detail-row"><span class="detail-label">Valid Until</span><span class="detail-value">${p.validUntilDate||"-"}</span></div>
@@ -1100,6 +1126,9 @@
     document.getElementById("n_save_draft_btn").style.display = "none";
     document.getElementById("revision_section").style.display = "none";
     document.getElementById("n_rev_reason").value = "";
+    // 발행사 초기화 (YSACC 기본 선택)
+    document.getElementById("n_issuing_ysacc").checked = true;
+    nUpdateIssuingCompany();
 
     // 오늘 날짜 기본값
     document.getElementById("n_pi_date").value = new Date().toISOString().split("T")[0];
@@ -1191,6 +1220,14 @@
       document.getElementById("n_rate").value = p.exchangeRate || 1400;
       document.getElementById("n_remarks").value = (p.remarks || "") + " (복제본)";
       document.getElementById("n_created_by_name").value = (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown");
+      // 발행사 복원 (복제 시)
+      const dupIssuing = p.issuingCompany || "YSACC";
+      if (dupIssuing === "YS") {
+        document.getElementById("n_issuing_ys").checked = true;
+      } else {
+        document.getElementById("n_issuing_ysacc").checked = true;
+      }
+      nUpdateIssuingCompany();
       document.getElementById("n_handling").value = p.handlingCharges || 0;
       document.getElementById("n_freight").value = p.freightCharges || 0;
 
@@ -1289,7 +1326,14 @@
       sel.appendChild(opt);
     });
 
-    // 기존 데이터 폼에 채우기
+    // 기존 데이터 폼에 채우기 (발행사 먼저 복원)
+    const storedIssuing = p.issuingCompany || "YSACC";
+    if (storedIssuing === "YS") {
+      document.getElementById("n_issuing_ys").checked = true;
+    } else {
+      document.getElementById("n_issuing_ysacc").checked = true;
+    }
+    nUpdateIssuingCompany();
     document.getElementById("n_pi_date").value = p.piDate || "";
     document.getElementById("n_validity").value = p.validityDays || 30;
     document.getElementById("n_valid_until").value = p.validUntilDate || "";
@@ -1401,6 +1445,20 @@
     if (e.target === document.getElementById("new_pi_overlay")) closeNewPI();
   };
 
+
+  // ── 견적 발행사 선택 변경 시 UI 업데이트 ──
+  window.nUpdateIssuingCompany = function() {
+    const isYS = document.getElementById("n_issuing_ys").checked;
+    const ysaccLabel = document.getElementById("issuing_ysacc_label");
+    const ysLabel    = document.getElementById("issuing_ys_label");
+    if (ysaccLabel && ysLabel) {
+      ysaccLabel.style.borderColor = isYS ? "#e2e8f0" : "#3b82f6";
+      ysaccLabel.style.background  = isYS ? "#f8fafc" : "#eff6ff";
+      ysLabel.style.borderColor    = isYS ? "#10b981" : "#e2e8f0";
+      ysLabel.style.background     = isYS ? "#f0fdf4" : "#fff";
+    }
+  };
+
   // ── 유효기간 계산 ──
   window.nCalcValid = function() {
     const d = document.getElementById("n_pi_date").value;
@@ -1409,6 +1467,7 @@
     const dt = new Date(d); dt.setDate(dt.getDate()+days);
     document.getElementById("n_valid_until").value = dt.toISOString().split("T")[0];
   };
+
 
   // ── 고객 선택 ──
   window.nOnCustomer = function() {
@@ -1767,8 +1826,10 @@
             if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
 
             const pData = piSnap.data();
+            const editIssuingCompany = document.querySelector('input[name="n_issuing_company"]:checked')?.value || "YSACC";
             const updateData = {
               piDate, customerId,
+              issuingCompany: editIssuingCompany,
               incoterms: incotermsVal,
               destinationPort: destVal,
               paymentTerms: paymentVal,
@@ -1827,8 +1888,10 @@
             }
 
             // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
+            const revIssuingCompany = document.querySelector('input[name="n_issuing_company"]:checked')?.value || "YSACC";
             const updateData = {
               piDate, customerId,
+              issuingCompany: revIssuingCompany,
               incoterms: incotermsVal,
               destinationPort: destVal,
               paymentTerms: paymentVal,
@@ -1889,23 +1952,27 @@
           alert(`✅ 수정 완료!\n새 리비전(${nextVerStr})이 발행되었습니다.`);
         }
       } else {
-        // 신규 PI 번호 발번 트랜잭션
+        // 신규 PI 번호 발번 트랜잭션 (발행사 분기)
         const year    = new Date(piDate).getFullYear();
+        const issuingCompany = document.querySelector('input[name="n_issuing_company"]:checked')?.value || "YSACC";
+        const piPrefix = issuingCompany === "YS" ? "PI-YS" : `PI-${COMPANY_ID}`;
+        const counterKey = issuingCompany === "YS" ? `count_ys_${year}` : `count_${year}`;
         const metaRef = doc(db,"companies",COMPANY_ID,"meta","pi_counter");
         let num;
         await runTransaction(db, async tx => {
           const snap = await tx.get(metaRef);
-          const cur  = snap.exists()?(snap.data()[`count_${year}`]||0):0;
+          const cur  = snap.exists()?(snap.data()[counterKey]||0):0;
           num = cur+1;
-          tx.set(metaRef,{[`count_${year}`]:num},{merge:true});
+          tx.set(metaRef,{[counterKey]:num},{merge:true});
         });
-        const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2,"0")}`;
+        const piNumber = `${piPrefix}-${year}-${String(num).padStart(2,"0")}`;
 
         // 신규 Firestore 트랜잭션 저장
         await runTransaction(db, async tx=>{
           const piRef  = doc(collection(doc(db,"companies",COMPANY_ID),"proforma_invoices"));
           const revRef = doc(collection(piRef,"revisions"));
           tx.set(piRef,{piNumber,piDate,customerId,
+            issuingCompany,
             incoterms:document.getElementById("n_incoterms").value,
             destinationPort:document.getElementById("n_dest").value,
             paymentTerms:document.getElementById("n_payment").value,
@@ -1948,7 +2015,9 @@
     const piDate     = document.getElementById("n_pi_date").value || new Date().toISOString().split("T")[0];
     const year       = new Date(piDate).getFullYear();
     // PI number preview (not yet saved)
-    let piNum = `PI-YSACC-${year}-DRAFT`;
+    const issuingCompany = document.querySelector('input[name="n_issuing_company"]:checked')?.value || "YSACC";
+    const piPrefix = issuingCompany === "YS" ? "PI-YS" : `PI-YSACC`;
+    let piNum = `${piPrefix}-${year}-DRAFT`;
     let currentVersion = "";
     if (editPIId) {
       const p = allPIs.find(x => x.id === editPIId);
@@ -1974,7 +2043,7 @@
     const insurance = parseFloat(document.getElementById("n_insurance").value)||0;
     const grand     = subtotal + handling + freight + insurance;
     return {
-      piNum, piDate, currentVersion,
+      piNum, piDate, currentVersion, issuingCompany,
       validUntil:   document.getElementById("n_valid_until").value,
       customer:     custName,
       contact:      document.getElementById("n_contact").value,
@@ -2132,8 +2201,9 @@
     };
     img.onerror = function() {
       // 이미지가 없을 경우 대체 텍스트
+      const companyName = d.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.';
       doc.setFontSize(22); doc.setTextColor(0, 0, 0); doc.setFont("helvetica","bold");
-      doc.text("YSACC CO., LTD.", M, 20);
+      doc.text(companyName, M, 20);
       drawPdfContent(35);
     };
 
