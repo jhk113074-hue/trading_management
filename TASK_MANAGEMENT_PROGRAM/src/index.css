@@ -1,12 +1,12 @@
 :root {
-  --bg-primary: #f8fafc;
+  --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
   --bg-header: #ffffff;
-  --bg-sidebar: #f8fafc;
+  --bg-sidebar: #ffffff;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --border-color: #e2e8f0;
+  --border-color: #e8ecf0;
   --primary-color: #0d9488;
   --primary-hover: #0f766e;
   --q1-color: #ef4444;
@@ -31,7 +31,7 @@ body {
 }
 
 .sidebar {
-  width: 250px;
+  width: 240px;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;

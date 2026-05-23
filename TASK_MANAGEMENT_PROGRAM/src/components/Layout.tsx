@@ -28,16 +28,13 @@ export const Layout: React.FC = () => {
   const menuItems = React.useMemo(() => {
     const groups = [
       { section: '무역 관리 시스템', items: [
-        { path: '/index.html', label: '⊞ Dashboard', external: true },
+        { path: '/', label: '⊞ Dashboard' },
+        { path: '/list', label: '📋 전체 업무 리스트' },
         { path: '/proforma_invoices.html', label: '≡ Proforma Invoice', external: true },
         { path: '/products.html', label: '◫ 상품 DB', external: true },
         { path: '/customers.html', label: '◎ 고객사 관리', external: true },
         { path: '/suppliers.html', label: '◉ 공급업체 관리', external: true }
-      ] as any },
-      { section: '작업 보기', items: [
-        { path: '/', label: '대시보드 (보드)', count: '' },
-        { path: '/list', label: '전체 업무 리스트', count: '' },
-      ]}
+      ] as any }
     ];
 
     if (userProfile?.role === '관리자') {
@@ -55,12 +52,8 @@ export const Layout: React.FC = () => {
   return (
     <div className="app-container">
       <aside className="sidebar">
-        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '12px' }}>
-          <img src="/logo.png" alt="Logo" style={{ maxHeight: '40px', maxWidth: '200px', objectFit: 'contain' }} />
-          <div>
-            <h1 className="logo-text">YSACC 업무 바스켓</h1>
-            <p className="logo-sub">출근 후 바로 보는 실행 화면</p>
-          </div>
+        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', minHeight: '80px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '20px 16px 18px' }}>
+          <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '52px', objectFit: 'contain' }} />
         </Link>
 
         {menuItems.map((group, gIdx) => (
@@ -116,6 +109,9 @@ export const Layout: React.FC = () => {
 
       <div className="main-wrapper">
         <header className="header">
+          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+            YSACC TASK MANAGEMENT PORTAL 업무포탈
+          </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {userProfile && (
