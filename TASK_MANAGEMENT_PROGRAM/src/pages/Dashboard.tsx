@@ -367,66 +367,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: '24px' }}>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
-              최근 Proforma Invoice 목록 <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '4px', marginLeft: '8px', fontWeight: 600 }}>● Firestore 실시간</span>
-            </div>
-            <div style={{ overflowX: 'auto', marginTop: '4px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>PI Number</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Date</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Writer</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Customer</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Incoterms</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Destination</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Payment Terms</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Ver.</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Status</th>
-                    <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Total (USD)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pis.length === 0 ? (
-                    <tr><td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>저장된 PI가 없습니다.</td></tr>
-                  ) : (
-                    pis.slice(0, 5).map((p, idx) => {
-                      const badge = { confirmed: "confirmed", sent: "sent", draft: "draft", expired: "expired" }[p.status as string] || "draft";
-                      const badgeStyles: Record<string, any> = {
-                        confirmed: { background: '#d1fae5', color: '#065f46' },
-                        sent: { background: '#e0f2fe', color: '#0369a1' },
-                        draft: { background: '#ede9fe', color: '#5b21b6' },
-                        expired: { background: '#fee2e2', color: '#991b1b' }
-                      };
-                      const cust = customerMap[p.customerId] || p.customerId?.substring(0,8) || "-";
-                      const date = p.piDate || (p.createdAt?.seconds ? new Date(p.createdAt.seconds * 1000).toISOString().split("T")[0] : "-");
-                      return (
-                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '12px' }}><strong>{p.piNumber || "-"}</strong></td>
-                          <td style={{ padding: '12px' }}>{date}</td>
-                          <td style={{ padding: '12px' }}>{p.createdByName || "-"}</td>
-                          <td style={{ padding: '12px' }}>{cust}</td>
-                          <td style={{ padding: '12px' }}>{p.incoterms || "-"}</td>
-                          <td style={{ padding: '12px' }}>{p.destinationPort || "-"}</td>
-                          <td style={{ padding: '12px' }}>{p.paymentTerms || "-"}</td>
-                          <td style={{ padding: '12px' }}>{p.currentVersion || "A"}</td>
-                          <td style={{ padding: '12px' }}>
-                            <span style={{ display: 'inline-block', padding: '3px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: 600, ...badgeStyles[badge] }}>
-                              {p.status || "draft"}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                            ${(p.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
         </>
       )}
 
