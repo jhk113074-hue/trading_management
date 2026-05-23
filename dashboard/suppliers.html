@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>YSACC TMS - Suppliers Management</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
@@ -186,6 +187,80 @@
 
     window.filterSuppliers = renderSuppliers;
 
+    const excelMapping = [
+      { header: "공급업체코드(ID)", key: "supplierCode" },
+      { header: "공급업체명", key: "name" },
+      { header: "사업자등록번호", key: "bizNumber" },
+      { header: "대표자명", key: "representative" },
+      { header: "대표전화번호", key: "phone" },
+      { header: "구매담당이메일", key: "purchaseEmail" },
+      { header: "본사주소", key: "address" },
+      { header: "구매담당자명", key: "managerName" },
+      { header: "구매담당자연락처", key: "managerPhone" }
+    ];
+
+    window.exportExcel = function() {
+      const data = allSuppliers.map(s => {
+        let row = {};
+        excelMapping.forEach(m => {
+          row[m.header] = s[m.key] || "";
+        });
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Suppliers");
+      XLSX.writeFile(wb, "suppliers_master.xlsx");
+    };
+
+    window.importExcel = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const btn = document.getElementById("btn_excel_upload");
+      if(btn) { btn.disabled = true; btn.textContent = "업로드 중..."; }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(firstSheet);
+          
+          let successCount = 0;
+          for (const row of json) {
+            let supData = {};
+            excelMapping.forEach(m => {
+              if (row[m.header] !== undefined && row[m.header] !== null) {
+                 supData[m.key] = String(row[m.header]).trim();
+              }
+            });
+
+            const docId = supData.supplierCode;
+            if (!docId) continue;
+
+            supData.updatedAt = serverTimestamp();
+            
+            const existing = allSuppliers.find(s => s.id === docId);
+            if (!existing) {
+              supData.createdAt = serverTimestamp();
+            }
+            await setDoc(doc(db, "companies", COMPANY_ID, "suppliers", docId), supData, { merge: true });
+            successCount++;
+          }
+          alert(`✅ Excel 업로드 완료: 총 ${successCount}건 처리되었습니다.`);
+        } catch (err) {
+          alert("❌ Excel 업로드 오류: " + err.message);
+          console.error(err);
+        } finally {
+          document.getElementById('excel_upload').value = "";
+          if(btn) { btn.disabled = false; btn.textContent = "⬆ Excel 업로드"; }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
     window.addEventListener("DOMContentLoaded", () => {
       subscribeSuppliers();
     });
@@ -288,7 +363,12 @@
         <div class="page-title">공급업체 관리 (Suppliers)</div>
         <div class="page-sub">원소재 제조사 및 국내외 공급처 마스터 정보와 핵심 스펙 관리</div>
       </div>
-      <button class="btn btn-primary" onclick="openNewSupModal()">＋ New Supplier</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline" onclick="exportExcel()">⬇ Excel 다운로드</button>
+        <button class="btn btn-outline" id="btn_excel_upload" onclick="document.getElementById('excel_upload').click()">⬆ Excel 업로드</button>
+        <input type="file" id="excel_upload" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
+        <button class="btn btn-primary" onclick="openNewSupModal()">＋ New Supplier</button>
+      </div>
     </div>
 
     <!-- Toolbar -->

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>YSACC TMS - Customers Management</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
@@ -304,6 +305,117 @@
 
     window.filterCustomers = renderCustomers;
 
+    const excelMapping = [
+      { header: "고객코드(ID)", key: "customerCode" },
+      { header: "고객명(영문)", key: "name" },
+      { header: "고객명(현지어)", key: "nameKo" },
+      { header: "고객유형", key: "customerType" },
+      { header: "국가코드", key: "countryCode" },
+      { header: "국가명", key: "countryName" },
+      { header: "도시", key: "city" },
+      { header: "대표자명", key: "representative" },
+      { header: "업종분류", key: "industryType" },
+      { header: "전화번호", key: "phone" },
+      { header: "팩스번호", key: "fax" },
+      { header: "이메일", key: "email" },
+      { header: "웹사이트", key: "website" },
+      { header: "주소(영문)", key: "addressEn" },
+      { header: "우편번호", key: "zipCode" },
+      { header: "배송지주소(영문)", key: "shippingAddressEn" },
+      { header: "배송지우편번호", key: "shippingZipCode" },
+      { header: "담당자명(영문)", key: "contactPerson" },
+      { header: "담당자연락처", key: "contactPhone" },
+      { header: "담당자이메일", key: "contactEmail" },
+      { header: "거래시작일", key: "tradeStartDate" },
+      { header: "거래상태", key: "tradeStatus" },
+      { header: "거래등급", key: "tradeGrade" },
+      { header: "결제조건", key: "paymentTerms" },
+      { header: "신용한도(USD)", key: "creditLimit" },
+      { header: "거래통화", key: "currency" },
+      { header: "거래담당팀", key: "tradeTeam" },
+      { header: "세금ID_VAT", key: "taxId" },
+      { header: "사업자등록번호", key: "businessLicense" },
+      { header: "법인/개인구분", key: "entityType" },
+      { header: "은행명", key: "bankName" },
+      { header: "계좌번호", key: "bankAccount" },
+      { header: "SWIFT코드", key: "swiftCode" },
+      { header: "IBAN", key: "iban" },
+      { header: "예금주명(영문)", key: "bankHolder" },
+      { header: "기본배송지/인도처", key: "shippingPort" },
+      { header: "배송방법_Incoterms", key: "preferredIncoterms" },
+      { header: "통관담당자명", key: "customsBroker" },
+      { header: "HS코드관리여부", key: "hsCodeManaged" },
+      { header: "통관/선적특기사항", key: "customsInfo" },
+      { header: "등록담당자명", key: "registrar" },
+      { header: "비고/프로필", key: "remarks" }
+    ];
+
+    window.exportExcel = function() {
+      const data = allCustomers.map(c => {
+        let row = {};
+        excelMapping.forEach(m => {
+          row[m.header] = c[m.key] || "";
+        });
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Customers");
+      XLSX.writeFile(wb, "customers_master.xlsx");
+    };
+
+    window.importExcel = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const btn = document.getElementById("btn_excel_upload");
+      if(btn) { btn.disabled = true; btn.textContent = "업로드 중..."; }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(firstSheet);
+          
+          let successCount = 0;
+          for (const row of json) {
+            let custData = {};
+            excelMapping.forEach(m => {
+              if (row[m.header] !== undefined && row[m.header] !== null) {
+                 custData[m.key] = String(row[m.header]).trim();
+              }
+            });
+            
+            if (custData.creditLimit) {
+              custData.creditLimit = parseFloat(custData.creditLimit) || 0;
+            }
+
+            const docId = custData.customerCode;
+            if (!docId) continue;
+
+            custData.updatedAt = serverTimestamp();
+            
+            const existing = allCustomers.find(c => c.id === docId);
+            if (!existing) {
+              custData.createdAt = serverTimestamp();
+            }
+            await setDoc(doc(db, "companies", COMPANY_ID, "customers", docId), custData, { merge: true });
+            successCount++;
+          }
+          alert(`✅ Excel 업로드 완료: 총 ${successCount}건 처리되었습니다.`);
+        } catch (err) {
+          alert("❌ Excel 업로드 오류: " + err.message);
+          console.error(err);
+        } finally {
+          document.getElementById('excel_upload').value = "";
+          if(btn) { btn.disabled = false; btn.textContent = "⬆ Excel 업로드"; }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
     window.addEventListener("DOMContentLoaded", () => {
       subscribeCustomers();
     });
@@ -458,7 +570,12 @@
         <div class="page-title">고객사 관리 (Customers)</div>
         <div class="page-sub">해외 거래처 정보 조회, 등록 및 36개 세부 무역 스펙 관리 도구</div>
       </div>
-      <button class="btn btn-primary" onclick="openNewCustModal()">＋ New Customer</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline" onclick="exportExcel()">⬇ Excel 다운로드</button>
+        <button class="btn btn-outline" id="btn_excel_upload" onclick="document.getElementById('excel_upload').click()">⬆ Excel 업로드</button>
+        <input type="file" id="excel_upload" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
+        <button class="btn btn-primary" onclick="openNewCustModal()">＋ New Customer</button>
+      </div>
     </div>
 
     <!-- Toolbar -->

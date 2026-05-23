@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>YSACC TMS - Products Master DB</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
@@ -310,6 +311,119 @@
 
     window.filterProducts = renderProducts;
 
+    const excelMapping = [
+      { header: "상품코드(ID)", key: "productCode" },
+      { header: "상품명(한글)", key: "nameKo" },
+      { header: "상품명(영문)", key: "nameEn" },
+      { header: "대분류", key: "categoryLarge" },
+      { header: "중분류", key: "categoryMedium" },
+      { header: "소분류", key: "categorySmall" },
+      { header: "상세설명", key: "description" },
+      { header: "이미지URL", key: "imageUrl" },
+      { header: "공급업체명", key: "supplierName" },
+      { header: "공급업체코드", key: "supplierCode" },
+      { header: "공급담당자", key: "supplierContact" },
+      { header: "공급연락처", key: "supplierPhone" },
+      { header: "공급이메일", key: "supplierEmail" },
+      { header: "공급업체주소", key: "supplierAddress" },
+      { header: "MOQ", key: "minOrderQty" },
+      { header: "구매가", key: "purchasePrice" },
+      { header: "구매통화", key: "currency" },
+      { header: "가격유효시작일", key: "priceValidFrom" },
+      { header: "가격유효종료일", key: "priceValidTo" },
+      { header: "할인율", key: "discountRate" },
+      { header: "배송비포함여부", key: "freightIncluded" },
+      { header: "단위", key: "unit" },
+      { header: "포장형태", key: "packageType" },
+      { header: "가로(mm)", key: "specWidth" },
+      { header: "세로(mm)", key: "specLength" },
+      { header: "높이(mm)", key: "specHeight" },
+      { header: "순중량(kg)", key: "weight" },
+      { header: "총중량(kg)", key: "grossWeight" },
+      { header: "다단적재", key: "stackable" },
+      { header: "회전허용", key: "rotation" },
+      { header: "색상", key: "color" },
+      { header: "재질", key: "material" },
+      { header: "원산지", key: "origin" },
+      { header: "재고수량", key: "stockQty" },
+      { header: "리드타임", key: "leadTimeDays" },
+      { header: "보관위치", key: "storageLocation" },
+      { header: "보관온도", key: "storageTemp" },
+      { header: "보관습도", key: "storageHumidity" },
+      { header: "제조사명", key: "manufacturer" },
+      { header: "제조일자", key: "manufactureDate" },
+      { header: "품질유효종료일", key: "expiryDate" },
+      { header: "MSDS관리여부", key: "msdsManaged" },
+      { header: "인증정보", key: "certifications" }
+    ];
+
+    window.exportExcel = function() {
+      const data = allProducts.map(p => {
+        let row = {};
+        excelMapping.forEach(m => {
+          row[m.header] = p[m.key] || "";
+        });
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Products");
+      XLSX.writeFile(wb, "products_master.xlsx");
+    };
+
+    window.importExcel = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const btn = document.getElementById("btn_excel_upload");
+      if(btn) { btn.disabled = true; btn.textContent = "업로드 중..."; }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, {type: 'array'});
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(firstSheet);
+          
+          let successCount = 0;
+          for (const row of json) {
+            let productData = {};
+            excelMapping.forEach(m => {
+              if (row[m.header] !== undefined && row[m.header] !== null) {
+                 productData[m.key] = String(row[m.header]).trim();
+              }
+            });
+            
+            // Number conversions
+            ['minOrderQty', 'purchasePrice', 'discountRate', 'specWidth', 'specLength', 'specHeight', 'weight', 'grossWeight', 'stockQty', 'leadTimeDays'].forEach(numKey => {
+               if (productData[numKey]) productData[numKey] = parseFloat(productData[numKey]) || 0;
+            });
+
+            const docId = productData.productCode;
+            if (!docId) continue; // 상품코드가 없으면 스킵
+
+            productData.updatedAt = serverTimestamp();
+            
+            const existing = allProducts.find(p => p.id === docId);
+            if (!existing) {
+              productData.createdAt = serverTimestamp();
+            }
+            await setDoc(doc(db, "companies", COMPANY_ID, "products", docId), productData, { merge: true });
+            successCount++;
+          }
+          alert(`✅ Excel 업로드 완료: 총 ${successCount}건 처리되었습니다.`);
+        } catch (err) {
+          alert("❌ Excel 업로드 오류: " + err.message);
+          console.error(err);
+        } finally {
+          document.getElementById('excel_upload').value = ""; // 초기화
+          if(btn) { btn.disabled = false; btn.textContent = "⬆ Excel 업로드"; }
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
     window.addEventListener("DOMContentLoaded", () => {
       subscribeProducts();
     });
@@ -424,7 +538,12 @@
         <div class="page-title">상품 마스터 DB (Products)</div>
         <div class="page-sub">글로벌 무역 원자재/상품 사양 조회, 추가 및 6대 분류 스펙 관리 도구</div>
       </div>
-      <button class="btn btn-primary" onclick="openNewProdModal()">＋ New Product</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline" onclick="exportExcel()">⬇ Excel 다운로드</button>
+        <button class="btn btn-outline" id="btn_excel_upload" onclick="document.getElementById('excel_upload').click()">⬆ Excel 업로드</button>
+        <input type="file" id="excel_upload" accept=".xlsx, .xls" style="display:none;" onchange="importExcel(event)">
+        <button class="btn btn-primary" onclick="openNewProdModal()">＋ New Product</button>
+      </div>
     </div>
 
     <!-- Toolbar -->
