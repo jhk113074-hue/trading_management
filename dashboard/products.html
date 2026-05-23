@@ -9,10 +9,20 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
       getFirestore, collection, doc, getDocs, onSnapshot,
-      setDoc, deleteDoc, serverTimestamp
+      setDoc, deleteDoc, serverTimestamp, getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    const firebaseConfig = {
+    const authConfig = {
+      apiKey: "AIzaSyBkDcT7s8HpWAKRsyVmAwrdOEHBTvYiueI",
+      authDomain: "ysacc-task-management.firebaseapp.com",
+      projectId: "ysacc-task-management",
+      storageBucket: "ysacc-task-management.firebasestorage.app",
+      messagingSenderId: "874651844108",
+      appId: "1:874651844108:web:e09c723d5b19614b1cf829"
+    };
+
+    const tradingConfig = {
       apiKey:            "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
       authDomain:        "tradingmanagement-c1cf4.firebaseapp.com",
       projectId:         "tradingmanagement-c1cf4",
@@ -21,9 +31,32 @@
       appId:             "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    const authApp = initializeApp(authConfig);
+    const tradingApp = initializeApp(tradingConfig, "tradingApp");
+
+    const auth = getAuth(authApp);
+    const authDb = getFirestore(authApp);
+    const db  = getFirestore(tradingApp);
     const COMPANY_ID = "YSACC";
+
+    onAuthStateChanged(auth, async (user) => {
+      const pText = document.querySelector(".main-header span");
+      if (user) {
+        let currentUserName = user.email.split("@")[0];
+        try {
+          const userDoc = await getDoc(doc(authDb, "users", user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentUserName = (data.department ? data.department + " " : "") + (data.name || user.email.split("@")[0]);
+          }
+        } catch (e) {
+          console.error("Error loading user profile:", e);
+        }
+        if (pText) pText.textContent = currentUserName + "님 로그인 중";
+      } else {
+        if (pText) pText.textContent = "로그인 정보 없음 (로그인 필요)";
+      }
+    });
 
     let allProducts = [];
     let editProdId = null;

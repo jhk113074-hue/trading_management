@@ -420,27 +420,40 @@
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey:"AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
-    authDomain:"tradingmanagement-c1cf4.firebaseapp.com",
-    projectId:"tradingmanagement-c1cf4",
-    storageBucket:"tradingmanagement-c1cf4.firebasestorage.app",
-    messagingSenderId:"1033735327012",
-    appId:"1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+  const authConfig = {
+    apiKey: "AIzaSyBkDcT7s8HpWAKRsyVmAwrdOEHBTvYiueI",
+    authDomain: "ysacc-task-management.firebaseapp.com",
+    projectId: "ysacc-task-management",
+    storageBucket: "ysacc-task-management.firebasestorage.app",
+    messagingSenderId: "874651844108",
+    appId: "1:874651844108:web:e09c723d5b19614b1cf829"
   };
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+
+  const tradingConfig = {
+    apiKey: "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+    authDomain: "tradingmanagement-c1cf4.firebaseapp.com",
+    projectId: "tradingmanagement-c1cf4",
+    storageBucket: "tradingmanagement-c1cf4.firebasestorage.app",
+    messagingSenderId: "1033735327012",
+    appId: "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
+  };
+
+  const authApp = initializeApp(authConfig);
+  const tradingApp = initializeApp(tradingConfig, "tradingApp");
+
+  const auth = getAuth(authApp);
+  const authDb = getFirestore(authApp);
+  const db  = getFirestore(tradingApp);
   const COMPANY_ID = "YSACC";
 
   // Auth User Tracking
   let currentUserId = "";
   let currentUserName = "Unknown";
-  const auth = getAuth(app);
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUserId = user.uid;
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userDoc = await getDoc(doc(authDb, "users", user.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
           currentUserName = (data.department ? data.department + " " : "") + (data.name || user.email.split("@")[0]);
