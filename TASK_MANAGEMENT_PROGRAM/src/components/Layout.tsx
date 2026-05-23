@@ -108,19 +108,47 @@ export const Layout: React.FC = () => {
       </aside>
 
       <div className="main-wrapper">
-        <header className="header">
-          <div style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+        <header className="header" style={{ height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <div style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
             YSACC TASK MANAGEMENT PORTAL 업무포탈
           </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {userProfile && (
-              <span style={{ marginRight: '12px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span style={{ marginRight: '12px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
-            <Link to="/profile" className="btn" style={{ textDecoration: 'none' }}>⚙️ 내 정보 수정</Link>
-            <button className="btn" onClick={logout}>로그아웃</button>
+            <Link to="/profile" className="btn" style={{
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #e8ecf0',
+              backgroundColor: '#ffffff',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#4f46e5',
+              cursor: 'pointer'
+            }}>
+              <span style={{ color: '#4f46e5', fontSize: '14px', lineHeight: '1' }}>⚙</span> 내 정보 수정
+            </Link>
+            <button className="btn" onClick={logout} style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              border: '1px solid #e8ecf0',
+              backgroundColor: '#ffffff',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#1e293b',
+              cursor: 'pointer'
+            }}>
+              로그아웃
+            </button>
           </div>
         </header>
 
