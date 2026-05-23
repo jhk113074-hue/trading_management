@@ -269,24 +269,6 @@ export const Dashboard: React.FC = () => {
     };
   }, [pis]);
 
-  const monthlyChartData = useMemo(() => {
-    const months: Record<string, number> = {};
-    pis.forEach(p => {
-      if (!p.piDate) return;
-      const ym = p.piDate.substring(0, 7);
-      if (!months[ym]) months[ym] = 0;
-      if (p.status === "confirmed") months[ym] += (p.totalUsd || 0);
-    });
-    const sorted = Object.keys(months).sort().slice(-6);
-    const maxVal = Math.max(...sorted.map(m => months[m]), 1);
-    
-    return sorted.map(ym => ({
-      label: ym.substring(5) + "월",
-      confirmed: months[ym],
-      pct: Math.max(Math.round((months[ym] / maxVal) * 100), 4)
-    }));
-  }, [pis]);
-
   const statusSummary = useMemo(() => {
     const counts: Record<string, number> = { draft: 0, sent: 0, confirmed: 0, expired: 0 };
     pis.forEach(p => {
@@ -313,62 +295,44 @@ export const Dashboard: React.FC = () => {
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#3b82f6' }} />
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>이번 달 PI 건수</div>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.thisMonthCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>건 (이번 달 작성)</div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#0891b2' }} />
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>확정 매출 (Confirmed)</div>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#0891b2' }}>${tradingKPIs.confirmedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>USD · 전체 누계</div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#10b981' }} />
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>수주율 (Win Rate)</div>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{tradingKPIs.winRate}%</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Confirmed / 전체 PI</div>
-            </div>
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#f59e0b' }} />
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>전체 PI 건수</div>
-              <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{tradingKPIs.totalCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Draft 포함 누계</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '24px' }}>
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
-                월별 확정 매출 (USD) <span style={{ fontSize: '10px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 7px', borderRadius: '4px', marginLeft: '8px', fontWeight: 600 }}>● LIVE</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '14px', marginBottom: '24px' }}>
+            {/* KPI Cards (2x2 Grid) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#3b82f6' }} />
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>이번 달 PI 건수</div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.thisMonthCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>건 (이번 달 작성)</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '130px' }}>
-                {monthlyChartData.length === 0 ? (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', padding: '40px 0', width: '100%', textAlign: 'center' }}>PI를 작성하면 차트가 표시됩니다</div>
-                ) : (
-                  monthlyChartData.map((m, idx) => (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, gap: '5px', height: '100%' }}>
-                      <div 
-                        style={{ 
-                          width: '100%', 
-                          borderRadius: '3px 3px 0 0', 
-                          minHeight: '4px', 
-                          height: `${m.pct}%`, 
-                          background: 'linear-gradient(to top, #3b82f6, #60a5fa)',
-                          transition: 'height .5s ease' 
-                        }} 
-                        title={`USD ${m.confirmed.toFixed(0)}`}
-                      />
-                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>{m.label}</div>
-                    </div>
-                  ))
-                )}
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#0891b2' }} />
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>확정 매출 (Confirmed)</div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#0891b2' }}>${tradingKPIs.confirmedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>USD · 전체 누계</div>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#10b981' }} />
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>수주율 (Win Rate)</div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#10b981' }}>{tradingKPIs.winRate}%</div>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Confirmed / 전체 PI</div>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: '#f59e0b' }} />
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>전체 PI 건수</div>
+                  <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>{tradingKPIs.totalCount} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>Draft 포함 누계</div>
               </div>
             </div>
 
+            {/* PI 상태 현황 */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '18px', display: 'flex', alignItems: 'center' }}>
