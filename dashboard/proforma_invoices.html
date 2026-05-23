@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -1147,82 +1147,112 @@
   };
 
   window.duplicatePI = async function(id) {
-    if(!confirm("이 Proforma Invoice를 복제하시겠습니까?")) return;
     try {
       const p = allPIs.find(x => x.id === id);
       if (!p) throw new Error("원본 PI를 찾을 수 없습니다.");
 
-      // 1. New PI number generation
-      const today = new Date().toISOString().split("T")[0];
-      const year = new Date(today).getFullYear();
-      const metaRef = doc(db, "companies", COMPANY_ID, "meta", "pi_counter");
-      let num;
-      await runTransaction(db, async tx => {
-        const snap = await tx.get(metaRef);
-        const cur = snap.exists() ? (snap.data()[`count_${year}`] || 0) : 0;
-        num = cur + 1;
-        tx.set(metaRef, { [`count_${year}`]: num }, { merge: true });
-      });
-      const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2, "0")}`;
+      // 수정 모드 ID 초기화 (새 PI로 저장)
+      editPIId = null;
 
-      // 2. Fetch original line items from the latest revision
-      const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", id), "revisions"));
-      let lineItems = [];
+      // 상세 모달 닫기
+      closeModal();
+
+      // UI 변경 (New PI 복제 모드)
+      document.getElementById("n_modal_title").textContent = "New Proforma Invoice (복제)";
+      document.getElementById("n_modal_sub").textContent = `기존 견적서(${p.piNumber}) 내용을 기반으로 복제 작성 중 · 최종 저장 시 새로운 PI가 생성됩니다.`;
+      document.getElementById("n_save_btn").textContent = "✔ Firestore 저장";
+      document.getElementById("n_save_draft_btn").style.display = "none";
+      document.getElementById("revision_section").style.display = "none";
+      document.getElementById("n_rev_reason").value = "";
+
+      // 고객 목록 채우기
+      const sel = document.getElementById("n_customer");
+      sel.innerHTML = '<option value="">-- 선택 --</option>';
+      Object.entries(customerMap).forEach(([cid, c]) => {
+        const opt = document.createElement("option");
+        opt.value = cid; opt.textContent = c.name || cid;
+        opt.dataset.info = JSON.stringify(c);
+        sel.appendChild(opt);
+      });
+
+      // 기존 데이터 폼에 채우기
+      document.getElementById("n_pi_date").value = new Date().toISOString().split("T")[0];
+      document.getElementById("n_validity").value = p.validityDays || 30;
+      sel.value = p.customerId || "";
+      document.getElementById("n_contact").value = customerMap[p.customerId]?.contactPerson || "";
+      document.getElementById("n_email").value = customerMap[p.customerId]?.email || "";
+      document.getElementById("n_incoterms").value = p.incoterms || "";
+      document.getElementById("n_dest").value = p.destinationPort || "";
+      document.getElementById("n_payment").value = p.paymentTerms || "";
+      document.getElementById("n_shipping").value = p.shippingMethod || "Sea Freight";
+      document.getElementById("n_departurePort").value = p.departurePort || "Busan, Korea";
+      document.getElementById("n_packagingSpec").value = p.packagingSpec || "Export Standard Packaging.";
+      document.getElementById("n_validityDesc").value = p.validityDesc || "4 weeks from the offered date";
+      document.getElementById("n_rate").value = p.exchangeRate || 1400;
+      document.getElementById("n_remarks").value = (p.remarks || "") + " (복제본)";
+      document.getElementById("n_created_by_name").value = (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown");
+      document.getElementById("n_handling").value = p.handlingCharges || 0;
+      document.getElementById("n_freight").value = p.freightCharges || 0;
+
+      if (p.freightDetails && p.freightDetails.length > 0) {
+        nFreightItems = JSON.parse(JSON.stringify(p.freightDetails));
+      } else if (p.freightCharges) {
+        nFreightItems = [{type:"LCL", qty:1, price:p.freightCharges}];
+      } else {
+        nFreightItems = [];
+      }
+      nRenderFreightRows(); updateFreightTitle();
+      document.getElementById("n_insurance").value = p.insuranceCharges || 0;
+
+      // 유효기간 다시 계산
+      nCalcValid();
+
+      // Line Items 로드
+      nItems = []; nCounter = 0;
+      document.getElementById("n_li_body").innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text-muted);">원본 상품 목록을 로딩 중...</td></tr>';
+
+      const revSnap = await getDocs(collection(doc(db,"companies",COMPANY_ID,"proforma_invoices", id),"revisions"));
       if (!revSnap.empty) {
-        const latestRev = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
-        const liSnap = await getDocs(collection(latestRev.ref, "line_items"));
+        const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+        const liSnap = await getDocs(collection(latestRev.ref,"line_items"));
         if (!liSnap.empty) {
-          lineItems = liSnap.docs.map(d => d.data());
+          const items = liSnap.docs.map(d => d.data()).sort((a,b) => (a.lineNumber||0)-(b.lineNumber||0));
+          nItems = items.map((item) => {
+            let costK = item.costKrw || 0;
+            const r = item.exchangeRate || p.exchangeRate || 1400;
+            let costU = item.costUsd || 0;
+            const margin = item.profitMargin || 0;
+            const salePrice = item.salePriceUsd || 0;
+            if (costK === 0 && costU === 0 && salePrice > 0) {
+              const mDiv = margin < 100 ? (1 - margin / 100) : 1;
+              costU = +(salePrice * mDiv).toFixed(4);
+            }
+            let baseCurr = "KRW";
+            if (costU > 0 && costK === 0) { baseCurr = "USD"; }
+            else if (costK > 0 && costU > 0) { baseCurr = "KRW"; costU = 0; }
+            return {
+              id: ++nCounter,
+              desc: item.description || "",
+              qty: item.quantity || 1,
+              unit: item.unit || "KG",
+              cost: costK,
+              rate: r,
+              costUsd: costU,
+              margin: margin,
+              _baseCurrency: baseCurr,
+              palletQty: item.palletQty || 1,
+              remarks: item.remarks || ""
+            };
+          });
         }
       }
 
-      // 3. Save new PI document
-      await runTransaction(db, async tx => {
-        const piRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
-        const revRef = doc(collection(piRef, "revisions"));
-        
-        tx.set(piRef, {
-          piNumber,
-          piDate: today,
-          customerId: p.customerId,
-          incoterms: p.incoterms || "",
-          destinationPort: p.destinationPort || "",
-          paymentTerms: p.paymentTerms || "",
-          shippingMethod: p.shippingMethod || "",
-          exchangeRate: p.exchangeRate || 1400,
-          validityDays: p.validityDays || 30,
-          validUntilDate: p.validUntilDate || "",
-          remarks: (p.remarks || "") + " (복제본)",
-          handlingCharges: p.handlingCharges || 0,
-          freightCharges: p.freightCharges || 0,
-          freightDetails: p.freightDetails || [],
-          insuranceCharges: p.insuranceCharges || 0,
-          subtotalUsd: p.subtotalUsd || 0,
-          totalUsd: p.totalUsd || 0,
-          currentVersion: "",
-          status: "draft",
-          itemsSummary: p.itemsSummary || [],
-          createdByUid: currentUserId || auth.currentUser?.uid || "",
-          createdByName: (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown"),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
+      nRenderItems();
 
-        tx.set(revRef, {
-          version: "",
-          revisionNumber: 0,
-          status: "draft",
-          subtotalUsd: p.subtotalUsd || 0,
-          totalUsd: p.totalUsd || 0,
-          createdAt: serverTimestamp()
-        });
+      // 모달 표시
+      document.getElementById("new_pi_overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
 
-        lineItems.forEach(item => {
-          tx.set(doc(collection(revRef, "line_items")), item);
-        });
-      });
-
-      alert(`✅ 복제가 완료되었습니다!\n새 PI 번호: ${piNumber}`);
     } catch (e) {
       alert("복제 실패: " + e.message);
       console.error(e);
