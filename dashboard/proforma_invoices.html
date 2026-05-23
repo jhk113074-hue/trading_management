@@ -1175,8 +1175,8 @@
           currentVersion: "R1",
           status: "draft",
           itemsSummary: p.itemsSummary || [],
-          createdByUid: currentUserId,
-          createdByName: currentUserName,
+          createdByUid: currentUserId || auth.currentUser?.uid || "",
+          createdByName: (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown"),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
@@ -1248,7 +1248,7 @@
     document.getElementById("n_validityDesc").value = p.validityDesc || "4 weeks from the offered date";
     document.getElementById("n_rate").value = p.exchangeRate || 1468.96;
     document.getElementById("n_remarks").value = p.remarks || "";
-    document.getElementById("n_created_by_name").value = p.createdByName || currentUserName;
+    document.getElementById("n_created_by_name").value = (p.createdByName && p.createdByName !== "Unknown") ? p.createdByName : (currentUserName && currentUserName !== "Unknown" ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown"));
     document.getElementById("n_handling").value = p.handlingCharges || 0;
     document.getElementById("n_freight").value = p.freightCharges || 0;
     if (p.freightDetails) { nFreightItems = p.freightDetails; } else if (p.freightCharges) { nFreightItems = [{type:"LCL", qty:1, price:p.freightCharges}]; } else { nFreightItems = []; }
@@ -1709,7 +1709,8 @@
             const piSnap = await tx.get(piRef);
             if (!piSnap.exists()) throw new Error("PI가 존재하지 않습니다.");
 
-            tx.update(piRef, {
+            const pData = piSnap.data();
+            const updateData = {
               piDate, customerId,
               incoterms: incotermsVal,
               destinationPort: destVal,
@@ -1720,7 +1721,14 @@
               handlingCharges: hand, freightCharges: frt, freightDetails: nFreightItems, insuranceCharges: ins,
               subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
               itemsSummary, updatedAt: serverTimestamp()
-            });
+            };
+
+            if (!pData.createdByName || pData.createdByName === "Unknown") {
+              updateData.createdByUid = currentUserId || auth.currentUser?.uid || "";
+              updateData.createdByName = (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown");
+            }
+
+            tx.update(piRef, updateData);
 
             if (latestRevDoc) {
               const revRef = latestRevDoc.ref;
@@ -1759,7 +1767,7 @@
             const nextRevNum = num + 1;
 
             // 1. 기존 PI 정보 업데이트 (버전 상승 포함)
-            tx.update(piRef, {
+            const updateData = {
               piDate, customerId,
               incoterms: incotermsVal,
               destinationPort: destVal,
@@ -1770,7 +1778,14 @@
               handlingCharges: hand, freightCharges: frt, freightDetails: nFreightItems, insuranceCharges: ins,
               subtotalUsd: +subtotal.toFixed(4), totalUsd: +grand.toFixed(4),
               currentVersion: nextVer, itemsSummary, updatedAt: serverTimestamp()
-            });
+            };
+
+            if (!data.createdByName || data.createdByName === "Unknown") {
+              updateData.createdByUid = currentUserId || auth.currentUser?.uid || "";
+              updateData.createdByName = (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown");
+            }
+
+            tx.update(piRef, updateData);
 
             // 2. 새 Revision 문서 등록
             const revRef = doc(collection(piRef, "revisions"));

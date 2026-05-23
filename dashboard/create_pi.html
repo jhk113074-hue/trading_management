@@ -186,8 +186,8 @@
             handlingCharges:  handling, freightCharges: freight, insuranceCharges: insurance,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
             currentVersion: "A", status: "draft",
-            createdByUid: currentUserId,
-            createdByName: currentUserName,
+            createdByUid: currentUserId || auth.currentUser?.uid || "",
+            createdByName: (currentUserName && currentUserName !== "Unknown") ? currentUserName : (auth.currentUser?.email?.split("@")[0] || "Unknown"),
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
           const revRef = doc(collection(piRef, "revisions"));
