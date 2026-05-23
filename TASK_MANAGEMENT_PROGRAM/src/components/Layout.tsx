@@ -88,23 +88,7 @@ export const Layout: React.FC = () => {
           </div>
         ))}
 
-        <div className="sidebar-info-box" style={{ background: 'none', border: 'none', padding: '0 24px', marginTop: '20px' }}>
-          <div className="sidebar-section-title" style={{ padding: 0, marginBottom: '10px' }}>프랭클린 시간 관리</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <div style={{ fontSize: '0.65rem' }}><span style={{ color: 'var(--q1-color)', fontWeight: 'bold' }}>Q1</span> 긴급-중요</div>
-            <div style={{ fontSize: '0.65rem' }}><span style={{ color: 'var(--q2-color)', fontWeight: 'bold' }}>Q2</span> 중요-비긴급</div>
-            <div style={{ fontSize: '0.65rem' }}><span style={{ color: 'var(--q3-color)', fontWeight: 'bold' }}>Q3</span> 긴급-비중요</div>
-            <div style={{ fontSize: '0.65rem' }}><span style={{ color: 'var(--q4-color)', fontWeight: 'bold' }}>Q4</span> 비긴급-비중요</div>
-          </div>
-        </div>
-        <div style={{ marginTop: 'auto', padding: '20px', borderTop: '1px solid var(--border-color)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          <div style={{ fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)' }}>권장 운영 흐름</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div>1. 아침 점검 → 대기 바스켓</div>
-            <div>2. 업무 착수 → 업무중 이동</div>
-            <div>3. 종료 보고 → 완료 처리</div>
-          </div>
-        </div>
+
       </aside>
 
       <div className="main-wrapper">
