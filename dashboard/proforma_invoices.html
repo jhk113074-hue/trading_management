@@ -200,6 +200,7 @@
             <tr>
               <th onclick="sortPIs('piNumber')" style="cursor:pointer">PI NUMBER <span id="sort_piNumber"></span></th>
               <th onclick="sortPIs('piDate')" style="cursor:pointer">DATE <span id="sort_piDate"></span></th>
+              <th onclick="sortPIs('createdByName')" style="cursor:pointer">WRITER <span id="sort_createdByName"></span></th>
               <th onclick="sortPIs('customerName')" style="cursor:pointer">CUSTOMER <span id="sort_customerName"></span></th>
               <th>ITEMS</th>
               <th onclick="sortPIs('currentVersion')" style="cursor:pointer;text-align:center">VER. <span id="sort_currentVersion"></span></th>
@@ -209,7 +210,7 @@
             </tr>
           </thead>
           <tbody id="pi_tbody">
-            <tr><td colspan="8" class="empty">Firestore에서 불러오는 중...</td></tr>
+            <tr><td colspan="9" class="empty">Firestore에서 불러오는 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -232,10 +233,11 @@
       <!-- ① 기본 정보 -->
       <div class="form-section">
         <h4>① PI 기본 정보</h4>
-        <div class="fg">
+        <div class="fg" style="grid-template-columns: repeat(4, 1fr);">
           <div class="fgroup"><label>PI Date ★</label><input type="date" id="n_pi_date" onchange="nCalcValid()"></div>
           <div class="fgroup"><label>Validity (Days)</label><input type="number" id="n_validity" value="30" onchange="nCalcValid()"></div>
           <div class="fgroup"><label>Valid Until (자동)</label><input type="text" id="n_valid_until" readonly></div>
+          <div class="fgroup"><label>작성자 (Author)</label><input type="text" id="n_created_by_name" readonly placeholder="로그인 정보 로딩 중..."></div>
         </div>
       </div>
       <!-- ② 고객 -->
@@ -413,9 +415,10 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getFirestore, collection, doc, getDocs, onSnapshot,
+    getFirestore, collection, doc, getDocs, onSnapshot, getDoc,
     updateDoc, serverTimestamp, runTransaction, deleteDoc, setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey:"AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
@@ -428,6 +431,45 @@
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
   const COMPANY_ID = "YSACC";
+
+  // Auth User Tracking
+  let currentUserId = "";
+  let currentUserName = "Unknown";
+  const auth = getAuth(app);
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUserId = user.uid;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          currentUserName = (data.department ? data.department + " " : "") + (data.name || user.email.split("@")[0]);
+        } else {
+          currentUserName = user.email.split("@")[0];
+        }
+      } catch (e) {
+        console.error("Error loading user profile:", e);
+        currentUserName = user.email.split("@")[0];
+      }
+      
+      // Update top header profile text if exists
+      const pText = document.querySelector(".main-header span");
+      if (pText) pText.textContent = currentUserName + "님 로그인 중";
+      
+      // Update new PI modal created by if exists
+      const nAuthor = document.getElementById("n_created_by_name");
+      if (nAuthor) nAuthor.value = currentUserName;
+    } else {
+      currentUserId = "";
+      currentUserName = "Unknown";
+      
+      const pText = document.querySelector(".main-header span");
+      if (pText) pText.textContent = "로그인 정보 없음 (로그인 필요)";
+      
+      const nAuthor = document.getElementById("n_created_by_name");
+      if (nAuthor) nAuthor.value = "로그인 정보 없음";
+    }
+  });
 
   const customerMap = {};
   const productMap  = {};
@@ -525,13 +567,14 @@
   function renderTable(pis) {
     const tbody = document.getElementById("pi_tbody");
     if (!pis.length) {
-      tbody.innerHTML = `<tr><td colspan="8" class="empty">검색 결과가 없습니다</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="empty">검색 결과가 없습니다</td></tr>`;
       return;
     }
     tbody.innerHTML = pis.map(p => {
       const badge = p.status || "draft";
       const cust  = customerMap[p.customerId]?.name || "-";
       const date  = p.piDate || "-";
+      const writer = p.createdByName || "-";
       
       let itemsHtml = "불러오는 중...";
       if (p.itemsSummary) {
@@ -545,6 +588,7 @@
       return `<tr class="pi-row" onclick="openModal('${p.id}')">
         <td class="pi-num">${p.piNumber||"-"}</td>
         <td>${date}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${writer}">${writer}</td>
         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${cust}</td>
         <td id="td_items_${p.id}" style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;color:var(--text-muted);line-height:1.4;">${itemsHtml}</td>
         <td style="text-align:center">${p.currentVersion||"R1"}</td>
@@ -554,6 +598,7 @@
           <button class="action-btn" style="border-color:#2563eb;color:#2563eb" onclick="event.stopPropagation(); window.openTimeline('${p.id}')">⏳ Timeline</button>
           <button class="action-btn" style="border-color:#e74c3c;color:#e74c3c" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}', true)">📄 미리보기</button>
           <button class="action-btn edit-btn" onclick="event.stopPropagation(); window.openEditModalPI('${p.id}')">✏ 수정</button>
+          <button class="action-btn" style="border-color:#10b981;color:#10b981" onclick="event.stopPropagation(); window.duplicatePI('${p.id}')">📋 복제</button>
           <button class="btn-del" onclick="event.stopPropagation(); window.deletePI('${p.id}')">✕ 삭제</button>
         </td>
       </tr>`;
@@ -1061,6 +1106,89 @@
     }
   };
 
+  window.duplicatePI = async function(id) {
+    if(!confirm("이 Proforma Invoice를 복제하시겠습니까?")) return;
+    try {
+      const p = allPIs.find(x => x.id === id);
+      if (!p) throw new Error("원본 PI를 찾을 수 없습니다.");
+
+      // 1. New PI number generation
+      const today = new Date().toISOString().split("T")[0];
+      const year = new Date(today).getFullYear();
+      const metaRef = doc(db, "companies", COMPANY_ID, "meta", "pi_counter");
+      let num;
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(metaRef);
+        const cur = snap.exists() ? (snap.data()[`count_${year}`] || 0) : 0;
+        num = cur + 1;
+        tx.set(metaRef, { [`count_${year}`]: num }, { merge: true });
+      });
+      const piNumber = `PI-${COMPANY_ID}-${year}-${String(num).padStart(2, "0")}`;
+
+      // 2. Fetch original line items from the latest revision
+      const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", id), "revisions"));
+      let lineItems = [];
+      if (!revSnap.empty) {
+        const latestRev = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
+        const liSnap = await getDocs(collection(latestRev.ref, "line_items"));
+        if (!liSnap.empty) {
+          lineItems = liSnap.docs.map(d => d.data());
+        }
+      }
+
+      // 3. Save new PI document
+      await runTransaction(db, async tx => {
+        const piRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+        const revRef = doc(collection(piRef, "revisions"));
+        
+        tx.set(piRef, {
+          piNumber,
+          piDate: today,
+          customerId: p.customerId,
+          incoterms: p.incoterms || "",
+          destinationPort: p.destinationPort || "",
+          paymentTerms: p.paymentTerms || "",
+          shippingMethod: p.shippingMethod || "",
+          exchangeRate: p.exchangeRate || 1400,
+          validityDays: p.validityDays || 30,
+          validUntilDate: p.validUntilDate || "",
+          remarks: (p.remarks || "") + " (복제본)",
+          handlingCharges: p.handlingCharges || 0,
+          freightCharges: p.freightCharges || 0,
+          freightDetails: p.freightDetails || [],
+          insuranceCharges: p.insuranceCharges || 0,
+          subtotalUsd: p.subtotalUsd || 0,
+          totalUsd: p.totalUsd || 0,
+          currentVersion: "R1",
+          status: "draft",
+          itemsSummary: p.itemsSummary || [],
+          createdByUid: currentUserId,
+          createdByName: currentUserName,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        tx.set(revRef, {
+          version: "R1",
+          revisionNumber: 1,
+          status: "draft",
+          subtotalUsd: p.subtotalUsd || 0,
+          totalUsd: p.totalUsd || 0,
+          createdAt: serverTimestamp()
+        });
+
+        lineItems.forEach(item => {
+          tx.set(doc(collection(revRef, "line_items")), item);
+        });
+      });
+
+      alert(`✅ 복제가 완료되었습니다!\n새 PI 번호: ${piNumber}`);
+    } catch (e) {
+      alert("복제 실패: " + e.message);
+      console.error(e);
+    }
+  };
+
   // ── 기존 PI 수정 모달 열기 ──
   window.openEditModal = async function(autoPdf = false) {
     if (!currentPIId) return;
@@ -1107,6 +1235,7 @@
     document.getElementById("n_validityDesc").value = p.validityDesc || "4 weeks from the offered date";
     document.getElementById("n_rate").value = p.exchangeRate || 1468.96;
     document.getElementById("n_remarks").value = p.remarks || "";
+    document.getElementById("n_created_by_name").value = p.createdByName || currentUserName;
     document.getElementById("n_handling").value = p.handlingCharges || 0;
     document.getElementById("n_freight").value = p.freightCharges || 0;
     if (p.freightDetails) { nFreightItems = p.freightDetails; } else if (p.freightCharges) { nFreightItems = [{type:"LCL", qty:1, price:p.freightCharges}]; } else { nFreightItems = []; }
@@ -1694,7 +1823,9 @@
             validUntilDate:validUntil,remarks:document.getElementById("n_remarks").value,
             handlingCharges:hand,freightCharges:frt,freightDetails:nFreightItems,insuranceCharges:ins,
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),
-            currentVersion:"R1",status:"draft",itemsSummary,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+            currentVersion:"R1",status:"draft",itemsSummary,
+            createdByUid:currentUserId,createdByName:currentUserName,
+            createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
           tx.set(revRef,{version:"R1",revisionNumber:1,status:"draft",
             subtotalUsd:+subtotal.toFixed(4),totalUsd:+grand.toFixed(4),createdAt:serverTimestamp()});
           processedItems.forEach(item=>{ tx.set(doc(collection(revRef,"line_items")),item); });

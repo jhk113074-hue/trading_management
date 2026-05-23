@@ -377,6 +377,7 @@ export const Dashboard: React.FC = () => {
                   <tr style={{ background: '#f8fafc' }}>
                     <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>PI Number</th>
                     <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Writer</th>
                     <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Customer</th>
                     <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Incoterms</th>
                     <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>Destination</th>
@@ -388,7 +389,7 @@ export const Dashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   {pis.length === 0 ? (
-                    <tr><td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>저장된 PI가 없습니다.</td></tr>
+                    <tr><td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>저장된 PI가 없습니다.</td></tr>
                   ) : (
                     pis.slice(0, 5).map((p, idx) => {
                       const badge = { confirmed: "confirmed", sent: "sent", draft: "draft", expired: "expired" }[p.status as string] || "draft";
@@ -404,6 +405,7 @@ export const Dashboard: React.FC = () => {
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                           <td style={{ padding: '12px' }}><strong>{p.piNumber || "-"}</strong></td>
                           <td style={{ padding: '12px' }}>{date}</td>
+                          <td style={{ padding: '12px' }}>{p.createdByName || "-"}</td>
                           <td style={{ padding: '12px' }}>{cust}</td>
                           <td style={{ padding: '12px' }}>{p.incoterms || "-"}</td>
                           <td style={{ padding: '12px' }}>{p.destinationPort || "-"}</td>

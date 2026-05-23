@@ -8,9 +8,10 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
-      getFirestore, collection, doc, addDoc, getDocs,
+      getFirestore, collection, doc, addDoc, getDocs, getDoc,
       query, where, orderBy, serverTimestamp, runTransaction
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     // ⚠️ 여기에 Firebase 프로젝트 설정값 입력
     const firebaseConfig = {
@@ -25,6 +26,39 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     const COMPANY_ID = "YSACC";
+
+    // Auth User Tracking
+    let currentUserId = "";
+    let currentUserName = "Unknown";
+    const auth = getAuth(app);
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            currentUserName = (data.department ? data.department + " " : "") + (data.name || user.email.split("@")[0]);
+          } else {
+            currentUserName = user.email.split("@")[0];
+          }
+        } catch (e) {
+          console.error("Error loading user profile:", e);
+          currentUserName = user.email.split("@")[0];
+        }
+        document.getElementById("created_by_name").value = currentUserName;
+
+        const pText = document.querySelector(".main-header span");
+        if (pText) pText.textContent = currentUserName + "님 로그인 중";
+      } else {
+        currentUserId = "";
+        currentUserName = "Unknown";
+        document.getElementById("created_by_name").value = "로그인 정보 없음";
+
+        const pText = document.querySelector(".main-header span");
+        if (pText) pText.textContent = "로그인 정보 없음 (로그인 필요)";
+      }
+    });
 
     // ── 고객 목록 로드 (단순 쿼리 - 복합 인덱스 불필요) ──
     async function loadCustomers() {
@@ -141,6 +175,8 @@
             handlingCharges:  handling, freightCharges: freight, insuranceCharges: insurance,
             subtotalUsd: +subtotal.toFixed(4), totalUsd: +grandTotal.toFixed(4),
             currentVersion: "A", status: "draft",
+            createdByUid: currentUserId,
+            createdByName: currentUserName,
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           });
           const revRef = doc(collection(piRef, "revisions"));
@@ -270,7 +306,7 @@
     <!-- PI 기본 정보 -->
     <div class="section">
       <div class="section-title">① PI 기본 정보</div>
-      <div class="form-grid">
+      <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
         <div class="form-group">
           <label>PI Date</label>
           <input type="date" id="pi_date" onchange="calcValidUntil()">
@@ -282,6 +318,10 @@
         <div class="form-group">
           <label>Valid Until (자동계산)</label>
           <input type="text" id="valid_until" readonly>
+        </div>
+        <div class="form-group">
+          <label>작성자 (Author)</label>
+          <input type="text" id="created_by_name" readonly placeholder="로그인 정보를 불러오는 중...">
         </div>
       </div>
     </div>
