@@ -63,8 +63,10 @@
     let sortKey = "productCode";
     let sortDir = 1; // 1=asc, -1=desc
 
+    window.buildCount = 0;
     // ── 카테고리 필터 동적 구성 ──
     function buildCategoryFilters() {
+      window.buildCount++;
       const largeCats = [...new Set(allProducts.map(p => p.categoryLarge).filter(Boolean))].sort();
       const mediumCats = [...new Set(allProducts.map(p => p.categoryMedium).filter(Boolean))].sort();
 
@@ -76,6 +78,10 @@
 
       largeSel.innerHTML = '<option value="">전체 대분류</option>' + largeCats.map(c => `<option value="${c}"${c===curLarge?" selected":""}>${c}</option>`).join("");
       mediumSel.innerHTML = '<option value="">전체 중분류</option>' + mediumCats.map(c => `<option value="${c}"${c===curMedium?" selected":""}>${c}</option>`).join("");
+      
+      // 강제 복구
+      largeSel.value = curLarge;
+      mediumSel.value = curMedium;
     }
 
     // ── 정렬 헤더 클릭 ──
@@ -153,7 +159,7 @@
 
         const selElems = document.querySelectorAll("#cat_large_filter");
         const selNode = document.getElementById("cat_large_filter");
-        document.getElementById("result_count").innerHTML = `(Debug: val="${catLargeFilter}", idx=${selNode ? selNode.selectedIndex : 'null'}, cnt=${selElems.length}) 총 ${filtered.length}건`;
+        document.getElementById("result_count").innerHTML = `(Debug: val="${catLargeFilter}", idx=${selNode ? selNode.selectedIndex : 'null'}, build=${window.buildCount}) 총 ${filtered.length}건`;
 
         const tbody = document.getElementById("prod_table_body");
         
