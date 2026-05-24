@@ -913,24 +913,26 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <div class="search-box">
-        <span>🔍</span>
-        <input type="text" id="search_input" placeholder="상품명(한글/영문), 상품코드, 공급업체 검색..." onkeydown="if(event.key==='Enter') renderProducts()">
+      <div style="display:flex; gap:8px;">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="search_input" placeholder="상품명(한글/영문), 상품코드, 공급업체 검색..." onkeydown="if(event.key==='Enter') renderProducts()">
+        </div>
+        <button class="btn btn-primary" onclick="renderProducts()" style="padding: 8px 16px;">조회</button>
       </div>
-      <select class="filter" id="cat_large_filter">
+      <select class="filter" id="cat_large_filter" onchange="renderProducts()">
         <option value="">전체 대분류</option>
       </select>
-      <select class="filter" id="cat_medium_filter">
+      <select class="filter" id="cat_medium_filter" onchange="renderProducts()">
         <option value="">전체 중분류</option>
       </select>
-      <select class="filter" id="curr_filter">
+      <select class="filter" id="curr_filter" onchange="renderProducts()">
         <option value="">전체 통화</option>
         <option>USD</option>
         <option>KRW</option>
         <option>EUR</option>
       </select>
-      <button class="btn btn-primary" onclick="renderProducts()" style="padding: 9px 16px; margin-left: auto;">조회</button>
-      <span class="result-count" id="result_count">총 0건</span>
+      <span class="result-count" id="result_count" style="margin-left: auto;">총 0건</span>
     </div>
 
     <!-- Table Grid -->
