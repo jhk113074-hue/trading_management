@@ -147,7 +147,7 @@
           return String(va).localeCompare(String(vb), "ko") * sortDir;
         });
 
-        document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+        document.getElementById("result_count").textContent = `(Debug Large: "${catLargeFilter}", Medium: "${catMediumFilter}") 총 ${filtered.length}건`;
 
         const tbody = document.getElementById("prod_table_body");
         
