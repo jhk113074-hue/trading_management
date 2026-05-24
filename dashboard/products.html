@@ -162,7 +162,7 @@
         }
 
         tbody.innerHTML = filtered.map(p => {
-        const priceFormatted = p.purchasePrice ? p.purchasePrice.toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00";
+        const priceFormatted = p.purchasePrice ? Number(p.purchasePrice).toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00";
         
         // 제품별 / 파렛트별 규격 구분 표시
         const unitW = p.unitWidth !== undefined ? p.unitWidth : p.specWidth;
@@ -214,7 +214,7 @@
             <td><span style="font-size:11px;color:var(--text-muted);">${p.origin || "-"}</span></td>
             <td style="text-align:right;white-space:nowrap;">
               <button class="action-btn edit-btn" data-id="${p.id}" onclick="window.openEditModal(this.getAttribute('data-id'))">✏ 수정</button>
-              <button class="action-btn delete-btn" data-id="${p.id}" data-name="${(p.nameKo || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}" onclick="window.deleteProduct(this.getAttribute('data-id'), this.getAttribute('data-name'))">✕ 삭제</button>
+              <button class="action-btn delete-btn" data-id="${p.id}" data-name="${String(p.nameKo || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}" onclick="window.deleteProduct(this.getAttribute('data-id'), this.getAttribute('data-name'))">✕ 삭제</button>
             </td>
           </tr>`;
         }).join("");
