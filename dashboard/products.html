@@ -64,6 +64,7 @@
     let sortDir = 1; // 1=asc, -1=desc
 
     window.buildCount = 0;
+    window._rebuilding = false; // flag to suppress onchange during rebuild
     // ── 카테고리 필터 동적 구성 ──
     function buildCategoryFilters() {
       window.buildCount++;
@@ -73,8 +74,12 @@
       const largeSel = document.getElementById("cat_large_filter");
       const mediumSel = document.getElementById("cat_medium_filter");
 
-      const curLarge = largeSel.value;
-      const curMedium = mediumSel.value;
+      // 현재 사용자 선택 보존 (window 변수 우선)
+      const curLarge = window.currentLargeFilter !== undefined ? window.currentLargeFilter : largeSel.value;
+      const curMedium = window.currentMediumFilter !== undefined ? window.currentMediumFilter : mediumSel.value;
+
+      // 재빌드 플래그 ON → onchange가 window 변수 덮어쓰지 않도록
+      window._rebuilding = true;
 
       largeSel.innerHTML = '<option value="">전체 대분류</option>' + largeCats.map(c => `<option value="${c}"${c===curLarge?" selected":""}>${c}</option>`).join("");
       mediumSel.innerHTML = '<option value="">전체 중분류</option>' + mediumCats.map(c => `<option value="${c}"${c===curMedium?" selected":""}>${c}</option>`).join("");
@@ -82,6 +87,8 @@
       // 강제 복구
       largeSel.value = curLarge;
       mediumSel.value = curMedium;
+
+      window._rebuilding = false;
     }
 
     // ── 정렬 헤더 클릭 ──
@@ -116,6 +123,29 @@
         renderProducts();
       }, (err) => {
         console.error("상품 DB 로딩 오류:", err);
+      });
+    }
+
+    // ── 필터 select 이벤트 리스너 (온체인지 플래그 방식으로 안전하게) ──
+    function setupFilterListeners() {
+      const largeSel = document.getElementById("cat_large_filter");
+      const mediumSel = document.getElementById("cat_medium_filter");
+      const currSel = document.getElementById("curr_filter");
+
+      largeSel.addEventListener("change", function() {
+        if (window._rebuilding) return; // 재빌드 중 무시
+        window.currentLargeFilter = this.value;
+        renderProducts();
+      });
+      mediumSel.addEventListener("change", function() {
+        if (window._rebuilding) return;
+        window.currentMediumFilter = this.value;
+        renderProducts();
+      });
+      currSel.addEventListener("change", function() {
+        if (window._rebuilding) return;
+        window.currentCurrFilter = this.value;
+        renderProducts();
       });
     }
 
@@ -758,6 +788,7 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
+      setupFilterListeners();
       initResizableColumns();
       subscribeProducts();
     });
@@ -938,13 +969,13 @@
         </div>
         <button class="btn btn-primary" onclick="renderProducts()" style="padding: 8px 16px;">조회</button>
       </div>
-      <select class="filter" id="cat_large_filter" onchange="window.currentLargeFilter = this.value; renderProducts()">
+      <select class="filter" id="cat_large_filter">
         <option value="">전체 대분류</option>
       </select>
-      <select class="filter" id="cat_medium_filter" onchange="window.currentMediumFilter = this.value; renderProducts()">
+      <select class="filter" id="cat_medium_filter">
         <option value="">전체 중분류</option>
       </select>
-      <select class="filter" id="curr_filter" onchange="window.currentCurrFilter = this.value; renderProducts()">
+      <select class="filter" id="curr_filter">
         <option value="">전체 통화</option>
         <option>USD</option>
         <option>KRW</option>
