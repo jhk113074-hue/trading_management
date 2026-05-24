@@ -125,7 +125,9 @@
           (p.nameKo || "").toLowerCase().includes(q) ||
           (p.nameEn || "").toLowerCase().includes(q) ||
           (p.productCode || "").toLowerCase().includes(q) ||
-          (p.supplierName || "").toLowerCase().includes(q);
+          (p.supplierName || "").toLowerCase().includes(q) ||
+          (p.categoryLarge || "").toLowerCase().includes(q) ||
+          (p.categoryMedium || "").toLowerCase().includes(q);
         
         const matchesLargeCat = !catLargeFilter || p.categoryLarge === catLargeFilter;
         const matchesMediumCat = !catMediumFilter || p.categoryMedium === catMediumFilter;
@@ -147,6 +149,12 @@
       document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
 
       const tbody = document.getElementById("prod_table_body");
+      
+      // 약간의 시각적 피드백 (조회 클릭 시 깜빡임 효과)
+      tbody.style.transition = 'opacity 0.15s ease';
+      tbody.style.opacity = '0.4';
+      setTimeout(() => tbody.style.opacity = '1', 150);
+
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 상품이 마스터 DB에 없습니다.</td></tr>`;
         return;
