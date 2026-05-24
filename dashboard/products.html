@@ -907,15 +907,15 @@
     <div class="toolbar">
       <div class="search-box">
         <span>🔍</span>
-        <input type="text" id="search_input" placeholder="상품명(한글/영문), 상품코드, 공급업체 검색..." oninput="filterProducts()">
+        <input type="text" id="search_input" placeholder="상품명(한글/영문), 상품코드, 공급업체 검색..." oninput="renderProducts()">
       </div>
-      <select class="filter" id="cat_filter" onchange="filterProducts()">
+      <select class="filter" id="cat_large_filter" onchange="renderProducts()">
         <option value="">전체 대분류</option>
-        <option>Carbon Fiber</option>
-        <option>Epoxy Resin</option>
-        <option>Aramid Paper</option>
       </select>
-      <select class="filter" id="curr_filter" onchange="filterProducts()">
+      <select class="filter" id="cat_medium_filter" onchange="renderProducts()">
+        <option value="">전체 중분류</option>
+      </select>
+      <select class="filter" id="curr_filter" onchange="renderProducts()">
         <option value="">전체 통화</option>
         <option>USD</option>
         <option>KRW</option>
@@ -928,16 +928,16 @@
     <div class="card">
       <div class="table-wrap">
         <table>
-          <thead>
+                    <thead>
             <tr>
-              <th>상품코드</th>
-              <th>상품명 (한글/영문)</th>
-              <th>카테고리</th>
-              <th>구매 단가 / MOQ</th>
-              <th>공급업체 (공급코드)</th>
-              <th>규격 / 단위</th>
-              <th style="text-align:center">재고 수량</th>
-              <th>원산지</th>
+              <th data-sort="productCode" onclick="sortProducts('productCode')" style="cursor:pointer;">상품코드<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="nameKo" onclick="sortProducts('nameKo')" style="cursor:pointer;">상품명 (한글/영문)<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="categoryLarge" onclick="sortProducts('categoryLarge')" style="cursor:pointer;">카테고리<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="purchasePrice" onclick="sortProducts('purchasePrice')" style="cursor:pointer;">구매 단가 / MOQ<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="supplierName" onclick="sortProducts('supplierName')" style="cursor:pointer;">공급업체 (공급코드)<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="specWidth" onclick="sortProducts('specWidth')" style="cursor:pointer;">규격 / 단위<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="stockQty" onclick="sortProducts('stockQty')" style="cursor:pointer;text-align:center;">재고 수량<span class="sort-icon"> ⇅</span></th>
+              <th data-sort="origin" onclick="sortProducts('origin')" style="cursor:pointer;">원산지<span class="sort-icon"> ⇅</span></th>
               <th style="text-align:right">작업</th>
             </tr>
           </thead>
