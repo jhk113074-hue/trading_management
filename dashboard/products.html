@@ -115,52 +115,53 @@
 
     // ── 상품 화면 렌더링 ──
     function renderProducts() {
-      const q = document.getElementById("search_input").value.toLowerCase();
-      const catLargeFilter = document.getElementById("cat_large_filter").value;
-      const catMediumFilter = document.getElementById("cat_medium_filter").value;
-      const currFilter = document.getElementById("curr_filter").value;
+      try {
+        const q = document.getElementById("search_input").value.toLowerCase();
+        const catLargeFilter = document.getElementById("cat_large_filter").value;
+        const catMediumFilter = document.getElementById("cat_medium_filter").value;
+        const currFilter = document.getElementById("curr_filter").value;
 
-      let filtered = allProducts.filter(p => {
-        const matchesSearch = 
-          (p.nameKo || "").toLowerCase().includes(q) ||
-          (p.nameEn || "").toLowerCase().includes(q) ||
-          (p.productCode || "").toLowerCase().includes(q) ||
-          (p.supplierName || "").toLowerCase().includes(q) ||
-          (p.categoryLarge || "").toLowerCase().includes(q) ||
-          (p.categoryMedium || "").toLowerCase().includes(q);
+        let filtered = allProducts.filter(p => {
+          const matchesSearch = 
+            String(p.nameKo || "").toLowerCase().includes(q) ||
+            String(p.nameEn || "").toLowerCase().includes(q) ||
+            String(p.productCode || "").toLowerCase().includes(q) ||
+            String(p.supplierName || "").toLowerCase().includes(q) ||
+            String(p.categoryLarge || "").toLowerCase().includes(q) ||
+            String(p.categoryMedium || "").toLowerCase().includes(q);
+          
+          const matchesLargeCat = !catLargeFilter || p.categoryLarge === catLargeFilter;
+          const matchesMediumCat = !catMediumFilter || p.categoryMedium === catMediumFilter;
+          const matchesCurr = !currFilter || p.currency === currFilter;
+
+          return matchesSearch && matchesLargeCat && matchesMediumCat && matchesCurr;
+        });
+
+        // 정렬
+        filtered.sort((a, b) => {
+          let va = a[sortKey] ?? "";
+          let vb = b[sortKey] ?? "";
+          if (typeof va === "number" && typeof vb === "number") {
+            return (va - vb) * sortDir;
+          }
+          return String(va).localeCompare(String(vb), "ko") * sortDir;
+        });
+
+        document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
+
+        const tbody = document.getElementById("prod_table_body");
         
-        const matchesLargeCat = !catLargeFilter || p.categoryLarge === catLargeFilter;
-        const matchesMediumCat = !catMediumFilter || p.categoryMedium === catMediumFilter;
-        const matchesCurr = !currFilter || p.currency === currFilter;
+        // 약간의 시각적 피드백 (조회 클릭 시 깜빡임 효과)
+        tbody.style.transition = 'opacity 0.15s ease';
+        tbody.style.opacity = '0.4';
+        setTimeout(() => tbody.style.opacity = '1', 150);
 
-        return matchesSearch && matchesLargeCat && matchesMediumCat && matchesCurr;
-      });
-
-      // 정렬
-      filtered.sort((a, b) => {
-        let va = a[sortKey] ?? "";
-        let vb = b[sortKey] ?? "";
-        if (typeof va === "number" && typeof vb === "number") {
-          return (va - vb) * sortDir;
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 상품이 마스터 DB에 없습니다.</td></tr>`;
+          return;
         }
-        return String(va).localeCompare(String(vb), "ko") * sortDir;
-      });
 
-      document.getElementById("result_count").textContent = `총 ${filtered.length}건`;
-
-      const tbody = document.getElementById("prod_table_body");
-      
-      // 약간의 시각적 피드백 (조회 클릭 시 깜빡임 효과)
-      tbody.style.transition = 'opacity 0.15s ease';
-      tbody.style.opacity = '0.4';
-      setTimeout(() => tbody.style.opacity = '1', 150);
-
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted);">조건에 부합하는 상품이 마스터 DB에 없습니다.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(p => {
+        tbody.innerHTML = filtered.map(p => {
         const priceFormatted = p.purchasePrice ? p.purchasePrice.toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00";
         
         // 제품별 / 파렛트별 규격 구분 표시
@@ -216,7 +217,12 @@
               <button class="action-btn delete-btn" data-id="${p.id}" data-name="${(p.nameKo || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;')}" onclick="window.deleteProduct(this.getAttribute('data-id'), this.getAttribute('data-name'))">✕ 삭제</button>
             </td>
           </tr>`;
-      }).join("");
+        }).join("");
+      } catch (err) {
+        console.error(err);
+        const tbody = document.getElementById("prod_table_body");
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:red;">렌더링 중 오류 발생: ${err.message}</td></tr>`;
+      }
     }
 
     // ── 단가 이력 동적 행 추가 및 관리 ──
