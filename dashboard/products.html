@@ -117,9 +117,13 @@
     function renderProducts() {
       try {
         const q = document.getElementById("search_input").value.toLowerCase();
-        const catLargeFilter = document.getElementById("cat_large_filter").value;
-        const catMediumFilter = document.getElementById("cat_medium_filter").value;
-        const currFilter = document.getElementById("curr_filter").value;
+        const largeSelNode = document.getElementById("cat_large_filter");
+        const mediumSelNode = document.getElementById("cat_medium_filter");
+        const currSelNode = document.getElementById("curr_filter");
+        
+        const catLargeFilter = largeSelNode.options[largeSelNode.selectedIndex < 0 ? 0 : largeSelNode.selectedIndex].value;
+        const catMediumFilter = mediumSelNode.options[mediumSelNode.selectedIndex < 0 ? 0 : mediumSelNode.selectedIndex].value;
+        const currFilter = currSelNode.options[currSelNode.selectedIndex < 0 ? 0 : currSelNode.selectedIndex].value;
 
         let filtered = allProducts.filter(p => {
           const matchesSearch = 
