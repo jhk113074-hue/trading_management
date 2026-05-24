@@ -127,9 +127,9 @@
         const mediumSelNode = document.getElementById("cat_medium_filter");
         const currSelNode = document.getElementById("curr_filter");
         
-        const catLargeFilter = largeSelNode.options[largeSelNode.selectedIndex < 0 ? 0 : largeSelNode.selectedIndex].value;
-        const catMediumFilter = mediumSelNode.options[mediumSelNode.selectedIndex < 0 ? 0 : mediumSelNode.selectedIndex].value;
-        const currFilter = currSelNode.options[currSelNode.selectedIndex < 0 ? 0 : currSelNode.selectedIndex].value;
+        let catLargeFilter = window.currentLargeFilter !== undefined ? window.currentLargeFilter : largeSelNode.options[largeSelNode.selectedIndex < 0 ? 0 : largeSelNode.selectedIndex].value;
+        let catMediumFilter = window.currentMediumFilter !== undefined ? window.currentMediumFilter : mediumSelNode.options[mediumSelNode.selectedIndex < 0 ? 0 : mediumSelNode.selectedIndex].value;
+        let currFilter = window.currentCurrFilter !== undefined ? window.currentCurrFilter : currSelNode.options[currSelNode.selectedIndex < 0 ? 0 : currSelNode.selectedIndex].value;
 
         let filtered = allProducts.filter(p => {
           const matchesSearch = 
@@ -938,13 +938,13 @@
         </div>
         <button class="btn btn-primary" onclick="renderProducts()" style="padding: 8px 16px;">조회</button>
       </div>
-      <select class="filter" id="cat_large_filter" onchange="renderProducts()">
+      <select class="filter" id="cat_large_filter" onchange="window.currentLargeFilter = this.value; renderProducts()">
         <option value="">전체 대분류</option>
       </select>
-      <select class="filter" id="cat_medium_filter" onchange="renderProducts()">
+      <select class="filter" id="cat_medium_filter" onchange="window.currentMediumFilter = this.value; renderProducts()">
         <option value="">전체 중분류</option>
       </select>
-      <select class="filter" id="curr_filter" onchange="renderProducts()">
+      <select class="filter" id="curr_filter" onchange="window.currentCurrFilter = this.value; renderProducts()">
         <option value="">전체 통화</option>
         <option>USD</option>
         <option>KRW</option>
