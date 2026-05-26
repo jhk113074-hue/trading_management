@@ -1,0 +1,65 @@
+{"users": [
+{
+  "localId": "2gbMXPxBSdc1bhoa3cZ47bIV7eV2",
+  "email": "alexpark@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "81ayWsn/TqmQaGInIsik5q4zF/VkYF/xMyxslUH1UDalgHLXjxCv07etjDpwVl538LQPPG2wHXFtRA/TSWOlfA==",
+  "salt": "UNixl6GzojaupQ==",
+  "lastSignedInAt": "1779539749522",
+  "createdAt": "1779499815194",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "3RtQuXQo2zQPXTTiTCRjMz4PSS22",
+  "email": "jhk010624@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "oC/MfckWywUfAo0T/YVGVCb6/Dx+JIVn16CCFmzzCcYEvYe/zgXpZT0QhPwJsVEiMs4j6Mak8I+s4BR5ksv2YQ==",
+  "salt": "eyrzbamGpbApnA==",
+  "lastSignedInAt": "1779504179274",
+  "createdAt": "1779504179274",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "49Y7G6mhSghtCngZlPzpYIzdDyU2",
+  "email": "jhkim1130@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "CkiZVYmoHgWRPetmgrsBAyjxoRFA/2CnUhe1MDefrU8h66QHXBWSZI3RrxYDUx8cvSYSw9ylERCMleEzvsuKSg==",
+  "salt": "vl2B7QWTwmC4+Q==",
+  "lastSignedInAt": "1779593472702",
+  "createdAt": "1779499787828",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "NhaR6TpP4zfJYX8p2QsrEZPUfV03",
+  "email": "admin@ysacc.com",
+  "emailVerified": false,
+  "passwordHash": "qHr/Fq/SUs67B18/G5OFJe0AmuFVqc5vEjJ2Pij+0JCee5P7gs69jOsimyRzRsWnIYiiyGAxyIwx4VYieJLiwQ==",
+  "salt": "1VNEyQ3mHeVQvw==",
+  "lastSignedInAt": "1779499445013",
+  "createdAt": "1779497667503",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "fh53CfGA5kbAgGLsM8sAX57LJmQ2",
+  "email": "jhkim1130@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "tI8NEyFqtMvmM1kfHgYlCQp20bPTOUEQyCiSu5LiAcXz2VgZVA12mzG+GY6ik4CeWQEIhesLKN8ElJVlPz3W4A==",
+  "salt": "Ddqqs2+WpHHasg==",
+  "createdAt": "1779635758620",
+  "disabled": false,
+  "providerUserInfo": []
+},
+{
+  "localId": "slsOixAdPRSzn8kfvNgGPWPKoVq2",
+  "email": "admin@ysacc.com",
+  "emailVerified": false,
+  "passwordHash": "9dgeN8XPO1+gTvj180Vu3LPPgqXjk4HmV92oRqujxh8ylfPSRgLwzLG3cmBM0m3db7iekBUI8KOA01Ode017bg==",
+  "salt": "tSkZej2lwp88aQ==",
+  "lastSignedInAt": "1779694063324",
+  "createdAt": "1779635805023",
+  "providerUserInfo": []
+}]}

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YSACC Container Loading Plan program</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/lucide@latest" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css?v=3">
+    
+    <!-- Three.js Global Scripts for local execution -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <!-- PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Excel Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Login overlay removed for embedded mode -->
+
+    <div class="app-container" id="main-app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <img src="img/logo.png" alt="YSACC Logo" style="max-height: 40px; margin-right: 10px;" onerror="this.style.display='none';">
+                <h1 style="font-size: 1.25rem;">YSACC Container Loading Plan program</h1>
+            </div>
+            <div class="header-actions">
+                <button id="btn-load-project" class="btn btn-outline" title="프로젝트 불러오기"><i data-lucide="folder-open"></i> 프로젝트 열기</button>
+                <button id="btn-save-project" class="btn btn-primary" title="현재 프로젝트 저장"><i data-lucide="save"></i> 저장</button>
+                <button id="btn-save-as-project" class="btn btn-outline" title="다른 이름으로 저장"><i data-lucide="copy"></i> 새 프로젝트로 저장</button>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <!-- Left Column: Inputs -->
+            <aside class="sidebar">
+                <section class="card project-info">
+                    <h2><i data-lucide="file-text"></i> 프로젝트 정보</h2>
+                    <div class="form-group">
+                        <label for="customer-name">고객사명</label>
+                        <input type="text" id="customer-name" placeholder="고객사명 입력">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-name">프로젝트명</label>
+                        <input type="text" id="project-name" placeholder="프로젝트명 입력">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="project-date">일자</label>
+                            <input type="date" id="project-date">
+                        </div>
+                        <div class="form-group">
+                            <label for="project-serial">일련번호</label>
+                            <input type="text" id="project-serial" placeholder="예: PRJ-2026-001">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card container-select">
+                    <h2><i data-lucide="box"></i> 컨테이너 수량 설정</h2>
+                    <div class="container-qty-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem;">20GP (일반 20ft)</label>
+                            <input type="number" id="qty-20GP" min="0" value="1" class="container-qty-input" data-type="20GP">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem;">20RF (냉동 20ft)</label>
+                            <input type="number" id="qty-20RF" min="0" value="0" class="container-qty-input" data-type="20RF">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem;">40GP (일반 40ft)</label>
+                            <input type="number" id="qty-40GP" min="0" value="0" class="container-qty-input" data-type="40GP">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 0.8rem;">40HC (하이큐빅)</label>
+                            <input type="number" id="qty-40HC" min="0" value="0" class="container-qty-input" data-type="40HC">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card item-form">
+                    <h2><i data-lucide="layers"></i> 화물(팔레트) 추가</h2>
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                        <select id="preset-select" style="flex: 1;">
+                            <option value="">-- 자주 쓰는 화물 불러오기 --</option>
+                        </select>
+                        <button type="button" id="btn-download-preset-template" class="btn btn-outline" style="padding: 0 10px;" title="즐겨찾기 엑셀 양식 다운로드"><i data-lucide="download"></i></button>
+                        <label for="preset-excel-upload" class="btn btn-outline" style="padding: 0 10px; margin: 0; cursor: pointer;" title="엑셀에서 즐겨찾기 목록 일괄 불러오기"><i data-lucide="file-spreadsheet"></i></label>
+                        <input type="file" id="preset-excel-upload" accept=".xlsx, .xls" style="display: none;">
+                        <button type="button" id="btn-delete-preset" class="btn btn-outline" style="padding: 0 10px;" title="선택된 즐겨찾기 삭제"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <form id="add-item-form">
+                        <input type="hidden" id="edit-item-id" value="">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="item-name">화물명</label>
+                                <input type="text" id="item-name" required placeholder="예: A형 팔레트">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="item-package-type">포장 형태</label>
+                                <select id="item-package-type">
+                                    <option value="Pallet">Pallet</option>
+                                    <option value="Wooden Box">Wooden Box</option>
+                                    <option value="Carton">Carton Box</option>
+                                    <option value="Drum">Drum</option>
+                                    <option value="Pail">Pail</option>
+                                    <option value="IBC">IBC</option>
+                                    <option value="Other">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="item-content-details">혼적/내용물 상세 (선택)</label>
+                            <textarea id="item-content-details" placeholder="예: A제품 박스 10개 + B제품 페일 2개 혼적"></textarea>
+                        </div>
+                        <div class="form-row triplet">
+                            <div class="form-group">
+                                <label for="item-w">가로 (mm)</label>
+                                <input type="number" id="item-w" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="item-d">세로 (mm)</label>
+                                <input type="number" id="item-d" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="item-h">높이 (mm)</label>
+                                <input type="number" id="item-h" required min="1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="item-net-weight">순중량 (Net wt, kg)</label>
+                                <input type="number" id="item-net-weight" required min="0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="item-gross-weight">총중량 (Gross wt, kg)</label>
+                                <input type="number" id="item-gross-weight" required min="0.1" step="0.1">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 0 0 50%;">
+                                <label for="item-qty">수량</label>
+                                <input type="number" id="item-qty" required min="1">
+                            </div>
+                        </div>
+                        <div class="form-row switch-row">
+                            <div class="switch-group">
+                                <label class="switch">
+                                    <input type="checkbox" id="item-stackable" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>다단 적재 허용</span>
+                            </div>
+                            <div class="switch-group">
+                                <label class="switch">
+                                    <input type="checkbox" id="item-rotation" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                                <span>회전 허용 (수평)</span>
+                            </div>
+                        </div>
+                        <div class="form-actions" style="display:flex; flex-direction:column; gap:10px;">
+                            <div style="display:flex; gap:10px; width: 100%;">
+                                <button type="button" id="btn-cancel-edit" class="btn btn-secondary hidden" style="flex:1;">취소</button>
+                                <button type="submit" id="btn-submit-item" class="btn btn-primary" style="flex:2;">리스트에 추가</button>
+                            </div>
+                            <button type="button" id="btn-save-preset" class="btn btn-outline full-width">⭐ 현재 입력값을 즐겨찾기로 저장</button>
+                        </div>
+                    </form>
+                </section>
+            </aside>
+
+            <!-- Right Column: Results -->
+            <section class="main-content">
+                <div class="summary-cards">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="hash"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">총 수량</span>
+                            <span class="stat-value" id="total-qty">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="weight"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">총 중량 (Net / Gross)</span>
+                            <span class="stat-value"><span id="total-net-weight">0</span> / <span id="total-gross-weight">0</span> kg</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="box-select"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">총 부피 (CBM)</span>
+                            <span class="stat-value"><span id="total-volume">0.000</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card items-table-card">
+                    <div class="card-header">
+                        <h2><i data-lucide="list"></i> 적재 품목 리스트</h2>
+                        <div class="header-actions">
+                            <button class="btn btn-outline btn-sm" id="btn-download-template" title="엑셀 업로드 양식 다운로드"><i data-lucide="download"></i> 양식 받기</button>
+                            <label for="excel-upload" class="btn btn-secondary btn-sm" style="cursor: pointer; margin: 0;"><i data-lucide="upload"></i> 엑셀 업로드</label>
+                            <input type="file" id="excel-upload" accept=".xlsx, .xls" style="display: none;">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>화물명 (포장 형태)</th>
+                                    <th>크기 (W×D×H)</th>
+                                    <th>CBM</th>
+                                    <th>단위 중량(Net/Gross)</th>
+                                    <th>수량</th>
+                                    <th>총 중량(Net/Gross)</th>
+                                    <th>옵션</th>
+                                    <th>작업</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-tbody">
+                                <!-- Dynamic rows go here -->
+                                <tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>
+                            </tbody>
+                            <tfoot id="items-tfoot" class="hidden">
+                                <tr style="background-color: rgba(255, 255, 255, 0.05); font-weight: bold;">
+                                    <td colspan="4" style="text-align: right;">전체 총계:</td>
+                                    <td id="table-total-qty">0</td>
+                                    <td id="table-total-weight">0 / 0</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="results-layout">
+                    <div class="card" id="export-area">
+                        <div class="card-header">
+                            <h2><i data-lucide="truck"></i> 적재 시뮬레이션 결과</h2>
+                            <div class="header-actions">
+                                <button class="btn btn-secondary btn-sm hidden" id="btn-print-preview"><i data-lucide="printer"></i> 인쇄 미리보기</button>
+                                <button class="btn btn-primary btn-sm" id="btn-run-simulation">시뮬레이션 실행</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Multi-container tabs -->
+                        <div id="multi-container-tabs" class="container-tabs hidden"></div>
+
+                        <div class="result-placeholder" id="simulation-result">
+                            <i data-lucide="cuboid"></i>
+                            <p>화물을 추가하고 시뮬레이션을 실행하면 여기에 결과가 표시됩니다.</p>
+                        </div>
+                        
+                        <div id="visualization-container" class="hidden">
+                            <div class="viz-mode-toggle">
+                                <button class="btn btn-outline btn-sm active" id="btn-mode-2d"><i data-lucide="layout"></i> 2D 도면</button>
+                                <button class="btn btn-outline btn-sm" id="btn-mode-3d"><i data-lucide="box"></i> 3D 뷰어</button>
+                            </div>
+                            
+                            <!-- 2D View -->
+                            <div id="viz-2d-wrapper">
+                                <div class="viz-tabs">
+                                    <button class="viz-tab active" data-view="top">위 (Top View)</button>
+                                    <button class="viz-tab" data-view="right_side">오른쪽 옆 (Right Side)</button>
+                                    <button class="viz-tab" data-view="left_side">왼쪽 옆 (Left Side)</button>
+                                </div>
+                                <div class="canvas-wrapper">
+                                    <canvas id="viz-canvas"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- 3D View -->
+                            <div id="viz-3d-wrapper" class="hidden">
+                                <div class="viz-toolbar">
+                                    <button class="btn btn-icon btn-sm" data-cam="iso" title="등각 투영(Iso)">Iso</button>
+                                    <button class="btn btn-icon btn-sm" data-cam="top" title="위(Top)">Top</button>
+                                    <button class="btn btn-icon btn-sm" data-cam="side" title="옆(Side)">Side</button>
+                                    <button class="btn btn-icon btn-sm" data-cam="front" title="앞(Front)">Front</button>
+                                    <div class="separator"></div>
+                                    <button class="btn btn-icon btn-sm" data-cam="reset" title="초기화(Reset)"><i data-lucide="refresh-cw"></i></button>
+                                </div>
+                                <div id="container-3d"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Packing List -->
+                        <div id="packing-list-container" class="hidden" style="margin-top: 2rem;">
+                            <h3>패킹 리스트 (Packing List)</h3>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>번호</th>
+                                            <th>화물명</th>
+                                            <th>크기(W×D×H)</th>
+                                            <th>Net Wt.</th>
+                                            <th>Gross Wt.</th>
+                                            <th>상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="packing-list-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card unloaded-items">
+                        <div class="card-header">
+                            <h2><i data-lucide="package-x"></i> 미적재 화물</h2>
+                        </div>
+                        <ul class="unloaded-list" id="unloaded-list">
+                            <li class="empty-list">시뮬레이션 결과가 없습니다.</li>
+                        </ul>
+                        
+                        <div id="unloaded-add-container-ui" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="unloaded-add-type" style="flex: 1;">
+                                    <option value="20GP">20GP (일반 20ft)</option>
+                                    <option value="20RF">20RF (냉동 20ft)</option>
+                                    <option value="40GP">40GP (일반 40ft)</option>
+                                    <option value="40HC">40HC (하이큐빅)</option>
+                                </select>
+                                <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> 추가</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="project-modal" class="modal-backdrop hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>프로젝트 관리</h2>
+                <button class="btn-close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="project-search" placeholder="고객사명 또는 프로젝트명 검색...">
+                </div>
+                <div class="project-list-container">
+                    <table class="data-table modal-table">
+                        <thead>
+                            <tr>
+                                <th>프로젝트명</th>
+                                <th>고객사</th>
+                                <th>수정일</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="project-history-tbody">
+                            <!-- Dynamic history -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js?v=5"></script>
+    <script src="js/viewer3d.js?v=5"></script>
+    <script src="js/packer.js?v=5"></script>
+    <script src="js/app.js?v=9"></script>
+</body>
+</html>

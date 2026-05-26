@@ -1,0 +1,1025 @@
+import React, { useState, useEffect } from 'react';
+import { doc, setDoc, serverTimestamp, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { db, COMPANY_ID } from '../firebase';
+import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
+import type { Customer } from '../types/customer';
+import type { Product } from '../types/product';
+import { generatePIPdf } from '../utils/piPdfGenerator';
+
+interface Props {
+  initialPI?: ProformaInvoice;
+  onClose: () => void;
+  currentUser: string;
+}
+
+export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }) => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
+    const defaults: Partial<ProformaInvoice> = {
+      piNumber: '',
+      piDate: new Date().toISOString().split('T')[0],
+      validityDays: 30,
+      validUntilDate: '',
+      issuingCompany: 'YSACC',
+      customerId: '', customerName: '', contactPerson: '', email: '',
+      incoterms: '', destinationPort: '', departurePort: 'Busan, Korea',
+      packagingSpec: 'Export Standard Packaging.', validityDesc: '4 weeks from the offered date',
+      paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00, remarks: '',
+      handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
+      subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
+      status: 'draft', currentVersion: 1, createdByName: currentUser
+    };
+
+    if (initialPI) {
+      // Only pick known safe primitive fields from initialPI
+      const pi = initialPI as any;
+      const safeFields: (keyof ProformaInvoice)[] = [
+        'piNumber', 'piDate', 'validityDays', 'validUntilDate', 'issuingCompany',
+        'customerId', 'customerName', 'contactPerson', 'email',
+        'incoterms', 'destinationPort', 'departurePort',
+        'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
+        'exchangeRate', 'remarks', 'handlingFee', 'freightTotal', 'insurance',
+        'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
+        'status', 'currentVersion', 'createdByName', 'createdBy'
+      ];
+      for (const key of safeFields) {
+        const val = pi[key];
+        if (val !== undefined && val !== null && (typeof val === 'string' || typeof val === 'number')) {
+          (defaults as any)[key] = val;
+        }
+      }
+      // Handle arrays separately
+      const rawFreight = Array.isArray(pi.freightCharges) ? pi.freightCharges : [];
+      defaults.freightCharges = rawFreight.map((f: any) => ({
+        type: f.type || f.name || 'LCL',
+        qty: typeof f.qty === 'number' ? f.qty : 1,
+        price: typeof f.price === 'number' ? f.price : (f.amount || 0),
+        remarks: f.remarks || '',
+        name: f.type || f.name || 'LCL',
+        amount: typeof f.amount === 'number' ? f.amount : ((f.qty || 1) * (f.price || 0))
+      }));
+      defaults.itemsSummary = Array.isArray(pi.itemsSummary) ? pi.itemsSummary : [];
+    }
+
+    return defaults;
+  });
+
+  const [items, setItems] = useState<PIItem[]>([]);
+  const [revisionReason, setRevisionReason] = useState('');
+
+
+  useEffect(() => {
+    // Load Customers and Products
+    const loadData = async () => {
+      try {
+        const custSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "customers"));
+        setCustomers(custSnap.docs.map(d => ({ id: d.id, ...d.data() } as Customer)));
+
+        const prodSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "products"));
+        setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    };
+    loadData();
+
+    if (initialPI) {
+      // Load Line Items for initialPI
+      const fetchItems = async () => {
+        try {
+          const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id), "revisions"));
+          if (!revSnap.empty) {
+            const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+            const liSnap = await getDocs(collection(latestRev.ref, "line_items"));
+            const loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+            setItems(loadedItems);
+          }
+        } catch (err: any) {
+          console.error("Error loading PI items:", err);
+        }
+      };
+      fetchItems();
+    } else {
+      // Generate temp PI number
+      const yy = new Date().getFullYear();
+      setFormData(prev => ({ ...prev, piNumber: `PI-YSACC-${yy}-TBD` }));
+    }
+  }, [initialPI, currentUser]);
+
+  // Auto-format productCode in items when products list is loaded
+  useEffect(() => {
+    if (products.length > 0 && items.length > 0) {
+      let changed = false;
+      const formattedItems = items.map(item => {
+        const rawCode = getRawProductCode(item.productCode);
+        const p = products.find(prod => prod.productCode === rawCode);
+        if (p) {
+          const formatted = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
+          if (item.productCode !== formatted) {
+            changed = true;
+            return { ...item, productCode: formatted };
+          }
+        }
+        return item;
+      });
+      if (changed) {
+        setItems(formattedItems);
+      }
+    }
+  }, [products, items]);
+
+  // Calculate Valid Until Date
+  useEffect(() => {
+    if (formData.piDate && formData.validityDays !== undefined) {
+      const d = new Date(formData.piDate);
+      d.setDate(d.getDate() + formData.validityDays);
+      setFormData(prev => ({ ...prev, validUntilDate: d.toISOString().split('T')[0] }));
+    }
+  }, [formData.piDate, formData.validityDays]);
+
+  // Recalculate Totals when items or extras change
+  useEffect(() => {
+    let subUsd = 0;
+    items.forEach(it => { subUsd += (it.lineTotalUsd || 0); });
+    
+    let fTotal = 0;
+    formData.freightCharges?.forEach(f => {
+      const amt = typeof f.amount === 'number' ? f.amount : ((f.qty || 1) * (f.price || 0));
+      fTotal += amt;
+    });
+
+    const extUsd = (formData.handlingFee || 0) + fTotal + (formData.insurance || 0);
+    const totUsd = subUsd + extUsd;
+    const totKrw = totUsd * (formData.exchangeRate || 0);
+
+    setFormData(prev => ({
+      ...prev,
+      freightTotal: fTotal,
+      subtotalUsd: subUsd,
+      extrasUsd: extUsd,
+      totalUsd: totUsd,
+      totalKrw: totKrw
+    }));
+  }, [items, formData.handlingFee, formData.freightCharges, formData.insurance, formData.exchangeRate]);
+
+  const handleCustomerChange = (custId: string) => {
+    const cust = customers.find(c => c.id === custId);
+    if (cust) {
+      setFormData(prev => ({
+        ...prev,
+        customerId: cust.id,
+        customerName: cust.name,
+        contactPerson: cust.contactPerson || cust.representative || '',
+        email: cust.email || cust.contactEmail || '',
+        destinationPort: cust.shippingPort || prev.destinationPort,
+        incoterms: cust.preferredIncoterms || prev.incoterms,
+        paymentTerms: cust.paymentTerms || prev.paymentTerms
+      }));
+    }
+  };
+
+  const addItem = () => {
+    setItems(prev => [...prev, {
+      lineNumber: prev.length + 1,
+      productCode: '', description: '', quantity: 0, unit: 'KG',
+      purchasePriceKrw: 0, exchangeRate: formData.exchangeRate || 1400,
+      purchasePriceUsd: 0, marginRate: 15, salePriceUsd: 0, lineTotalUsd: 0,
+      palletQty: 0, remarks: '', roundDigits: 2
+    }]);
+  };
+
+  const updateItem = (index: number, field: keyof PIItem, value: any) => {
+    const newItems = [...items];
+    const it = { ...newItems[index], [field]: value };
+
+    // Zero out other purchase price when one is entered
+    if (field === 'purchasePriceKrw' && parseFloat(value) > 0) {
+      it.purchasePriceUsd = 0;
+    } else if (field === 'purchasePriceUsd' && parseFloat(value) > 0) {
+      it.purchasePriceKrw = 0;
+    }
+
+    // Auto calculate
+    if (field === 'productCode') {
+      const parsedCode = getRawProductCode(value);
+      const p = products.find(prod => prod.productCode === parsedCode);
+      if (p) {
+        it.productCode = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
+        it.description = p.nameEn || p.nameKo || '';
+        it.unit = p.unit || 'KG';
+        // Assuming purchase price is in KRW or USD
+        if (p.currency === 'KRW') {
+          it.purchasePriceKrw = p.purchasePrice || 0;
+          it.purchasePriceUsd = 0; // Independent: do not pre-fill USD if currency is KRW
+        } else {
+          it.purchasePriceUsd = p.purchasePrice || 0;
+          it.purchasePriceKrw = 0; // Independent: do not pre-fill KRW if currency is USD
+        }
+        
+        // Auto select default packing method if exists
+        const defaultMethod = p.packingMethods?.find((m: any) => m.isDefault);
+        if (defaultMethod) {
+          it.selectedPackingMethodId = defaultMethod.id;
+          const isPallet = defaultMethod.packageType?.endsWith('+ Pallet') || defaultMethod.packageType === 'Pallet';
+          it.packingSpecOverride = {
+            packageType: defaultMethod.packageType,
+            qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+            specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+            specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+            specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+            weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+            grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+          };
+          if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
+            it.palletQty = Math.ceil(it.quantity / defaultMethod.qtyPerPallet);
+          } else {
+            it.palletQty = 1;
+          }
+        } else {
+          it.selectedPackingMethodId = undefined;
+          it.packingSpecOverride = undefined;
+          // Auto calculate palletQty
+          if (p.qtyPerPallet && p.qtyPerPallet > 0) {
+            it.palletQty = Math.ceil(it.quantity / p.qtyPerPallet);
+          } else if (p.weight && p.weight > 0) {
+            it.palletQty = Math.ceil(it.quantity / p.weight);
+          } else {
+            it.palletQty = 1;
+          }
+        }
+      }
+    }
+
+    if (field === 'selectedPackingMethodId') {
+      const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+      if (p && p.packingMethods) {
+        const method = p.packingMethods.find((m: any) => m.id === value);
+        if (method) {
+          const isPallet = method.packageType?.endsWith('+ Pallet') || method.packageType === 'Pallet';
+          it.packingSpecOverride = {
+            packageType: method.packageType,
+            qtyPerPallet: method.qtyPerPallet || 0,
+            specWidth: isPallet ? (method.palletWidth || method.unitWidth || 0) : (method.unitWidth || 0),
+            specLength: isPallet ? (method.palletLength || method.unitLength || 0) : (method.unitLength || 0),
+            specHeight: isPallet ? (method.palletHeight || method.unitHeight || 0) : (method.unitHeight || 0),
+            weight: isPallet ? (method.palletWeight || method.unitWeight || 0) : (method.unitWeight || 0),
+            grossWeight: isPallet ? (method.palletGrossWeight || method.unitGrossWeight || 0) : (method.unitGrossWeight || method.unitWeight || 0),
+          };
+          
+          if (method.qtyPerPallet && method.qtyPerPallet > 0) {
+            it.palletQty = Math.ceil(it.quantity / method.qtyPerPallet);
+          } else {
+            it.palletQty = 1;
+          }
+        } else {
+          it.selectedPackingMethodId = undefined;
+          it.packingSpecOverride = undefined;
+        }
+      }
+    }
+
+    if (field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+      let rawSalePrice = 0;
+      if (it.purchasePriceKrw > 0) {
+        rawSalePrice = (it.purchasePriceKrw || 0) / (it.exchangeRate || 1) / (1 - (it.marginRate || 0) / 100);
+      } else {
+        rawSalePrice = (it.purchasePriceUsd || 0) / (1 - (it.marginRate || 0) / 100);
+      }
+
+      if (typeof it.roundDigits === 'number') {
+        it.salePriceUsd = ceilValue(rawSalePrice, it.roundDigits);
+      } else {
+        it.salePriceUsd = rawSalePrice;
+      }
+    }
+
+    if (field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+      it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
+      
+      // Auto calculate palletQty when quantity changes
+      if (field === 'quantity') {
+        const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+        if (it.packingSpecOverride) {
+          const qpp = it.packingSpecOverride.qtyPerPallet;
+          if (qpp && qpp > 0) {
+            it.palletQty = Math.ceil(value / qpp);
+          } else {
+            it.palletQty = 1;
+          }
+        } else if (p) {
+          if (p.qtyPerPallet && p.qtyPerPallet > 0) {
+            it.palletQty = Math.ceil(value / p.qtyPerPallet);
+          } else if (p.weight && p.weight > 0) {
+            it.palletQty = Math.ceil(value / p.weight);
+          }
+        }
+      }
+    }
+
+    newItems[index] = it;
+    setItems(newItems);
+  };
+
+  const removeItem = (index: number) => {
+    const newItems = [...items];
+    newItems.splice(index, 1);
+    // Re-assign line numbers
+    newItems.forEach((it, i) => it.lineNumber = i + 1);
+    setItems(newItems);
+  };
+
+  const addFreightCharge = () => {
+    setFormData(prev => ({
+      ...prev,
+      freightCharges: [...(prev.freightCharges || []), { type: 'LCL', qty: 1, price: 0, remarks: '', name: 'LCL', amount: 0 }]
+    }));
+  };
+
+  const updateFreightCharge = (index: number, field: 'type' | 'qty' | 'price' | 'remarks', value: any) => {
+    setFormData(prev => {
+      const list = [...(prev.freightCharges || [])];
+      const item = { ...list[index], [field]: value };
+      
+      // Update compatibility fields
+      item.name = item.type;
+      item.amount = (item.qty || 0) * (item.price || 0);
+
+      list[index] = item;
+      return { ...prev, freightCharges: list };
+    });
+  };
+
+  const removeFreightCharge = (index: number) => {
+    setFormData(prev => {
+      const list = [...(prev.freightCharges || [])];
+      list.splice(index, 1);
+      return { ...prev, freightCharges: list };
+    });
+  };
+
+  const handleSave = async (isRevision: boolean = false) => {
+    if (!formData.customerId) { alert('고객을 선택해주세요.'); return; }
+    if (items.length === 0) { alert('최소 1개 이상의 상품 라인을 추가해주세요.'); return; }
+    
+    // Revision 저장 시에만 변경 사유 체크
+    if (initialPI && isRevision && !revisionReason) {
+      alert('Revision 저장 시에는 변경 사유(Revision Reason)를 필수 입력해야 합니다.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      let piId = initialPI?.id;
+      let piNum = formData.piNumber;
+      let version = initialPI ? initialPI.currentVersion : 1;
+
+      if (initialPI && isRevision) {
+        version = initialPI.currentVersion + 1;
+      }
+
+      // New PI Number generation logic if not editing
+      if (!initialPI) {
+        const yy = new Date().getFullYear();
+        const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+        
+        // Find latest number
+        const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+        const existingNums = snap.docs
+          .map(d => d.data().piNumber)
+          .filter(n => n && n.includes(`PI-${prefix}-${yy}`))
+          .map(n => parseInt(n.split('-').pop() || '0'))
+          .filter(n => !isNaN(n));
+        
+        const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+        piNum = `PI-${prefix}-${yy}-${nextNum.toString().padStart(4, '0')}`;
+        piId = piNum;
+      }
+
+      if (!piId) throw new Error("Invalid PI ID");
+
+      const itemsSummary = items.slice(0, 3).map(i => `${i.description} (${i.quantity}${i.unit})`);
+      if (items.length > 3) itemsSummary.push('...');
+
+      const piData: Partial<ProformaInvoice> = {
+        ...formData,
+        piNumber: piNum,
+        currentVersion: version,
+        itemsSummary,
+        updatedAt: serverTimestamp()
+      };
+
+      if (!initialPI) {
+        piData.createdAt = serverTimestamp();
+        piData.createdBy = currentUser;
+      }
+
+      // Save main doc
+      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), sanitizeForFirestore(piData), { merge: true });
+
+      // Handle revision document reference
+      let revRef;
+      if (initialPI && !isRevision) {
+        // Find existing revision for the current version
+        const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+        const match = revSnap.docs.find(d => d.data().version === version);
+        if (match) {
+          revRef = match.ref;
+          
+          // Delete old line items
+          const liSnap = await getDocs(collection(revRef, "line_items"));
+          for (const d of liSnap.docs) {
+            await deleteDoc(d.ref);
+          }
+        }
+      }
+
+      if (!revRef) {
+        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+      }
+
+      const revData: PIRevision = {
+        version,
+        revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
+        items,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(revRef, sanitizeForFirestore(revData));
+
+      // Save line items in subcollection
+      for (const item of items) {
+        const itemRef = doc(collection(revRef, "line_items"));
+        let rawCode = item.productCode;
+        if (rawCode.startsWith('[') && rawCode.includes(']')) {
+          rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+        }
+        await setDoc(itemRef, sanitizeForFirestore({ ...item, productCode: rawCode, id: itemRef.id }));
+
+        // Update product master with the latest purchase price and date
+        const prod = products.find(p => p.productCode === rawCode);
+        if (prod) {
+          const finalPrice = item.purchasePriceKrw > 0 ? item.purchasePriceKrw : item.purchasePriceUsd;
+          const finalCurrency = item.purchasePriceKrw > 0 ? 'KRW' : 'USD';
+          
+          if (finalPrice > 0) {
+            const prodRef = doc(db, "companies", COMPANY_ID, "products", prod.id);
+            
+            const newHistoryItem = {
+              validFrom: formData.piDate || new Date().toISOString().split('T')[0],
+              validTo: '',
+              currency: finalCurrency,
+              price: finalPrice,
+              minQty: item.quantity || 1,
+              discountRate: 0,
+              remarks: `Updated from PI ${piNum}`
+            };
+            
+            const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
+            currentHistory.push(newHistoryItem);
+
+            await setDoc(prodRef, {
+              purchasePrice: finalPrice,
+              currency: finalCurrency,
+              priceValidFrom: formData.piDate || new Date().toISOString().split('T')[0],
+              purchasePrices: currentHistory
+            }, { merge: true });
+          }
+        }
+      }
+
+      alert('✅ 견적서가 성공적으로 저장되었습니다.');
+      onClose();
+    } catch (e: any) {
+      alert('❌ 저장 실패: ' + e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSimulation = () => {
+    if (items.length === 0) {
+      alert('시뮬레이션할 상품 라인이 없습니다.');
+      return;
+    }
+    
+    const payloadItems = items.map(it => {
+      const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+      const spec = it.packingSpecOverride || {
+        packageType: p?.packageType || 'Pallet',
+        specWidth: p?.palletWidth || p?.specWidth || 0,
+        specLength: p?.palletLength || p?.specLength || 0,
+        specHeight: p?.palletHeight || p?.specHeight || 0,
+        weight: p?.palletWeight || p?.weight || 0,
+        grossWeight: p?.palletGrossWeight || p?.grossWeight || 0
+      };
+      
+      return {
+        desc: it.description,
+        qty: it.quantity,
+        w: spec.specWidth || 0,
+        d: spec.specLength || 0,
+        h: spec.specHeight || 0,
+        netWeight: spec.weight || 0,
+        grossWeight: spec.grossWeight || 0,
+        packageType: spec.packageType,
+        stackable: p?.stackable !== 'No',
+        rotation: p?.rotation !== 'No'
+      };
+    });
+
+    const payload = {
+      type: 'LOAD_PI_DATA',
+      customer: formData.customerName || '',
+      piNumber: formData.piNumber || '',
+      date: formData.piDate || '',
+      items: payloadItems
+    };
+
+    localStorage.setItem('PI_SIMULATION_DATA', JSON.stringify(payload));
+    window.open('/container/index.html', '_blank');
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '98%', maxWidth: '1200px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+        
+        {/* Header */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
+              {initialPI ? 'Edit Proforma Invoice' : 'New Proforma Invoice'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+              신규 견적서 작성 · Firebase Firestore 저장
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
+          
+          {/* Issuer */}
+          <div style={{ background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '2px solid #3b82f6', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+            <h4 style={{ color: '#1d4ed8', fontSize: '11px', fontWeight: 700, marginBottom: '12px' }}>⓪ 견적 발행사 선택 ★</h4>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: formData.issuingCompany === 'YSACC' ? '2px solid #3b82f6' : '2px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff' }}>
+                <input type="radio" checked={formData.issuingCompany === 'YSACC'} onChange={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))} style={{ width: '18px', height: '18px', accentColor: '#3b82f6' }} />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '14px' }}>(주)와이에스에이씨씨</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>YSACC CO., LTD.</div>
+                </div>
+              </label>
+              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: formData.issuingCompany === 'YS' ? '2px solid #10b981' : '2px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff' }}>
+                <input type="radio" checked={formData.issuingCompany === 'YS'} onChange={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))} style={{ width: '18px', height: '18px', accentColor: '#10b981' }} />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#059669', fontSize: '14px' }}>영성ACC</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>YS ACC</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
+            <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
+            <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
+            <Input label="작성자 (Author)" value={formData.createdByName} disabled />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+              <select value={formData.customerId} onChange={(e) => handleCustomerChange(e.target.value)} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
+                <option value="">-- 선택 --</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <Input label="Contact" value={formData.contactPerson} disabled />
+            <Input label="Email" value={formData.email} disabled />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Incoterms ★</label>
+              <select value={formData.incoterms} onChange={(e) => setFormData(prev => ({...prev, incoterms: e.target.value}))} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
+                <option value="">-- 선택 --</option>
+                <option>EXW</option>
+                <option>FAS</option>
+                <option>FCA</option>
+                <option>FOB</option>
+                <option>CFR</option>
+                <option>CIF</option>
+                <option>CPT</option>
+                <option>CIP</option>
+                <option>DAP</option>
+                <option>DPU</option>
+                <option>DDP</option>
+              </select>
+            </div>
+            <Input label="Destination Port ★" value={formData.destinationPort} onChange={(v: any) => setFormData(prev => ({...prev, destinationPort: v}))} />
+            <Input label="Departure Port" value={formData.departurePort} onChange={(v: any) => setFormData(prev => ({...prev, departurePort: v}))} />
+            <Input label="Packaging Spec." value={formData.packagingSpec} onChange={(v: any) => setFormData(prev => ({...prev, packagingSpec: v}))} />
+            <Input label="Validity Description" value={formData.validityDesc} onChange={(v: any) => setFormData(prev => ({...prev, validityDesc: v}))} />
+            <Input label="Payment Terms ★" value={formData.paymentTerms} onChange={(v: any) => setFormData(prev => ({...prev, paymentTerms: v}))} placeholder="예: 100% T/T in advance" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Shipping Method</label>
+              <select value={formData.shippingMethod} onChange={(e) => setFormData(prev => ({...prev, shippingMethod: e.target.value}))} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
+                <option>Sea Freight</option><option>Air Freight</option><option>Truck</option>
+              </select>
+            </div>
+            <Input label="Exchange Rate (KRW/USD)" type="number" step="0.01" value={formData.exchangeRate} onChange={(v: any) => setFormData(prev => ({...prev, exchangeRate: parseFloat(v)||1}))} />
+            <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>
+            </div>
+          </div>
+
+          {/* Line Items */}
+          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', overflowX: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#475569', margin: 0 }}>④ 상품 라인 (Line Items)</h4>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>🚢 적재 시뮬레이션</button>
+                <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
+              </div>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
+                  <th style={{ padding: '8px 4px', width: '285px' }}>상품코드</th>
+                  <th style={{ padding: '8px 4px', width: '120px' }}>패킹 방식</th>
+                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>수량</th>
+                  <th style={{ padding: '8px 4px', width: '60px' }}>단위</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>매입(₩)</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>환율</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>매입($)</th>
+                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>마진%</th>
+                  <th style={{ padding: '8px 4px', width: '70px' }}>올림</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '8px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>PLT</th>
+                  <th style={{ padding: '8px 4px', width: '100px' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '40px' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr><td colSpan={14} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
+                ) : items.map((it, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        list={`products_datalist_${idx}`}
+                        value={it.productCode} 
+                        placeholder="상품코드 검색/입력"
+                        onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
+                        style={gridInputStyle} 
+                      />
+                      <datalist id={`products_datalist_${idx}`}>
+                        {products.map(p => (
+                          <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
+                            [{p.productCode}] {p.nameKo || p.nameEn}
+                          </option>
+                        ))}
+                      </datalist>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      {it.productCode ? (() => {
+                        const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                        const methods = prod?.packingMethods || [];
+                        return (
+                          <select
+                            value={it.selectedPackingMethodId || ''}
+                            onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
+                            style={gridInputStyle}
+                          >
+                            <option value="">-- 기본 규격 --</option>
+                            {methods.map((m: any) => (
+                              <option key={m.id} value={m.id}>
+                                {m.name}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })() : (
+                        <select style={gridInputStyle} disabled><option>--</option></select>
+                      )}
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.quantity)} 
+                        onChange={(e) => updateItem(idx, 'quantity', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} style={gridInputStyle} /></td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.purchasePriceKrw)} 
+                        onChange={(e) => updateItem(idx, 'purchasePriceKrw', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.exchangeRate)} 
+                        onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.purchasePriceUsd)} 
+                        onChange={(e) => updateItem(idx, 'purchasePriceUsd', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.marginRate)} 
+                        onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <select 
+                        value={it.roundDigits ?? 'none'} 
+                        onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
+                        style={gridInputStyle}
+                      >
+                        <option value="none">없음</option>
+                        <option value="2">2자리</option>
+                        <option value="1">1자리</option>
+                        <option value="0">정수</option>
+                        <option value="-1">10의자리</option>
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px', textAlign: 'right' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.salePriceUsd)} 
+                        onChange={(e) => updateItem(idx, 'salePriceUsd', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#059669' }}>
+                      ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.palletQty)} 
+                        onChange={(e) => updateItem(idx, 'palletQty', parseCommas(e.target.value))} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={it.remarks || ''} 
+                        placeholder="비고"
+                        onChange={(e) => updateItem(idx, 'remarks', e.target.value)} 
+                        style={gridInputStyle} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px', cursor: 'pointer' }}>✕</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Extras and Totals */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            <Input label="Handling Fee (USD)" type="number" step="0.01" value={formData.handlingFee} onChange={(v: any) => setFormData(prev => ({...prev, handlingFee: parseFloat(v)||0}))} />
+            
+            {/* Freight Charges (USD) */}
+            <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '16px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Freight Charges (USD)</span>
+                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(formData.freightCharges || []).map((fc, fcIdx) => (
+                  <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select 
+                      value={fc.type || 'LCL'} 
+                      onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)} 
+                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                    >
+                      <option value="LCL">LCL</option>
+                      <option value="20GP">20GP</option>
+                      <option value="20DG">20DG</option>
+                      <option value="40FT">40FT</option>
+                      <option value="40HQ">40HQ</option>
+                    </select>
+                    <input 
+                      type="number" 
+                      placeholder="수량" 
+                      value={fc.qty ?? 1} 
+                      onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
+                      style={{ flex: 0.8, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                    />
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      placeholder="금액 (USD)" 
+                      value={fc.price ?? 0} 
+                      onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
+                      style={{ flex: 1.2, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="비고" 
+                      value={fc.remarks || ''} 
+                      onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
+                      style={{ flex: 2, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
+                    />
+                    <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
+                      ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+                운송비 합계: ${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <Input label="Insurance (USD)" type="number" step="0.01" value={formData.insurance} onChange={(v: any) => setFormData(prev => ({...prev, insurance: parseFloat(v)||0}))} />
+            <Input label="원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
+          </div>
+
+          {initialPI && (
+            <div style={{ background: 'rgba(37,99,235,0.05)', border: '2px solid #2563eb', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+              <Input label="Revision Reason (변경 사유) ★" value={revisionReason} onChange={(v: any) => setRevisionReason(v)} placeholder="예: 고객 단가 인하 요청 수용" />
+            </div>
+          )}
+
+          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'flex-end', gap: '32px', alignItems: 'center' }}>
+            <div style={{ color: '#64748b', fontSize: '14px' }}>Subtotal: <b style={{ color: '#334155' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+            <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+            <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px', flexWrap: 'wrap' }}>
+          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
+          
+          <button 
+            type="button" 
+            onClick={() => generatePIPdf(formData as ProformaInvoice, items)} 
+            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #ef4444', background: '#fff', fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
+          >
+            📄 PDF로 저장하기
+          </button>
+          
+          <button 
+            type="button" 
+            onClick={() => exportPIToExcel(formData, items)} 
+            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
+          >
+            📊 Excel로 내보내기
+          </button>
+
+          <button 
+            onClick={() => handleSave(false)} 
+            disabled={isSaving} 
+            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+          >
+            {isSaving ? '저장 중...' : '✔ 일반저장'}
+          </button>
+
+          {initialPI && (
+            <button 
+              onClick={() => handleSave(true)} 
+              disabled={isSaving} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+            >
+              {isSaving ? '저장 중...' : '⚙ Revision 저장'}
+            </button>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label}</label>
+    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f1f5f9' : '#fff' }} />
+  </div>
+);
+
+const gridInputStyle = { width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' };
+
+const formatNumberWithCommas = (value: number | string | undefined) => {
+  if (value === undefined || value === null || value === '') return '';
+  const str = value.toString().replace(/,/g, '');
+  if (isNaN(Number(str))) return str;
+  const parts = str.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+};
+
+const parseCommas = (value: string): number => {
+  return parseFloat(value.replace(/,/g, '')) || 0;
+};
+
+const getRawProductCode = (code: string | undefined): string => {
+  if (!code) return '';
+  const val = code.trim();
+  if (val.startsWith('[') && val.includes(']')) {
+    return val.substring(1, val.indexOf(']')).trim();
+  }
+  return val;
+};
+
+const ceilValue = (value: number, digits: number): number => {
+  if (digits === -1) {
+    return Math.ceil(value / 10) * 10;
+  }
+  const factor = Math.pow(10, digits);
+  return Math.ceil(value * factor) / factor;
+};
+
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === null || obj === undefined) return null;
+  
+  // Keep Firestore FieldValue placeholders untouched
+  if (obj && typeof obj === 'object' && obj.constructor) {
+    const cName = obj.constructor.name;
+    if (cName === 'FieldValue' || cName === 'FieldValueImpl' || 'serverTimestamp' in obj) {
+      return obj;
+    }
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeForFirestore);
+  }
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const key of Object.keys(obj)) {
+      if (obj[key] !== undefined) {
+        cleaned[key] = sanitizeForFirestore(obj[key]);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+};
+
+const exportPIToExcel = (piData: Partial<ProformaInvoice>, items: PIItem[]) => {
+  let csvContent = "\ufeff"; // UTF-8 BOM to prevent Korean character corruption in Excel
+  csvContent += "No,상품코드,포장형태,수량,단위,매입(₩),환율,매입($),마진(%),단가($),총액($),PLT,비고\n";
+  
+  items.forEach((item, index) => {
+    let rawCode = item.productCode || '';
+    if (rawCode.startsWith('[') && rawCode.includes(']')) {
+      rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+    }
+    const packageType = item.packingSpecOverride?.packageType || 'Default';
+    const row = [
+      index + 1,
+      `"${rawCode}"`,
+      `"${packageType}"`,
+      item.quantity,
+      `"${item.unit}"`,
+      item.purchasePriceKrw,
+      item.exchangeRate,
+      item.purchasePriceUsd,
+      item.marginRate,
+      item.salePriceUsd,
+      item.lineTotalUsd,
+      item.palletQty,
+      `"${item.remarks || ''}"`
+    ].join(",");
+    csvContent += row + "\n";
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${piData.piNumber || 'PI'}_LineItems.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

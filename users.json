@@ -1,0 +1,41 @@
+{"users": [
+{
+  "localId": "2gbMXPxBSdc1bhoa3cZ47bIV7eV2",
+  "email": "alexpark@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "81ayWsn/TqmQaGInIsik5q4zF/VkYF/xMyxslUH1UDalgHLXjxCv07etjDpwVl538LQPPG2wHXFtRA/TSWOlfA==",
+  "salt": "UNixl6GzojaupQ==",
+  "lastSignedInAt": "1779539749522",
+  "createdAt": "1779499815194",
+  "providerUserInfo": []
+},
+{
+  "localId": "3RtQuXQo2zQPXTTiTCRjMz4PSS22",
+  "email": "jhk010624@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "oC/MfckWywUfAo0T/YVGVCb6/Dx+JIVn16CCFmzzCcYEvYe/zgXpZT0QhPwJsVEiMs4j6Mak8I+s4BR5ksv2YQ==",
+  "salt": "eyrzbamGpbApnA==",
+  "lastSignedInAt": "1779504179274",
+  "createdAt": "1779504179274",
+  "providerUserInfo": []
+},
+{
+  "localId": "49Y7G6mhSghtCngZlPzpYIzdDyU2",
+  "email": "jhkim1130@ysacc.co.kr",
+  "emailVerified": false,
+  "passwordHash": "CkiZVYmoHgWRPetmgrsBAyjxoRFA/2CnUhe1MDefrU8h66QHXBWSZI3RrxYDUx8cvSYSw9ylERCMleEzvsuKSg==",
+  "salt": "vl2B7QWTwmC4+Q==",
+  "lastSignedInAt": "1779593472702",
+  "createdAt": "1779499787828",
+  "providerUserInfo": []
+},
+{
+  "localId": "NhaR6TpP4zfJYX8p2QsrEZPUfV03",
+  "email": "admin@ysacc.com",
+  "emailVerified": false,
+  "passwordHash": "qHr/Fq/SUs67B18/G5OFJe0AmuFVqc5vEjJ2Pij+0JCee5P7gs69jOsimyRzRsWnIYiiyGAxyIwx4VYieJLiwQ==",
+  "salt": "1VNEyQ3mHeVQvw==",
+  "lastSignedInAt": "1779499445013",
+  "createdAt": "1779497667503",
+  "providerUserInfo": []
+}]}
