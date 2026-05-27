@@ -114,6 +114,26 @@ export const Dashboard: React.FC = () => {
     setDraggingId(null);
   };
 
+  const handleStatusDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).style.background = '';
+    const taskId = e.dataTransfer.getData('taskId');
+    if (!taskId) return;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    try {
+      const { id, ...rest } = task;
+      await updateDoc(doc(db, 'tasks', id), {
+        ...rest,
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setDraggingId(null);
+  };
+
   const handleDelegatedQuickAdd = async () => {
     const trimmed = delegatedQuickTitle.trim();
     if (!trimmed) return;
@@ -419,7 +439,14 @@ export const Dashboard: React.FC = () => {
 
       <div className="board-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
         {baskets.map(basket => (
-          <div key={basket.id} className="board-column" style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px' }}>
+          <div
+            key={basket.id}
+            className="board-column"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={e => handleStatusDrop(e, basket.id)}
+            style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 4px' }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>{basket.title}</span>
@@ -444,7 +471,26 @@ export const Dashboard: React.FC = () => {
                 if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
                 return s === 'HOLDING' || s === '보류';
               }).map(task => (
-                <div key={task.id} onClick={() => setEditingTask(task)} className="task-card" style={{ background: '#fff', borderRadius: '6px', padding: '8px 10px', border: '1px solid #e2e8f0', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div
+                  key={task.id}
+                  draggable
+                  onDragStart={e => handleDragStart(e, task.id)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => setEditingTask(task)}
+                  className="task-card"
+                  style={{
+                    background: '#fff',
+                    borderRadius: '6px',
+                    padding: '8px 10px',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'grab',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    opacity: draggingId === task.id ? 0.4 : 1
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', flex: 1, lineHeight: '1.25' }}>{task.title}</div>
                     <div style={{ fontSize: '0.6rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '6px' }}>{task.quadrant || 'Q2'}</div>
