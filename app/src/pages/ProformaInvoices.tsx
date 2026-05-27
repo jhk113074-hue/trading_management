@@ -201,7 +201,7 @@ export const ProformaInvoices: React.FC = () => {
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
-                      <button onClick={() => { setSelectedPiId(p.id); setIsDetailOpen(true); }} style={{ background: '#fff', border: '1px solid #2563eb', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>✏ 수정</button>
+                      <button onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} style={{ background: '#fff', border: '1px solid #2563eb', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>✏ 수정</button>
                       <button 
                         onClick={() => handleDelete(p.id, p.piNumber)}
                         style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
@@ -217,7 +217,7 @@ export const ProformaInvoices: React.FC = () => {
 
       {isFormOpen && (
         <PIFormModal
-          initialPI={undefined}
+          initialPI={selectedPiId ? pis.find(p => p.id === selectedPiId) : undefined}
           onClose={() => setIsFormOpen(false)}
           currentUser={currentUser}
         />
@@ -227,7 +227,10 @@ export const ProformaInvoices: React.FC = () => {
         <PIDetailModal
           pi={pis.find(p => p.id === selectedPiId)!}
           onClose={() => setIsDetailOpen(false)}
-          currentUser={currentUser}
+          onEdit={() => {
+            setIsDetailOpen(false);
+            setIsFormOpen(true);
+          }}
         />
       )}
     </div>

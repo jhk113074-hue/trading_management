@@ -4,17 +4,14 @@ import { db, COMPANY_ID } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
 import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
-import { PIFormModal } from './PIFormModal';
 
 interface Props {
   pi: ProformaInvoice;
   onClose: () => void;
-  onEdit?: () => void; // kept for compatibility but no longer used
-  currentUser?: string;
+  onEdit: () => void;
 }
 
-export const PIDetailModal: React.FC<Props> = ({ pi, onClose, currentUser = '' }) => {
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
+export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
   const [items, setItems] = useState<PIItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +42,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, currentUser = '' }
         updatedAt: serverTimestamp()
       });
       alert('✅ 상태가 업데이트되었습니다.');
-      onClose(); // close modal to refresh state in parent
+      onClose();
     } catch (e: any) {
       alert('❌ 상태 변경 실패: ' + e.message);
     }
@@ -54,21 +51,6 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, currentUser = '' }
   const badgeStyle = pi.status === 'confirmed' ? { bg: '#d1fae5', color: '#065f46' } 
                    : pi.status === 'sent' ? { bg: '#e0f2fe', color: '#0369a1' } 
                    : { bg: '#ede9fe', color: '#5b21b6' };
-
-  // If in edit mode, render PIFormModal in place (it is a full-screen overlay itself)
-  if (mode === 'edit') {
-    return (
-      <PIFormModal
-        initialPI={pi}
-        onClose={() => {
-          // Return to view mode after saving/closing the form
-          setMode('view');
-          setLoading(true); // re-fetch items
-        }}
-        currentUser={currentUser}
-      />
-    );
-  }
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
@@ -112,7 +94,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, currentUser = '' }
 
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px', gridColumn: '1 / -1' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>🚢 무역 조건 (Trade Terms)</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'x-14px y-4px' }}>
                 <DetailRow label="Incoterms" value={pi.incoterms} />
                 <DetailRow label="Destination Port" value={pi.destinationPort} />
                 <DetailRow label="Departure Port" value={pi.departurePort} />
@@ -174,10 +156,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, currentUser = '' }
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', color: '#475569' }}>닫기</button>
-            <button
-              onClick={() => setMode('edit')}
-              style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: 'rgba(37,99,235,0.05)', border: '1px solid #2563eb', color: '#2563eb' }}
-            >✏ 수정</button>
+            <button onClick={() => { onClose(); onEdit(); }} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: 'rgba(37,99,235,0.05)', border: '1px solid #2563eb', color: '#2563eb' }}>✏ 수정</button>
             <button onClick={() => updateStatus('sent')} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', color: '#0369a1' }}>📨 Sent</button>
             <button onClick={() => updateStatus('confirmed')} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#2563eb', border: 'none', color: '#fff' }}>✔ Confirmed</button>
           </div>
