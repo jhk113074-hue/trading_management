@@ -65,6 +65,50 @@ export const Dashboard: React.FC = () => {
     };
   }, []);
 
+  // ── 일간 및 기간 검색 기준 ──────────────────────────────────────────────
+  const [dateMode, setDateMode] = useState<'daily' | 'range'>('daily');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const handlePrevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const handleNextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const setRangePreset = (preset: 'today' | 'week' | 'month' | 'all') => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    if (preset === 'today') {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === 'week') {
+      const day = today.getDay();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      setStartDate(monday.toISOString().split('T')[0]);
+      setEndDate(sunday.toISOString().split('T')[0]);
+    } else if (preset === 'month') {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
+    } else if (preset === 'all') {
+      setStartDate('2020-01-01');
+      setEndDate('2030-12-31');
+    }
+  };
+
   const [filter, setFilter] = useState('내 업무');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
@@ -227,6 +271,46 @@ export const Dashboard: React.FC = () => {
       }
     }
 
+    // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
+    if (dateMode === 'daily') {
+      base = base.filter(task => {
+        const isDone = task.status === 'DONE';
+        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+
+        // 완료된 업무: 완료일에만 표시
+        if (isDone && completedAt) {
+          const compStr = completedAt.toISOString().split('T')[0];
+          return compStr === selectedDate;
+        }
+
+        // 미완료 업무: startDate, dueDate, createdAt 기준 또는 현재 날짜가 일정 범위 내에 포함되는지 확인
+        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
+        if (dates.length === 0) return true; // 날짜 없으면 항상 표시
+        
+        return dates.some(d => d === selectedDate) || 
+               (task.startDate && task.dueDate && task.startDate <= selectedDate && task.dueDate >= selectedDate);
+      });
+    } else {
+      // 기간 검색
+      base = base.filter(task => {
+        const isDone = task.status === 'DONE';
+        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+
+        // 완료된 업무: 완료일이 검색 기간 내에 있는지 확인
+        if (isDone && completedAt) {
+          const compStr = completedAt.toISOString().split('T')[0];
+          return compStr >= startDate && compStr <= endDate;
+        }
+
+        // 미완료 업무: 검색 기간과 겹치거나 범위에 속하는지 확인
+        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
+        if (dates.length === 0) return true;
+
+        return dates.some(d => d >= startDate && d <= endDate) ||
+               (task.startDate && task.dueDate && task.startDate <= endDate && task.dueDate >= startDate);
+      });
+    }
+
     return base.filter(t => {
       if (filter === '전체') return true;
       if (filter === '내 업무') return t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name;
@@ -238,7 +322,7 @@ export const Dashboard: React.FC = () => {
       
       return t.quadrant === filter;
     });
-  }, [tasks, location.pathname, filter, userProfile, users]);
+  }, [tasks, location.pathname, filter, userProfile, users, dateMode, selectedDate, startDate, endDate]);
 
   const stats = {
     todayDue: filteredTasks.filter(t => t.dueDate === new Date().toISOString().split('T')[0] && t.status !== 'DONE').length,
@@ -393,12 +477,131 @@ export const Dashboard: React.FC = () => {
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '32px 0 24px 0' }} />
 
-      <div className="top-section">
-        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>📋 오늘 해야 할 일을 바로 시작하는 화면</span>
-          <span style={{ fontSize: '0.7rem', background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>실시간 칸반</span>
-        </h2>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
+      <div className="top-section" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📋 오늘 해야 할 일을 바로 시작하는 화면</span>
+            <span style={{ fontSize: '0.7rem', background: '#3b82f6', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>실시간 칸반</span>
+          </h2>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* ── 조회 모드 탭 ── */}
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+            <button
+              onClick={() => setDateMode('daily')}
+              style={{
+                padding: '6px 12px',
+                border: 'none',
+                background: dateMode === 'daily' ? '#3b82f6' : '#fff',
+                color: dateMode === 'daily' ? '#fff' : '#475569',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px',
+                transition: 'all 0.15s'
+              }}
+            >
+              일별 조회
+            </button>
+            <button
+              onClick={() => setDateMode('range')}
+              style={{
+                padding: '6px 12px',
+                border: 'none',
+                background: dateMode === 'range' ? '#3b82f6' : '#fff',
+                color: dateMode === 'range' ? '#fff' : '#475569',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px',
+                transition: 'all 0.15s',
+                borderLeft: '1px solid #cbd5e1'
+              }}
+            >
+              기간 검색
+            </button>
+          </div>
+
+          {/* ── 상세 날짜 선택 영역 ── */}
+          {dateMode === 'daily' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+              <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid #e2e8f0' }}>‹</button>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                style={{
+                  padding: '4px 10px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#1e293b',
+                  cursor: 'pointer',
+                  background: '#fff'
+                }}
+              />
+              <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid #e2e8f0' }}>›</button>
+              {selectedDate !== new Date().toISOString().split('T')[0] && (
+                <button
+                  onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                  style={{
+                    padding: '6px 12px',
+                    border: 'none',
+                    borderLeft: '1px solid #e2e8f0',
+                    background: '#f0fdf4',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: '#16a34a'
+                  }}
+                >
+                  오늘
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  style={{
+                    padding: '6px 10px',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#1e293b',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ padding: '0 8px', color: '#94a3b8', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '30px', display: 'flex', alignItems: 'center' }}>~</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  style={{
+                    padding: '6px 10px',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#1e293b',
+                    cursor: 'pointer'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={() => setRangePreset('today')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>오늘</button>
+                <button onClick={() => setRangePreset('week')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번주</button>
+                <button onClick={() => setRangePreset('month')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번달</button>
+                <button onClick={() => setRangePreset('all')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>전체</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
