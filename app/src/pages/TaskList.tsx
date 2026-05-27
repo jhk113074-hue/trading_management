@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
@@ -20,17 +20,41 @@ const statusLabels: Record<string, string> = {
 };
 
 export const TaskList: React.FC = () => {
-  const { tasks, updateTask, addTask, deleteTask } = useTasks();
+  const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [users, setUsers] = useState<User[]>([]);
 
+  // ── 주간 단위 기준 ──────────────────────────────────────────────
+  // weekOffset: 0=이번주, -1=지난주, 1=다음주 ...
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const getWeekRange = (offset: number) => {
+    const now = new Date();
+    const day = now.getDay(); // 0=일, 1=월 ...
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const formatWeekLabel = (offset: number) => {
+    const { start, end } = getWeekRange(offset);
+    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    if (offset === 0) return `이번 주 (${fmt(start)}~${fmt(end)})`;
+    if (offset === -1) return `지난 주 (${fmt(start)}~${fmt(end)})`;
+    if (offset === 1) return `다음 주 (${fmt(start)}~${fmt(end)})`;
+    return `${offset > 0 ? '+' : ''}${offset}주 (${fmt(start)}~${fmt(end)})`;
+  };
+
   // Filtering & Sorting State
   const [filterAssignee, setFilterAssignee] = useState('전체 담당자');
   const [filterType, setFilterType] = useState('모든 유형');
   const [filterStatus, setFilterStatus] = useState('모든 상태');
-  const [filterPeriod, setFilterPeriod] = useState('전체 기간');
   
   const [sortField, setSortField] = useState<keyof Task | 'urgency_icon' | ''>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -56,8 +80,32 @@ export const TaskList: React.FC = () => {
     }
   };
 
-  const filteredAndSortedTasks = React.useMemo(() => {
+  const filteredAndSortedTasks = useMemo(() => {
     let result = [...tasks];
+
+    // ── 주간 필터링 ──────────────────────────────────────────────
+    const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
+    const thisWeekStart = getWeekRange(0).start;
+
+    result = result.filter(task => {
+      const isDone = task.status === 'DONE';
+      const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+
+      // 완료된 업무는 완료된 주에만 보임. 다음 주부터는 숨김
+      if (isDone && completedAt) {
+        const completedWeek = Math.floor((completedAt.getTime() - thisWeekStart.getTime()) / (7 * 24 * 3600 * 1000));
+        if (completedWeek !== weekOffset) return false;
+        return true;
+      }
+
+      // 미완료 업무: startDate / dueDate / createdAt 기준으로 이번 주에 해당하는 것 표시
+      const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
+      if (dates.length === 0) return true; // 날짜 없으면 항상 표시
+      return dates.some(d => {
+        const dt = new Date(d);
+        return dt >= wStart && dt <= wEnd;
+      }) || (task.startDate && task.dueDate && new Date(task.startDate) <= wEnd && new Date(task.dueDate) >= wStart);
+    });
 
     if (filterAssignee !== '전체 담당자') {
       result = result.filter(t => t.assigneeName === filterAssignee || t.assigneeId === filterAssignee);
@@ -70,36 +118,21 @@ export const TaskList: React.FC = () => {
       const statusKey = Object.keys(statusLabels).find(k => statusLabels[k] === filterStatus);
       if (statusKey) result = result.filter(t => t.status === statusKey);
     }
-    if (filterPeriod !== '전체 기간') {
-      const today = new Date().toISOString().split('T')[0];
-      if (filterPeriod === '오늘 마감') {
-        result = result.filter(t => t.dueDate === today);
-      } else if (filterPeriod === '지연됨') {
-        result = result.filter(t => t.dueDate && t.dueDate < today && t.status !== 'DONE');
-      }
-    }
 
     if (sortField) {
       result.sort((a, b) => {
         let valA = a[sortField as keyof Task];
         let valB = b[sortField as keyof Task];
-        
-        if (sortField === 'urgency_icon') {
-          valA = a.importance;
-          valB = b.importance;
-        }
-        
+        if (sortField === 'urgency_icon') { valA = a.importance; valB = b.importance; }
         if (valA === undefined) valA = '';
         if (valB === undefined) valB = '';
-
         if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
         if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
     }
-
     return result;
-  }, [tasks, filterAssignee, filterType, filterStatus, filterPeriod, sortField, sortDirection]);
+  }, [tasks, filterAssignee, filterType, filterStatus, weekOffset, sortField, sortDirection]);
 
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     select: 35, urgency_icon: 30, urgency: 55, quadrant: 45, title: 280,
@@ -175,13 +208,24 @@ export const TaskList: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#fdfdfd' }}>
-      <div style={{ padding: '24px 30px 10px' }}>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: '900', color: '#111827' }}>전체 업무 리스트</h2>
-        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '20px' }}>
-          첫 번째 행에서 바로 입력하여 새 업무를 추가하세요. 행 클릭 시 상세 수정 모달이 열립니다.
-        </p>
+        <div style={{ padding: '16px 30px 8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#111827', margin: 0 }}>전체 업무 리스트</h2>
+
+          {/* ── 주간 네비게이터 ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', marginLeft: '8px' }}>
+            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '14px', fontWeight: 700, color: '#374151' }}>‹</button>
+            <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+              📅 {formatWeekLabel(weekOffset)}
+            </div>
+            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '14px', fontWeight: 700, color: '#374151' }}>›</button>
+            {weekOffset !== 0 && (
+              <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid #e2e8f0', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+            )}
+          </div>
+        </div>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <select className="btn" style={{ padding: '6px 12px' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
               <option>전체 담당자</option>
@@ -191,17 +235,12 @@ export const TaskList: React.FC = () => {
               <option>모든 유형</option>
               {Object.values(typeLabels).map(l => <option key={l}>{l}</option>)}
             </select>
-            <select className="btn" style={{ padding: '6px 12px' }} value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}>
-              <option>전체 기간</option>
-              <option>오늘 마감</option>
-              <option>지연됨</option>
-            </select>
             <select className="btn" style={{ padding: '6px 12px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option>모든 상태</option>
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
           </div>
-          <div style={{ fontSize: '0.8rem', fontWeight: '600' }}>총 {tasks.length}건 / 검색 {filteredAndSortedTasks.length}건</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280' }}>총 {tasks.length}건 / 이번 주 {filteredAndSortedTasks.length}건</div>
         </div>
       </div>
 
@@ -251,63 +290,66 @@ export const TaskList: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredAndSortedTasks.map((task, idx) => (
-                <tr key={task.id} className="task-row-hover" style={{ height: '40px', borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 1 ? '#fcfcfc' : 'white' }} onClick={() => setEditingTask(task)}>
-                  <td style={{ textAlign: 'center' }}><input type="checkbox" onClick={e => e.stopPropagation()} /></td>
-                  <td style={{ textAlign: 'center', fontWeight: '800', color: task.importance === 'A' ? '#ef4444' : '#94a3b8' }}>{task.importance}</td>
-                  <td style={{ padding: '0 12px' }}>{task.urgency}</td>
-                  <td style={{ padding: '0 12px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>
-                  <td style={{ padding: '0 8px', fontWeight: '600', color: '#111827', position: 'sticky', left: 0, zIndex: 10, backgroundColor: idx % 2 === 1 ? '#fcfcfc' : 'white', borderRight: '2px solid #f1f5f9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {task.title}
-                      {(task.commentCount ?? 0) > 0 && (
-                        <span style={{ 
-                          fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', 
-                          padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', 
-                          alignItems: 'center', gap: '2px', fontWeight: '800' 
-                        }}>
-                          💬 {(task.commentCount ?? 0)}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '0 12px' }}>
-                    <span style={{ 
-                      color: task.status === 'DONE' ? '#ef4444' : task.status === 'IN_PROGRESS' ? '#3b82f6' : task.status === 'HOLDING' ? '#ca8a04' : '#059669', 
-                      fontWeight: '700' 
-                    }}>
-                      {statusLabels[task.status] || task.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0 12px' }}>{typeLabels[task.type] || task.type}</td>
-                  <td style={{ padding: '0 12px' }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>
-                  <td style={{ padding: '0 12px', color: '#0d9488', fontWeight: '600' }}>{task.projectName}</td>
-                  <td style={{ padding: '0 12px' }}>{task.customerName || '-'}</td>
-                  <td style={{ padding: '0 12px' }}>{task.requesterName || '-'}</td>
-                  <td style={{ padding: '0 12px', fontWeight: '700' }}>{task.assigneeName}</td>
-                  <td style={{ padding: '0 12px' }}>{task.startDate || '-'}</td>
-                  <td style={{ padding: '0 12px' }}>{task.dueDate || '-'}</td>
-                  <td style={{ padding: '0 12px' }}>{task.recurrence || '-'}</td>
-                  <td style={{ padding: '0 12px' }}>{task.recurrenceEndDate || '-'}</td>
-                  <td style={{ padding: '0 12px', textAlign: 'center' }}>{task.externalFileLink ? '🔗' : '-'}</td>
-                  <td style={{ padding: '0 12px' }}>{visibilityLabels[task.visibility] || task.visibility}</td>
-                  <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.updatedAt?.split('T')[0]}</td>
-                  <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.completedAt?.split('T')[0]}</td>
-                  <td style={{ padding: '0 12px', textAlign: 'center' }}>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm('정말 삭제하시겠습니까?')) {
-                          deleteTask(task.id);
-                        }
-                      }}
-                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredAndSortedTasks.map((task, idx) => {
+                const isDone = task.status === 'DONE';
+                return (
+                  <tr key={task.id} className="task-row-hover" style={{ height: '40px', borderBottom: '1px solid #f1f5f9', backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white') }} onClick={() => setEditingTask(task)}>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={isDone}
+                        onClick={e => e.stopPropagation()}
+                        onChange={async (e) => {
+                          e.stopPropagation();
+                          await updateTaskStatus(task.id, isDone ? 'TODO' : 'DONE');
+                        }}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#16a34a' }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center', fontWeight: '800', color: task.importance === 'A' ? '#ef4444' : '#94a3b8' }}>{task.importance}</td>
+                    <td style={{ padding: '0 12px' }}>{task.urgency}</td>
+                    <td style={{ padding: '0 12px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>
+                    <td style={{ padding: '0 8px', fontWeight: '600', color: isDone ? '#9ca3af' : '#111827', position: 'sticky', left: 0, zIndex: 10, backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white'), borderRight: '2px solid #f1f5f9' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        textDecoration: isDone ? 'line-through' : 'none',
+                        opacity: isDone ? 0.6 : 1
+                      }}>
+                        {task.title}
+                        {(task.commentCount ?? 0) > 0 && (
+                          <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td style={{ padding: '0 12px' }}>
+                      <span style={{ 
+                        color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#3b82f6' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
+                        fontWeight: '700',
+                        textDecoration: isDone ? 'line-through' : 'none'
+                      }}>
+                        {statusLabels[task.status] || task.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{typeLabels[task.type] || task.type}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>
+                    <td style={{ padding: '0 12px', color: '#0d9488', fontWeight: '600', opacity: isDone ? 0.5 : 1 }}>{task.projectName}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.customerName || '-'}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.requesterName || '-'}</td>
+                    <td style={{ padding: '0 12px', fontWeight: '700', opacity: isDone ? 0.5 : 1 }}>{task.assigneeName}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.startDate || '-'}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.dueDate || '-'}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrence || '-'}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrenceEndDate || '-'}</td>
+                    <td style={{ padding: '0 12px', textAlign: 'center', opacity: isDone ? 0.5 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>
+                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>
+                    <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.updatedAt?.split('T')[0]}</td>
+                    <td style={{ padding: '0 12px', color: isDone ? '#16a34a' : '#9ca3af', fontSize: '0.7rem', fontWeight: isDone ? 700 : 400 }}>{task.completedAt?.split('T')[0]}</td>
+                    <td style={{ padding: '0 12px', textAlign: 'center' }}>
+                      <button onClick={(e) => { e.stopPropagation(); if (window.confirm('정말 삭제하시겠습니까?')) deleteTask(task.id); }}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
