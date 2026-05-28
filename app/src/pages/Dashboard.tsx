@@ -66,7 +66,7 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   // ── 일간, 주간 및 기간 검색 기준 ──────────────────────────────────────────────
-  const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('daily');
+  const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
