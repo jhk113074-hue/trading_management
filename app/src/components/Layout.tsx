@@ -153,7 +153,7 @@ export const Layout: React.FC = () => {
       <div className="main-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         <header className="header" style={{ height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
           <div style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
-            YSACC TASK MANAGEMENT PORTAL 업무포탈
+            YSACC 업무포탈
           </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
