@@ -210,6 +210,18 @@ export const TaskList: React.FC = () => {
         if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
+    } else {
+      // Default sorting: importance 'A' first, then 'B', 'C', 'D'. If importance is equal, newest first.
+      result.sort((a, b) => {
+        const impA = a.importance || 'Z';
+        const impB = b.importance || 'Z';
+        if (impA !== impB) {
+          return impA.localeCompare(impB);
+        }
+        const dateA = a.createdAt || '';
+        const dateB = b.createdAt || '';
+        return dateB.localeCompare(dateA);
+      });
     }
     return result;
   }, [tasks, filterAssignee, filterType, filterStatus, dateMode, selectedDate, startDate, endDate, weekOffset, sortField, sortDirection]);
