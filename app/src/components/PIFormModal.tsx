@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }) => {
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [showNewCust, setShowNewCust] = useState(false);
@@ -76,6 +76,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [revisionReason, setRevisionReason] = useState('');
   const [revisions, setRevisions] = useState<any[]>([]);
   const [selectedRevId, setSelectedRevId] = useState<string>('');
+  const [dropdownRevId, setDropdownRevId] = useState<string>('');
 
 
   useEffect(() => {
@@ -131,6 +132,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             // Default to latest revision
             const latestRevDoc = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
             setSelectedRevId(latestRevDoc.id);
+            setDropdownRevId(latestRevDoc.id);
 
             // Load line items for this latest revision
             const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
@@ -467,7 +469,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   const handleSave = async (isRevision: boolean = false) => {
     // ── Guard: prevent double execution ──
-    if (isSaving) return;
+    if (savingType !== null) return;
 
     if (!formData.customerId) { alert('고객을 선택해주세요.'); return; }
     if (items.length === 0) { alert('최소 1개 이상의 상품 라인을 추가해주세요.'); return; }
@@ -478,7 +480,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       return;
     }
 
-    setIsSaving(true);
+    setSavingType(isRevision ? 'revision' : 'normal');
     try {
       let piId = initialPI?.id;
       let piNum = formData.piNumber;
@@ -652,12 +654,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
       }
 
-      alert('✅ 견적서가 성공적으로 저장되었습니다.');
+      alert(isRevision ? `✅ Revision 저장 완료! (R${version})` : '✅ 일반저장 완료!');
       onClose();
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
     } finally {
-      setIsSaving(false);
+      setSavingType(null);
     }
   };
 
@@ -716,7 +718,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       return;
     }
     try {
-      setIsSaving(true);
+      setSavingType('deleting');
       const revDocRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id, "revisions", selectedRevId);
       
       // 1. Delete all line items in subcollection
@@ -745,6 +747,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         const latestRevDoc = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
         setSelectedRevId(latestRevDoc.id);
+        setDropdownRevId(latestRevDoc.id);
 
         // Load items for the new latest revision
         const newLiSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
@@ -763,13 +766,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       } else {
         setRevisions([]);
         setSelectedRevId('');
+        setDropdownRevId('');
         setItems([]);
       }
     } catch (err: any) {
       console.error("Error deleting revision:", err);
       alert("❌ Revision 삭제 중 오류가 발생했습니다: " + err.message);
     } finally {
-      setIsSaving(false);
+      setSavingType(null);
     }
   };
 
@@ -829,20 +833,39 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
                 <select
-                  value={selectedRevId}
-                  onChange={(e) => handleRevisionChange(e.target.value)}
+                  value={dropdownRevId}
+                  onChange={(e) => setDropdownRevId(e.target.value)}
                   style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
                 >
                   {revisions.map((rev) => (
                     <option key={rev.id} value={rev.id}>
-                      R{rev.version || '?' } ({rev.revisionReason || '사유 없음'}) - {rev.createdAt instanceof Date ? rev.createdAt.toLocaleDateString() : '날짜 없음'}
+                      {initialPI.piNumber}-R{rev.version || '?'}
                     </option>
                   ))}
                 </select>
                 <button
                   type="button"
+                  onClick={() => handleRevisionChange(dropdownRevId)}
+                  disabled={savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId}
+                  style={{
+                    marginLeft: '4px',
+                    background: '#e0e7ff',
+                    border: '1px solid #c7d2fe',
+                    color: '#4338ca',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer'
+                  }}
+                  title="선택한 Revision 불러오기"
+                >
+                  📥 불러오기
+                </button>
+                <button
+                  type="button"
                   onClick={handleDeleteRevision}
-                  disabled={isSaving}
+                  disabled={savingType !== null}
                   style={{
                     marginLeft: '4px',
                     background: '#fef2f2',
@@ -852,7 +875,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     padding: '4px 8px',
                     fontSize: '11px',
                     fontWeight: 700,
-                    cursor: isSaving ? 'not-allowed' : 'pointer'
+                    cursor: savingType !== null ? 'not-allowed' : 'pointer'
                   }}
                   title="선택된 Revision 기록 삭제"
                 >
@@ -1313,20 +1336,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           <button 
             type="button"
             onClick={() => handleSave(false)} 
-            disabled={isSaving} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: isSaving ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}
+            disabled={savingType !== null} 
+            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}
           >
-            {isSaving ? '저장 중...' : '✔ 일반저장'}
+            {savingType === 'normal' ? '✔ 일반저장 중...' : '✔ 일반저장'}
           </button>
 
           {initialPI && (
             <button 
               type="button"
               onClick={() => handleSave(true)} 
-              disabled={isSaving} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: isSaving ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}
+              disabled={savingType !== null} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
             >
-              {isSaving ? '저장 중...' : '⚙ Revision 저장'}
+              {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
             </button>
           )}
         </div>
