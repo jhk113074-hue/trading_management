@@ -156,12 +156,12 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </div>
 
     <!-- Metadata Table (Right) -->
-    <div style="width: 260px; margin-top: 15px;">
+    <div style="width: 290px; margin-top: 15px;">
       <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #cbd5e1;">
         <tr>
-          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; width: 42%; text-align: center; font-size: 9.5px; text-transform: uppercase;">INVOICE NO.</td>
-          <td style="color: #1f4e78; font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 11.5px;">
-            ${piData.piNumber || '-'} ${piData.currentVersion && piData.currentVersion > 1 ? `<span style="color: #b45309; font-weight: 700; font-size: 10px; margin-left: 2px;">R${piData.currentVersion - 1}</span>` : ''}
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; width: 35%; text-align: center; font-size: 9.5px; text-transform: uppercase;">INVOICE NO.</td>
+          <td style="color: #1f4e78; font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 11.5px; white-space: nowrap;">
+            ${piData.piNumber || '-'}${piData.currentVersion && piData.currentVersion > 1 ? `<span style="color: #b45309; font-weight: 700; font-size: 10px; margin-left: 2px;">R${piData.currentVersion - 1}</span>` : ''}
           </td>
         </tr>
         <tr>
