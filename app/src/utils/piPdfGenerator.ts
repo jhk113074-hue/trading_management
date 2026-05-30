@@ -137,37 +137,44 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
 
   <div id="issuer-name-text" style="font-size:18px; font-weight:800; color:#1f4e78; margin-bottom:12px; text-align:center;">${issuerName}</div>
 
-  <!-- Metadata Table -->
-  <table class="metadata-table">
-    <thead>
-      <tr>
-        <th style="width: 25%;">INVOICE NO.</th>
-        <th style="width: 20%;">DATE</th>
-        <th style="width: 20%;">VALID UNTIL</th>
-        <th style="width: 15%;">REVISION</th>
-        <th style="width: 20%;">STATUS</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="color:#1f4e78;">${piData.piNumber || '-'}</td>
-        <td>${piData.piDate || '-'}</td>
-        <td>${piData.validUntilDate || '-'}</td>
-        <td>v${piData.currentVersion || 1}</td>
-        <td class="status-cell status-${(piData.status || 'draft').toLowerCase()}">${(piData.status || 'draft').toUpperCase()}</td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Bill To & Metadata Row -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 20px;">
+    <!-- Bill To Section (Left) -->
+    <div class="bill-to-box" style="flex: 1; margin-bottom: 0;">
+      <div class="section-title color-red">BILL TO</div>
+      <div class="customer-name">${piData.customerName || '-'}</div>
+      <div class="customer-detail">
+        ${(piData as any).customerAddress ? `<div>Address: ${(piData as any).customerAddress}</div>` : ''}
+        <div>Attn: ${piData.contactPerson || '-'}</div>
+        <div>Email: ${piData.email || '-'}</div>
+        ${(piData as any).customerPhone ? `<div>Tel: ${(piData as any).customerPhone}</div>` : ''}
+      </div>
+    </div>
 
-  <!-- Bill To Section -->
-  <div class="bill-to-box">
-    <div class="section-title color-red">BILL TO</div>
-    <div class="customer-name">${piData.customerName || '-'}</div>
-    <div class="customer-detail">
-      ${(piData as any).customerAddress ? `<div>Address: ${(piData as any).customerAddress}</div>` : ''}
-      <div>Attn: ${piData.contactPerson || '-'}</div>
-      <div>Email: ${piData.email || '-'}</div>
-      ${(piData as any).customerPhone ? `<div>Tel: ${(piData as any).customerPhone}</div>` : ''}
+    <!-- Metadata Table (Right) -->
+    <div style="width: 260px; margin-top: 15px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid #cbd5e1;">
+        <tr>
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; width: 42%; text-align: center; font-size: 9.5px; text-transform: uppercase;">INVOICE NO.</td>
+          <td style="color: #1f4e78; font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 11.5px;">
+            ${piData.piNumber || '-'} <span style="color: #b45309; font-weight: 700; font-size: 10px; margin-left: 2px;">(v${piData.currentVersion || 1})</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">DATE</td>
+          <td style="color: #0f172a; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center;">${piData.piDate || '-'}</td>
+        </tr>
+        <tr>
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">VALID UNTIL</td>
+          <td style="color: #0f172a; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center;">${piData.validUntilDate || '-'}</td>
+        </tr>
+        <tr>
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">STATUS</td>
+          <td class="status-cell status-${(piData.status || 'draft').toLowerCase()}" style="font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; text-transform: uppercase; font-size: 10px;">
+            ${(piData.status || 'draft').toUpperCase()}
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
 
