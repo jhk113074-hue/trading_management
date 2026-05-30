@@ -167,9 +167,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         const p = products.find(prod => prod.productCode === rawCode);
         if (p) {
           const formatted = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
-          if (item.productCode !== formatted) {
+          const latestDesc = p.nameKo || p.nameEn || '';
+          if (item.productCode !== formatted || item.description !== latestDesc) {
             changed = true;
-            return { ...item, productCode: formatted };
+            return { ...item, productCode: formatted, description: latestDesc };
           }
         }
         return item;
