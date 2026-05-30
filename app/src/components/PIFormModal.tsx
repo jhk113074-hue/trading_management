@@ -466,6 +466,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
   const handleSave = async (isRevision: boolean = false) => {
+    // ── Guard: prevent double execution ──
+    if (isSaving) return;
+
     if (!formData.customerId) { alert('고객을 선택해주세요.'); return; }
     if (items.length === 0) { alert('최소 1개 이상의 상품 라인을 추가해주세요.'); return; }
     
@@ -479,11 +482,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     try {
       let piId = initialPI?.id;
       let piNum = formData.piNumber;
-      let version = initialPI ? (Number(initialPI.currentVersion) || 1) : 1;
-
-      if (initialPI && isRevision) {
-        version = (Number(initialPI.currentVersion) || 1) + 1;
-      }
 
       // New PI Number generation logic if not editing
       if (!initialPI) {
@@ -508,6 +506,80 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const itemsSummary = items.slice(0, 3).map(i => `${i.description} (${i.quantity}${i.unit})`);
       if (items.length > 3) itemsSummary.push('...');
 
+      // ═══════════════════════════════════════════════════════
+      // Determine the revision document reference & version
+      // ═══════════════════════════════════════════════════════
+      let revRef;
+      let existingCreatedAt = null;
+      let version: number;
+
+      if (!initialPI) {
+        // ── BRAND-NEW PI ──
+        version = 1;
+        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+
+      } else if (isRevision) {
+        // ── REVISION SAVE (explicit new revision) ──
+        // Read the actual current max version from Firestore (not the stale initialPI prop)
+        const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+        let maxVersion = 0;
+        revSnap.docs.forEach(d => {
+          const v = Number(d.data().version) || 0;
+          if (v > maxVersion) maxVersion = v;
+        });
+        version = maxVersion + 1;
+        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+
+      } else {
+        // ── NORMAL SAVE on existing PI ──
+        // Use selectedRevId to directly target the correct revision document.
+        // This avoids version-mismatch issues from the stale initialPI prop.
+        const revisionsColRef = collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions");
+
+        if (selectedRevId) {
+          // We have a specific revision selected – reuse it directly
+          revRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", piId, "revisions", selectedRevId);
+          const revDoc = await getDoc(revRef);
+          if (revDoc.exists()) {
+            existingCreatedAt = revDoc.data().createdAt;
+            version = Number(revDoc.data().version) || 1;
+          } else {
+            // Selected revision doesn't exist anymore; fallback to latest
+            const revSnap = await getDocs(revisionsColRef);
+            if (!revSnap.empty) {
+              const latest = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
+              revRef = latest.ref;
+              existingCreatedAt = latest.data().createdAt;
+              version = Number(latest.data().version) || 1;
+            } else {
+              version = 1;
+              revRef = doc(revisionsColRef);
+            }
+          }
+        } else {
+          // No revision selected – find the latest one
+          const revSnap = await getDocs(revisionsColRef);
+          if (!revSnap.empty) {
+            const latest = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
+            revRef = latest.ref;
+            existingCreatedAt = latest.data().createdAt;
+            version = Number(latest.data().version) || 1;
+          } else {
+            version = 1;
+            revRef = doc(revisionsColRef);
+          }
+        }
+
+        // Delete old line_items from the target revision so we can re-save the current set
+        const liSnap = await getDocs(collection(revRef, "line_items"));
+        for (const d of liSnap.docs) {
+          await deleteDoc(d.ref);
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════
+      // Save main PI document (after version is finalised)
+      // ═══════════════════════════════════════════════════════
       const piData: Partial<ProformaInvoice> = {
         ...formData,
         piNumber: piNum,
@@ -521,54 +593,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         piData.createdBy = currentUser;
       }
 
-      // Handle revision document reference FIRST (may adjust version for normal saves)
-      let revRef;
-      let existingCreatedAt = null;
-
-      if (initialPI && !isRevision) {
-        // ── NORMAL SAVE on existing PI ──
-        // Must reuse an existing revision document; never create a new one.
-        const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-
-        // 1) Try exact version match
-        let match = revSnap.docs.find(d => String(d.data().version) === String(version));
-
-        // 2) Fallback: pick the latest revision by createdAt
-        if (!match && revSnap.docs.length > 0) {
-          match = revSnap.docs.sort((a, b) => {
-            const ta = a.data().createdAt?.seconds || 0;
-            const tb = b.data().createdAt?.seconds || 0;
-            return tb - ta;
-          })[0];
-          // Keep version in sync with what we found
-          version = Number(match.data().version) || version;
-        }
-
-        if (match) {
-          revRef = match.ref;
-          existingCreatedAt = match.data().createdAt;
-
-          // Delete old line items so we can re-save the current set
-          const liSnap = await getDocs(collection(revRef, "line_items"));
-          for (const d of liSnap.docs) {
-            await deleteDoc(d.ref);
-          }
-        } else {
-          // Edge case: no revisions exist at all – create the first one
-          revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-        }
-      } else if (initialPI && isRevision) {
-        // ── REVISION SAVE ── always create a new revision document
-        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-      } else {
-        // ── BRAND-NEW PI ── create the initial revision document
-        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-      }
-
-      // Now save main doc with the finalised version
-      piData.currentVersion = version;
       await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), sanitizeForFirestore(piData), { merge: true });
 
+      // ═══════════════════════════════════════════════════════
+      // Save revision document
+      // ═══════════════════════════════════════════════════════
       const revData: PIRevision = {
         version,
         revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
@@ -1282,18 +1311,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </button>
 
           <button 
+            type="button"
             onClick={() => handleSave(false)} 
             disabled={isSaving} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: isSaving ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}
           >
             {isSaving ? '저장 중...' : '✔ 일반저장'}
           </button>
 
           {initialPI && (
             <button 
+              type="button"
               onClick={() => handleSave(true)} 
               disabled={isSaving} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#7c3aed', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: isSaving ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1 }}
             >
               {isSaving ? '저장 중...' : '⚙ Revision 저장'}
             </button>
