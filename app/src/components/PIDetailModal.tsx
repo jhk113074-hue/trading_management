@@ -121,7 +121,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
               <DetailRow label="PI Number" value={resolvedPi.piNumber} />
               <DetailRow label="PI Date" value={resolvedPi.piDate} />
               <DetailRow label="Valid Until" value={resolvedPi.validUntilDate} />
-              <DetailRow label="Revision" value={resolvedPi.currentVersion?.toString()} />
+              <DetailRow label="Revision" value={resolvedPi.currentVersion ? `R${resolvedPi.currentVersion}` : '-'} />
             </div>
 
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>

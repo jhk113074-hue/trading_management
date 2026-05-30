@@ -157,7 +157,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         <tr>
           <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; width: 42%; text-align: center; font-size: 9.5px; text-transform: uppercase;">INVOICE NO.</td>
           <td style="color: #1f4e78; font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 11.5px;">
-            ${piData.piNumber || '-'} <span style="color: #b45309; font-weight: 700; font-size: 10px; margin-left: 2px;">(v${piData.currentVersion || 1})</span>
+            ${piData.piNumber || '-'} <span style="color: #b45309; font-weight: 700; font-size: 10px; margin-left: 2px;">(R${piData.currentVersion || 1})</span>
           </td>
         </tr>
         <tr>

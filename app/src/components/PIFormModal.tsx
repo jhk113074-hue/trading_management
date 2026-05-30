@@ -652,6 +652,75 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     window.open('/container/index.html', '_blank');
   };
 
+  const handleDeleteRevision = async () => {
+    if (!selectedRevId || !initialPI) return;
+    if (revisions.length <= 1) {
+      alert("⚠️ 최소 1개 이상의 Revision 기록이 존재해야 하므로 삭제할 수 없습니다.");
+      return;
+    }
+    const targetRev = revisions.find(r => r.id === selectedRevId);
+    const targetVersion = targetRev ? targetRev.version : '';
+    if (!window.confirm(`⚠️ 정말 이 Revision (R${targetVersion}) 기록을 완전히 삭제하시겠습니까?\n복구할 수 없으며 관련 상품 라인 데이터도 함께 영구 삭제됩니다.`)) {
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const revDocRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id, "revisions", selectedRevId);
+      
+      // 1. Delete all line items in subcollection
+      const liSnap = await getDocs(collection(revDocRef, "line_items"));
+      for (const d of liSnap.docs) {
+        await deleteDoc(d.ref);
+      }
+      
+      // 2. Delete revision doc itself
+      await deleteDoc(revDocRef);
+      
+      alert("✅ 선택한 Revision 기록이 완전히 삭제되었습니다.");
+      
+      // 3. Reload revisions and load the latest remaining revision
+      const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id), "revisions"));
+      if (!revSnap.empty) {
+        const revList = revSnap.docs.map(d => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+          };
+        }).sort((a: any, b: any) => (b.version || 0) - (a.version || 0));
+        setRevisions(revList);
+
+        const latestRevDoc = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+        setSelectedRevId(latestRevDoc.id);
+
+        // Load items for the new latest revision
+        const newLiSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+        let loadedItems = newLiSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+        if (loadedItems.length === 0 && Array.isArray(latestRevDoc.data().items)) {
+          loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+        }
+        setItems(loadedItems);
+        
+        // Update main document's currentVersion
+        const newVersion = latestRevDoc.data().version || 1;
+        await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id), {
+          currentVersion: newVersion
+        }, { merge: true });
+        
+      } else {
+        setRevisions([]);
+        setSelectedRevId('');
+        setItems([]);
+      }
+    } catch (err: any) {
+      console.error("Error deleting revision:", err);
+      alert("❌ Revision 삭제 중 오류가 발생했습니다: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleRevisionChange = async (revId: string) => {
     if (!revId || !initialPI) return;
     setSelectedRevId(revId);
@@ -714,10 +783,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 >
                   {revisions.map((rev) => (
                     <option key={rev.id} value={rev.id}>
-                      v{rev.version || '?' } ({rev.revisionReason || '사유 없음'}) - {rev.createdAt instanceof Date ? rev.createdAt.toLocaleDateString() : '날짜 없음'}
+                      R{rev.version || '?' } ({rev.revisionReason || '사유 없음'}) - {rev.createdAt instanceof Date ? rev.createdAt.toLocaleDateString() : '날짜 없음'}
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  onClick={handleDeleteRevision}
+                  disabled={isSaving}
+                  style={{
+                    marginLeft: '4px',
+                    background: '#fef2f2',
+                    border: '1px solid #fee2e2',
+                    color: '#ef4444',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: isSaving ? 'not-allowed' : 'pointer'
+                  }}
+                  title="선택된 Revision 기록 삭제"
+                >
+                  🗑️ 삭제
+                </button>
               </div>
             )}
           </div>
