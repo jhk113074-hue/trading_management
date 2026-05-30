@@ -143,6 +143,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
             }
             setItems(loadedItems);
+
+            // Load special custom values from the latest revision
+            const latestData = latestRevDoc.data();
+            setFormData(prev => ({
+              ...prev,
+              ...(latestData.exchangeRate && { exchangeRate: latestData.exchangeRate }),
+              ...(latestData.remarks && { remarks: latestData.remarks }),
+              ...(latestData.incoterms && { incoterms: latestData.incoterms }),
+              ...(latestData.destinationPort && { destinationPort: latestData.destinationPort }),
+              ...(latestData.paymentTerms && { paymentTerms: latestData.paymentTerms }),
+              ...(latestData.shippingMethod && { shippingMethod: latestData.shippingMethod }),
+              ...(latestData.packagingSpec && { packagingSpec: latestData.packagingSpec }),
+            }));
           }
         } catch (err: any) {
           console.error("Error loading PI revisions & items:", err);
