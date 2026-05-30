@@ -202,13 +202,13 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     <table class="items-table">
       <thead>
         <tr>
-          <th style="width:40px; text-align:center;">No</th>
+          <th style="width:30px; text-align:center;">No</th>
           <th>Description</th>
-          <th style="width:75px; text-align:right;">Qty</th>
-          <th style="width:60px; text-align:center;">Unit</th>
-          <th style="width:105px; text-align:right;">Unit Price</th>
-          <th style="width:115px; text-align:right;">Total (USD)</th>
-          <th style="width:110px; text-align:right;">Remarks</th>
+          <th style="width:60px; text-align:right;">Qty</th>
+          <th style="width:40px; text-align:center;">Unit</th>
+          <th style="width:70px; text-align:right;">Unit Price</th>
+          <th style="width:95px; text-align:right;">Total (USD)</th>
+          <th style="width:80px; text-align:right;">Remarks</th>
         </tr>
       </thead>
       <tbody>
