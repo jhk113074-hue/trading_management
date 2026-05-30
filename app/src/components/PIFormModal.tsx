@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
 import type { Customer } from '../types/customer';
@@ -74,6 +74,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   const [items, setItems] = useState<PIItem[]>([]);
   const [revisionReason, setRevisionReason] = useState('');
+  const [revisions, setRevisions] = useState<any[]>([]);
+  const [selectedRevId, setSelectedRevId] = useState<string>('');
 
 
   useEffect(() => {
@@ -111,21 +113,40 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     });
 
     if (initialPI) {
-      // Load Line Items for initialPI
-      const fetchItems = async () => {
+      // Load Revisions & Line Items for initialPI
+      const fetchRevisionsAndItems = async () => {
         try {
           const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id), "revisions"));
           if (!revSnap.empty) {
-            const latestRev = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
-            const liSnap = await getDocs(collection(latestRev.ref, "line_items"));
-            const loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+            const revList = revSnap.docs.map(d => {
+              const data = d.data() as any;
+              return {
+                id: d.id,
+                ...data,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+              };
+            }).sort((a: any, b: any) => (b.version || 0) - (a.version || 0));
+            setRevisions(revList);
+
+            // Default to latest revision
+            const latestRevDoc = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
+            setSelectedRevId(latestRevDoc.id);
+
+            // Load line items for this latest revision
+            const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+            let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+            
+            // Fallback to items array if subcollection is empty
+            if (loadedItems.length === 0 && Array.isArray(latestRevDoc.data().items)) {
+              loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+            }
             setItems(loadedItems);
           }
         } catch (err: any) {
-          console.error("Error loading PI items:", err);
+          console.error("Error loading PI revisions & items:", err);
         }
       };
-      fetchItems();
+      fetchRevisionsAndItems();
     } else {
       // Generate temp PI number
       const yy = new Date().getFullYear();
@@ -629,19 +650,74 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     window.open('/container/index.html', '_blank');
   };
 
+  const handleRevisionChange = async (revId: string) => {
+    if (!revId || !initialPI) return;
+    setSelectedRevId(revId);
+    try {
+      const revDocRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", initialPI.id, "revisions", revId);
+      const revDoc = await getDoc(revDocRef);
+      if (revDoc.exists()) {
+        const data = revDoc.data();
+        
+        // Load line items from subcollection
+        const liSnap = await getDocs(collection(revDocRef, "line_items"));
+        let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+        
+        // Fallback to items array if subcollection is empty
+        if (loadedItems.length === 0 && Array.isArray(data.items)) {
+          loadedItems = (data.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+        }
+        
+        setItems(loadedItems);
+        
+        // If the revision saved special custom values (like exchangeRate, remarks etc.), we can load them too
+        if (data.exchangeRate) setFormData(prev => ({ ...prev, exchangeRate: data.exchangeRate }));
+        if (data.remarks) setFormData(prev => ({ ...prev, remarks: data.remarks }));
+        if (data.incoterms) setFormData(prev => ({ ...prev, incoterms: data.incoterms }));
+        if (data.destinationPort) setFormData(prev => ({ ...prev, destinationPort: data.destinationPort }));
+        if (data.paymentTerms) setFormData(prev => ({ ...prev, paymentTerms: data.paymentTerms }));
+        if (data.shippingMethod) setFormData(prev => ({ ...prev, shippingMethod: data.shippingMethod }));
+        if (data.packagingSpec) setFormData(prev => ({ ...prev, packagingSpec: data.packagingSpec }));
+        
+        alert(`ℹ️ Version ${data.version || ''}의 데이터가 로드되었습니다.`);
+      }
+    } catch (err) {
+      console.error("Error loading specific revision:", err);
+      alert("❌ Revision 데이터를 불러오는데 실패했습니다.");
+    }
+  };
+
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: '#fff', borderRadius: '14px', width: '98%', maxWidth: '1200px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
         
         {/* Header */}
         <div style={{ padding: '16px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
-          <div>
-            <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
-              {initialPI ? 'Edit Proforma Invoice' : 'New Proforma Invoice'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
+                {initialPI ? 'Edit Proforma Invoice' : 'New Proforma Invoice'}
+              </div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                신규 견적서 작성 · Firebase Firestore 저장
+              </div>
             </div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-              신규 견적서 작성 · Firebase Firestore 저장
-            </div>
+            {initialPI && revisions.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
+                <select
+                  value={selectedRevId}
+                  onChange={(e) => handleRevisionChange(e.target.value)}
+                  style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
+                >
+                  {revisions.map((rev) => (
+                    <option key={rev.id} value={rev.id}>
+                      v{rev.version || '?' } ({rev.revisionReason || '사유 없음'}) - {rev.createdAt instanceof Date ? rev.createdAt.toLocaleDateString() : '날짜 없음'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
