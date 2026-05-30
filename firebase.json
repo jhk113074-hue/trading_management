@@ -4,7 +4,7 @@
     "indexes": "firebase/firestore.indexes.json"
   },
   "hosting": {
-    "public": "dashboard",
+    "public": "app/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -21,19 +21,32 @@
         ]
       },
       {
-        "source": "/tasks/**",
+        "source": "/assets/**",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "no-cache, no-store, must-revalidate"
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/container/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
           }
         ]
       }
     ],
     "rewrites": [
       {
-        "source": "/tasks/**",
-        "destination": "/tasks/index.html"
+        "source": "/container/**",
+        "destination": "/container/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   }

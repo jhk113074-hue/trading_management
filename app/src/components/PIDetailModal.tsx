@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDocs, collection, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
 import { generatePIPdf } from '../utils/piPdfGenerator';
@@ -14,6 +14,45 @@ interface Props {
 export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
   const [items, setItems] = useState<PIItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resolvedCustomer, setResolvedCustomer] = useState<{
+    name: string;
+    contactPerson: string;
+    email: string;
+    addressEn: string;
+    contactPhone: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      if (pi.customerId) {
+        try {
+          const custDoc = await getDoc(doc(db, "companies", COMPANY_ID, "customers", pi.customerId));
+          if (custDoc.exists()) {
+            const data = custDoc.data();
+            setResolvedCustomer({
+              name: data.name || '',
+              contactPerson: data.contactPerson || data.representative || '',
+              email: data.email || data.contactEmail || '',
+              addressEn: data.addressEn || '',
+              contactPhone: data.contactPhone || data.phone || ''
+            });
+          }
+        } catch (e) {
+          console.error("Error fetching customer:", e);
+        }
+      }
+    };
+    fetchCustomer();
+  }, [pi.customerId]);
+
+  const resolvedPi = {
+    ...pi,
+    customerName: resolvedCustomer?.name || pi.customerName || '-',
+    contactPerson: resolvedCustomer?.contactPerson || pi.contactPerson || '-',
+    email: resolvedCustomer?.email || pi.email || '-',
+    customerAddress: resolvedCustomer?.addressEn || '',
+    customerPhone: resolvedCustomer?.contactPhone || ''
+  };
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -59,10 +98,10 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #e8ecf0', background: '#fafafa' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111827' }}>
-              {pi.piNumber || '-'}
+              {resolvedPi.piNumber || '-'}
             </div>
             <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '3px' }}>
-              {pi.piDate} · {pi.customerName} · {pi.destinationPort}
+              {resolvedPi.piDate} · {resolvedPi.customerName} · {resolvedPi.destinationPort}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -78,18 +117,18 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
             
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>📋 PI 정보</h4>
-              <DetailRow label="견적 발행사" value={pi.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : '(주)와이에스에이씨씨 (YSACC CO.,LTD)'} valueColor={pi.issuingCompany === 'YS' ? '#059669' : '#2563eb'} bold />
-              <DetailRow label="PI Number" value={pi.piNumber} />
-              <DetailRow label="PI Date" value={pi.piDate} />
-              <DetailRow label="Valid Until" value={pi.validUntilDate} />
-              <DetailRow label="Revision" value={pi.currentVersion?.toString()} />
+              <DetailRow label="견적 발행사" value={resolvedPi.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : '(주)와이에스에이씨씨 (YSACC CO.,LTD)'} valueColor={resolvedPi.issuingCompany === 'YS' ? '#059669' : '#2563eb'} bold />
+              <DetailRow label="PI Number" value={resolvedPi.piNumber} />
+              <DetailRow label="PI Date" value={resolvedPi.piDate} />
+              <DetailRow label="Valid Until" value={resolvedPi.validUntilDate} />
+              <DetailRow label="Revision" value={resolvedPi.currentVersion?.toString()} />
             </div>
 
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>🏢 고객 정보</h4>
-              <DetailRow label="Customer Name" value={pi.customerName} bold />
-              <DetailRow label="Contact Person" value={pi.contactPerson} />
-              <DetailRow label="Email" value={pi.email} />
+              <DetailRow label="Customer Name" value={resolvedPi.customerName} bold />
+              <DetailRow label="Contact Person" value={resolvedPi.contactPerson} />
+              <DetailRow label="Email" value={resolvedPi.email} />
             </div>
 
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px', gridColumn: '1 / -1' }}>
@@ -151,8 +190,8 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
 
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', display: 'flex', gap: '10px', justifyContent: 'space-between', background: '#fafafa' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => generatePIPdf(pi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #dc2626', color: '#dc2626', opacity: loading ? 0.5 : 1 }}>📄 PDF</button>
-            <button onClick={() => generatePIExcel(pi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #16a34a', color: '#16a34a', opacity: loading ? 0.5 : 1 }}>📊 Excel</button>
+            <button onClick={() => generatePIPdf(resolvedPi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #dc2626', color: '#dc2626', opacity: loading ? 0.5 : 1 }}>📄 PDF</button>
+            <button onClick={() => generatePIExcel(resolvedPi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #16a34a', color: '#16a34a', opacity: loading ? 0.5 : 1 }}>📊 Excel</button>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', color: '#475569' }}>닫기</button>

@@ -14,6 +14,7 @@ import { Customers } from './pages/Customers';
 import { Suppliers } from './pages/Suppliers';
 import { ProformaInvoices } from './pages/ProformaInvoices';
 import { ContainerPacker } from './pages/ContainerPacker';
+import { AuthCallback } from './pages/AuthCallback';
 
 const App: React.FC = () => {
   return (
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/auth-callback" element={<AuthCallback />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="list" element={<TaskList />} />

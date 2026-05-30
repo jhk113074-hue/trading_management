@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
 import type { Customer } from '../types/customer';
 import type { Product } from '../types/product';
 import { generatePIPdf } from '../utils/piPdfGenerator';
+import { ProductModal } from './ProductModal';
 
 interface Props {
   initialPI?: ProformaInvoice;
@@ -18,6 +19,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [products, setProducts] = useState<Product[]>([]);
   const [showNewCust, setShowNewCust] = useState(false);
   const [newCustForm, setNewCustForm] = useState({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '' });
+  const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
 
   const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
     const defaults: Partial<ProformaInvoice> = {
@@ -74,19 +77,38 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
 
   useEffect(() => {
-    // Load Customers and Products
+    // Load Customers
     const loadData = async () => {
       try {
         const custSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "customers"));
-        setCustomers(custSnap.docs.map(d => ({ id: d.id, ...d.data() } as Customer)));
+        const loadedCusts = custSnap.docs.map(d => ({ id: d.id, ...d.data() } as Customer));
+        setCustomers(loadedCusts);
 
-        const prodSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "products"));
-        setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+        // Self-healing customer details if customerName is empty but customerId exists
+        setFormData(prev => {
+          if (prev.customerId && !prev.customerName) {
+            const cust = loadedCusts.find(c => c.id === prev.customerId);
+            if (cust) {
+              return {
+                ...prev,
+                customerName: cust.name,
+                contactPerson: prev.contactPerson || cust.contactPerson || cust.representative || '',
+                email: prev.email || cust.email || cust.contactEmail || ''
+              };
+            }
+          }
+          return prev;
+        });
       } catch (err) {
         console.error("Error loading data:", err);
       }
     };
     loadData();
+
+    // Subscribe to products in real-time
+    const unsubProducts = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "products"), (snap) => {
+      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+    });
 
     if (initialPI) {
       // Load Line Items for initialPI
@@ -109,6 +131,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const yy = new Date().getFullYear();
       setFormData(prev => ({ ...prev, piNumber: `PI-YSACC-${yy}-TBD` }));
     }
+
+    return () => {
+      unsubProducts();
+    };
   }, [initialPI, currentUser]);
 
   // Auto-format productCode in items when products list is loaded
@@ -522,27 +548,31 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           const finalCurrency = item.purchasePriceKrw > 0 ? 'KRW' : 'USD';
           
           if (finalPrice > 0) {
-            const prodRef = doc(db, "companies", COMPANY_ID, "products", prod.id);
+            const isPriceChanged = prod.purchasePrice !== finalPrice || prod.currency !== finalCurrency;
             
-            const newHistoryItem = {
-              validFrom: formData.piDate || new Date().toISOString().split('T')[0],
-              validTo: '',
-              currency: finalCurrency,
-              price: finalPrice,
-              minQty: item.quantity || 1,
-              discountRate: 0,
-              remarks: `Updated from PI ${piNum}`
-            };
-            
-            const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
-            currentHistory.push(newHistoryItem);
+            if (isPriceChanged) {
+              const prodRef = doc(db, "companies", COMPANY_ID, "products", prod.id);
+              
+              const newHistoryItem = {
+                validFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                validTo: '',
+                currency: finalCurrency,
+                price: finalPrice,
+                minQty: item.quantity || 1,
+                discountRate: 0,
+                remarks: `Updated from PI ${piNum}`
+              };
+              
+              const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
+              currentHistory.push(newHistoryItem);
 
-            await setDoc(prodRef, {
-              purchasePrice: finalPrice,
-              currency: finalCurrency,
-              priceValidFrom: formData.piDate || new Date().toISOString().split('T')[0],
-              purchasePrices: currentHistory
-            }, { merge: true });
+              await setDoc(prodRef, {
+                purchasePrice: finalPrice,
+                currency: finalCurrency,
+                priceValidFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                purchasePrices: currentHistory
+              }, { merge: true });
+            }
           }
         }
       }
@@ -758,7 +788,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '8px 4px', width: '285px' }}>상품코드</th>
+                  <th style={{ padding: '8px 4px', width: '380px' }}>상품코드</th>
                   <th style={{ padding: '8px 4px', width: '120px' }}>패킹 방식</th>
                   <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>수량</th>
                   <th style={{ padding: '8px 4px', width: '60px' }}>단위</th>
@@ -780,21 +810,78 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 ) : items.map((it, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        list={`products_datalist_${idx}`}
-                        value={it.productCode} 
-                        placeholder="상품코드 검색/입력"
-                        onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
-                        style={gridInputStyle} 
-                      />
-                      <datalist id={`products_datalist_${idx}`}>
-                        {products.map(p => (
-                          <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
-                            [{p.productCode}] {p.nameKo || p.nameEn}
-                          </option>
-                        ))}
-                      </datalist>
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <div style={{ flex: 1, position: 'relative' }}>
+                          <input 
+                            type="text" 
+                            list={`products_datalist_${idx}`}
+                            value={it.productCode} 
+                            placeholder="상품코드 검색/입력"
+                            onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
+                            style={gridInputStyle} 
+                          />
+                          <datalist id={`products_datalist_${idx}`}>
+                            {products.map(p => (
+                              <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
+                                [{p.productCode}] {p.nameKo || p.nameEn}
+                              </option>
+                            ))}
+                          </datalist>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingProd(undefined);
+                            setIsProdModalOpen(true);
+                          }}
+                          title="신규 상품 등록"
+                          style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            color: '#2563eb',
+                            borderRadius: '4px',
+                            padding: '4px 6px',
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          ➕ 등록
+                        </button>
+                        {(() => {
+                          const rawCode = getRawProductCode(it.productCode);
+                          const p = products.find(prod => prod.productCode === rawCode);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (p) {
+                                  setEditingProd(p);
+                                  setIsProdModalOpen(true);
+                                } else {
+                                  alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                }
+                              }}
+                              disabled={!p}
+                              title="선택된 상품 수정"
+                              style={{
+                                background: p ? '#f0fdf4' : '#f1f5f9',
+                                border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
+                                color: p ? '#16a34a' : '#94a3b8',
+                                borderRadius: '4px',
+                                padding: '4px 6px',
+                                cursor: p ? 'pointer' : 'not-allowed',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              ✏️ 수정
+                            </button>
+                          );
+                        })()}
+                      </div>
                     </td>
                     <td style={{ padding: '4px' }}>
                       {it.productCode ? (() => {
@@ -1025,6 +1112,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
       </div>
+      {isProdModalOpen && (
+        <ProductModal
+          initialProduct={editingProd}
+          onClose={() => setIsProdModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

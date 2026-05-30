@@ -9,14 +9,59 @@ import type { Task, User } from '../types';
 
 export const Dashboard: React.FC = () => {
   const location = useLocation();
-  const { tasks, addTask, updateTask, loading } = useTasks();
+  const { tasks, addTask, updateTask, loading, syncFromMsTodo } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile } = useAuth();
-  
+  const [toast, setToast] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    isError?: boolean;
+    debugInfo?: string;
+  } | null>(null);
+
+  const [isDebugExpanded, setIsDebugExpanded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
   // ── Trading Data States ──
   const [pis, setPis] = useState<any[]>([]);
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
   const [tradingLoading, setTradingLoading] = useState(true);
+
+  // 토스트 자동 닫기 타이머 (8초)
+  useEffect(() => {
+    if (toast && toast.show) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const handleSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setToast(null); // 이전 토스트 초기화
+    try {
+      const stats = await syncFromMsTodo();
+      setToast({
+        show: true,
+        title: '🔄 Microsoft To Do 동기화 완료!',
+        message: `가져온 신규 업무: ${stats.added}건, 상태 변경된 업무: ${stats.updated}건`,
+        debugInfo: stats.debugInfo
+      });
+    } catch (err: any) {
+      console.error(err);
+      setToast({
+        show: true,
+        title: '❌ 동기화 실패',
+        message: '동기화 중 오류가 발생했습니다: ' + (err.message || err),
+        isError: true
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -305,9 +350,15 @@ export const Dashboard: React.FC = () => {
           return compStr === selectedDate;
         }
 
-        // 미완료 업무: startDate, dueDate, createdAt 기준 또는 현재 날짜가 일정 범위 내에 포함되는지 확인
+        // 미완료 업무: 과거에 등록된 모든 미완료 업무는 계속 표시 (누락 방지)
+        if (!isDone) {
+          const createdStr = task.createdAt?.split('T')[0];
+          if (createdStr && createdStr <= selectedDate) return true;
+        }
+
+        // 기본 날짜 매칭
         const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; // 날짜 없으면 항상 표시
+        if (dates.length === 0) return true; 
         
         return dates.some(d => d === selectedDate) || 
                (task.startDate && task.dueDate && task.startDate <= selectedDate && task.dueDate >= selectedDate);
@@ -327,9 +378,15 @@ export const Dashboard: React.FC = () => {
           return true;
         }
 
-        // 미완료 업무: startDate / dueDate / createdAt 기준으로 이번 주에 해당하는 것 표시
+        // 미완료 업무: 이번 주 종료일 이전에 생성된 모든 미완료 업무는 누락 방지를 위해 항상 표시
+        if (!isDone) {
+          const createdDate = new Date(task.createdAt);
+          if (createdDate <= wEnd) return true;
+        }
+
+        // 기본 날짜 매칭
         const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; // 날짜 없으면 항상 표시
+        if (dates.length === 0) return true; 
         return dates.some(d => {
           const dt = new Date(d);
           return dt >= wStart && dt <= wEnd;
@@ -532,6 +589,35 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {userProfile && (userProfile as any).microsoftConnected && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: isSyncing ? '#f1f5f9' : '#0f172a',
+                color: isSyncing ? '#94a3b8' : '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: isSyncing ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSyncing) e.currentTarget.style.backgroundColor = '#1e293b';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSyncing) e.currentTarget.style.backgroundColor = '#0f172a';
+              }}
+            >
+              <span>{isSyncing ? '🔄 동기화 중...' : '🔄 MS To Do 동기화'}</span>
+            </button>
+          )}
           {/* ── 조회 모드 탭 ── */}
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
             <button
@@ -867,6 +953,118 @@ export const Dashboard: React.FC = () => {
             setEditingTask(null);
           }}
         />
+      )}
+
+      {/* ── Premium Toast Notification ── */}
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateY(20px) scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
+      {toast && toast.show && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: `1px solid ${toast.isError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+          borderRadius: '16px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          width: '360px',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          fontFamily: "'Inter', sans-serif",
+          animation: 'slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          color: '#1e293b'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: toast.isError ? '#ef4444' : '#10b981'
+              }} />
+              <strong style={{ fontSize: '13px', fontWeight: 800 }}>{toast.title}</strong>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+            >
+              ×
+            </button>
+          </div>
+          
+          <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+            {toast.message}
+          </p>
+
+          {toast.debugInfo && (
+            <div style={{ marginTop: '4px' }}>
+              <button
+                onClick={() => setIsDebugExpanded(!isDebugExpanded)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#3b82f6',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  outline: 'none'
+                }}
+              >
+                <span>{isDebugExpanded ? '▼ 디버그 정보 접기' : '▶ 디버그 정보 보기'}</span>
+              </button>
+              {isDebugExpanded && (
+                <div style={{
+                  marginTop: '6px',
+                  padding: '8px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '10px',
+                  fontFamily: 'monospace',
+                  color: '#64748b',
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                  lineHeight: '1.4',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {toast.debugInfo}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </>
   );
