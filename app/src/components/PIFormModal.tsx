@@ -442,7 +442,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+    if (field === 'productCode' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
       let rawSalePrice = 0;
       if (it.purchasePriceKrw > 0) {
         rawSalePrice = (it.purchasePriceKrw || 0) / (it.exchangeRate || 1) / (1 - (it.marginRate || 0) / 100);
@@ -457,7 +457,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+    if (field === 'productCode' || field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
       it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
       
       // Auto calculate palletQty when quantity changes
