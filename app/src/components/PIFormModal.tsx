@@ -525,12 +525,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
       // Handle revision document reference
       let revRef;
+      let existingCreatedAt = null;
       if (initialPI && !isRevision) {
-        // Find existing revision for the current version
+        // Find existing revision for the current version (cast to String for type-safe comparison)
         const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-        const match = revSnap.docs.find(d => d.data().version === version);
+        const match = revSnap.docs.find(d => String(d.data().version) === String(version));
         if (match) {
           revRef = match.ref;
+          existingCreatedAt = match.data().createdAt;
           
           // Delete old line items
           const liSnap = await getDocs(collection(revRef, "line_items"));
@@ -548,7 +550,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         version,
         revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
         items,
-        createdAt: serverTimestamp(),
+        createdAt: existingCreatedAt || serverTimestamp(),
         updatedAt: serverTimestamp()
       };
       await setDoc(revRef, sanitizeForFirestore(revData));
