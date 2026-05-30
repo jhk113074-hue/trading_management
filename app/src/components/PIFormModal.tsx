@@ -129,33 +129,36 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             }).sort((a: any, b: any) => (b.version || 0) - (a.version || 0));
             setRevisions(revList);
 
-            // Default to latest revision
-            const latestRevDoc = revSnap.docs.sort((a,b) => (b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0))[0];
-            setSelectedRevId(latestRevDoc.id);
-            setDropdownRevId(latestRevDoc.id);
-
-            // Load line items for this latest revision
-            const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
-            let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+            // Default to latest revision (already sorted by version descending in revList)
+            const latestRevData = revList[0];
+            const latestRevDoc = revSnap.docs.find(d => d.id === latestRevData.id);
             
-            // Fallback to items array if subcollection is empty
-            if (loadedItems.length === 0 && Array.isArray(latestRevDoc.data().items)) {
-              loadedItems = (latestRevDoc.data().items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
-            }
-            setItems(loadedItems);
+            if (latestRevDoc) {
+              setSelectedRevId(latestRevDoc.id);
+              setDropdownRevId(latestRevDoc.id);
 
-            // Load special custom values from the latest revision
-            const latestData = latestRevDoc.data();
-            setFormData(prev => ({
-              ...prev,
-              ...(latestData.exchangeRate && { exchangeRate: latestData.exchangeRate }),
-              ...(latestData.remarks && { remarks: latestData.remarks }),
-              ...(latestData.incoterms && { incoterms: latestData.incoterms }),
-              ...(latestData.destinationPort && { destinationPort: latestData.destinationPort }),
-              ...(latestData.paymentTerms && { paymentTerms: latestData.paymentTerms }),
-              ...(latestData.shippingMethod && { shippingMethod: latestData.shippingMethod }),
-              ...(latestData.packagingSpec && { packagingSpec: latestData.packagingSpec }),
-            }));
+              // Load line items for this latest revision
+              const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+              
+              // Fallback to items array if subcollection is empty
+              if (loadedItems.length === 0 && Array.isArray(latestRevData.items)) {
+                loadedItems = (latestRevData.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+              }
+              setItems(loadedItems);
+
+              // Load special custom values from the latest revision
+              setFormData(prev => ({
+                ...prev,
+                ...(latestRevData.exchangeRate && { exchangeRate: latestRevData.exchangeRate }),
+                ...(latestRevData.remarks && { remarks: latestRevData.remarks }),
+                ...(latestRevData.incoterms && { incoterms: latestRevData.incoterms }),
+                ...(latestRevData.destinationPort && { destinationPort: latestRevData.destinationPort }),
+                ...(latestRevData.paymentTerms && { paymentTerms: latestRevData.paymentTerms }),
+                ...(latestRevData.shippingMethod && { shippingMethod: latestRevData.shippingMethod }),
+                ...(latestRevData.packagingSpec && { packagingSpec: latestRevData.packagingSpec }),
+              }));
+            }
           }
         } catch (err: any) {
           console.error("Error loading PI revisions & items:", err);
