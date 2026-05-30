@@ -217,6 +217,47 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }));
   }, [items, formData.handlingFee, formData.freightCharges, formData.insurance, formData.exchangeRate]);
 
+  // Auto-suggest PI Number when creating a new PI and customer/issuer changes
+  useEffect(() => {
+    if (initialPI) return;
+    if (!formData.customerId || !formData.issuingCompany) return;
+
+    const suggestPiNumber = async () => {
+      try {
+        const yy = formData.piDate ? formData.piDate.substring(0, 4) : new Date().getFullYear().toString();
+        const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+        const cust = customers.find(c => c.id === formData.customerId);
+        // Using nameKo as Abbreviation, fallback to first 3 letters of name if empty
+        let abbr = cust?.nameKo ? cust.nameKo.trim().replace(/\s+/g, '') : '';
+        if (!abbr && cust?.name) {
+          abbr = cust.name.substring(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        }
+        if (!abbr) abbr = 'TBD';
+
+        const basePrefix = `PI-${prefix}-${yy}-${abbr}-`;
+
+        // If the current piNumber already starts with the correct basePrefix, do not overwrite (preserves manual sequence edits)
+        if (formData.piNumber?.startsWith(basePrefix)) {
+          return;
+        }
+
+        // Find latest number for this specific prefix
+        const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+        const existingNums = snap.docs
+          .map(d => d.data().piNumber)
+          .filter(n => n && n.startsWith(basePrefix))
+          .map(n => parseInt(n.replace(basePrefix, ''), 10))
+          .filter(n => !isNaN(n));
+
+        const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+        setFormData(prev => ({ ...prev, piNumber: `${basePrefix}${nextNum.toString().padStart(2, '0')}` }));
+      } catch (err) {
+        console.error("Error auto-suggesting PI number:", err);
+      }
+    };
+    suggestPiNumber();
+  }, [initialPI, formData.customerId, formData.issuingCompany, formData.piDate, customers]);
+
   const handleCustomerChange = (custId: string) => {
     if (custId === '__NEW__') {
       setShowNewCust(true);
@@ -485,8 +526,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       let piId = initialPI?.id;
       let piNum = formData.piNumber;
 
-      // New PI Number generation logic if not editing
-      if (!initialPI) {
+      // New PI Number generation logic if not editing, fallback if empty
+      if (!initialPI && !piNum) {
         const yy = new Date().getFullYear();
         const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
         
@@ -501,6 +542,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
         piNum = `PI-${prefix}-${yy}-${nextNum.toString().padStart(4, '0')}`;
         piId = piNum;
+      }
+      
+      if (!piId && piNum) {
+          piId = piNum;
       }
 
       if (!piId) throw new Error("Invalid PI ID");
@@ -911,7 +956,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
             <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
             <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
             <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />

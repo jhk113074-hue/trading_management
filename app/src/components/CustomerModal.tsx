@@ -110,7 +110,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
                 <Input label="고객코드 (필수) ★" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={!!initialCustomer} placeholder="예: CUST-001" />
                 <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL SHIRAWAI CO." />
-                <Input label="고객명_현지어/한글" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: 알 시라와이" />
+                <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: ABC" />
                 <Select label="고객 유형" value={formData.customerType} onChange={(v: any) => handleChange('customerType', v)} options={['Buyer', 'Agent', 'Distributor', 'Partner']} />
                 <Input label="국가코드 (2자리)" value={formData.countryCode} onChange={(v: any) => handleChange('countryCode', v)} placeholder="예: AE" />
                 <Input label="국가명" value={formData.countryName} onChange={(v: any) => handleChange('countryName', v)} placeholder="예: UAE" />

@@ -9,7 +9,7 @@ import { useColumnResize } from '../hooks/useColumnResize';
 const excelMapping = [
   { header: "고객코드(ID)", key: "customerCode" },
   { header: "고객명(영문)", key: "name" },
-  { header: "고객명(현지어)", key: "nameKo" },
+  { header: "고객약자", key: "nameKo" },
   { header: "고객유형", key: "customerType" },
   { header: "국가코드", key: "countryCode" },
   { header: "국가명", key: "countryName" },
