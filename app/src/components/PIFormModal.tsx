@@ -478,10 +478,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     try {
       let piId = initialPI?.id;
       let piNum = formData.piNumber;
-      let version = initialPI ? initialPI.currentVersion : 1;
+      let version = initialPI ? (Number(initialPI.currentVersion) || 1) : 1;
 
       if (initialPI && isRevision) {
-        version = initialPI.currentVersion + 1;
+        version = (Number(initialPI.currentVersion) || 1) + 1;
       }
 
       // New PI Number generation logic if not editing
