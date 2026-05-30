@@ -884,7 +884,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 >
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
-                    const suffix = v > 1 ? `-R${v - 1}` : '';
+                    const suffix = v > 1 ? `R${v - 1}` : '';
                     return (
                       <option key={rev.id} value={rev.id}>
                         {initialPI.piNumber}{suffix}
