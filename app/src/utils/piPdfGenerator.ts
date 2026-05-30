@@ -7,6 +7,7 @@ import type { ProformaInvoice, PIItem } from '../types/pi';
  */
 export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
   const issuerName = piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.';
+  const logoVersion = Date.now();
 
   const itemRows = items.map((item, index) => `
     <tr>
@@ -129,7 +130,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
 
   <!-- Letterhead Area (Automatically shown if image exists in /public folder) -->
   <div id="letterhead-box" style="margin-bottom: 12px; display: none; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
-    <img src="${piData.issuingCompany === 'YS' ? '/letterhead_ys.png' : '/letterhead_ysacc.png'}" 
+    <img src="${piData.issuingCompany === 'YS' ? `/letterhead_ys.png?v=${logoVersion}` : `/letterhead_ysacc.png?v=${logoVersion}`}" 
          style="width: 100%; height: auto; max-height: 120px; display: block; object-fit: contain;"
          onload="document.getElementById('letterhead-box').style.display='block'; const el = document.getElementById('issuer-name-text'); if(el) el.style.display='none';" />
   </div>
