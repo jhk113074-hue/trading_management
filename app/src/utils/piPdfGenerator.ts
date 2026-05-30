@@ -249,6 +249,51 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </div>
   </div>
 
+  <!-- Bank Details & Signatures side-by-side section -->
+  <div style="display: flex; justify-content: space-between; margin-top: 5px; margin-bottom: 12px; gap: 20px;">
+    <!-- Bank Details (Left) -->
+    <div style="flex: 1.25;">
+      <div class="section-title color-gold" style="margin-bottom: 3px;">BANK DETAILS</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #cbd5e1;">
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1; width:28%;">Bank Name</td>
+          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">IBK (Industrial Bank of Korea)</td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Beneficiary</td>
+          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Account No.</td>
+          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">955-010464-04-015</td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">SWIFT Code</td>
+          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">KIHOKRPXXXX</td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Signatures (Right) -->
+    <div style="flex: 1;">
+      <div class="section-title color-red" style="margin-bottom: 3px; text-align: right;">SIGNATURES</div>
+      <div style="display: flex; gap: 8px; height: 62px; font-size: 9.5px;">
+        <!-- Buyer Sign -->
+        <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #fff8f8;">
+          <div style="font-weight: 700; color: #475569; border-bottom: 1px solid #fca5a5; padding-bottom: 2px;">CONSIGNEE (BUYER)</div>
+          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 10px;">Authorized Signature</div>
+          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
+        </div>
+        <!-- Seller Sign -->
+        <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #eff6ff;">
+          <div style="font-weight: 700; color: #1f4e78; border-bottom: 1px solid #dbeafe; padding-bottom: 2px;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC'} (SELLER)</div>
+          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 10px;">Authorized Signature</div>
+          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer Bar -->
   <div class="footer-bar">
     ${issuerName} &nbsp;·&nbsp; ${piData.issuingCompany === 'YS' ? 'www.ysacc.co.kr' : 'www.ysacc.co.kr'} &nbsp;·&nbsp; ${piData.piNumber || ''} &nbsp;·&nbsp; Page 1 of 1
