@@ -521,31 +521,53 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         piData.createdBy = currentUser;
       }
 
-      // Save main doc
-      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), sanitizeForFirestore(piData), { merge: true });
-
-      // Handle revision document reference
+      // Handle revision document reference FIRST (may adjust version for normal saves)
       let revRef;
       let existingCreatedAt = null;
+
       if (initialPI && !isRevision) {
-        // Find existing revision for the current version (cast to String for type-safe comparison)
+        // ── NORMAL SAVE on existing PI ──
+        // Must reuse an existing revision document; never create a new one.
         const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
-        const match = revSnap.docs.find(d => String(d.data().version) === String(version));
+
+        // 1) Try exact version match
+        let match = revSnap.docs.find(d => String(d.data().version) === String(version));
+
+        // 2) Fallback: pick the latest revision by createdAt
+        if (!match && revSnap.docs.length > 0) {
+          match = revSnap.docs.sort((a, b) => {
+            const ta = a.data().createdAt?.seconds || 0;
+            const tb = b.data().createdAt?.seconds || 0;
+            return tb - ta;
+          })[0];
+          // Keep version in sync with what we found
+          version = Number(match.data().version) || version;
+        }
+
         if (match) {
           revRef = match.ref;
           existingCreatedAt = match.data().createdAt;
-          
-          // Delete old line items
+
+          // Delete old line items so we can re-save the current set
           const liSnap = await getDocs(collection(revRef, "line_items"));
           for (const d of liSnap.docs) {
             await deleteDoc(d.ref);
           }
+        } else {
+          // Edge case: no revisions exist at all – create the first one
+          revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
         }
-      }
-
-      if (!revRef) {
+      } else if (initialPI && isRevision) {
+        // ── REVISION SAVE ── always create a new revision document
+        revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+      } else {
+        // ── BRAND-NEW PI ── create the initial revision document
         revRef = doc(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
       }
+
+      // Now save main doc with the finalised version
+      piData.currentVersion = version;
+      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), sanitizeForFirestore(piData), { merge: true });
 
       const revData: PIRevision = {
         version,
