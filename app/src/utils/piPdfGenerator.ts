@@ -11,20 +11,20 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
 
   const itemRows = items.map((item, index) => `
     <tr>
-      <td style="text-align:center; padding:8px 6px; border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; font-weight:500;">${index + 1}</td>
-      <td style="padding:8px 10px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${item.description}</td>
-      <td style="text-align:right; padding:8px 10px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(item.quantity || 0).toLocaleString('en-US')}</td>
-      <td style="text-align:center; padding:8px 6px; border:1px solid #cbd5e1; color:#475569;">${item.unit}</td>
-      <td style="text-align:right; padding:8px 10px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-      <td style="text-align:right; padding:8px 10px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-      <td style="padding:8px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b; text-align:right;">${item.remarks || ''}</td>
+      <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; font-weight:500;">${index + 1}</td>
+      <td style="padding:4px 8px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${item.description}</td>
+      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(item.quantity || 0).toLocaleString('en-US')}</td>
+      <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; color:#475569;">${item.unit}</td>
+      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      <td style="padding:4px 8px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b; text-align:right;">${item.remarks || ''}</td>
     </tr>
   `).join('');
 
   const freightRows = (piData.freightCharges || []).map(f => `
     <tr>
-      <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">${f.name} (USD):</td>
-      <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(f.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      <td style="text-align:right; padding:3px 12px; color:#64748b; font-size:11.5px; border:none;">${f.name} (USD):</td>
+      <td style="text-align:right; padding:3px 12px; font-weight:600; color:#1e293b; font-size:11.5px; border:none; width:120px;">$${(f.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
     </tr>
   `).join('');
 
@@ -36,12 +36,12 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
   <title>${piData.piNumber || 'Proforma Invoice'}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1f2937; background: #f3f4f6; display: flex; justify-content: center; padding: 40px 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #f3f4f6; display: flex; justify-content: center; padding: 25px 0; }
     .page-container {
       background: #ffffff;
       width: 210mm;
       min-height: 297mm;
-      padding: 18mm 18mm 0 18mm;
+      padding: 10mm 10mm 0 10mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
@@ -56,47 +56,47 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         box-shadow: none;
       }
       .no-print { display: none !important; }
-      @page { size: A4; margin: 12mm 10mm; }
+      @page { size: A4; margin: 6mm 6mm; }
     }
 
     /* Metadata Table Style */
-    .metadata-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
-    .metadata-table th { background: #f8fafc; color: #475569; padding: 6px 12px; text-align: center; font-size: 10.5px; font-weight: 700; border: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; }
-    .metadata-table td { padding: 8px 12px; text-align: center; font-size: 13px; font-weight: 700; border: 1px solid #cbd5e1; color: #1e293b; }
+    .metadata-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    .metadata-table th { background: #f8fafc; color: #475569; padding: 4px 8px; text-align: center; font-size: 10px; font-weight: 700; border: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; }
+    .metadata-table td { padding: 5px 8px; text-align: center; font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; color: #1e293b; }
     .status-cell { font-weight: 700 !important; }
     .status-draft { color: #b45309; background: #fffbeb; }
     .status-confirmed { color: #15803d; background: #f0fdf4; }
 
     /* Titles */
-    .section-title { font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; text-transform: uppercase; }
+    .section-title { font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; text-transform: uppercase; }
     .color-red { color: #991b1b; }
     .color-gold { color: #b45309; }
 
     /* Bill To Content */
-    .bill-to-box { margin-bottom: 20px; }
-    .customer-name { font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
-    .customer-detail { font-size: 12px; color: #334155; line-height: 1.4; }
+    .bill-to-box { margin-bottom: 12px; }
+    .customer-name { font-size: 15.5px; font-weight: 800; color: #0f172a; margin-bottom: 3px; }
+    .customer-detail { font-size: 11px; color: #334155; line-height: 1.35; }
 
     /* Trade Terms Table */
-    .terms-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; border: 1px solid #cbd5e1; }
-    .terms-label { background: #f8fafc; color: #475569; width: 16%; font-size: 11.5px; padding: 7px 12px; font-weight: 600; border: 1px solid #cbd5e1; }
-    .terms-value { color: #0f172a; font-weight: 700; font-size: 12.5px; padding: 7px 12px; border: 1px solid #cbd5e1; width: 34%; }
+    .terms-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #cbd5e1; }
+    .terms-label { background: #f8fafc; color: #475569; width: 16%; font-size: 11px; padding: 4px 8px; font-weight: 600; border: 1px solid #cbd5e1; }
+    .terms-value { color: #0f172a; font-weight: 700; font-size: 11.5px; padding: 4px 8px; border: 1px solid #cbd5e1; width: 34%; }
 
     /* Line Items Table */
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    .items-table th { background: #1f4e78; color: #ffffff; padding: 9px 8px; text-align: center; font-weight: 700; border: 1px solid #1f4e78; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px; }
+    .items-table th { background: #1f4e78; color: #ffffff; padding: 5px 6px; text-align: center; font-weight: 700; border: 1px solid #1f4e78; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* Totals Box */
-    .totals-section { margin-left: auto; width: 320px; margin-bottom: 15px; }
+    .totals-section { margin-left: auto; width: 320px; margin-bottom: 8px; }
     .totals-table { width: 100%; border-collapse: collapse; border: none; }
     .totals-table td { border: none; }
     .grand-total-row td { border-top: 2px solid #1f4e78 !important; border-bottom: 2px solid #1f4e78 !important; }
-    .grand-total-label { font-size: 14.5px; font-weight: 800; color: #1e293b; padding: 8px 12px; text-align: right; }
-    .grand-total-val { font-size: 18px; font-weight: 800; color: #991b1b; padding: 8px 12px; text-align: right; }
+    .grand-total-label { font-size: 13.5px; font-weight: 800; color: #1e293b; padding: 5px 8px; text-align: right; }
+    .grand-total-val { font-size: 16px; font-weight: 800; color: #991b1b; padding: 5px 8px; text-align: right; }
 
     /* Remarks Box */
-    .remarks-box { border: 1px solid #fca5a5; background: #fff8f8; border-radius: 6px; padding: 12px 16px; margin-top: 10px; margin-bottom: 30px; font-size: 12px; line-height: 1.5; color: #334155; }
-    .remarks-line { margin-bottom: 4px; font-weight: 500; }
+    .remarks-box { border: 1px solid #fca5a5; background: #fff8f8; border-radius: 6px; padding: 8px 12px; margin-top: 4px; margin-bottom: 15px; font-size: 11px; line-height: 1.45; color: #334155; }
+    .remarks-line { margin-bottom: 2px; font-weight: 500; }
     .remarks-line:last-child { margin-bottom: 0; }
 
     /* Bottom Footer Bar */
@@ -104,18 +104,18 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
       margin-top: auto;
       background: #0f172a;
       color: #ffffff;
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 600;
       text-align: center;
-      padding: 8px 15px;
+      padding: 6px 15px;
       letter-spacing: 0.5px;
-      margin-left: -18mm;
-      margin-right: -18mm;
+      margin-left: -10mm;
+      margin-right: -10mm;
     }
     @media print {
       .footer-bar {
-        margin-left: -10mm;
-        margin-right: -10mm;
+        margin-left: -6mm;
+        margin-right: -6mm;
       }
     }
 
