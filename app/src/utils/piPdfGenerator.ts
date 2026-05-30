@@ -21,12 +21,16 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </tr>
   `).join('');
 
-  const freightRows = (piData.freightCharges || []).map(f => `
-    <tr>
-      <td style="text-align:right; padding:3px 12px; color:#64748b; font-size:11.5px; border:none;">${f.name} (USD):</td>
-      <td style="text-align:right; padding:3px 12px; font-weight:600; color:#1e293b; font-size:11.5px; border:none; width:120px;">$${(f.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-    </tr>
-  `).join('');
+  const freightRows = (piData.freightCharges || []).map(f => {
+    const chargeName = f.name || f.type || 'Freight';
+    const chargeAmount = typeof f.amount === 'number' ? f.amount : ((f.qty || 1) * (f.price || 0));
+    return `
+      <tr>
+        <td style="text-align:right; padding:3px 12px; color:#64748b; font-size:11.5px; border:none;">${chargeName} (USD):</td>
+        <td style="text-align:right; padding:3px 12px; font-weight:600; color:#1e293b; font-size:11.5px; border:none; width:120px;">$${chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      </tr>
+    `;
+  }).join('');
 
   const html = `
 <!DOCTYPE html>
