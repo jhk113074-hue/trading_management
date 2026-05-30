@@ -129,6 +129,8 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
               <DetailRow label="Customer Name" value={resolvedPi.customerName} bold />
               <DetailRow label="Contact Person" value={resolvedPi.contactPerson} />
               <DetailRow label="Email" value={resolvedPi.email} />
+              <DetailRow label="Address" value={resolvedPi.customerAddress} />
+              {resolvedPi.customerPhone && <DetailRow label="Tel" value={resolvedPi.customerPhone} />}
             </div>
 
             <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px', gridColumn: '1 / -1' }}>

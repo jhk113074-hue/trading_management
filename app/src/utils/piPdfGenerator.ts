@@ -144,7 +144,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
       <div class="section-title color-red">BILL TO</div>
       <div class="customer-name">${piData.customerName || '-'}</div>
       <div class="customer-detail">
-        ${(piData as any).customerAddress ? `<div>Address: ${(piData as any).customerAddress}</div>` : ''}
+        <div>Address: ${(piData as any).customerAddress || '-'}</div>
         <div>Attn: ${piData.contactPerson || '-'}</div>
         <div>Email: ${piData.email || '-'}</div>
         ${(piData as any).customerPhone ? `<div>Tel: ${(piData as any).customerPhone}</div>` : ''}
@@ -269,6 +269,10 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         <tr>
           <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Beneficiary</td>
           <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Address</td>
+          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1; font-size: 8.5px; line-height: 1.25;">111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea</td>
         </tr>
         <tr>
           <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Account No.</td>
