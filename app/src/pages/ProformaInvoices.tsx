@@ -191,7 +191,9 @@ export const ProformaInvoices: React.FC = () => {
                       {p.itemsSummary ? p.itemsSummary.join(', ') : '-'}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>{issuerBadge}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>{p.currentVersion || ''}</td>
+                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                      {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
+                    </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <span style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color, padding: '3px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: 600 }}>
                         {p.status || 'draft'}

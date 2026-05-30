@@ -882,11 +882,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   onChange={(e) => setDropdownRevId(e.target.value)}
                   style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
                 >
-                  {revisions.map((rev) => (
-                    <option key={rev.id} value={rev.id}>
-                      {initialPI.piNumber}-R{rev.version || '?'}
-                    </option>
-                  ))}
+                  {revisions.map((rev) => {
+                    const v = rev.version || 1;
+                    const suffix = v > 1 ? `-R${v - 1}` : '';
+                    return (
+                      <option key={rev.id} value={rev.id}>
+                        {initialPI.piNumber}{suffix}
+                      </option>
+                    );
+                  })}
                 </select>
                 <button
                   type="button"
