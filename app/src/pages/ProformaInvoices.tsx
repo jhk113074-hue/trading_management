@@ -4,7 +4,6 @@ import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 import { PIFormModal } from '../components/PIFormModal';
-import { PIDetailModal } from '../components/PIDetailModal';
 import { getAuth } from 'firebase/auth';
 
 export const ProformaInvoices: React.FC = () => {
@@ -24,7 +23,6 @@ export const ProformaInvoices: React.FC = () => {
 
   // Modals
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedPiId, setSelectedPiId] = useState<string | null>(null);
 
   const auth = getAuth();
@@ -171,8 +169,8 @@ export const ProformaInvoices: React.FC = () => {
                                  : <span style={{ fontSize: '0.7rem', fontWeight: 800, background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: '10px' }}>YSACC</span>;
 
                 return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedPiId(p.id); setIsDetailOpen(true); }}>
-                    <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{p.piDate || '-'}</td>
+                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}>
+                    <td style={{ padding: '8px 6px', whiteSpace: 'nowrap' }}>{p.piDate || '-'}</td>
                     <td style={{ padding: '6px 8px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap' }}>{p.piNumber || '-'}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
@@ -208,17 +206,6 @@ export const ProformaInvoices: React.FC = () => {
           initialPI={selectedPiId ? pis.find(p => p.id === selectedPiId) : undefined}
           onClose={() => setIsFormOpen(false)}
           currentUser={currentUser}
-        />
-      )}
-
-      {isDetailOpen && selectedPiId && (
-        <PIDetailModal
-          pi={pis.find(p => p.id === selectedPiId)!}
-          onClose={() => setIsDetailOpen(false)}
-          onEdit={() => {
-            setIsDetailOpen(false);
-            setIsFormOpen(true);
-          }}
         />
       )}
     </div>
