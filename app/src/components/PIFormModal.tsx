@@ -847,7 +847,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
 
       alert(isRevision ? `✅ Revision 저장 완료! (R${version})` : '✅ 일반저장 완료!');
-      onClose();
+      // onClose(); 삭제됨: 저장 후 창 닫지 않음
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
     } finally {
