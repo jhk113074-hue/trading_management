@@ -189,12 +189,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
           <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">VALID UNTIL</td>
           <td style="color: #0f172a; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center;">${piData.validUntilDate || '-'}</td>
         </tr>
-        <tr>
-          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">STATUS</td>
-          <td class="status-cell status-${(piData.status || 'draft').toLowerCase()}" style="font-weight: 800; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; text-transform: uppercase; font-size: 10px;">
-            ${(piData.status || 'draft').toUpperCase()}
-          </td>
-        </tr>
+
       </table>
     </div>
   </div>
