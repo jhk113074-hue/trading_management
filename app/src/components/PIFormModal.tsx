@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID, storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
 import type { Customer } from '../types/customer';
 import type { Product } from '../types/product';
@@ -120,32 +120,57 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const handleFileUpload = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setIsUploading(true);
-    try {
-      const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
-      const newAttachments = [...(formData.attachments || [])];
+    
+    const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
+    const newAttachments = [...(formData.attachments || [])];
+    
+    let uploadedCount = 0;
+    let hasError = false;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uniqueFileName = `${Date.now()}_${file.name}`;
+      // Note: Make sure Firebase Storage rules allow writing to this path!
+      // If it gets stuck at 0%, the rules might be blocking 'proforma_invoices/' paths.
+      const storageRef = ref(storage, `proforma_invoices/${COMPANY_ID}/${piId}/${uniqueFileName}`);
       
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const uniqueFileName = `${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, `proforma_invoices/${COMPANY_ID}/${piId}/${uniqueFileName}`);
-        
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        
-        newAttachments.push({
-          name: file.name,
-          url,
-          size: file.size,
-          path: storageRef.fullPath
-        });
-      }
+      const uploadTask = uploadBytesResumable(storageRef, file);
       
-      setFormData(prev => ({ ...prev, attachments: newAttachments }));
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("파일 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setIsUploading(false);
+      await new Promise<void>((resolve) => {
+        uploadTask.on('state_changed', 
+          (snapshot: any) => {
+            // progress could be tracked here if we added a progress state
+          }, 
+          (error: any) => {
+            console.error("Upload failed for", file.name, error);
+            hasError = true;
+            resolve();
+          }, 
+          async () => {
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              newAttachments.push({
+                name: file.name,
+                url,
+                size: file.size,
+                path: uploadTask.snapshot.ref.fullPath
+              });
+            } catch(e) {
+              console.error("Download URL error", e);
+              hasError = true;
+            }
+            uploadedCount++;
+            resolve();
+          }
+        );
+      });
+    }
+    
+    setFormData(prev => ({ ...prev, attachments: newAttachments }));
+    setIsUploading(false);
+    
+    if (hasError) {
+      alert("일부 파일 업로드에 실패했습니다. Firebase Storage 권한(Rules) 설정이나 네트워크 상태를 확인해 주세요.");
     }
   };
 
