@@ -1318,8 +1318,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <div style={{ flex: 1.5 }}>Container Type</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>Quantities</div>
                   <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
-                  <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
+                  <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
                 </div>
                 {(formData.freightCharges || []).map((fc, fcIdx) => (
                   <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1349,6 +1349,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
                       style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
                     />
+                    <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
+                      ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
                     <input 
                       type="text" 
                       placeholder="비고" 
@@ -1356,9 +1359,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
                       style={{ flex: 3.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
                     />
-                    <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
-                      ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
                     <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                   </div>
                 ))}

@@ -30,8 +30,8 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
           <th style="width:120px; text-align:left; padding-left:10px;">Container Type</th>
           <th style="width:60px; text-align:right;">Qty</th>
           <th style="width:80px; text-align:right;">Unit Price</th>
-          <th style="text-align:left; padding-left:10px;">Remarks</th>
           <th style="width:95px; text-align:right;">Total (USD)</th>
+          <th style="text-align:left; padding-left:10px;">Remarks</th>
         </tr>
       </thead>
       <tbody>
@@ -40,8 +40,8 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
             <td style="padding:4px 10px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${fc.type || '-'}</td>
             <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(fc.qty || 0).toLocaleString('en-US')}</td>
             <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(fc.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b;">${fc.remarks || '-'}</td>
             <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b;">${fc.remarks || '-'}</td>
           </tr>
         `).join('')}
       </tbody>
