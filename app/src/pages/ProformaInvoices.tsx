@@ -190,7 +190,11 @@ export const ProformaInvoices: React.FC = () => {
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'center' }}>{issuerBadge}</td>
                     <td style={{ padding: '6px 8px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.createdByName === 'jhkim1130' ? '김주한' : (p.createdByName || '-')}
+                      {(() => {
+                        const name = p.createdByName || '-';
+                        if (name === 'jhkim1130' || name === '대표이사 김주한') return '김주한';
+                        return name.replace('대표이사 ', '');
+                      })()}
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                       <button onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} style={{ background: '#fff', border: '1px solid #2563eb', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>✏ 수정</button>
