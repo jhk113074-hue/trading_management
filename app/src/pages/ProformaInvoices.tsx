@@ -16,8 +16,7 @@ export const ProformaInvoices: React.FC = () => {
   const [filterStart, setFilterStart] = useState('');
   const [filterEnd, setFilterEnd] = useState('');
   const [filterCustomer, setFilterCustomer] = useState('');
-  const [filterPiNum, setFilterPiNum] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+    const [filterPiNum, setFilterPiNum] = useState('');
 
   // Sorting
   const [sortKey, setSortKey] = useState<keyof ProformaInvoice | 'customerName'>('piDate');
@@ -59,7 +58,6 @@ export const ProformaInvoices: React.FC = () => {
       if (filterEnd && p.piDate > filterEnd) return false;
       if (filterCustomer && p.customerId !== filterCustomer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
-      if (filterStatus && p.status !== filterStatus) return false;
       return true;
     });
 
@@ -81,7 +79,7 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, customers, filterStart, filterEnd, filterCustomer, filterPiNum, filterStatus, sortKey, sortDir]);
+  }, [pis, customers, filterStart, filterEnd, filterCustomer, filterPiNum, sortKey, sortDir]);
 
   const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
     if (sortKey === key) {
@@ -136,13 +134,6 @@ export const ProformaInvoices: React.FC = () => {
         </select>
         
         <input type="text" placeholder="PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '180px' }} />
-        
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-          <option value="">전체 상태</option>
-          <option value="draft">draft</option>
-          <option value="confirmed">confirmed</option>
-          <option value="sent">sent</option>
-        </select>
 
         <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: 600, color: '#475569' }}>
           총 {filteredAndSorted.length}건
@@ -161,22 +152,17 @@ export const ProformaInvoices: React.FC = () => {
               <th style={{ padding: '12px' }}>ITEMS</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>ISSUER</th>
               <th onClick={() => handleSort('currentVersion')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'center' }}>VER. {getSortIcon('currentVersion')}</th>
-              <th onClick={() => handleSort('status')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'center' }}>STATUS {getSortIcon('status')}</th>
               <th onClick={() => handleSort('totalUsd')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'right' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>작업</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>검색 결과가 없습니다</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>검색 결과가 없습니다</td></tr>
             ) : (
               filteredAndSorted.map(p => {
-                const badgeStyle = p.status === 'confirmed' ? { bg: '#d1fae5', color: '#065f46' } 
-                                 : p.status === 'sent' ? { bg: '#e0f2fe', color: '#0369a1' } 
-                                 : { bg: '#ede9fe', color: '#5b21b6' };
-                                 
                 const issuerBadge = p.issuingCompany === 'YS' 
                                  ? <span style={{ fontSize: '0.7rem', fontWeight: 800, background: '#d1fae5', color: '#065f46', padding: '2px 7px', borderRadius: '10px' }}>영성ACC</span>
                                  : <span style={{ fontSize: '0.7rem', fontWeight: 800, background: '#dbeafe', color: '#1e40af', padding: '2px 7px', borderRadius: '10px' }}>YSACC</span>;
@@ -193,11 +179,6 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '12px', textAlign: 'center' }}>{issuerBadge}</td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color, padding: '3px 9px', borderRadius: '5px', fontSize: '11px', fontWeight: 600 }}>
-                        {p.status || 'draft'}
-                      </span>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
