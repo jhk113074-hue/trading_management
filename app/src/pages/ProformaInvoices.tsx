@@ -28,7 +28,10 @@ export const ProformaInvoices: React.FC = () => {
   const [selectedPiId, setSelectedPiId] = useState<string | null>(null);
 
   const auth = getAuth();
-  const currentUser = auth.currentUser?.email?.split('@')[0] || 'Unknown';
+  let currentUser = auth.currentUser?.email?.split('@')[0] || 'Unknown';
+  if (currentUser === 'jhkim1130') {
+    currentUser = '대표이사 김주한';
+  }
 
   useEffect(() => {
     // Load Customers
@@ -171,7 +174,9 @@ export const ProformaInvoices: React.FC = () => {
                   <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedPiId(p.id); setIsDetailOpen(true); }}>
                     <td style={{ padding: '12px', color: '#2563eb', fontWeight: 600 }}>{p.piNumber || '-'}</td>
                     <td style={{ padding: '12px' }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '12px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.createdByName || '-'}</td>
+                    <td style={{ padding: '12px', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.createdByName === 'jhkim1130' ? '대표이사 김주한' : (p.createdByName || '-')}
+                    </td>
                     <td style={{ padding: '12px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
                     <td style={{ padding: '12px', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary ? p.itemsSummary.join(', ') : '-'}
