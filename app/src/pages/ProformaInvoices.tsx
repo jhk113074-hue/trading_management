@@ -148,15 +148,15 @@ export const ProformaInvoices: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
           <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
             <tr>
-              <th onClick={() => handleSort('piDate')} style={{ padding: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>DATE {getSortIcon('piDate')}</th>
-              <th onClick={() => handleSort('piNumber')} style={{ padding: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}>PI NUMBER {getSortIcon('piNumber')}</th>
-              <th onClick={() => handleSort('currentVersion')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'center', width: '60px' }}>VER. {getSortIcon('currentVersion')}</th>
-              <th onClick={() => handleSort('customerName')} style={{ padding: '12px', cursor: 'pointer' }}>CUSTOMER {getSortIcon('customerName')}</th>
-              <th style={{ padding: '12px' }}>ITEMS</th>
-              <th onClick={() => handleSort('totalUsd')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
-              <th style={{ padding: '12px', textAlign: 'center', whiteSpace: 'nowrap' }}>ISSUER</th>
-              <th onClick={() => handleSort('createdByName')} style={{ padding: '12px', cursor: 'pointer', width: '100px', whiteSpace: 'nowrap' }}>WRITER {getSortIcon('createdByName')}</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>작업</th>
+              <th onClick={() => handleSort('piDate')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>DATE {getSortIcon('piDate')}</th>
+              <th onClick={() => handleSort('piNumber')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>PI NUMBER {getSortIcon('piNumber')}</th>
+              <th onClick={() => handleSort('currentVersion')} style={{ padding: '6px 8px', cursor: 'pointer', textAlign: 'center', width: '60px' }}>VER. {getSortIcon('currentVersion')}</th>
+              <th onClick={() => handleSort('customerName')} style={{ padding: '6px 8px', cursor: 'pointer' }}>CUSTOMER {getSortIcon('customerName')}</th>
+              <th style={{ padding: '6px 8px' }}>ITEMS</th>
+              <th onClick={() => handleSort('totalUsd')} style={{ padding: '6px 8px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
+              <th style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>ISSUER</th>
+              <th onClick={() => handleSort('createdByName')} style={{ padding: '6px 8px', cursor: 'pointer', width: '100px', whiteSpace: 'nowrap' }}>WRITER {getSortIcon('createdByName')}</th>
+              <th style={{ padding: '6px 8px', textAlign: 'center' }}>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -172,23 +172,23 @@ export const ProformaInvoices: React.FC = () => {
 
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedPiId(p.id); setIsDetailOpen(true); }}>
-                    <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '12px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap' }}>{p.piNumber || '-'}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <td style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>{p.piDate || '-'}</td>
+                    <td style={{ padding: '6px 8px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap' }}>{p.piNumber || '-'}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
                     </td>
-                    <td style={{ padding: '12px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '12px', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#6b7280' }}>
+                    <td style={{ padding: '6px 8px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '6px 8px', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary ? p.itemsSummary.join(', ') : '-'}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600 }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>{issuerBadge}</td>
-                    <td style={{ padding: '12px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>{issuerBadge}</td>
+                    <td style={{ padding: '6px 8px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {p.createdByName === 'jhkim1130' ? '대표이사 김주한' : (p.createdByName || '-')}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                    <td style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                       <button onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} style={{ background: '#fff', border: '1px solid #2563eb', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>✏ 수정</button>
                       <button 
                         onClick={() => handleDelete(p.id, p.piNumber)}
