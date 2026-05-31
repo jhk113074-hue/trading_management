@@ -130,9 +130,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const uniqueFileName = `${Date.now()}_${file.name}`;
-      // Note: Make sure Firebase Storage rules allow writing to this path!
-      // If it gets stuck at 0%, the rules might be blocking 'proforma_invoices/' paths.
-      const storageRef = ref(storage, `proforma_invoices/${COMPANY_ID}/${piId}/${uniqueFileName}`);
+      // Firebase Storage Rules 수정을 피하기 위해 기존에 허용된 'tasks/' 경로를 재사용합니다.
+      const storageRef = ref(storage, `tasks/pi_attachments/${piId}/${uniqueFileName}`);
       
       const uploadTask = uploadBytesResumable(storageRef, file);
       
