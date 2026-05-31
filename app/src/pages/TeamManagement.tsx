@@ -202,32 +202,31 @@ export const TeamManagement: React.FC = () => {
               </div>
             )}
             
-            <div className="form-group">
-              <label>이름</label>
-              <input className="form-control" placeholder="성명을 입력하세요" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
-            </div>
-            <div className="form-group">
-              <label>이메일</label>
-              <input className="form-control" type="email" placeholder="이메일 주소" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} disabled={!!editingId} style={{ backgroundColor: editingId ? '#f1f5f9' : 'white' }} />
-            </div>
-
-            <div className="form-group">
-              <label>부서</label>
-              <input className="form-control" placeholder="예: 경영지원, 설계팀, 생산관리 등" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})} />
-            </div>
-
-            <div className="form-group">
-              <label>직급 / 직위</label>
-              <input className="form-control" placeholder="예: 대표이사, 부장, 사원 등" value={newMember.position} onChange={e => setNewMember({...newMember, position: e.target.value})} />
-            </div>
-            
-            <div className="form-group">
-              <label>권한 설정</label>
-              <select className="form-control" value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})}>
-                <option>팀원</option>
-                <option>매니저</option>
-                <option>관리자</option>
-              </select>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>이름</label>
+                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="성명을 입력하세요" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>이메일</label>
+                <input type="email" style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: editingId ? '#f1f5f9' : 'white', color: editingId ? '#94a3b8' : 'inherit' }} placeholder="이메일 주소" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} disabled={!!editingId} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>부서</label>
+                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 경영지원, 설계팀, 생산관리 등" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>직급 / 직위</label>
+                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 대표이사, 부장, 사원 등" value={newMember.position} onChange={e => setNewMember({...newMember, position: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>권한 설정</label>
+                <select style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})}>
+                  <option>팀원</option>
+                  <option>매니저</option>
+                  <option>관리자</option>
+                </select>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
               <button 
