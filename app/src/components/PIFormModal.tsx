@@ -137,7 +137,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       
       await new Promise<void>((resolve) => {
         uploadTask.on('state_changed', 
-          (snapshot: any) => {
+          () => {
             // progress could be tracked here if we added a progress state
           }, 
           (error: any) => {
