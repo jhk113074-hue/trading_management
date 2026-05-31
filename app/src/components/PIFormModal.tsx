@@ -1539,13 +1539,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             📊 Excel 견적서
           </button>
 
-          <button 
-            type="button" 
-            onClick={() => exportPIToExcel(formData, items)} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #64748b', background: '#fff', fontWeight: 600, color: '#64748b', cursor: 'pointer' }}
-          >
-            📉 내부 원가 엑셀
-          </button>
 
           <button 
             type="button"
@@ -1649,40 +1642,3 @@ const sanitizeForFirestore = (obj: any): any => {
   return obj;
 };
 
-const exportPIToExcel = (piData: Partial<ProformaInvoice>, items: PIItem[]) => {
-  let csvContent = "\ufeff"; // UTF-8 BOM to prevent Korean character corruption in Excel
-  csvContent += "No,상품코드,포장형태,수량,단위,매입(₩),환율,매입($),마진(%),단가($),총액($),PLT,비고\n";
-  
-  items.forEach((item, index) => {
-    let rawCode = item.productCode || '';
-    if (rawCode.startsWith('[') && rawCode.includes(']')) {
-      rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
-    }
-    const packageType = item.packingSpecOverride?.packageType || 'Default';
-    const row = [
-      index + 1,
-      `"${rawCode}"`,
-      `"${packageType}"`,
-      item.quantity,
-      `"${item.unit}"`,
-      item.purchasePriceKrw,
-      item.exchangeRate,
-      item.purchasePriceUsd,
-      item.marginRate,
-      item.salePriceUsd,
-      item.lineTotalUsd,
-      item.palletQty,
-      `"${item.remarks || ''}"`
-    ].join(",");
-    csvContent += row + "\n";
-  });
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `${piData.piNumber || 'PI'}_LineItems.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
