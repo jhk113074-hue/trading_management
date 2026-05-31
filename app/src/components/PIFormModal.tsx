@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { db, COMPANY_ID } from '../firebase';
+import { db, COMPANY_ID, storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
 import type { Customer } from '../types/customer';
 import type { Product } from '../types/product';
@@ -71,7 +72,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00, remarks: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
-      status: 'draft', currentVersion: 1, createdByName: currentUser
+      status: 'draft', currentVersion: 1, createdByName: currentUser,
+      attachments: []
     };
 
     if (initialPI) {
@@ -84,7 +86,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
         'exchangeRate', 'remarks', 'handlingFee', 'freightTotal', 'insurance',
         'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
-        'status', 'currentVersion', 'createdByName', 'createdBy'
+        'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments'
       ];
       for (const key of safeFields) {
         const val = pi[key];
@@ -113,6 +115,59 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [revisions, setRevisions] = useState<any[]>([]);
   const [selectedRevId, setSelectedRevId] = useState<string>('');
   const [dropdownRevId, setDropdownRevId] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    try {
+      const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
+      const newAttachments = [...(formData.attachments || [])];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniqueFileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `proforma_invoices/${COMPANY_ID}/${piId}/${uniqueFileName}`);
+        
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        
+        newAttachments.push({
+          name: file.name,
+          url,
+          size: file.size,
+          path: storageRef.fullPath
+        });
+      }
+      
+      setFormData(prev => ({ ...prev, attachments: newAttachments }));
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("파일 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (index: number) => {
+    const att = formData.attachments?.[index];
+    if (!att) return;
+    
+    if (!window.confirm(`'${att.name}' 파일을 삭제하시겠습니까?`)) return;
+    
+    try {
+      if (att.path) {
+        const storageRef = ref(storage, att.path);
+        await deleteObject(storageRef).catch(console.warn);
+      }
+      const newAttachments = [...(formData.attachments || [])];
+      newAttachments.splice(index, 1);
+      setFormData(prev => ({ ...prev, attachments: newAttachments }));
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("파일 삭제 중 오류가 발생했습니다.");
+    }
+  };
 
 
   useEffect(() => {
@@ -1515,6 +1570,61 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
               <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
             </div>
+          </div>
+
+          {/* Attachments (Dropzone) */}
+          <div 
+            style={{ 
+              background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '20px', 
+              borderRadius: '8px', marginBottom: '16px', textAlign: 'center',
+              position: 'relative', transition: 'all 0.2s'
+            }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDrop={e => {
+              e.preventDefault();
+              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.background = '#f8fafc';
+              handleFileUpload(e.dataTransfer.files);
+            }}
+            onPaste={e => {
+              const files = e.clipboardData?.files;
+              if (files && files.length > 0) {
+                e.preventDefault();
+                handleFileUpload(files);
+              }
+            }}
+            tabIndex={0}
+          >
+            <div style={{ color: '#64748b', fontSize: '14px', marginBottom: '12px' }}>
+              📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.
+            </div>
+            <input 
+              type="file" 
+              multiple 
+              onChange={e => handleFileUpload(e.target.files)} 
+              style={{ display: 'none' }} 
+              id="pi-file-upload" 
+            />
+            <label 
+              htmlFor="pi-file-upload" 
+              style={{ background: '#3b82f6', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}
+            >
+              {isUploading ? '업로드 중...' : '파일 선택하기'}
+            </label>
+            
+            {formData.attachments && formData.attachments.length > 0 && (
+              <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                {formData.attachments.map((att, idx) => (
+                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                    <a href={att.url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'none', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>
+                      {att.name} ({(att.size / 1024).toFixed(1)}KB)
+                    </a>
+                    <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px', fontSize: '12px', fontWeight: 'bold' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>

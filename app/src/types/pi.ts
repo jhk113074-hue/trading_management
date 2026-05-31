@@ -86,4 +86,5 @@ export interface ProformaInvoice {
   updatedAt: any;
   
   itemsSummary?: string[]; // Quick summary of line items
+  attachments?: { name: string; url: string; size: number; path: string }[];
 }
