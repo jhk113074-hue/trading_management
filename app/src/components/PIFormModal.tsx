@@ -1205,21 +1205,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '8px 4px', width: '380px' }}>상품코드</th>
-                  <th style={{ padding: '8px 4px', width: '120px' }}>패킹 방식</th>
-                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>수량</th>
-                  <th style={{ padding: '8px 4px', width: '60px' }}>단위</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>매입(₩)</th>
-                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>환율</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>매입($)</th>
-                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>마진%</th>
-                  <th style={{ padding: '8px 4px', width: '70px' }}>올림</th>
-                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>단가($)</th>
-                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>이익($)</th>
-                  <th style={{ padding: '8px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>PLT</th>
-                  <th style={{ padding: '8px 4px', width: '100px' }}>비고</th>
-                  <th style={{ padding: '8px 4px', width: '40px' }}></th>
+                  <th style={{ padding: '8px 4px', width: '480px' }}>상품코드</th>
+                  <th style={{ padding: '8px 4px', width: '110px' }}>패킹 방식</th>
+                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>수량</th>
+                  <th style={{ padding: '8px 4px', width: '50px' }}>단위</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>매입(₩)</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>환율</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>매입($)</th>
+                  <th style={{ padding: '8px 4px', width: '50px', textAlign: 'right' }}>마진%</th>
+                  <th style={{ padding: '8px 4px', width: '65px' }}>올림</th>
+                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '50px', textAlign: 'right' }}>PLT</th>
+                  <th style={{ padding: '8px 4px', width: '90px' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -1246,60 +1246,60 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             ))}
                           </datalist>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingProd(undefined);
-                            setIsProdModalOpen(true);
-                          }}
-                          title="신규 상품 등록"
-                          style={{
-                            background: '#eff6ff',
-                            border: '1px solid #bfdbfe',
-                            color: '#2563eb',
-                            borderRadius: '4px',
-                            padding: '4px 6px',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          ➕ 등록
-                        </button>
-                        {(() => {
-                          const rawCode = getRawProductCode(it.productCode);
-                          const p = products.find(prod => prod.productCode === rawCode);
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (p) {
-                                  setEditingProd(p);
-                                  setIsProdModalOpen(true);
-                                } else {
-                                  alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                }
-                              }}
-                              disabled={!p}
-                              title="선택된 상품 수정"
-                              style={{
-                                background: p ? '#f0fdf4' : '#f1f5f9',
-                                border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
-                                color: p ? '#16a34a' : '#94a3b8',
-                                borderRadius: '4px',
-                                padding: '4px 6px',
-                                cursor: p ? 'pointer' : 'not-allowed',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              ✏️ 수정
-                            </button>
-                          );
-                        })()}
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingProd(undefined);
+                              setIsProdModalOpen(true);
+                            }}
+                            title="신규 상품 등록"
+                            style={{
+                              background: '#eff6ff',
+                              border: '1px solid #bfdbfe',
+                              color: '#2563eb',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            ➕
+                          </button>
+                          {(() => {
+                            const rawCode = getRawProductCode(it.productCode);
+                            const p = products.find(prod => prod.productCode === rawCode);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (p) {
+                                    setEditingProd(p);
+                                    setIsProdModalOpen(true);
+                                  } else {
+                                    alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                  }
+                                }}
+                                disabled={!p}
+                                title="선택된 상품 수정"
+                                style={{
+                                  background: p ? '#f0fdf4' : '#f1f5f9',
+                                  border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
+                                  color: p ? '#16a34a' : '#94a3b8',
+                                  borderRadius: '4px',
+                                  padding: '4px 8px',
+                                  cursor: p ? 'pointer' : 'not-allowed',
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            );
+                          })()}
+                        </div>
                     </td>
                     <td style={{ padding: '4px' }}>
                       {it.productCode ? (() => {
@@ -1351,7 +1351,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}>
                       <input 
                         type="text" 
-                        value={formatNumberWithCommas(it.purchasePriceUsd)} 
+                        value={formatNumberWithCommas(it.purchasePriceUsd, 2)} 
                         onChange={(e) => updateItem(idx, 'purchasePriceUsd', parseCommas(e.target.value))} 
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
@@ -1380,7 +1380,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px', textAlign: 'right' }}>
                       <input 
                         type="text" 
-                        value={formatNumberWithCommas(it.salePriceUsd)} 
+                        value={formatNumberWithCommas(it.salePriceUsd, 2)} 
                         onChange={(e) => updateItem(idx, 'salePriceUsd', parseCommas(e.target.value))} 
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
@@ -1588,13 +1588,18 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
 
 const gridInputStyle = { width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' };
 
-const formatNumberWithCommas = (value: number | string | undefined) => {
+const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
   const str = value.toString().replace(/,/g, '');
   if (isNaN(Number(str))) return str;
-  const parts = str.split('.');
+  let parts = str.split('.');
+  if (maxDecimals !== undefined && parts.length > 1) {
+      if (parts[1].length > maxDecimals) {
+          parts[1] = parts[1].substring(0, maxDecimals);
+      }
+  }
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return parts.join('.');
+  return parts.length > 1 && maxDecimals !== 0 ? parts.join('.') : parts[0];
 };
 
 const parseCommas = (value: string): number => {
