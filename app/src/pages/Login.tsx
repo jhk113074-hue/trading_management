@@ -46,8 +46,8 @@ export const Login: React.FC = () => {
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center' }}>
       <div style={{ width: '100%', maxWidth: '400px', padding: '40px', backgroundColor: '#ffffff', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{ width: '48px', height: '48px', backgroundColor: '#10b981', color: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold', margin: '0 auto 16px' }}>
-            Y
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <img src="/logo.png" alt="YSACC Logo" style={{ maxHeight: '60px', objectFit: 'contain' }} />
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e293b', margin: '0 0 8px 0' }}>YSACC 업무 시스템</h2>
           <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>직원 계정으로 로그인해 주세요</p>
