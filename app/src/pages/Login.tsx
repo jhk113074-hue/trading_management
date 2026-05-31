@@ -6,8 +6,17 @@ import '../index.css'; // For basic styling if needed
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [saveId, setSaveId] = useState(false);
   const [error, setError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  React.useEffect(() => {
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setSaveId(true);
+    }
+  }, []);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -19,6 +28,11 @@ export const Login: React.FC = () => {
     
     try {
       await login(email, password);
+      if (saveId) {
+        localStorage.setItem('savedEmail', email);
+      } else {
+        localStorage.removeItem('savedEmail');
+      }
       navigate('/');
     } catch (err: any) {
       console.error(err);
@@ -68,6 +82,19 @@ export const Login: React.FC = () => {
               placeholder="••••••••"
               style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
             />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-10px', marginBottom: '4px' }}>
+            <input 
+              type="checkbox" 
+              id="saveId" 
+              checked={saveId} 
+              onChange={(e) => setSaveId(e.target.checked)} 
+              style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#10b981' }}
+            />
+            <label htmlFor="saveId" style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'pointer', userSelect: 'none' }}>
+              이메일(ID) 저장
+            </label>
           </div>
 
           <button 
