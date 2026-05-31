@@ -23,6 +23,41 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
 
+  const [tradeTermsDB, setTradeTermsDB] = useState<any>({
+    incoterms: ["EXW", "FOB", "CIF", "CFR", "DAP", "DDP"],
+    destinationPorts: [],
+    departurePorts: ["Busan, Korea"],
+    packagingSpecs: ["Export Standard Packaging."],
+    validityDescriptions: ["4 weeks from the offered date"],
+    paymentTerms: [
+      "100% T/T in advance",
+      "50% T/T in advance / 50% T/T against BL",
+      "L/C at sight",
+      "Usance L/C 30days",
+      "Usance L/C 60days",
+      "Usance L/C 90days"
+    ],
+    shippingMethods: ["Sea Freight", "Air Freight", "Truck"]
+  });
+
+  useEffect(() => {
+    const fetchTradeTerms = async () => {
+      try {
+        const docRef = doc(db, "companies", COMPANY_ID, "settings", "trade_terms");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setTradeTermsDB((prev: any) => ({ ...prev, ...docSnap.data() }));
+        } else {
+          // Initialize DB with defaults
+          await setDoc(docRef, tradeTermsDB);
+        }
+      } catch (err) {
+        console.error("Failed to load trade terms:", err);
+      }
+    };
+    fetchTradeTerms();
+  }, []);
+
   const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
     const defaults: Partial<ProformaInvoice> = {
       piNumber: '',
@@ -523,6 +558,101 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       list.splice(index, 1);
       return { ...prev, freightCharges: list };
     });
+  };
+
+  const handleAddNewTradeTerm = async (field: string, newValue: string) => {
+    setFormData(prev => ({ ...prev, [field]: newValue }));
+    
+    try {
+      const fieldMapping: any = {
+        incoterms: 'incoterms',
+        destinationPort: 'destinationPorts',
+        departurePort: 'departurePorts',
+        packagingSpec: 'packagingSpecs',
+        validityDesc: 'validityDescriptions',
+        paymentTerms: 'paymentTerms',
+        shippingMethod: 'shippingMethods'
+      };
+      const dbField = fieldMapping[field];
+      
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "trade_terms");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const arr = data[dbField] || [];
+        if (!arr.includes(newValue)) {
+          const newArr = [...arr, newValue];
+          await setDoc(docRef, { [dbField]: newArr }, { merge: true });
+          setTradeTermsDB((prev: any) => ({ ...prev, [dbField]: newArr }));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to add new trade term", e);
+    }
+  };
+
+  const ComboSelect = ({ label, field, options, placeholder = '', required = false }: any) => {
+    const value = (formData as any)[field] || '';
+    const [isNewMode, setIsNewMode] = useState(false);
+    const [newVal, setNewVal] = useState('');
+
+    if (isNewMode) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <input 
+              type="text" 
+              value={newVal} 
+              onChange={e => setNewVal(e.target.value)} 
+              placeholder="직접 입력..." 
+              style={{ flex: 1, padding: '8px 10px', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '13px' }}
+              autoFocus
+            />
+            <button 
+              type="button"
+              onClick={() => {
+                if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
+                setIsNewMode(false);
+              }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✓
+            </button>
+            <button 
+              type="button"
+              onClick={() => setIsNewMode(false)}
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
+        <select 
+          value={value} 
+          onChange={e => {
+            if (e.target.value === '__NEW__') setIsNewMode(true);
+            else setFormData(prev => ({...prev, [field]: e.target.value}));
+          }}
+          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+        >
+          <option value="">{placeholder || '-- 선택 --'}</option>
+          {options.map((opt: string) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+          {value && !options.includes(value) && (
+            <option value={value}>{value}</option>
+          )}
+          <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록 (직접 입력)</option>
+        </select>
+      </div>
+    );
   };
 
   const handleSave = async (isRevision: boolean = false) => {
@@ -1049,34 +1179,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Incoterms ★</label>
-              <select value={formData.incoterms} onChange={(e) => setFormData(prev => ({...prev, incoterms: e.target.value}))} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="">-- 선택 --</option>
-                <option>EXW</option>
-                <option>FAS</option>
-                <option>FCA</option>
-                <option>FOB</option>
-                <option>CFR</option>
-                <option>CIF</option>
-                <option>CPT</option>
-                <option>CIP</option>
-                <option>DAP</option>
-                <option>DPU</option>
-                <option>DDP</option>
-              </select>
-            </div>
-            <Input label="Destination Port ★" value={formData.destinationPort} onChange={(v: any) => setFormData(prev => ({...prev, destinationPort: v}))} />
-            <Input label="Departure Port" value={formData.departurePort} onChange={(v: any) => setFormData(prev => ({...prev, departurePort: v}))} />
-            <Input label="Packaging Spec." value={formData.packagingSpec} onChange={(v: any) => setFormData(prev => ({...prev, packagingSpec: v}))} />
-            <Input label="Validity Description" value={formData.validityDesc} onChange={(v: any) => setFormData(prev => ({...prev, validityDesc: v}))} />
-            <Input label="Payment Terms ★" value={formData.paymentTerms} onChange={(v: any) => setFormData(prev => ({...prev, paymentTerms: v}))} placeholder="예: 100% T/T in advance" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Shipping Method</label>
-              <select value={formData.shippingMethod} onChange={(e) => setFormData(prev => ({...prev, shippingMethod: e.target.value}))} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
-                <option>Sea Freight</option><option>Air Freight</option><option>Truck</option>
-              </select>
-            </div>
+            <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+            <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+            <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
+            <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
+            <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
+            <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+            <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
             <Input label="Exchange Rate (KRW/USD)" type="number" step="0.01" value={formData.exchangeRate} onChange={(v: any) => setFormData(prev => ({...prev, exchangeRate: parseFloat(v)||1}))} />
             <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
