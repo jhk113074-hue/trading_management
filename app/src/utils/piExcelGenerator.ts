@@ -9,6 +9,9 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   // Page setup
   worksheet.pageSetup.paperSize = 9; // A4
   worksheet.pageSetup.orientation = 'portrait';
+  worksheet.pageSetup.fitToPage = true;
+  worksheet.pageSetup.fitToWidth = 1;
+  worksheet.pageSetup.fitToHeight = 0;
   worksheet.pageSetup.margins = {
     left: 0.3, right: 0.3,
     top: 0.4, bottom: 0.4,
@@ -30,30 +33,57 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   // 1. Letterhead / Company Info
   const isYS = piData.issuingCompany === 'YS';
-  const issuerName = isYS ? "YS ACC" : "YSACC CO., LTD.";
-  const issuerAddress = "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea";
-  const issuerContact = "Tel: +82-50-7081-1130   Fax: +82-503-0464-1130   www.ysacc.co.kr";
 
-  worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
-  const titleRow = worksheet.getRow(currentRow);
-  titleRow.getCell(1).value = issuerName;
-  titleRow.getCell(1).font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF1F4E78' } };
-  titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'bottom' };
-  titleRow.height = 25;
-  currentRow++;
+  try {
+    const logoUrl = isYS ? '/letterhead_ys.png' : '/letterhead_ysacc.png';
+    const response = await fetch(logoUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    
+    const imageId = workbook.addImage({
+      buffer: arrayBuffer,
+      extension: 'png',
+    });
+    
+    // Add image spanning rows 1 to 4 (columns A to G)
+    worksheet.addImage(imageId, 'A1:G4');
+    
+    // Set heights for the rows to make space for the image
+    worksheet.getRow(1).height = 20;
+    worksheet.getRow(2).height = 20;
+    worksheet.getRow(3).height = 20;
+    worksheet.getRow(4).height = 25;
+    
+    // Add red border line at the bottom of the letterhead area
+    worksheet.mergeCells(`A4:G4`);
+    worksheet.getCell('A4').border = { bottom: { style: 'thick', color: { argb: 'FFB91C1C' } } };
+    
+  } catch (e) {
+    console.error("Failed to load letterhead image for Excel:", e);
+    // Fallback to text
+    const issuerName = isYS ? "YS ACC" : "YSACC CO., LTD.";
+    const issuerAddress = "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea";
+    const issuerContact = "Tel: +82-50-7081-1130   Fax: +82-503-0464-1130   www.ysacc.co.kr";
 
-  worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
-  const addrRow = worksheet.getRow(currentRow);
-  addrRow.getCell(1).value = issuerAddress;
-  addrRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
-  currentRow++;
+    worksheet.mergeCells(`A1:G1`);
+    const titleRow = worksheet.getRow(1);
+    titleRow.getCell(1).value = issuerName;
+    titleRow.getCell(1).font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF1F4E78' } };
+    titleRow.getCell(1).alignment = { horizontal: 'left', vertical: 'bottom' };
+    titleRow.height = 25;
 
-  worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
-  const contactRow = worksheet.getRow(currentRow);
-  contactRow.getCell(1).value = issuerContact;
-  contactRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
-  contactRow.getCell(1).border = { bottom: { style: 'thick', color: { argb: 'FFB91C1C' } } }; // Red thick bottom border
-  currentRow += 2;
+    worksheet.mergeCells(`A2:G2`);
+    const addrRow = worksheet.getRow(2);
+    addrRow.getCell(1).value = issuerAddress;
+    addrRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
+
+    worksheet.mergeCells(`A3:G3`);
+    const contactRow = worksheet.getRow(3);
+    contactRow.getCell(1).value = issuerContact;
+    contactRow.getCell(1).font = { name: 'Arial', size: 9, color: { argb: 'FF475569' } };
+    contactRow.getCell(1).border = { bottom: { style: 'thick', color: { argb: 'FFB91C1C' } } };
+  }
+
+  currentRow = 6;
 
   // 2. Title: PROFORMA INVOICE
   worksheet.mergeCells(`A${currentRow}:G${currentRow}`);
