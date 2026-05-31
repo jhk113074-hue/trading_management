@@ -1499,13 +1499,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
           <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>${(() => {
+              <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
                   const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
                   const profit = (it.salePriceUsd || 0) - costUsd;
                   return sum + (profit * (it.quantity || 0));
                 }, 0);
-                return totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const totalSales = formData.totalUsd || formData.subtotalUsd || 0;
+                const marginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+                return `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPercent.toFixed(1)}%)`;
               })()}</b></div>
             </div>
             <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
