@@ -1215,6 +1215,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>마진%</th>
                   <th style={{ padding: '8px 4px', width: '70px' }}>올림</th>
                   <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '8px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
                   <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>PLT</th>
                   <th style={{ padding: '8px 4px', width: '100px' }}>비고</th>
@@ -1384,6 +1385,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
                     </td>
+                    <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#3b82f6' }}>
+                      ${(() => {
+                        const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
+                        const profit = (it.salePriceUsd || 0) - costUsd;
+                        const lineProfit = profit * (it.quantity || 0);
+                        return lineProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      })()}
+                    </td>
                     <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#059669' }}>
                       ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
@@ -1488,10 +1497,22 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           )}
 
-          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'flex-end', gap: '32px', alignItems: 'center' }}>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Subtotal: <b style={{ color: '#334155' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
-            <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>${(() => {
+                const totalProfit = items.reduce((sum, it) => {
+                  const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
+                  const profit = (it.salePriceUsd || 0) - costUsd;
+                  return sum + (profit * (it.quantity || 0));
+                }, 0);
+                return totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              })()}</b></div>
+            </div>
+            <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+              <div style={{ color: '#64748b', fontSize: '14px' }}>Subtotal: <b style={{ color: '#334155' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+              <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+              <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+            </div>
           </div>
 
         </div>
