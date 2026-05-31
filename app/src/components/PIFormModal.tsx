@@ -5,6 +5,7 @@ import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
 import type { Customer } from '../types/customer';
 import type { Product } from '../types/product';
 import { generatePIPdf } from '../utils/piPdfGenerator';
+import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
 
 interface Props {
@@ -1400,10 +1401,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           
           <button 
             type="button" 
-            onClick={() => exportPIToExcel(formData, items)} 
+            onClick={() => generatePIExcel(formData as ProformaInvoice, items)} 
             style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
           >
-            📊 Excel로 내보내기
+            📊 Excel 견적서
+          </button>
+
+          <button 
+            type="button" 
+            onClick={() => exportPIToExcel(formData, items)} 
+            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #64748b', background: '#fff', fontWeight: 600, color: '#64748b', cursor: 'pointer' }}
+          >
+            📉 내부 원가 엑셀
           </button>
 
           <button 
