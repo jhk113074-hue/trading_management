@@ -88,8 +88,8 @@ export const Layout: React.FC = () => {
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <aside className="sidebar" style={{ width: `${sidebarWidth}px`, flexShrink: 0, overflowY: 'auto' }}>
-        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', minHeight: '80px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '20px 16px 18px' }}>
-          <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '52px', objectFit: 'contain' }} />
+        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', height: '64px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '0 16px' }}>
+          <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '44px', objectFit: 'contain' }} />
         </Link>
 
         {menuItems.map((group, gIdx) => (
