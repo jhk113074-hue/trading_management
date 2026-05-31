@@ -176,8 +176,14 @@ export const ProformaInvoices: React.FC = () => {
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
                     </td>
                     <td style={{ padding: '6px 8px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '6px 8px', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '12px', color: '#6b7280' }}>
-                      {p.itemsSummary ? p.itemsSummary.join(', ') : '-'}
+                    <td style={{ padding: '6px 8px', maxWidth: '250px', fontSize: '12px', color: '#6b7280' }}>
+                      {p.itemsSummary && p.itemsSummary.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {p.itemsSummary.map((item, idx) => (
+                            <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</div>
+                          ))}
+                        </div>
+                      ) : '-'}
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
