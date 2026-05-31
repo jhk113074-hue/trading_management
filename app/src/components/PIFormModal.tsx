@@ -1304,16 +1304,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Extras and Totals */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-            <Input label="Handling Fee (USD)" type="number" step="0.01" value={formData.handlingFee} onChange={(v: any) => setFormData(prev => ({...prev, handlingFee: parseFloat(v)||0}))} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
             
             {/* Freight Charges (USD) */}
-            <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '16px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Freight Charges (USD)</span>
                 <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Freight Headers */}
+                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #e2e8f0', marginBottom: '4px', fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ flex: 1.5 }}>Container Type</div>
+                  <div style={{ flex: 1, textAlign: 'right' }}>Quantities</div>
+                  <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
+                  <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
+                  <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
+                </div>
                 {(formData.freightCharges || []).map((fc, fcIdx) => (
                   <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <select 
@@ -1332,7 +1339,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="수량" 
                       value={fc.qty ?? 1} 
                       onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 0.8, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                      style={{ flex: 1, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
                     />
                     <input 
                       type="number" 
@@ -1340,14 +1347,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="금액 (USD)" 
                       value={fc.price ?? 0} 
                       onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1.2, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
                     />
                     <input 
                       type="text" 
                       placeholder="비고" 
                       value={fc.remarks || ''} 
                       onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
-                      style={{ flex: 2, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
+                      style={{ flex: 3.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
                     />
                     <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
                       ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

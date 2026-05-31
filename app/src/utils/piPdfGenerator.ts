@@ -21,16 +21,33 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </tr>
   `).join('');
 
-  const freightRows = (piData.freightCharges || []).map(f => {
-    const chargeName = f.name || f.type || 'Freight';
-    const chargeAmount = typeof f.amount === 'number' ? f.amount : ((f.qty || 1) * (f.price || 0));
-    return `
-      <tr>
-        <td style="text-align:right; padding:3px 12px; color:#64748b; font-size:11.5px; border:none;">${chargeName} (USD):</td>
-        <td style="text-align:right; padding:3px 12px; font-weight:600; color:#1e293b; font-size:11.5px; border:none; width:120px;">$${chargeAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-      </tr>
-    `;
-  }).join('');
+  const freightTable = (piData.freightCharges && piData.freightCharges.length > 0) ? `
+  <div style="margin-top: 10px;">
+    <div class="section-title color-red">FREIGHT CHARGES</div>
+    <table class="items-table" style="margin-bottom: 5px;">
+      <thead>
+        <tr>
+          <th style="width:120px; text-align:left; padding-left:10px;">Container Type</th>
+          <th style="width:60px; text-align:right;">Qty</th>
+          <th style="width:80px; text-align:right;">Unit Price</th>
+          <th style="text-align:left; padding-left:10px;">Remarks</th>
+          <th style="width:95px; text-align:right;">Total (USD)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${piData.freightCharges.map(fc => `
+          <tr>
+            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${fc.type || '-'}</td>
+            <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(fc.qty || 0).toLocaleString('en-US')}</td>
+            <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(fc.price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+            <td style="padding:4px 10px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b;">${fc.remarks || '-'}</td>
+            <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  </div>
+  ` : '';
 
   const html = `
 <!DOCTYPE html>
@@ -228,6 +245,8 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </table>
   </div>
 
+  ${freightTable}
+
   <!-- Totals Section -->
   <div class="totals-section">
     <table class="totals-table">
@@ -235,11 +254,18 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Subtotal (USD):</td>
         <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
       </tr>
-      ${freightRows}
+      ${piData.freightCharges && piData.freightCharges.length > 0 ? `
       <tr>
-        <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Extras (USD):</td>
-        <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Freight Total (USD):</td>
+        <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.freightCharges || []).reduce((s, f) => s + ((f.qty || 0) * (f.price || 0)), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
       </tr>
+      ` : ''}
+      ${piData.insurance ? `
+      <tr>
+        <td style="text-align:right; padding:5px 12px; color:#64748b; font-size:12px; border:none;">Insurance (USD):</td>
+        <td style="text-align:right; padding:5px 12px; font-weight:600; color:#1e293b; font-size:12px; border:none; width:120px;">$${(piData.insurance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+      </tr>
+      ` : ''}
       <tr class="grand-total-row">
         <td class="grand-total-label">GRAND TOTAL (USD)</td>
         <td class="grand-total-val">$${(piData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
