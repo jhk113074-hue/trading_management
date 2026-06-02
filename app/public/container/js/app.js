@@ -6,22 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginPassword = document.getElementById('login-password');
     const loginError = document.getElementById('login-error');
 
-    const checkLogin = () => {
-        // Automatically bypass login if loaded inside an iframe (integrated mode)
-        if (window.self !== window.top) {
-            sessionStorage.setItem('ysacc_logged_in', 'true');
-        }
-
-        if (sessionStorage.getItem('ysacc_logged_in') === 'true') {
-            loginOverlay.style.display = 'none';
-            mainApp.classList.remove('hidden');
-        }
-    };
+    // 통합 무역관리 프로그램에서는 이미 Firebase 인증이 되어 있으므로
+    // 로그인 화면을 무조건 자동 우회합니다.
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (mainApp) mainApp.classList.remove('hidden');
+    sessionStorage.setItem('ysacc_logged_in', 'true');
 
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
             const pwd = loginPassword.value;
-            // Simple hardcoded passwords for employees
             if (pwd === 'admin' || pwd === 'ysacc1234' || pwd === '1234') {
                 sessionStorage.setItem('ysacc_logged_in', 'true');
                 loginOverlay.style.display = 'none';
@@ -36,8 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loginPassword.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') btnLogin.click();
         });
-        
-        checkLogin();
     }
 
     // --- State Management ---
