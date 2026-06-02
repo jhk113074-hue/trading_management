@@ -510,8 +510,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderItems = () => {
         itemsTbody.innerHTML = '';
         const itemsTfoot = document.getElementById('items-tfoot');
+        const checkAllEl = document.getElementById('check-all-items');
+        if (checkAllEl) checkAllEl.checked = false;
+
         if (currentItems.length === 0) {
-            itemsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>';
+            itemsTbody.innerHTML = '<tr class="empty-row"><td colspan="9">등록된 화물이 없습니다.</td></tr>';
             if(itemsTfoot) itemsTfoot.classList.add('hidden');
         } else {
             if(itemsTfoot) itemsTfoot.classList.remove('hidden');
@@ -528,6 +531,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const detailsDisp = item.contentDetails ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; white-space: pre-wrap;">${item.contentDetails}</div>` : '';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="item-checkbox" data-id="${item.id}">
+                    </td>
                     <td>
                         <strong>${item.name}</strong>${pkgTypeDisp}
                         ${detailsDisp}
@@ -1495,82 +1501,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Load PI Data from LocalStorage (New Tab) ---
-    const simDataStr = localStorage.getItem('PI_SIMULATION_DATA');
-    if (simDataStr) {
-        try {
-            const data = JSON.parse(simDataStr);
-            console.log("Loaded PI Data from LocalStorage:", data);
-            
-            // Populate project info
-            if (data.customer) customerInput.value = data.customer;
-            if (data.piNumber) {
-                projectInput.value = data.piNumber;
-                const serialInput = document.getElementById('project-serial');
-                if (serialInput) serialInput.value = data.piNumber;
-            }
-            if (data.date) dateInput.value = data.date;
-            
-            // Populate containers
-            if (data.containers) {
-                if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
-                if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
-                if (document.getElementById('qty-40GP')) document.getElementById('qty-40GP').value = data.containers['40GP'] || 0;
-                if (document.getElementById('qty-40HC')) document.getElementById('qty-40HC').value = data.containers['40HC'] || 0;
-            }
-            
-            // Populate items
-            if (data.items && Array.isArray(data.items)) {
-                let addedCount = 0;
-                let missingDimensionsCount = 0;
-                data.items.forEach(piItem => {
-                    if (!piItem.desc || !piItem.qty) return;
-                    
-                    const w = parseFloat(piItem.w) || 0;
-                    const d = parseFloat(piItem.d) || 0;
-                    const h = parseFloat(piItem.h) || 0;
-                    const nw = parseFloat(piItem.netWeight) || 0;
-                    const gw = parseFloat(piItem.grossWeight) || 0;
-                    const qty = parseInt(piItem.qty, 10) || 1;
-                    
-                    let hasDimensions = (w > 0 && d > 0 && h > 0);
-                    
-                    currentItems.push({
-                        id: generateId(),
-                        name: piItem.desc,
-                        packageType: piItem.packageType || 'Pallet',
-                        contentDetails: piItem.remarks || '',
-                        w: w, d: d, h: h,
-                        netWeight: nw, grossWeight: gw, weight: gw,
-                        qty: qty,
-                        stackable: piItem.stackable !== undefined ? piItem.stackable : true,
-                        rotation: piItem.rotation !== undefined ? piItem.rotation : true
-                    });
-                    
-                    if (!hasDimensions) missingDimensionsCount++;
-                    addedCount++;
-                });
-                
-                if (addedCount > 0) {
-                    if (missingDimensionsCount > 0) {
-                        alert(`견적서에서 ${addedCount}개의 화물을 불러왔습니다.\n\n⚠️ 주의: ${missingDimensionsCount}개의 화물은 규격(가로/세로/높이) 정보가 없습니다. 리스트 우측의 [수정(연필)] 버튼을 눌러 규격을 입력하셔야 시뮬레이션이 가능합니다.`);
-                    } else {
-                        setTimeout(() => {
-                            const runBtn = document.getElementById('btn-run-simulation');
-                            if (runBtn) runBtn.click();
-                        }, 100);
-                    }
-                }
-                renderItems();
-            }
-            
-            // Remove the data so it doesn't load again on refresh
-            localStorage.removeItem('PI_SIMULATION_DATA');
-        } catch(e) {
-            console.error("Error parsing PI_SIMULATION_DATA", e);
-        }
-    }
-
     // --- PostMessage from Parent (Proforma Invoice) ---
     window.addEventListener('message', (event) => {
         const data = event.data;
@@ -1645,6 +1575,255 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // --- Pallet Merging & Mixed Loading Wizard Logic ---
+    const checkAllItemsEl = document.getElementById('check-all-items');
+    if (checkAllItemsEl) {
+        checkAllItemsEl.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            document.querySelectorAll('.item-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+            });
+        });
+    }
+
+    const mergeModal = document.getElementById('merge-modal');
+    const btnMergeSelected = document.getElementById('btn-merge-selected');
+    const btnCloseMergeModal = document.getElementById('btn-close-merge-modal');
+    const btnCancelMerge = document.getElementById('btn-cancel-merge');
+    const mergeItemsTbody = document.getElementById('merge-items-tbody');
+    const mergePalletsForm = document.getElementById('merge-pallets-form');
+    
+    const mergeNameInput = document.getElementById('merge-name');
+    const mergePkgTypeInput = document.getElementById('merge-package-type');
+    const mergeContentInput = document.getElementById('merge-content-details');
+    const mergeWInput = document.getElementById('merge-w');
+    const mergeDInput = document.getElementById('merge-d');
+    const mergeHInput = document.getElementById('merge-h');
+    const mergeNetWeightInput = document.getElementById('merge-net-weight');
+    const mergeGrossWeightInput = document.getElementById('merge-gross-weight');
+    const mergePalletWeightAddInput = document.getElementById('merge-pallet-weight-add');
+    const mergeStackableInput = document.getElementById('merge-stackable');
+    const mergeRotationInput = document.getElementById('merge-rotation');
+
+    let selectedMergeItems = []; // Array of { item, qty }
+
+    const openMergeModal = () => {
+        const checkedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+        if (checkedCheckboxes.length < 2) {
+            alert('병합할 화물을 최소 2개 이상 선택해주세요.');
+            return;
+        }
+
+        selectedMergeItems = [];
+        let maxW = 0, maxD = 0, maxH = 0;
+
+        checkedCheckboxes.forEach(cb => {
+            const id = cb.dataset.id;
+            const item = currentItems.find(i => i.id === id);
+            if (item) {
+                selectedMergeItems.push({
+                    item: item,
+                    qty: item.qty // default to merge all
+                });
+                if (item.w > maxW) maxW = item.w;
+                if (item.d > maxD) maxD = item.d;
+                if (item.h > maxH) maxH = item.h;
+            }
+        });
+
+        // Set default inputs
+        const names = selectedMergeItems.map(s => s.item.name);
+        mergeNameInput.value = `혼적 [${names.slice(0, 2).join(' + ')}${names.length > 2 ? ' 외 ' + (names.length - 2) + '건' : ''}]`;
+        mergePkgTypeInput.value = 'Pallet';
+        mergePalletWeightAddInput.checked = true;
+        mergeStackableInput.checked = true;
+        mergeRotationInput.checked = true;
+
+        // Default dimensions: Standard Pallet size 1100x1100
+        mergeWInput.value = maxW > 1100 ? maxW : 1100;
+        mergeDInput.value = maxD > 1100 ? maxD : 1100;
+        mergeHInput.value = maxH > 1000 ? maxH : 1000;
+
+        // Remove active class from preset buttons
+        document.querySelectorAll('.merge-preset-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Render merge item list
+        renderMergeItemsList();
+        recalculateMergeValues();
+
+        mergeModal.classList.remove('hidden');
+    };
+
+    const closeMergeModalFunc = () => {
+        mergeModal.classList.add('hidden');
+    };
+
+    if (btnMergeSelected) btnMergeSelected.addEventListener('click', openMergeModal);
+    if (btnCloseMergeModal) btnCloseMergeModal.addEventListener('click', closeMergeModalFunc);
+    if (btnCancelMerge) btnCancelMerge.addEventListener('click', closeMergeModalFunc);
+    
+    // Preset buttons event
+    document.querySelectorAll('.merge-preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.merge-preset-btn').forEach(b => b.classList.remove('active'));
+            
+            if (e.target.id === 'btn-merge-max-preset') {
+                let maxW = 0, maxD = 0, maxH = 0;
+                selectedMergeItems.forEach(s => {
+                    if (s.item.w > maxW) maxW = s.item.w;
+                    if (s.item.d > maxD) maxD = s.item.d;
+                    if (s.item.h > maxH) maxH = s.item.h;
+                });
+                mergeWInput.value = maxW;
+                mergeDInput.value = maxD;
+                mergeHInput.value = maxH;
+                e.target.classList.add('active');
+                return;
+            }
+
+            const w = e.target.dataset.w;
+            const d = e.target.dataset.d;
+            const h = e.target.dataset.h;
+            if (w && d && h) {
+                mergeWInput.value = w;
+                mergeDInput.value = d;
+                mergeHInput.value = h;
+                e.target.classList.add('active');
+            }
+        });
+    });
+
+    const inputsToWatch = [mergeWInput, mergeDInput, mergeHInput];
+    inputsToWatch.forEach(input => {
+        if (input) {
+            input.addEventListener('input', () => {
+                document.querySelectorAll('.merge-preset-btn').forEach(b => b.classList.remove('active'));
+            });
+        }
+    });
+
+    const renderMergeItemsList = () => {
+        mergeItemsTbody.innerHTML = '';
+        selectedMergeItems.forEach((s, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <strong>${s.item.name}</strong> <small style="color:var(--text-secondary);">(${s.item.w}×${s.item.d}×${s.item.h})</small>
+                </td>
+                <td style="text-align: center;">${s.item.qty}</td>
+                <td style="text-align: center;">
+                    <input type="number" class="merge-item-qty-input" data-index="${idx}" min="1" max="${s.item.qty}" value="${s.qty}" style="width: 80px; text-align: center; padding: 2px 5px;">
+                </td>
+            `;
+            mergeItemsTbody.appendChild(tr);
+        });
+
+        // Add event listeners to qty inputs
+        document.querySelectorAll('.merge-item-qty-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.index, 10);
+                let val = parseInt(e.target.value, 10);
+                const max = selectedMergeItems[idx].item.qty;
+                if (isNaN(val) || val < 1) val = 1;
+                if (val > max) val = max;
+                e.target.value = val;
+                selectedMergeItems[idx].qty = val;
+                
+                recalculateMergeValues();
+            });
+        });
+    };
+
+    const recalculateMergeValues = () => {
+        let totalNet = 0;
+        let totalGross = 0;
+        let contentParts = [];
+
+        selectedMergeItems.forEach(s => {
+            const qty = s.qty;
+            const nw = s.item.netWeight || 0;
+            const gw = s.item.grossWeight || s.item.weight || 0;
+            totalNet += (nw * qty);
+            totalGross += (gw * qty);
+            contentParts.push(`${s.item.name} ${qty}개`);
+        });
+
+        // Add empty pallet weight if checked
+        if (mergePalletWeightAddInput && mergePalletWeightAddInput.checked) {
+            totalGross += 20; // 20kg standard empty pallet weight
+        }
+
+        mergeNetWeightInput.value = totalNet.toFixed(1);
+        mergeGrossWeightInput.value = totalGross.toFixed(1);
+        
+        // Auto-update content details if not customized or empty
+        mergeContentInput.value = contentParts.join(' + ') + ' 혼적';
+    };
+
+    if (mergePalletWeightAddInput) {
+        mergePalletWeightAddInput.addEventListener('change', recalculateMergeValues);
+    }
+
+    if (mergePalletsForm) {
+        mergePalletsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Validate merge quantities
+            let valid = true;
+            selectedMergeItems.forEach(s => {
+                if (s.qty < 1 || s.qty > s.item.qty) {
+                    valid = false;
+                }
+            });
+
+            if (!valid) {
+                alert('병합할 수량이 유효하지 않습니다. 다시 확인해주세요.');
+                return;
+            }
+
+            // Create new combined item
+            const mergedItem = {
+                id: generateId(),
+                name: mergeNameInput.value,
+                packageType: mergePkgTypeInput.value,
+                contentDetails: mergeContentInput.value,
+                w: parseFloat(mergeWInput.value),
+                d: parseFloat(mergeDInput.value),
+                h: parseFloat(mergeHInput.value),
+                netWeight: parseFloat(mergeNetWeightInput.value),
+                grossWeight: parseFloat(mergeGrossWeightInput.value),
+                weight: parseFloat(mergeGrossWeightInput.value), // packer compatibility
+                qty: 1, // combined pallet is 1 unit
+                stackable: mergeStackableInput.checked,
+                rotation: mergeRotationInput.checked
+            };
+
+            // Deduct quantities from original items
+            selectedMergeItems.forEach(s => {
+                const origItem = currentItems.find(i => i.id === s.item.id);
+                if (origItem) {
+                    origItem.qty -= s.qty;
+                }
+            });
+
+            // Filter out items with quantity 0
+            currentItems = currentItems.filter(i => i.qty > 0);
+
+            // Add the new merged item
+            currentItems.push(mergedItem);
+
+            // Close modal and refresh UI
+            closeMergeModalFunc();
+            renderItems();
+
+            // Trigger simulation
+            setTimeout(() => {
+                const runSimBtn = document.getElementById('btn-run-simulation');
+                if (runSimBtn) runSimBtn.click();
+            }, 150);
+        });
+    }
 
     // Initial render
     renderItems();

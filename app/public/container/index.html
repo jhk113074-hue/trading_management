@@ -17,9 +17,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Login overlay removed for embedded mode -->
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="login-backdrop">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="img/logo.png" alt="YSACC Logo" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none';">
+                <h1 style="font-size: 1.25rem;">YSACC Container Loading Plan program</h1>
+                <p>직원 전용 시스템입니다</p>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <input type="password" id="login-password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+                <p id="login-error" class="text-danger hidden" style="font-size: 0.8rem; margin-top: 0.5rem; text-align: center;">비밀번호가 일치하지 않습니다.</p>
+            </div>
+            <button id="btn-login" class="btn btn-primary full-width">로그인</button>
+        </div>
+    </div>
 
-    <div class="app-container" id="main-app">
+    <div class="app-container hidden" id="main-app">
         <!-- Header -->
         <header class="app-header">
             <div class="header-logo">
@@ -202,6 +216,7 @@
                     <div class="card-header">
                         <h2><i data-lucide="list"></i> 적재 품목 리스트</h2>
                         <div class="header-actions">
+                            <button class="btn btn-primary btn-sm" id="btn-merge-selected" title="선택한 화물들을 하나의 파렛트로 병합"><i data-lucide="shrink"></i> 선택 합치기</button>
                             <button class="btn btn-outline btn-sm" id="btn-download-template" title="엑셀 업로드 양식 다운로드"><i data-lucide="download"></i> 양식 받기</button>
                             <label for="excel-upload" class="btn btn-secondary btn-sm" style="cursor: pointer; margin: 0;"><i data-lucide="upload"></i> 엑셀 업로드</label>
                             <input type="file" id="excel-upload" accept=".xlsx, .xls" style="display: none;">
@@ -211,6 +226,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-items"></th>
                                     <th>화물명 (포장 형태)</th>
                                     <th>크기 (W×D×H)</th>
                                     <th>CBM</th>
@@ -223,11 +239,11 @@
                             </thead>
                             <tbody id="items-tbody">
                                 <!-- Dynamic rows go here -->
-                                <tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>
+                                <tr class="empty-row"><td colspan="9">등록된 화물이 없습니다.</td></tr>
                             </tbody>
                             <tfoot id="items-tfoot" class="hidden">
                                 <tr style="background-color: rgba(255, 255, 255, 0.05); font-weight: bold;">
-                                    <td colspan="4" style="text-align: right;">전체 총계:</td>
+                                    <td colspan="5" style="text-align: right;">전체 총계:</td>
                                     <td id="table-total-qty">0</td>
                                     <td id="table-total-weight">0 / 0</td>
                                     <td colspan="2"></td>
@@ -361,6 +377,126 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Merge Modal -->
+    <div id="merge-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2><i data-lucide="shrink"></i> 파렛트 병합 및 혼적 설정</h2>
+                <button class="btn-close-modal" id="btn-close-merge-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 0.5rem;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                    선택한 화물들 중 병합할 수량을 입력하고, 혼적될 파렛트 크기 및 무게를 설정하세요.
+                </p>
+                <div class="merge-items-list-container" style="margin-bottom: 1rem; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.5rem;">
+                    <table class="data-table" style="font-size: 0.8rem; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>화물명</th>
+                                <th style="text-align: center;">기존 수량</th>
+                                <th style="text-align: center; width: 120px;">병합할 수량</th>
+                            </tr>
+                        </thead>
+                        <tbody id="merge-items-tbody">
+                            <!-- JS will populate -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <form id="merge-pallets-form">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="merge-name">병합 파렛트명</label>
+                            <input type="text" id="merge-name" required placeholder="예: 혼적 [화물A + 화물B]">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="merge-package-type">포장 형태</label>
+                            <select id="merge-package-type">
+                                <option value="Pallet">Pallet</option>
+                                <option value="Wooden Box">Wooden Box</option>
+                                <option value="Carton">Carton Box</option>
+                                <option value="Other">기타</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="merge-content-details">혼적 내용물 상세</label>
+                        <textarea id="merge-content-details" style="min-height: 50px;" placeholder="혼적되는 세부 항목들을 입력하세요."></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label>파렛트 규격 빠른 지정</label>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                            <button type="button" class="btn btn-outline btn-sm merge-preset-btn" data-w="1100" data-d="1100" data-h="1000">1100×1100×1000 (표준)</button>
+                            <button type="button" class="btn btn-outline btn-sm merge-preset-btn" data-w="1200" data-d="1000" data-h="1000">1200×1000×1000 (공용)</button>
+                            <button type="button" class="btn btn-outline btn-sm merge-preset-btn" data-w="1200" data-d="800" data-h="1000">1200×800×1000 (유럽)</button>
+                            <button type="button" class="btn btn-outline btn-sm merge-preset-btn" id="btn-merge-max-preset">선택 화물 최대 규격</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row triplet">
+                        <div class="form-group">
+                            <label for="merge-w">가로 (mm)</label>
+                            <input type="number" id="merge-w" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="merge-d">세로 (mm)</label>
+                            <input type="number" id="merge-d" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="merge-h">높이 (mm)</label>
+                            <input type="number" id="merge-h" required min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="merge-net-weight">총 순중량 (Net, kg)</label>
+                            <input type="number" id="merge-net-weight" required min="0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="merge-gross-weight">총 중량 (Gross, kg)</label>
+                            <input type="number" id="merge-gross-weight" required min="0.1" step="0.1">
+                        </div>
+                    </div>
+
+                    <div class="form-row switch-row" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                        <div class="switch-group" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                            <label class="switch">
+                                <input type="checkbox" id="merge-pallet-weight-add" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>공파렛트 중량 자동 추가 (+20kg)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-row switch-row" style="margin-top: 0.25rem;">
+                        <div class="switch-group">
+                            <label class="switch">
+                                <input type="checkbox" id="merge-stackable" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>다단 적재 허용</span>
+                        </div>
+                        <div class="switch-group">
+                            <label class="switch">
+                                <input type="checkbox" id="merge-rotation" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>회전 허용 (수평)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <button type="button" id="btn-cancel-merge" class="btn btn-secondary" style="flex:1;">취소</button>
+                        <button type="submit" class="btn btn-primary" style="flex:2;">병합하여 리스트에 추가</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

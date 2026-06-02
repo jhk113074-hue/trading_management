@@ -644,3 +644,36 @@ input:checked + .slider:before { transform: translateX(16px); }
         grid-template-columns: 1fr 1fr;
     }
 }
+
+/* Merge Feature Styles */
+.data-table th input[type="checkbox"],
+.data-table td input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.merge-items-list-container {
+    background-color: var(--input-bg);
+}
+
+.merge-preset-btn {
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    transition: var(--transition);
+}
+
+.merge-preset-btn:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.merge-preset-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
