@@ -482,7 +482,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       productCode: '', description: '', quantity: 0, unit: 'KG',
       purchasePriceKrw: 0, exchangeRate: formData.exchangeRate || 1400,
       purchasePriceUsd: 0, marginRate: 15, salePriceUsd: 0, lineTotalUsd: 0,
-      palletQty: 0, remarks: '', roundDigits: 2
+      palletQty: 1, remarks: '', roundDigits: 2
     }]);
   };
 
@@ -495,6 +495,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       it.purchasePriceUsd = 0;
     } else if (field === 'purchasePriceUsd' && parseFloat(value) > 0) {
       it.purchasePriceKrw = 0;
+    }
+
+    // Auto calculate from palletQty
+    if (field === 'palletQty') {
+      const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+      let qpp = 0;
+      if (it.packingSpecOverride) {
+        qpp = it.packingSpecOverride.qtyPerPallet;
+      } else if (p) {
+        qpp = p.qtyPerPallet || p.weight || 0;
+      }
+      const numVal = parseFloat(value) || 0;
+      if (qpp > 0) {
+        it.quantity = numVal * qpp;
+      }
     }
 
     // Auto calculate
@@ -534,9 +549,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             };
           }
           if (existingMethod.qtyPerPallet && existingMethod.qtyPerPallet > 0) {
-            it.palletQty = Math.ceil(it.quantity / existingMethod.qtyPerPallet);
+            it.quantity = (it.palletQty || 1) * existingMethod.qtyPerPallet;
           } else {
-            it.palletQty = 1;
+            it.quantity = it.quantity || 0;
           }
         } else if (defaultMethod) {
           // If no existing method was loaded, fallback to defaultMethod
@@ -552,20 +567,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
           };
           if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
-            it.palletQty = Math.ceil(it.quantity / defaultMethod.qtyPerPallet);
+            it.quantity = (it.palletQty || 1) * defaultMethod.qtyPerPallet;
           } else {
-            it.palletQty = 1;
+            it.quantity = it.quantity || 0;
           }
         } else {
           it.selectedPackingMethodId = undefined;
           it.packingSpecOverride = undefined;
-          // Auto calculate palletQty
+          // Auto calculate quantity from palletQty
           if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.palletQty = Math.ceil(it.quantity / p.qtyPerPallet);
+            it.quantity = (it.palletQty || 1) * p.qtyPerPallet;
           } else if (p.weight && p.weight > 0) {
-            it.palletQty = Math.ceil(it.quantity / p.weight);
+            it.quantity = (it.palletQty || 1) * p.weight;
           } else {
-            it.palletQty = 1;
+            it.quantity = it.quantity || 0;
           }
         }
       }
@@ -588,9 +603,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           };
           
           if (method.qtyPerPallet && method.qtyPerPallet > 0) {
-            it.palletQty = Math.ceil(it.quantity / method.qtyPerPallet);
+            it.quantity = (it.palletQty || 1) * method.qtyPerPallet;
           } else {
-            it.palletQty = 1;
+            it.quantity = it.quantity || 0;
           }
         } else {
           it.selectedPackingMethodId = undefined;
@@ -614,10 +629,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'productCode' || field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+    if (field === 'productCode' || field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits' || field === 'palletQty') {
       it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
       
-      // Auto calculate palletQty when quantity changes
+      // Auto calculate palletQty when quantity changes (backward compatibility if quantity is updated directly somehow)
       if (field === 'quantity') {
         const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
         if (it.packingSpecOverride) {
@@ -1336,7 +1351,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
                   <th style={{ padding: '8px 4px', width: '480px' }}>상품코드</th>
                   <th style={{ padding: '8px 4px', width: '110px' }}>패킹 방식</th>
-                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>수량</th>
+                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>PLT수량</th>
+                  <th style={{ padding: '8px 4px', width: '95px', textAlign: 'right' }}>수량(자동계산)</th>
                   <th style={{ padding: '8px 4px', width: '50px' }}>단위</th>
                   <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>매입(₩)</th>
                   <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>환율</th>
@@ -1346,14 +1362,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>단가($)</th>
                   <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '50px', textAlign: 'right' }}>PLT</th>
                   <th style={{ padding: '8px 4px', width: '90px' }}>비고</th>
                   <th style={{ padding: '8px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={14} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={15} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
@@ -1455,9 +1470,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}>
                       <input 
                         type="text" 
-                        value={formatNumberWithCommas(it.quantity)} 
-                        onChange={(e) => updateItem(idx, 'quantity', parseCommas(e.target.value))} 
+                        value={formatNumberWithCommas(it.palletQty)} 
+                        onChange={(e) => updateItem(idx, 'palletQty', parseCommas(e.target.value))} 
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
+                      />
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={formatNumberWithCommas(it.quantity)} 
+                        readOnly
+                        style={{ ...gridInputStyle, textAlign: 'right', backgroundColor: '#f1f5f9', color: '#64748b' }} 
                       />
                     </td>
                     <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} style={gridInputStyle} /></td>
@@ -1524,14 +1547,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#059669' }}>
                       ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.palletQty)} 
-                        onChange={(e) => updateItem(idx, 'palletQty', parseCommas(e.target.value))} 
-                        style={{ ...gridInputStyle, textAlign: 'right' }} 
-                      />
                     </td>
                     <td style={{ padding: '4px' }}>
                       <input 
