@@ -142,7 +142,18 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
     const targetMethod = {
       ...editingMethod,
       id: methodId,
-      isDefault: list.length === 0 ? true : !!editingMethod.isDefault
+      isDefault: list.length === 0 ? true : !!editingMethod.isDefault,
+      unitWidth: parseFloat(editingMethod.unitWidth) || 0,
+      unitLength: parseFloat(editingMethod.unitLength) || 0,
+      unitHeight: parseFloat(editingMethod.unitHeight) || 0,
+      unitWeight: parseFloat(editingMethod.unitWeight) || 0,
+      unitGrossWeight: parseFloat(editingMethod.unitGrossWeight) || 0,
+      qtyPerPallet: parseInt(editingMethod.qtyPerPallet) || 0,
+      palletWidth: parseFloat(editingMethod.palletWidth) || 0,
+      palletLength: parseFloat(editingMethod.palletLength) || 0,
+      palletHeight: parseFloat(editingMethod.palletHeight) || 0,
+      palletWeight: parseFloat(editingMethod.palletWeight) || 0,
+      palletGrossWeight: parseFloat(editingMethod.palletGrossWeight) || 0,
     };
 
     if (targetMethod.isDefault) {
@@ -690,11 +701,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>📦 단품별 규격 (Single Spec)</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-                          <Input label="가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
-                          <Input label="총중량 (kg)" value={editingMethod.unitGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitGrossWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
+                          <Input label="세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
+                          <Input label="높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
+                          <Input label="순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
+                          <Input label="총중량 (kg)" value={editingMethod.unitGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitGrossWeight: v }))} type="number" step="0.01" />
                         </div>
                       </div>
                     )}
@@ -703,10 +714,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669', display: 'block', marginBottom: '8px' }}>🧪 화학물 페일(Pail) 규격</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                          <Input label="페일 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="페일 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="페일 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="페일 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="페일 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
+                          <Input label="페일 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
+                          <Input label="페일 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
+                          <Input label="페일 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
                         </div>
                       </div>
                     )}
@@ -715,10 +726,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#7c3aed', display: 'block', marginBottom: '8px' }}>🛢️ 화학물 드럼(Drum) 규격</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                          <Input label="드럼 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="드럼 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="드럼 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="드럼 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="드럼 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
+                          <Input label="드럼 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
+                          <Input label="드럼 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
+                          <Input label="드럼 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
                         </div>
                       </div>
                     )}
@@ -727,12 +738,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '8px' }}>🪵 파렛트별 적재 및 규격 (Pallet Spec)</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                          <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: parseInt(v) || 0 }))} type="number" labelColor="#d97706" />
-                          <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="순중량 (kg)" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
-                          <Input label="총중량 (kg)" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
+                          <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: v }))} type="number" />
+                          <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: v }))} type="number" />
+                          <Input label="높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: v }))} type="number" />
+                          <Input label="순중량 (kg)" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: v }))} type="number" step="0.01" />
+                          <Input label="총중량 (kg)" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: v }))} type="number" step="0.01" />
                         </div>
                       </div>
                     )}
