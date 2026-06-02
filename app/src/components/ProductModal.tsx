@@ -726,7 +726,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                     {(editingMethod.packageType?.endsWith('+ Pallet') || editingMethod.packageType === 'Pallet') && (
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '8px' }}>🪵 파렛트별 적재 및 규격 (Pallet Spec)</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                           <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: parseInt(v) || 0 }))} type="number" labelColor="#d97706" />
                           <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: parseFloat(v) || 0 }))} type="number" />
                           <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: parseFloat(v) || 0 }))} type="number" />
