@@ -515,8 +515,31 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
         
         // Auto select default packing method if exists
-        const defaultMethod = p.packingMethods?.find((m: any) => m.isDefault);
-        if (defaultMethod) {
+        const existingMethod = p.packingMethods?.find((m: any) => m.id === it.selectedPackingMethodId);
+        const defaultMethod = p.packingMethods?.find((m: any) => m.isDefault) || p.packingMethods?.[0];
+        
+        if (existingMethod) {
+          // Keep existing loaded packing method and its overrides
+          it.selectedPackingMethodId = existingMethod.id;
+          const isPallet = existingMethod.packageType?.endsWith('+ Pallet') || existingMethod.packageType === 'Pallet';
+          if (!it.packingSpecOverride) {
+            it.packingSpecOverride = {
+              packageType: existingMethod.packageType,
+              qtyPerPallet: existingMethod.qtyPerPallet || 0,
+              specWidth: isPallet ? (existingMethod.palletWidth || existingMethod.unitWidth || 0) : (existingMethod.unitWidth || 0),
+              specLength: isPallet ? (existingMethod.palletLength || existingMethod.unitLength || 0) : (existingMethod.unitLength || 0),
+              specHeight: isPallet ? (existingMethod.palletHeight || existingMethod.unitHeight || 0) : (existingMethod.unitHeight || 0),
+              weight: isPallet ? (existingMethod.palletWeight || existingMethod.unitWeight || 0) : (existingMethod.unitWeight || 0),
+              grossWeight: isPallet ? (existingMethod.palletGrossWeight || existingMethod.unitGrossWeight || 0) : (existingMethod.unitGrossWeight || existingMethod.unitWeight || 0),
+            };
+          }
+          if (existingMethod.qtyPerPallet && existingMethod.qtyPerPallet > 0) {
+            it.palletQty = Math.ceil(it.quantity / existingMethod.qtyPerPallet);
+          } else {
+            it.palletQty = 1;
+          }
+        } else if (defaultMethod) {
+          // If no existing method was loaded, fallback to defaultMethod
           it.selectedPackingMethodId = defaultMethod.id;
           const isPallet = defaultMethod.packageType?.endsWith('+ Pallet') || defaultMethod.packageType === 'Pallet';
           it.packingSpecOverride = {
