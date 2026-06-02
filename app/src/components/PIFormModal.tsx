@@ -1013,7 +1013,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     };
 
     localStorage.setItem('PI_SIMULATION_DATA', JSON.stringify(payload));
-    window.open('/container/index.html', '_blank');
+    
+    // Calculate centered coordinates for the popup window
+    const width = 1280;
+    const height = 900;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+    
+    window.open(
+      '/container/index.html', 
+      'YSACCPackingSimulation', 
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no,location=no,toolbar=no,menubar=no`
+    );
   };
 
   const handleDeleteRevision = async () => {
