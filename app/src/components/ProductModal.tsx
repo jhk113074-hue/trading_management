@@ -607,7 +607,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                           <th style={{ padding: '8px' }}>포장 형태</th>
                           <th style={{ padding: '8px' }}>단위</th>
                           <th style={{ padding: '8px' }}>개별 규격 (가x세x높, mm)</th>
-                          <th style={{ padding: '8px' }}>파렛트 규격 (가x세x높, mm / 적재수량)</th>
+                          <th style={{ padding: '8px' }}>파렛트 규격 (가x세x높, mm / 적재수량/중량)</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>기본 설정</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>작업</th>
                         </tr>
@@ -727,12 +727,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '8px' }}>🪵 파렛트별 적재 및 규격 (Pallet Spec)</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
-                          <Input label="적재 수량 (EA) ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: parseInt(v) || 0 }))} type="number" labelColor="#d97706" />
-                          <Input label="파렛트 가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="파렛트 세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="파렛트 높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: parseFloat(v) || 0 }))} type="number" />
-                          <Input label="파렛트 순중량 (kg)" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
-                          <Input label="파렛트 총중량 (kg)" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: parseInt(v) || 0 }))} type="number" labelColor="#d97706" />
+                          <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: parseFloat(v) || 0 }))} type="number" />
+                          <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: parseFloat(v) || 0 }))} type="number" />
+                          <Input label="높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: parseFloat(v) || 0 }))} type="number" />
+                          <Input label="순중량 (kg)" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
+                          <Input label="총중량 (kg)" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: parseFloat(v) || 0 }))} type="number" step="0.01" />
                         </div>
                       </div>
                     )}
