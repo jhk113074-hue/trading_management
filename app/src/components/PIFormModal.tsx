@@ -969,7 +969,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       
       return {
         desc: it.description,
-        qty: it.quantity,
+        qty: it.palletQty && it.palletQty > 0 ? it.palletQty : 1, // 제품 낱개 수량이 아닌, 포장된 최종 Pallet 수량 전달
         w: spec.specWidth || 0,
         d: spec.specLength || 0,
         h: spec.specHeight || 0,
