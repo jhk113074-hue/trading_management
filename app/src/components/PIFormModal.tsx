@@ -638,15 +638,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (it.packingSpecOverride) {
           const qpp = it.packingSpecOverride.qtyPerPallet;
           if (qpp && qpp > 0) {
-            it.palletQty = Math.ceil(value / qpp);
+            it.palletQty = parseFloat((value / qpp).toFixed(1));
           } else {
             it.palletQty = 1;
           }
         } else if (p) {
           if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.palletQty = Math.ceil(value / p.qtyPerPallet);
+            it.palletQty = parseFloat((value / p.qtyPerPallet).toFixed(1));
           } else if (p.weight && p.weight > 0) {
-            it.palletQty = Math.ceil(value / p.weight);
+            it.palletQty = parseFloat((value / p.weight).toFixed(1));
           }
         }
       }
@@ -1152,7 +1152,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '98%', maxWidth: '1200px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '98%', maxWidth: '1600px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
         
         {/* Header */}
         <div style={{ padding: '16px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
@@ -1469,9 +1469,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px' }}>
                       <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.palletQty)} 
-                        onChange={(e) => updateItem(idx, 'palletQty', parseCommas(e.target.value))} 
+                        type="number" 
+                        step="0.1"
+                        value={it.palletQty || ''} 
+                        onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
                     </td>
