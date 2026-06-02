@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -197,6 +197,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
 
+  const isLoadedRef = useRef(false);
+
   useEffect(() => {
     // Load Customers
     const loadData = async () => {
@@ -232,6 +234,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     });
 
     if (initialPI) {
+      // If we have already loaded the data for this modal session, do not re-load on subsequent prop updates
+      if (isLoadedRef.current) {
+        return () => {
+          unsubProducts();
+        };
+      }
+
       // Load Revisions & Line Items for initialPI
       const fetchRevisionsAndItems = async () => {
         try {
@@ -278,15 +287,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               }));
             }
           }
+          isLoadedRef.current = true;
         } catch (err: any) {
           console.error("Error loading PI revisions & items:", err);
         }
       };
       fetchRevisionsAndItems();
     } else {
-      // Generate temp PI number
-      const yy = new Date().getFullYear();
-      setFormData(prev => ({ ...prev, piNumber: `PI-YSACC-${yy}-TBD` }));
+      if (!isLoadedRef.current) {
+        // Generate temp PI number
+        const yy = new Date().getFullYear();
+        setFormData(prev => ({ ...prev, piNumber: `PI-YSACC-${yy}-TBD` }));
+        isLoadedRef.current = true;
+      }
     }
 
     return () => {
