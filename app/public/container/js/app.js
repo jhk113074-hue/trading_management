@@ -1821,6 +1821,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Load PI Simulation Data from localStorage (Integration) ---
+    const loadPiSimulationData = () => {
+        try {
+            const rawData = localStorage.getItem('PI_SIMULATION_DATA');
+            if (rawData) {
+                const data = JSON.parse(rawData);
+                if (data && data.type === 'LOAD_PI_DATA') {
+                    // Populate project fields
+                    if (customerInput) customerInput.value = data.customer || '';
+                    if (projectInput) projectInput.value = data.piNumber ? `${data.piNumber} 적재 계획` : '';
+                    if (dateInput && data.date) dateInput.value = data.date;
+                    if (serialInput) serialInput.value = data.piNumber || '';
+
+                    // Transform and push items
+                    if (Array.isArray(data.items)) {
+                        currentItems = data.items.map(it => ({
+                            id: generateId(),
+                            name: it.desc || '무명 화물',
+                            packageType: it.packageType || 'Pallet',
+                            contentDetails: '',
+                            w: parseFloat(it.w) || 0,
+                            d: parseFloat(it.d) || 0,
+                            h: parseFloat(it.h) || 0,
+                            netWeight: parseFloat(it.netWeight) || 0,
+                            grossWeight: parseFloat(it.grossWeight) || 0,
+                            weight: parseFloat(it.grossWeight) || 0, // compatibility
+                            qty: parseInt(it.qty, 10) || 0,
+                            stackable: it.stackable !== false,
+                            rotation: it.rotation !== false
+                        })).filter(it => it.qty > 0 && it.w > 0 && it.d > 0 && it.h > 0);
+                    }
+
+                    // Remove item to prevent re-triggering on fresh load
+                    localStorage.removeItem('PI_SIMULATION_DATA');
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load PI simulation data from localStorage:", e);
+        }
+    };
+
+    // Load integration data first
+    loadPiSimulationData();
+
     // Initial render
     renderItems();
     renderSimulationResult();
