@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginError = document.getElementById('login-error');
 
     const checkLogin = () => {
+        // Automatically bypass login if loaded inside an iframe (integrated mode)
+        if (window.self !== window.top) {
+            sessionStorage.setItem('ysacc_logged_in', 'true');
+        }
+
         if (sessionStorage.getItem('ysacc_logged_in') === 'true') {
             loginOverlay.style.display = 'none';
             mainApp.classList.remove('hidden');
