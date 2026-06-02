@@ -604,16 +604,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = getProjectData();
         let docId = data.id;
 
+        // Check if a project with same customerName, date, and serial already exists
+        const duplicateProject = savedProjects.find(p => 
+            p.customerName === data.customerName &&
+            p.date === data.date &&
+            p.serial === data.serial
+        );
+
         if (isSaveAs) {
             data.id = generateId(); // New ID
             data.createdAt = new Date().toISOString();
             currentProjectId = data.id;
             docId = data.id;
         } else {
-            if (!currentProjectId) {
-                data.createdAt = new Date().toISOString();
-                currentProjectId = data.id;
-                docId = data.id;
+            // If duplicate exists or we don't have currentProjectId, enforce generating a new project
+            if (duplicateProject || !currentProjectId) {
+                // If it's a duplicate of an existing project and we didn't explicitly load this exact ID,
+                // we should regenerate ID to prevent overwriting.
+                if (duplicateProject && currentProjectId !== duplicateProject.id) {
+                    data.id = generateId();
+                    data.createdAt = new Date().toISOString();
+                    currentProjectId = data.id;
+                    docId = data.id;
+                } else if (!currentProjectId) {
+                    data.id = generateId();
+                    data.createdAt = new Date().toISOString();
+                    currentProjectId = data.id;
+                    docId = data.id;
+                } else {
+                    // We loaded this exact project ID, so keep updating it
+                    const oldProj = savedProjects.find(p => p.id === currentProjectId);
+                    if (oldProj) {
+                        data.createdAt = oldProj.createdAt || new Date().toISOString();
+                    } else {
+                        data.createdAt = new Date().toISOString();
+                    }
+                }
             } else {
                 const oldProj = savedProjects.find(p => p.id === currentProjectId);
                 if (oldProj) {
