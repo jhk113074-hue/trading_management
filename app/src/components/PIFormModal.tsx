@@ -116,6 +116,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [selectedRevId, setSelectedRevId] = useState<string>('');
   const [dropdownRevId, setDropdownRevId] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null);
+  const [activePreviewName, setActivePreviewName] = useState<string>('');
 
   const handleFileUpload = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
@@ -131,7 +133,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const file = files[i];
       const uniqueFileName = `${Date.now()}_${file.name}`;
       // Firebase Storage Rules 수정을 피하기 위해 기존에 허용된 'tasks/' 경로를 재사용합니다.
-      const storageRef = ref(storage, `tasks/pi_attachments/${piId}/${uniqueFileName}`);
+      // 2레벨 경로 구조(tasks/taskId/fileName)를 엄격히 지켜야 규칙 검사를 통과할 수 있습니다.
+      const storageRef = ref(storage, `tasks/${piId}/${uniqueFileName}`);
       
       const uploadTask = uploadBytesResumable(storageRef, file);
       
@@ -1638,15 +1641,75 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </label>
             
             {formData.attachments && formData.attachments.length > 0 && (
-              <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-                {formData.attachments.map((att, idx) => (
-                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                    <a href={att.url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'none', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>
-                      {att.name} ({(att.size / 1024).toFixed(1)}KB)
-                    </a>
-                    <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 6px', fontSize: '12px', fontWeight: 'bold' }}>✕</button>
-                  </div>
-                ))}
+              <div style={{ marginTop: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+                {formData.attachments.map((att, idx) => {
+                  const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name);
+                  const isPdf = /\.pdf$/i.test(att.name);
+                  const isExcel = /\.(xls|xlsx)$/i.test(att.name);
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                        padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '10px', 
+                        fontSize: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                        transition: 'transform 0.15s, box-shadow 0.15s'
+                      }}
+                    >
+                      {/* Preview Thumbnail/Icon */}
+                      <div 
+                        onClick={() => { setActivePreviewUrl(att.url); setActivePreviewName(att.name); }}
+                        style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                        title="클릭하여 미리보기"
+                      >
+                        {isImg ? (
+                          <img 
+                            src={att.url} 
+                            alt={att.name} 
+                            style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                          />
+                        ) : (
+                          <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                            {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* File Name & Info */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                        <span 
+                          onClick={() => { setActivePreviewUrl(att.url); setActivePreviewName(att.name); }}
+                          style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          title="클릭하여 미리보기"
+                        >
+                          {att.name}
+                        </span>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => { setActivePreviewUrl(att.url); setActivePreviewName(att.name); }}
+                          style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                          title="미리보기"
+                        >
+                          🔍
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => handleDeleteAttachment(idx)} 
+                          style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                          title="삭제"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1700,7 +1763,67 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         <ProductModal
           initialProduct={editingProd}
           onClose={() => setIsProdModalOpen(false)}
+          products={products}
         />
+      )}
+      {activePreviewUrl && (
+        <div 
+          onClick={() => setActivePreviewUrl(null)} 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', 
+            justifyContent: 'center', alignItems: 'center', zIndex: 9999,
+            backdropFilter: 'blur(3px)'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              background: '#fff', padding: '16px', borderRadius: '12px', 
+              maxWidth: '90%', maxHeight: '90%', display: 'flex', 
+              flexDirection: 'column', alignItems: 'center', gap: '12px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.25)', position: 'relative'
+            }}
+          >
+            <button 
+              onClick={() => setActivePreviewUrl(null)} 
+              style={{ 
+                position: 'absolute', top: '-15px', right: '-15px', 
+                background: '#ef4444', color: '#fff', border: 'none', 
+                borderRadius: '50%', width: '30px', height: '30px', 
+                cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                justifyContent: 'center', fontWeight: 'bold', fontSize: '16px',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+              }}
+            >
+              ✕
+            </button>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              🔍 {activePreviewName}
+            </div>
+            {/\.(jpg|jpeg|png|gif|webp)$/i.test(activePreviewName) ? (
+              <img 
+                src={activePreviewUrl} 
+                alt="preview" 
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '6px' }} 
+              />
+            ) : (
+              <iframe 
+                src={activePreviewUrl} 
+                title="preview-iframe"
+                style={{ width: '80vw', height: '70vh', border: 'none' }}
+              />
+            )}
+            <a 
+              href={activePreviewUrl} 
+              target="_blank" 
+              rel="noreferrer" 
+              style={{ color: '#2563eb', fontWeight: 600, fontSize: '13px', textDecoration: 'none' }}
+            >
+              ↗️ 새 창으로 크게 보기
+            </a>
+          </div>
+        </div>
       )}
     </div>
   );

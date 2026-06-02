@@ -458,35 +458,70 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     worksheet.getCell(`D${r}`).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
   };
 
-  writeBank("Bank Name", "IBK (Industrial Bank of Korea)", currentRow); currentRow++;
-  writeBank("Beneficiary", isYS ? 'YS ACC' : 'YSACC CO., LTD.', currentRow); currentRow++;
-  writeBank("Address", "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea", currentRow); 
+  const bankName = "INDUSTRIAL BANK OF KOREA, SEOUL,KOREA";
+  const bankAddress = "50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA";
+  const beneficiary = isYS ? "YS ACC" : "YSACC Co.,LTD";
+  const bankAccountNo = isYS ? "940-013901-56-00011" : "143-129260-56-00012";
+  const swiftCode = isYS ? "IBKOKRSE" : "IBKOKRSEXXX";
+  const beneficiaryAddress = isYS 
+    ? "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea" 
+    : "201-1HO, 1251, GAROSU-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28420, SOUTH KOREA";
+
+  writeBank("Bank Name", bankName, currentRow); currentRow++;
+  
+  writeBank("Bank Address", bankAddress, currentRow); 
   worksheet.getRow(currentRow).height = 25; // multi-line address space
   worksheet.getCell(`B${currentRow}`).alignment = { wrapText: true, vertical: 'middle' };
   currentRow++;
-  writeBank("Account No.", "955-010464-04-015", currentRow); currentRow++;
-  writeBank("SWIFT Code", "KIHOKRPXXXX", currentRow); 
+  
+  writeBank("Beneficiary", beneficiary, currentRow); currentRow++;
+  
+  writeBank("Beneficiary Addr", beneficiaryAddress, currentRow); 
+  worksheet.getRow(currentRow).height = 25; // multi-line address space
+  worksheet.getCell(`B${currentRow}`).alignment = { wrapText: true, vertical: 'middle' };
+  currentRow++;
+  
+  writeBank("Account No.", bankAccountNo, currentRow); currentRow++;
+  writeBank("SWIFT Code", swiftCode, currentRow); 
 
   // Add Signatures on the right side of the bank details
   const sigStartRow = startBankRow;
   
   // Buyer Signature Box (F)
-  worksheet.mergeCells(`F${sigStartRow}:F${sigStartRow+4}`);
+  worksheet.mergeCells(`F${sigStartRow}:F${sigStartRow+5}`);
   const buyerBox = worksheet.getCell(`F${sigStartRow}`);
-  buyerBox.value = "CONSIGNEE (BUYER)\n\n\n\nAuthorized Signature";
+  buyerBox.value = "CONSIGNEE (BUYER)\n\n\n\n\nAuthorized Signature";
   buyerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
   buyerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
   buyerBox.border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
   buyerBox.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF8F8' } };
 
   // Seller Signature Box (G)
-  worksheet.mergeCells(`G${sigStartRow}:G${sigStartRow+4}`);
+  worksheet.mergeCells(`G${sigStartRow}:G${sigStartRow+5}`);
   const sellerBox = worksheet.getCell(`G${sigStartRow}`);
-  sellerBox.value = `${isYS ? 'YS ACC' : 'YSACC CO., LTD.'} (SELLER)\n\n\n\nAuthorized Signature`;
+  sellerBox.value = `${isYS ? 'YS ACC' : 'YSACC CO., LTD.'} (SELLER)\n\n\n\n\nAuthorized Signature`;
   sellerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
   sellerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
   sellerBox.border = { top: {style:'thin', color: {argb:'FFCBD5E1'}}, left: {style:'thin', color: {argb:'FFCBD5E1'}}, bottom: {style:'thin', color: {argb:'FFCBD5E1'}}, right: {style:'thin', color: {argb:'FFCBD5E1'}} };
   sellerBox.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F9FF' } };
+  
+  // Add signature image to G column over the seller signature box
+  try {
+    const sigResponse = await fetch('/signature.png');
+    const sigArrayBuffer = await sigResponse.arrayBuffer();
+    const sigImageId = workbook.addImage({
+      buffer: sigArrayBuffer,
+      extension: 'png'
+    });
+    // Column G is 0-indexed index 6. We place the image to hover inside cell G[sigStartRow+1.5]
+    worksheet.addImage(sigImageId, {
+      tl: { col: 6.2, row: sigStartRow + 1.2 },
+      ext: { width: 110, height: 50 },
+      editAs: 'absolute'
+    });
+  } catch (e) {
+    console.error("Failed to load signature image for Excel:", e);
+  }
   
   // Write to file
   const buffer = await workbook.xlsx.writeBuffer();

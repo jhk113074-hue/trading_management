@@ -125,67 +125,29 @@ export const TaskList: React.FC = () => {
     let result = [...tasks];
 
     // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
-    if (dateMode === 'daily') {
-      result = result.filter(task => {
-        const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+    result = result.filter(task => {
+      const isDone = task.status === 'DONE';
+      
+      // 완료되지 않은 일(미완료 업무)은 날짜 필터를 우회하여 화면에 항상 계속 표시합니다.
+      if (!isDone) return true;
 
-        // 완료된 업무: 완료일에만 표시
-        if (isDone && completedAt) {
-          const compStr = completedAt.toISOString().split('T')[0];
-          return compStr === selectedDate;
-        }
+      // 완료된(DONE) 업무에 대한 날짜별 필터링 처리
+      const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+      if (!completedAt) return false;
 
-        // 미완료 업무: startDate, dueDate, createdAt 기준 또는 현재 날짜가 일정 범위 내에 포함되는지 확인
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; // 날짜 없으면 항상 표시
-        
-        return dates.some(d => d === selectedDate) || 
-               (task.startDate && task.dueDate && task.startDate <= selectedDate && task.dueDate >= selectedDate);
-      });
-    } else if (dateMode === 'weekly') {
-      const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
-      const thisWeekStart = getWeekRange(0).start;
-
-      result = result.filter(task => {
-        const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-
-        // 완료된 업무는 완료된 주에만 보임. 다음 주부터는 숨김
-        if (isDone && completedAt) {
-          const completedWeek = Math.floor((completedAt.getTime() - thisWeekStart.getTime()) / (7 * 24 * 3600 * 1000));
-          if (completedWeek !== weekOffset) return false;
-          return true;
-        }
-
-        // 미완료 업무: startDate / dueDate / createdAt 기준으로 이번 주에 해당하는 것 표시
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; // 날짜 없으면 항상 표시
-        return dates.some(d => {
-          const dt = new Date(d);
-          return dt >= wStart && dt <= wEnd;
-        }) || (task.startDate && task.dueDate && new Date(task.startDate) <= wEnd && new Date(task.dueDate) >= wStart);
-      });
-    } else {
-      // 기간 검색
-      result = result.filter(task => {
-        const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-
-        // 완료된 업무: 완료일이 검색 기간 내에 있는지 확인
-        if (isDone && completedAt) {
-          const compStr = completedAt.toISOString().split('T')[0];
-          return compStr >= startDate && compStr <= endDate;
-        }
-
-        // 미완료 업무: 검색 기간과 겹치거나 범위에 속하는지 확인
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true;
-
-        return dates.some(d => d >= startDate && d <= endDate) ||
-               (task.startDate && task.dueDate && task.startDate <= endDate && task.dueDate >= startDate);
-      });
-    }
+      if (dateMode === 'daily') {
+        const compStr = completedAt.toISOString().split('T')[0];
+        return compStr === selectedDate;
+      } else if (dateMode === 'weekly') {
+        const thisWeekStart = getWeekRange(0).start;
+        const completedWeek = Math.floor((completedAt.getTime() - thisWeekStart.getTime()) / (7 * 24 * 3600 * 1000));
+        return completedWeek === weekOffset;
+      } else {
+        // 기간 검색
+        const compStr = completedAt.toISOString().split('T')[0];
+        return compStr >= startDate && compStr <= endDate;
+      }
+    });
 
     if (filterAssignee !== '전체 담당자') {
       result = result.filter(t => t.assigneeName === filterAssignee || t.assigneeId === filterAssignee);

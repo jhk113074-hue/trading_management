@@ -6,6 +6,7 @@ import type { Product, ProductPriceHistory } from '../types/product';
 interface Props {
   initialProduct?: Product;
   onClose: () => void;
+  products?: Product[];
 }
 
 export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
@@ -18,7 +19,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
   const [sameAsSupplier, setSameAsSupplier] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Product>>({
-    productCode: '', nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', imageUrl: '',
+    productCode: undefined, nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', imageUrl: '',
     supplierName: '', supplierCode: '', supplierContact: '', supplierPhone: '', supplierEmail: '', supplierAddress: '', minOrderQty: 0,
     manufacturerName: '', manufacturerCode: '', manufacturerContact: '', manufacturerPhone: '', manufacturerEmail: '', manufacturerAddress: '',
     purchasePrice: 0, currency: 'USD', priceValidFrom: '', priceValidTo: '', discountRate: 0, freightIncluded: 'N', purchasePrices: [],
@@ -44,6 +45,34 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         packingMethods: []
       }));
     }
+  }, [initialProduct]);
+
+  useEffect(() => {
+    // Only run for new product creation (not editing)
+    if (initialProduct) return;
+
+    const generateCode = async () => {
+      let maxNum = 0;
+      try {
+        const snap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+        snap.docs.forEach(d => {
+          const code = d.data().productCode || d.id;
+          if (code && typeof code === 'string' && /^P\d+$/i.test(code)) {
+            const num = parseInt(code.substring(1), 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+        console.log('자동 상품코드 계산: 최대번호=', maxNum);
+      } catch (err) {
+        console.error('상품코드 자동발번 오류:', err);
+      }
+
+      const nextCode = `P${String(maxNum + 1).padStart(4, '0')}`;
+      console.log('자동 상품코드 설정:', nextCode);
+      setFormData(prev => ({ ...prev, productCode: nextCode }));
+    };
+
+    generateCode();
   }, [initialProduct]);
 
   useEffect(() => {

@@ -67,7 +67,7 @@ export const refreshMicrosoftToken = async (userProfile: User | null): Promise<s
 
   // 아직 만료시간까지 5분(300초) 이상 여유가 있다면 기존 토큰 사용
   const expiresAt = msUser.microsoftTokenExpiresAt || 0;
-  if (Date.now() < expiresAt - 5 * 60 * 1000) {
+  if (msUser.microsoftAccessToken && Date.now() < expiresAt - 5 * 60 * 1000) {
     return msUser.microsoftAccessToken;
   }
 
@@ -112,10 +112,16 @@ export const refreshMicrosoftToken = async (userProfile: User | null): Promise<s
 
     console.log('MS To Do 액세스 토큰 자동 갱신 완료!');
     return newAccessToken;
-  } catch (err) {
+  } catch (err: any) {
     console.error('refreshMicrosoftToken error:', err);
-    // 에러 발생 시 기존 토큰으로 최선을 다해 fallback
-    return msUser.microsoftAccessToken || null;
+    
+    // 만약 토큰이 완전히 만료되었거나 처음부터 없었다면, 갱신 실패 시 폴백하지 않고 에러를 던져 재인증 유도
+    if (!msUser.microsoftAccessToken || Date.now() >= expiresAt) {
+      throw new Error(`MS To Do 인증 토큰이 만료되었으며 자동 갱신에 실패했습니다. 계정 비밀번호가 바뀌었거나 연동이 만료되었을 수 있습니다. [내 정보 수정] 메뉴에서 연동 해제 후 다시 연동을 시작해 주세요. (원인: ${err.message})`);
+    }
+    
+    // 아직 만료 전이라면 기존 토큰으로 최선을 다해 fallback
+    return msUser.microsoftAccessToken;
   }
 };
 
@@ -165,7 +171,16 @@ const getOrCreateTodoList = async (accessToken: string, userProfile: User): Prom
   });
 
   if (!createResponse.ok) {
-    throw new Error('Microsoft To Do 리스트 생성 실패');
+    let errDetail = '';
+    try {
+      const errJson = await createResponse.json();
+      errDetail = errJson.error?.message || JSON.stringify(errJson);
+    } catch (_) {
+      try {
+        errDetail = await createResponse.text();
+      } catch (__) {}
+    }
+    throw new Error(`Microsoft To Do 리스트 생성 실패 (HTTP ${createResponse.status} ${createResponse.statusText}): ${errDetail || '상세 정보 없음'}`);
   }
 
   const newListData = await createResponse.json();
@@ -336,7 +351,16 @@ export const syncMsTodoToFirebase = async (
     });
 
     if (!listResponse.ok) {
-      throw new Error('Microsoft To Do 리스트 목록 조회 실패');
+      let errDetail = '';
+      try {
+        const errJson = await listResponse.json();
+        errDetail = errJson.error?.message || JSON.stringify(errJson);
+      } catch (_) {
+        try {
+          errDetail = await listResponse.text();
+        } catch (__) {}
+      }
+      throw new Error(`Microsoft To Do 리스트 목록 조회 실패 (HTTP ${listResponse.status} ${listResponse.statusText}): ${errDetail || '상세 정보 없음'}`);
     }
 
     const listData = await listResponse.json();

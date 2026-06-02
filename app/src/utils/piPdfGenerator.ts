@@ -9,6 +9,16 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
   const issuerName = piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.';
   const logoVersion = Date.now();
 
+  const isYS = piData.issuingCompany === 'YS';
+  const bankName = "INDUSTRIAL BANK OF KOREA, SEOUL,KOREA";
+  const bankAddress = "50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA";
+  const beneficiary = isYS ? "YS ACC" : "YSACC Co.,LTD";
+  const bankAccountNo = isYS ? "940-013901-56-00011" : "143-129260-56-00012";
+  const swiftCode = isYS ? "IBKOKRSE" : "IBKOKRSEXXX";
+  const beneficiaryAddress = isYS 
+    ? "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea" 
+    : "201-1HO, 1251, GAROSU-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28420, SOUTH KOREA";
+
   const itemRows = items.map((item, index) => `
     <tr>
       <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; font-weight:500;">${index + 1}</td>
@@ -286,26 +296,30 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     <!-- Bank Details (Left) -->
     <div style="flex: 1.25;">
       <div class="section-title color-gold" style="margin-bottom: 3px;">BANK DETAILS</div>
-      <table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #cbd5e1;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; border: 1px solid #cbd5e1;">
         <tr>
-          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1; width:28%;">Bank Name</td>
-          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">IBK (Industrial Bank of Korea)</td>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1; width:28%;">Bank Name</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1;">${bankName}</td>
         </tr>
         <tr>
-          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Beneficiary</td>
-          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</td>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1;">Bank Address</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1; font-size: 8px; line-height: 1.2;">${bankAddress}</td>
         </tr>
         <tr>
-          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Address</td>
-          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1; font-size: 8.5px; line-height: 1.25;">111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea</td>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1;">Beneficiary</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1;">${beneficiary}</td>
         </tr>
         <tr>
-          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">Account No.</td>
-          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">955-010464-04-015</td>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1;">Beneficiary Addr</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1; font-size: 8px; line-height: 1.2;">${beneficiaryAddress}</td>
         </tr>
         <tr>
-          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:3px 6px; border:1px solid #cbd5e1;">SWIFT Code</td>
-          <td style="color:#0f172a; font-weight:700; padding:3px 6px; border:1px solid #cbd5e1;">KIHOKRPXXXX</td>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1;">Account No.</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1;">${bankAccountNo}</td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc; color:#475569; font-weight:600; padding:2px 5px; border:1px solid #cbd5e1;">SWIFT Code</td>
+          <td style="color:#0f172a; font-weight:700; padding:2px 5px; border:1px solid #cbd5e1;">${swiftCode}</td>
         </tr>
       </table>
     </div>
@@ -321,10 +335,12 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
           <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
         </div>
         <!-- Seller Sign -->
-        <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #eff6ff;">
-          <div style="font-weight: 700; color: #1f4e78; border-bottom: 1px solid #dbeafe; padding-bottom: 2px;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC'} (SELLER)</div>
-          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 10px;">Authorized Signature</div>
-          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
+        <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #eff6ff; position: relative;">
+          <div style="font-weight: 700; color: #1f4e78; border-bottom: 1px solid #dbeafe; padding-bottom: 2px; z-index: 10;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC'} (SELLER)</div>
+          <div style="height: 38px; display: flex; justify-content: center; align-items: center; position: relative;">
+            <img src="/signature.png?v=${logoVersion}" style="height: 48px; width: auto; object-fit: contain; position: absolute; top: -5px; z-index: 5;" />
+          </div>
+          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px; font-weight: 700; font-size: 8px; color: #475569; z-index: 10;">Authorized Signature</div>
         </div>
       </div>
     </div>

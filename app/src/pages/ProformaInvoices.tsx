@@ -12,10 +12,73 @@ export const ProformaInvoices: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [filterStart, setFilterStart] = useState('');
-  const [filterEnd, setFilterEnd] = useState('');
+  const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [weekOffset, setWeekOffset] = useState(0);
+
   const [filterCustomer, setFilterCustomer] = useState('');
-    const [filterPiNum, setFilterPiNum] = useState('');
+  const [filterPiNum, setFilterPiNum] = useState('');
+
+  const getWeekRange = (offset: number) => {
+    const now = new Date();
+    const day = now.getDay(); // 0=일, 1=월 ...
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const formatWeekLabel = (offset: number) => {
+    const { start, end } = getWeekRange(offset);
+    const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    if (offset === 0) return `이번 주 (${fmt(start)}~${fmt(end)})`;
+    if (offset === -1) return `지난 주 (${fmt(start)}~${fmt(end)})`;
+    if (offset === 1) return `다음 주 (${fmt(start)}~${fmt(end)})`;
+    return `${offset > 0 ? '+' : ''}${offset}주 (${fmt(start)}~${fmt(end)})`;
+  };
+
+  const handlePrevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const handleNextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const setRangePreset = (preset: 'today' | 'week' | 'month' | 'all') => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    if (preset === 'today') {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === 'week') {
+      const day = today.getDay();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      setStartDate(monday.toISOString().split('T')[0]);
+      setEndDate(sunday.toISOString().split('T')[0]);
+    } else if (preset === 'month') {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
+    } else if (preset === 'all') {
+      setStartDate('2020-01-01');
+      setEndDate('2030-12-31');
+    }
+  };
 
   // Sorting
   const [sortKey, setSortKey] = useState<keyof ProformaInvoice | 'customerName'>('piDate');
@@ -55,8 +118,20 @@ export const ProformaInvoices: React.FC = () => {
 
   const filteredAndSorted = useMemo(() => {
     let filtered = pis.filter(p => {
-      if (filterStart && p.piDate < filterStart) return false;
-      if (filterEnd && p.piDate > filterEnd) return false;
+      // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
+      if (dateMode === 'daily') {
+        if (p.piDate !== selectedDate) return false;
+      } else if (dateMode === 'weekly') {
+        const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
+        if (!p.piDate) return false;
+        const dt = new Date(p.piDate);
+        if (dt < wStart || dt > wEnd) return false;
+      } else {
+        // 기간 검색
+        if (!p.piDate) return false;
+        if (p.piDate < startDate || p.piDate > endDate) return false;
+      }
+
       if (filterCustomer && p.customerId !== filterCustomer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
       return true;
@@ -80,7 +155,7 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, customers, filterStart, filterEnd, filterCustomer, filterPiNum, sortKey, sortDir]);
+  }, [pis, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterPiNum, sortKey, sortDir]);
 
   const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
     if (sortKey === key) {
@@ -123,19 +198,162 @@ export const ProformaInvoices: React.FC = () => {
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-        <span style={{ color: '#6b7280' }}>~</span>
-        <input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px' }}>
+        {/* ── 조회 모드 탭 ── */}
+        <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+          <button
+            onClick={() => setDateMode('daily')}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              background: dateMode === 'daily' ? '#3b82f6' : '#fff',
+              color: dateMode === 'daily' ? '#fff' : '#475569',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '12px',
+              transition: 'all 0.15s'
+            }}
+          >
+            일간
+          </button>
+          <button
+            onClick={() => setDateMode('weekly')}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              background: dateMode === 'weekly' ? '#3b82f6' : '#fff',
+              color: dateMode === 'weekly' ? '#fff' : '#475569',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '12px',
+              transition: 'all 0.15s',
+              borderLeft: '1px solid #cbd5e1'
+            }}
+          >
+            주간
+          </button>
+          <button
+            onClick={() => setDateMode('range')}
+            style={{
+              padding: '6px 12px',
+              border: 'none',
+              background: dateMode === 'range' ? '#3b82f6' : '#fff',
+              color: dateMode === 'range' ? '#fff' : '#475569',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '12px',
+              transition: 'all 0.15s',
+              borderLeft: '1px solid #cbd5e1'
+            }}
+          >
+            기간 검색
+          </button>
+        </div>
+
+        {/* ── 상세 날짜 선택 영역 ── */}
+        {dateMode === 'daily' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+            <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid #e2e8f0' }}>‹</button>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={e => setSelectedDate(e.target.value)}
+              style={{
+                padding: '4px 10px',
+                border: 'none',
+                outline: 'none',
+                fontSize: '13px',
+                fontWeight: 700,
+                color: '#1e293b',
+                cursor: 'pointer',
+                background: '#fff'
+              }}
+            />
+            <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid #e2e8f0' }}>›</button>
+            {selectedDate !== new Date().toISOString().split('T')[0] && (
+              <button
+                onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+                style={{
+                  padding: '6px 12px',
+                  border: 'none',
+                  borderLeft: '1px solid #e2e8f0',
+                  background: '#f0fdf4',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#16a34a'
+                }}
+              >
+                오늘
+              </button>
+            )}
+          </div>
+        )}
+
+        {dateMode === 'weekly' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>‹</button>
+            <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
+              📅 {formatWeekLabel(weekOffset)}
+            </div>
+            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>›</button>
+            {weekOffset !== 0 && (
+              <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+            )}
+          </div>
+        )}
+
+        {dateMode === 'range' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#1e293b',
+                  cursor: 'pointer'
+                }}
+              />
+              <span style={{ padding: '0 8px', color: '#94a3b8', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '30px', display: 'flex', alignItems: 'center' }}>~</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: '#1e293b',
+                  cursor: 'pointer'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button onClick={() => setRangePreset('today')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>오늘</button>
+              <button onClick={() => setRangePreset('week')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번주</button>
+              <button onClick={() => setRangePreset('month')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번달</button>
+              <button onClick={() => setRangePreset('all')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>전체</button>
+            </div>
+          </div>
+        )}
+        
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
           <option value="">전체 고객</option>
           {Object.entries(customers).map(([id, c]) => (
             <option key={id} value={id}>{c.name}</option>
           ))}
         </select>
         
-        <input type="text" placeholder="PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '180px' }} />
-
+        <input type="text" placeholder="PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '180px', fontSize: '13px' }} />
+ 
         <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: 600, color: '#475569' }}>
           총 {filteredAndSorted.length}건
         </span>

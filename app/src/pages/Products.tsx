@@ -404,6 +404,7 @@ export const Products: React.FC = () => {
         <ProductModal 
           initialProduct={editingProdId ? products.find(p => p.id === editingProdId) : undefined}
           onClose={() => setIsModalOpen(false)}
+          products={products}
         />
       )}
     </div>
