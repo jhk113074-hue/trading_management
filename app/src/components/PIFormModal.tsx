@@ -90,8 +90,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       ];
       for (const key of safeFields) {
         const val = pi[key];
-        if (val !== undefined && val !== null && (typeof val === 'string' || typeof val === 'number')) {
-          (defaults as any)[key] = val;
+        if (val !== undefined && val !== null) {
+          if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' || Array.isArray(val)) {
+            (defaults as any)[key] = val;
+          }
         }
       }
       // Handle arrays separately
@@ -978,6 +980,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           }
         }
       }
+
+      // Reload revisions in real-time after save
+      const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions"));
+      if (!revSnap.empty) {
+        const revList = revSnap.docs.map(d => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+          };
+        }).sort((a: any, b: any) => (b.version || 0) - (a.version || 0));
+        setRevisions(revList);
+
+        // Update selected states to the saved revision
+        setSelectedRevId(revRef.id);
+        setDropdownRevId(revRef.id);
+      }
+      
+      // Clear revision reason input
+      setRevisionReason('');
 
       alert(isRevision ? `✅ Revision 저장 완료! (R${version})` : '✅ 일반저장 완료!');
       // onClose(); 삭제됨: 저장 후 창 닫지 않음
