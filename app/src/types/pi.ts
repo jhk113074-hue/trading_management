@@ -33,6 +33,14 @@ export interface PIRevision {
   createdAt: any;
   updatedAt: any;
   items: PIItem[];
+  exchangeRate?: number;
+  remarks?: string;
+  incoterms?: string;
+  destinationPort?: string;
+  paymentTerms?: string;
+  shippingMethod?: string;
+  packagingSpec?: string;
+  attachments?: { name: string; url: string; size: number; path: string }[];
 }
 
 export interface ProformaInvoice {

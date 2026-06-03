@@ -286,6 +286,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 ...(latestRevData.paymentTerms && { paymentTerms: latestRevData.paymentTerms }),
                 ...(latestRevData.shippingMethod && { shippingMethod: latestRevData.shippingMethod }),
                 ...(latestRevData.packagingSpec && { packagingSpec: latestRevData.packagingSpec }),
+                attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
               }));
             }
           }
@@ -931,6 +932,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         version,
         revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
         items,
+        exchangeRate: formData.exchangeRate,
+        remarks: formData.remarks,
+        incoterms: formData.incoterms,
+        destinationPort: formData.destinationPort,
+        paymentTerms: formData.paymentTerms,
+        shippingMethod: formData.shippingMethod,
+        packagingSpec: formData.packagingSpec,
+        attachments: formData.attachments || [],
         createdAt: existingCreatedAt || serverTimestamp(),
         updatedAt: serverTimestamp()
       };
@@ -1157,13 +1166,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         setItems(loadedItems);
         
         // If the revision saved special custom values (like exchangeRate, remarks etc.), we can load them too
-        if (data.exchangeRate) setFormData(prev => ({ ...prev, exchangeRate: data.exchangeRate }));
-        if (data.remarks) setFormData(prev => ({ ...prev, remarks: data.remarks }));
-        if (data.incoterms) setFormData(prev => ({ ...prev, incoterms: data.incoterms }));
-        if (data.destinationPort) setFormData(prev => ({ ...prev, destinationPort: data.destinationPort }));
-        if (data.paymentTerms) setFormData(prev => ({ ...prev, paymentTerms: data.paymentTerms }));
-        if (data.shippingMethod) setFormData(prev => ({ ...prev, shippingMethod: data.shippingMethod }));
-        if (data.packagingSpec) setFormData(prev => ({ ...prev, packagingSpec: data.packagingSpec }));
+        setFormData(prev => ({
+          ...prev,
+          exchangeRate: data.exchangeRate !== undefined ? data.exchangeRate : prev.exchangeRate,
+          remarks: data.remarks !== undefined ? data.remarks : prev.remarks,
+          incoterms: data.incoterms !== undefined ? data.incoterms : prev.incoterms,
+          destinationPort: data.destinationPort !== undefined ? data.destinationPort : prev.destinationPort,
+          paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : prev.paymentTerms,
+          shippingMethod: data.shippingMethod !== undefined ? data.shippingMethod : prev.shippingMethod,
+          packagingSpec: data.packagingSpec !== undefined ? data.packagingSpec : prev.packagingSpec,
+          attachments: data.attachments !== undefined ? data.attachments : (prev.attachments || [])
+        }));
         
         alert(`ℹ️ Version ${data.version || ''}의 데이터가 로드되었습니다.`);
       }
