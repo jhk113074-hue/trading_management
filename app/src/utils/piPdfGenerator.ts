@@ -294,7 +294,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
   <!-- Bank Details & Signatures side-by-side section -->
   <div style="display: flex; justify-content: space-between; margin-top: 5px; margin-bottom: 12px; gap: 20px;">
     <!-- Bank Details (Left) -->
-    <div style="flex: 0.8;">
+    <div style="flex: 0.65;">
       <div class="section-title color-gold" style="margin-bottom: 3px;">BANK DETAILS</div>
       <table style="width: 100%; border-collapse: collapse; font-size: 9.5px; border: 1px solid #cbd5e1;">
         <tr>
@@ -325,20 +325,20 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     </div>
     
     <!-- Signatures (Right) -->
-    <div style="flex: 1.2;">
+    <div style="flex: 1.35;">
       <div class="section-title color-red" style="margin-bottom: 3px; text-align: right;">SIGNATURES</div>
-      <div style="display: flex; gap: 8px; height: 82px; font-size: 9.5px;">
+      <div style="display: flex; gap: 8px; height: 100px; font-size: 9.5px;">
         <!-- Buyer Sign -->
         <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #fff8f8;">
           <div style="font-weight: 700; color: #475569; border-bottom: 1px solid #fca5a5; padding-bottom: 2px;">CONSIGNEE (BUYER)</div>
-          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 15px;">Authorized Signature</div>
+          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 25px;">Authorized Signature</div>
           <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
         </div>
         <!-- Seller Sign -->
         <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #eff6ff; position: relative;">
           <div style="font-weight: 700; color: #1f4e78; border-bottom: 1px solid #dbeafe; padding-bottom: 2px; z-index: 10;">${piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC'} (SELLER)</div>
-          <div style="height: 52px; display: flex; justify-content: center; align-items: center; position: relative;">
-            <img src="/signature.png?v=${logoVersion}" style="height: 65px; width: auto; object-fit: contain; position: absolute; top: -5px; z-index: 5;" />
+          <div style="height: 70px; display: flex; justify-content: center; align-items: center; position: relative;">
+            <img src="/signature.png?v=${logoVersion}" style="height: 80px; width: auto; object-fit: contain; position: absolute; top: -5px; z-index: 5;" />
           </div>
           <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px; font-weight: 700; font-size: 8.5px; color: #475569; z-index: 10;">Authorized Signature</div>
         </div>
@@ -356,7 +356,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
 </html>
   `;
 
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open('', '_blank', 'width=900,height=950,scrollbars=yes,resizable=yes');
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
