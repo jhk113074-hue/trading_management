@@ -192,6 +192,10 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
           </td>
         </tr>
         <tr>
+          <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">YOUR REF.</td>
+          <td style="color: #0f172a; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center;">${piData.yourRef || '-'}</td>
+        </tr>
+        <tr>
           <td style="background: #f8fafc; color: #475569; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center; font-size: 9.5px; text-transform: uppercase;">DATE</td>
           <td style="color: #0f172a; font-weight: 700; padding: 4px 8px; border: 1px solid #cbd5e1; text-align: center;">${piData.piDate || '-'}</td>
         </tr>

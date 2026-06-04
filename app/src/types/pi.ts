@@ -42,6 +42,7 @@ export interface PIRevision {
   packagingSpec?: string;
   deliveryTerm?: string;
   origin?: string;
+  yourRef?: string;
   attachments?: { name: string; url: string; size: number; path: string }[];
 }
 
@@ -70,6 +71,7 @@ export interface ProformaInvoice {
   remarks: string;
   deliveryTerm?: string;
   origin?: string;
+  yourRef?: string;
   
   handlingFee: number;
   freightCharges: Array<{

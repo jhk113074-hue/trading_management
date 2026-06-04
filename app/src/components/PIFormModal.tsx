@@ -72,7 +72,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       incoterms: '', destinationPort: '', departurePort: 'Busan, Korea',
       packagingSpec: 'Export Standard Packaging.', validityDesc: '4 weeks from the offered date',
       paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00, remarks: '',
-      deliveryTerm: '', origin: '',
+      deliveryTerm: '', origin: '', yourRef: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
       status: 'draft', currentVersion: 1, createdByName: currentUser,
@@ -87,7 +87,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         'customerId', 'customerName', 'contactPerson', 'email',
         'incoterms', 'destinationPort', 'departurePort',
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
-        'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'handlingFee', 'freightTotal', 'insurance',
+        'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'yourRef', 'handlingFee', 'freightTotal', 'insurance',
         'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
         'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments'
       ];
@@ -291,6 +291,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 ...(latestRevData.packagingSpec && { packagingSpec: latestRevData.packagingSpec }),
                 ...(latestRevData.deliveryTerm && { deliveryTerm: latestRevData.deliveryTerm }),
                 ...(latestRevData.origin && { origin: latestRevData.origin }),
+                ...(latestRevData.yourRef && { yourRef: latestRevData.yourRef }),
                 attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
               }));
             }
@@ -948,6 +949,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         packagingSpec: formData.packagingSpec,
         deliveryTerm: formData.deliveryTerm,
         origin: formData.origin,
+        yourRef: formData.yourRef,
         attachments: formData.attachments || [],
         createdAt: existingCreatedAt || serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -1186,6 +1188,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           packagingSpec: data.packagingSpec !== undefined ? data.packagingSpec : prev.packagingSpec,
           deliveryTerm: data.deliveryTerm !== undefined ? data.deliveryTerm : prev.deliveryTerm,
           origin: data.origin !== undefined ? data.origin : prev.origin,
+          yourRef: data.yourRef !== undefined ? data.yourRef : prev.yourRef,
           attachments: data.attachments !== undefined ? data.attachments : (prev.attachments || [])
         }));
         
@@ -1298,8 +1301,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
             <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
+            <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
             <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
             <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
             <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />

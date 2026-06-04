@@ -125,6 +125,27 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`A${currentRow}`).value = piData.customerName || '-';
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF0F172A' } };
   
+  // YOUR REF.
+  worksheet.getCell(`E${currentRow}`).value = "YOUR REF.";
+  worksheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
+  worksheet.getCell(`E${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+  worksheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+  worksheet.getCell(`E${currentRow}`).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
+  worksheet.mergeCells(`F${currentRow}:G${currentRow}`);
+  worksheet.getCell(`F${currentRow}`).value = piData.yourRef || '-';
+  worksheet.getCell(`F${currentRow}`).font = { name: 'Arial', size: 10, bold: true };
+  worksheet.getCell(`F${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+  worksheet.getCell(`F${currentRow}`).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+
+  currentRow++;
+
+  // Address
+  worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
+  worksheet.getCell(`A${currentRow}`).value = `Address: ${(piData as any).customerAddress || '-'}`;
+  worksheet.getCell(`A${currentRow}`).font = { size: 9, color: { argb: 'FF334155' } };
+  
+  // DATE
   worksheet.getCell(`E${currentRow}`).value = "DATE";
   worksheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
   worksheet.getCell(`E${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
@@ -139,11 +160,12 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   currentRow++;
 
-  // Address
+  // Attn
   worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
-  worksheet.getCell(`A${currentRow}`).value = `Address: ${(piData as any).customerAddress || '-'}`;
+  worksheet.getCell(`A${currentRow}`).value = `Attn: ${piData.contactPerson || '-'}`;
   worksheet.getCell(`A${currentRow}`).font = { size: 9, color: { argb: 'FF334155' } };
-  
+
+  // VALID UNTIL
   worksheet.getCell(`E${currentRow}`).value = "VALID UNTIL";
   worksheet.getCell(`E${currentRow}`).font = { name: 'Arial', size: 9, bold: true, color: { argb: 'FF475569' } };
   worksheet.getCell(`E${currentRow}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
@@ -156,12 +178,6 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`F${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
   worksheet.getCell(`F${currentRow}`).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
 
-  currentRow++;
-
-  // Attn
-  worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
-  worksheet.getCell(`A${currentRow}`).value = `Attn: ${piData.contactPerson || '-'}`;
-  worksheet.getCell(`A${currentRow}`).font = { size: 9, color: { argb: 'FF334155' } };
   currentRow++;
 
   // Email
