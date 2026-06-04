@@ -331,8 +331,10 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         <!-- Buyer Sign -->
         <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #fff8f8;">
           <div style="font-weight: 700; color: #475569; border-bottom: 1px solid #fca5a5; padding-bottom: 2px;">CONSIGNEE (BUYER)</div>
-          <div style="color: #94a3b8; font-style: italic; font-size: 8.5px; margin-top: 25px;">Authorized Signature</div>
-          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px;"></div>
+          <div style="height: 70px; display: flex; justify-content: center; align-items: center; font-weight: 800; font-size: 13.5px; color: #0f172a; padding: 0 4px; word-break: break-word; line-height: 1.2;">
+            ${piData.customerName || ''}
+          </div>
+          <div style="border-top: 1px dashed #cbd5e1; margin-top: 2px; font-weight: 700; font-size: 8.5px; color: #475569;">Authorized Signature</div>
         </div>
         <!-- Seller Sign -->
         <div style="flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; text-align: center; background: #eff6ff; position: relative;">
