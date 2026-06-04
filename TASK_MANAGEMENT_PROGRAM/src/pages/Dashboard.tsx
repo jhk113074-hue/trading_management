@@ -437,39 +437,41 @@ export const Dashboard: React.FC = () => {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {filteredTasks.filter(t => {
-                const s = t.status?.toUpperCase();
-                if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
-                if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
-                if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
-                return s === 'HOLDING' || s === '보류';
-              }).map(task => (
-                <div key={task.id} onClick={() => setEditingTask(task)} className="task-card" style={{ background: '#fff', borderRadius: '8px', padding: '12px', border: '1px solid #e2e8f0', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', flex: 1 }}>{task.title}</div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '8px' }}>{task.quadrant || 'Q2'}</div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-                    <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>업무유형</div>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.type === 'PROJECT' ? '프로젝트' : '일반'}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+                {filteredTasks.filter(t => {
+                  const s = t.status?.toUpperCase();
+                  if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                  if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
+                  if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
+                  return s === 'HOLDING' || s === '보류';
+                }).map(task => (
+                  <div key={task.id} onClick={() => setEditingTask(task)} className="task-card" style={{ background: '#fff', borderRadius: '8px', padding: '12px', border: '1px solid #e2e8f0', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#1e293b', flex: 1 }}>{task.title}</div>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '8px' }}>{task.quadrant || 'Q2'}</div>
                     </div>
-                    <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>일정기반</div>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                      <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>업무유형</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.type === 'PROJECT' ? '프로젝트' : '일반'}</div>
+                      </div>
+                      <div style={{ border: '1px solid #f1f5f9', padding: '4px', borderRadius: '4px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>일정기반</div>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700 }}>{task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>마감 {task.dueDate || '-'}</span>
+                        {(task.commentCount ?? 0) > 0 && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 6px', borderRadius: '10px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                        )}
+                      </div>
+                      <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#64748b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>마감 {task.dueDate || '-'}</span>
-                      {(task.commentCount ?? 0) > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 6px', borderRadius: '10px', fontWeight: 700 }}>💬 {task.commentCount}</span>
-                      )}
-                    </div>
-                    <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
               {basket.id === 'TODO' && filter === '내 업무' && (
                 <input 
                   type="text" 

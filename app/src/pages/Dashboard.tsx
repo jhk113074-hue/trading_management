@@ -829,58 +829,60 @@ export const Dashboard: React.FC = () => {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {filteredTasks.filter(t => {
-                const s = t.status?.toUpperCase();
-                if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
-                if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
-                if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
-                return s === 'HOLDING' || s === '보류';
-              }).map(task => (
-                <div
-                  key={task.id}
-                  draggable
-                  onDragStart={e => handleDragStart(e, task.id)}
-                  onDragEnd={handleDragEnd}
-                  onClick={() => setEditingTask(task)}
-                  className="task-card"
-                  style={{
-                    background: '#fff',
-                    borderRadius: '6px',
-                    padding: '8px 10px',
-                    border: '1px solid #e2e8f0',
-                    cursor: 'grab',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    opacity: draggingId === task.id ? 0.4 : 1
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', flex: 1, lineHeight: '1.25' }}>{task.title}</div>
-                    <div style={{ fontSize: '0.6rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '6px' }}>{task.quadrant || 'Q2'}</div>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.62rem', background: '#eff6ff', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
-                      {task.type === 'PROJECT' ? '프로젝트' : '일반'}
-                    </span>
-                    <span style={{ fontSize: '0.62rem', background: '#f0fdf4', color: '#16a34a', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
-                      {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>마감 {task.dueDate || '-'}</span>
-                      {(task.commentCount ?? 0) > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 4px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
-                      )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '480px', overflowY: 'auto', paddingRight: '4px' }}>
+                {filteredTasks.filter(t => {
+                  const s = t.status?.toUpperCase();
+                  if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
+                  if (basket.id === 'IN_PROGRESS') return s === 'IN_PROGRESS' || s === '진행중';
+                  if (basket.id === 'DONE') return s === 'DONE' || s === '완료';
+                  return s === 'HOLDING' || s === '보류';
+                }).map(task => (
+                  <div
+                    key={task.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, task.id)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => setEditingTask(task)}
+                    className="task-card"
+                    style={{
+                      background: '#fff',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'grab',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      opacity: draggingId === task.id ? 0.4 : 1
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', flex: 1, lineHeight: '1.25' }}>{task.title}</div>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '6px' }}>{task.quadrant || 'Q2'}</div>
                     </div>
-                    <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
+                    
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.62rem', background: '#eff6ff', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                        {task.type === 'PROJECT' ? '프로젝트' : '일반'}
+                      </span>
+                      <span style={{ fontSize: '0.62rem', background: '#f0fdf4', color: '#16a34a', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                        {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>마감 {task.dueDate || '-'}</span>
+                        {(task.commentCount ?? 0) > 0 && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 4px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                        )}
+                      </div>
+                      <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
               {basket.id === 'TODO' && filter === '내 업무' && (
                 <input 
                   type="text" 
