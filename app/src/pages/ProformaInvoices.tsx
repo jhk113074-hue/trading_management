@@ -12,10 +12,10 @@ export const ProformaInvoices: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
+  const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('range');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>('2020-01-01');
+  const [endDate, setEndDate] = useState<string>('2030-12-31');
   const [weekOffset, setWeekOffset] = useState(0);
 
   const [filterCustomer, setFilterCustomer] = useState('');
