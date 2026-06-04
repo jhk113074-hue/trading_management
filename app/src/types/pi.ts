@@ -40,6 +40,8 @@ export interface PIRevision {
   paymentTerms?: string;
   shippingMethod?: string;
   packagingSpec?: string;
+  deliveryTerm?: string;
+  origin?: string;
   attachments?: { name: string; url: string; size: number; path: string }[];
 }
 
@@ -66,6 +68,8 @@ export interface ProformaInvoice {
   shippingMethod: string;
   exchangeRate: number;
   remarks: string;
+  deliveryTerm?: string;
+  origin?: string;
   
   handlingFee: number;
   freightCharges: Array<{

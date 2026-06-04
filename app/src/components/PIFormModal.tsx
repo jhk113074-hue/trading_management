@@ -38,7 +38,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       "Usance L/C 60days",
       "Usance L/C 90days"
     ],
-    shippingMethods: ["Sea Freight", "Air Freight", "Truck"]
+    shippingMethods: ["Sea Freight", "Air Freight", "Truck"],
+    deliveryTerms: ["8 weeks after receipt LC"],
+    origins: ["KOREA", "CHINA", "KOREA/CHINA"]
   });
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       incoterms: '', destinationPort: '', departurePort: 'Busan, Korea',
       packagingSpec: 'Export Standard Packaging.', validityDesc: '4 weeks from the offered date',
       paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00, remarks: '',
+      deliveryTerm: '', origin: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
       status: 'draft', currentVersion: 1, createdByName: currentUser,
@@ -84,7 +87,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         'customerId', 'customerName', 'contactPerson', 'email',
         'incoterms', 'destinationPort', 'departurePort',
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
-        'exchangeRate', 'remarks', 'handlingFee', 'freightTotal', 'insurance',
+        'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'handlingFee', 'freightTotal', 'insurance',
         'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
         'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments'
       ];
@@ -286,6 +289,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 ...(latestRevData.paymentTerms && { paymentTerms: latestRevData.paymentTerms }),
                 ...(latestRevData.shippingMethod && { shippingMethod: latestRevData.shippingMethod }),
                 ...(latestRevData.packagingSpec && { packagingSpec: latestRevData.packagingSpec }),
+                ...(latestRevData.deliveryTerm && { deliveryTerm: latestRevData.deliveryTerm }),
+                ...(latestRevData.origin && { origin: latestRevData.origin }),
                 attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
               }));
             }
@@ -707,7 +712,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         packagingSpec: 'packagingSpecs',
         validityDesc: 'validityDescriptions',
         paymentTerms: 'paymentTerms',
-        shippingMethod: 'shippingMethods'
+        shippingMethod: 'shippingMethods',
+        deliveryTerm: 'deliveryTerms',
+        origin: 'origins'
       };
       const dbField = fieldMapping[field];
       
@@ -939,6 +946,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         paymentTerms: formData.paymentTerms,
         shippingMethod: formData.shippingMethod,
         packagingSpec: formData.packagingSpec,
+        deliveryTerm: formData.deliveryTerm,
+        origin: formData.origin,
         attachments: formData.attachments || [],
         createdAt: existingCreatedAt || serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -1175,6 +1184,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : prev.paymentTerms,
           shippingMethod: data.shippingMethod !== undefined ? data.shippingMethod : prev.shippingMethod,
           packagingSpec: data.packagingSpec !== undefined ? data.packagingSpec : prev.packagingSpec,
+          deliveryTerm: data.deliveryTerm !== undefined ? data.deliveryTerm : prev.deliveryTerm,
+          origin: data.origin !== undefined ? data.origin : prev.origin,
           attachments: data.attachments !== undefined ? data.attachments : (prev.attachments || [])
         }));
         
@@ -1358,7 +1369,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
             <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
             <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
             <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
@@ -1366,8 +1377,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
             <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
             <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
+            <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
+            <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
             <Input label="Exchange Rate (KRW/USD)" type="number" step="0.01" value={formData.exchangeRate} onChange={(v: any) => setFormData(prev => ({...prev, exchangeRate: parseFloat(v)||1}))} />
-            <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
               <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>
             </div>

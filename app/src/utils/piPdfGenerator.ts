@@ -226,6 +226,12 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
         <td class="terms-label">Packaging</td>
         <td class="terms-value">${piData.packagingSpec || '-'}</td>
       </tr>
+      <tr>
+        <td class="terms-label">Delivery Term</td>
+        <td class="terms-value">${piData.deliveryTerm || '-'}</td>
+        <td class="terms-label">Origin</td>
+        <td class="terms-value">${piData.origin || '-'}</td>
+      </tr>
     </table>
   </div>
 
