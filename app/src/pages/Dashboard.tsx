@@ -311,7 +311,7 @@ export const Dashboard: React.FC = () => {
       </div>
       <div
         onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, memberId)}
-        style={{ flex: 1, minHeight: '120px', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#fff', transition: 'background 0.15s' }}
+        style={{ flex: 1, minHeight: '120px', maxHeight: '380px', overflowY: 'auto', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0 0 8px 8px', background: '#fff', transition: 'background 0.15s' }}
       >
         {zoneTasks.length === 0 ? (
           <div style={{ height: '100%', minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: '6px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', padding: '10px' }}>여기에 업무를<br />드래그하여 배정</div>
@@ -917,7 +917,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <div
               onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, null)}
-              style={{ flex: 1, minHeight: '120px', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0', background: '#fff', transition: 'background 0.15s' }}
+              style={{ flex: 1, minHeight: '120px', maxHeight: '380px', overflowY: 'auto', padding: '8px', border: '1px solid var(--border-color)', borderTop: 'none', borderRadius: '0', background: '#fff', transition: 'background 0.15s' }}
             >
               {unassignedTasks.length === 0 ? (
                 <div style={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: '6px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center', padding: '10px' }}>여기에 업무를<br />드래그하여 배정</div>
