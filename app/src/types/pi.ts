@@ -35,6 +35,7 @@ export interface PIRevision {
   items: PIItem[];
   exchangeRate?: number;
   remarks?: string;
+  customerAddress?: string;
   incoterms?: string;
   destinationPort?: string;
   paymentTerms?: string;
@@ -57,6 +58,7 @@ export interface ProformaInvoice {
   
   customerId: string;
   customerName: string;
+  customerAddress?: string;
   contactPerson: string;
   email: string;
   

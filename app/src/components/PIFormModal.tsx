@@ -20,7 +20,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [showNewCust, setShowNewCust] = useState(false);
-  const [newCustForm, setNewCustForm] = useState({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '' });
+  const [newCustForm, setNewCustForm] = useState({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '', addressEn: '' });
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
 
@@ -68,10 +68,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       validityDays: 30,
       validUntilDate: '',
       issuingCompany: 'YSACC',
-      customerId: '', customerName: '', contactPerson: '', email: '',
+      customerId: '', customerName: '', customerAddress: '', contactPerson: '', email: '',
       incoterms: '', destinationPort: '', departurePort: 'Busan, Korea',
-      packagingSpec: 'Export Standard Packaging.', validityDesc: '4 weeks from the offered date',
-      paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00, remarks: '',
+      paymentTerms: '', shippingMethod: 'Sea Freight', exchangeRate: 1400.00,
+      remarks: '① This is a basic price. Prices are subject to change based on your additional requests.\n② Shipping cost may vary monthly depending on the carrier\'s current conditions.',
       deliveryTerm: '', origin: '', yourRef: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
@@ -84,7 +84,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const pi = initialPI as any;
       const safeFields: (keyof ProformaInvoice)[] = [
         'piNumber', 'piDate', 'validityDays', 'validUntilDate', 'issuingCompany',
-        'customerId', 'customerName', 'contactPerson', 'email',
+        'customerId', 'customerName', 'customerAddress', 'contactPerson', 'email',
         'incoterms', 'destinationPort', 'departurePort',
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
         'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'yourRef', 'handlingFee', 'freightTotal', 'insurance',
@@ -214,12 +214,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         // Self-healing customer details if customerName is empty but customerId exists
         setFormData(prev => {
-          if (prev.customerId && !prev.customerName) {
+          if (prev.customerId) {
             const cust = loadedCusts.find(c => c.id === prev.customerId);
             if (cust) {
               return {
                 ...prev,
-                customerName: cust.name,
+                customerName: prev.customerName || cust.name,
+                customerAddress: prev.customerAddress || cust.addressEn || '',
                 contactPerson: prev.contactPerson || cust.contactPerson || cust.representative || '',
                 email: prev.email || cust.email || cust.contactEmail || ''
               };
@@ -282,16 +283,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               // Load special custom values from the latest revision
               setFormData(prev => ({
                 ...prev,
-                ...(latestRevData.exchangeRate && { exchangeRate: latestRevData.exchangeRate }),
-                ...(latestRevData.remarks && { remarks: latestRevData.remarks }),
-                ...(latestRevData.incoterms && { incoterms: latestRevData.incoterms }),
-                ...(latestRevData.destinationPort && { destinationPort: latestRevData.destinationPort }),
-                ...(latestRevData.paymentTerms && { paymentTerms: latestRevData.paymentTerms }),
-                ...(latestRevData.shippingMethod && { shippingMethod: latestRevData.shippingMethod }),
-                ...(latestRevData.packagingSpec && { packagingSpec: latestRevData.packagingSpec }),
-                ...(latestRevData.deliveryTerm && { deliveryTerm: latestRevData.deliveryTerm }),
-                ...(latestRevData.origin && { origin: latestRevData.origin }),
-                ...(latestRevData.yourRef && { yourRef: latestRevData.yourRef }),
+                exchangeRate: latestRevData.exchangeRate !== undefined ? latestRevData.exchangeRate : prev.exchangeRate,
+                remarks: latestRevData.remarks !== undefined ? latestRevData.remarks : prev.remarks,
+                customerAddress: latestRevData.customerAddress !== undefined ? latestRevData.customerAddress : prev.customerAddress,
+                incoterms: latestRevData.incoterms !== undefined ? latestRevData.incoterms : prev.incoterms,
+                destinationPort: latestRevData.destinationPort !== undefined ? latestRevData.destinationPort : prev.destinationPort,
+                paymentTerms: latestRevData.paymentTerms !== undefined ? latestRevData.paymentTerms : prev.paymentTerms,
+                shippingMethod: latestRevData.shippingMethod !== undefined ? latestRevData.shippingMethod : prev.shippingMethod,
+                packagingSpec: latestRevData.packagingSpec !== undefined ? latestRevData.packagingSpec : prev.packagingSpec,
+                deliveryTerm: latestRevData.deliveryTerm !== undefined ? latestRevData.deliveryTerm : prev.deliveryTerm,
+                origin: latestRevData.origin !== undefined ? latestRevData.origin : prev.origin,
+                yourRef: latestRevData.yourRef !== undefined ? latestRevData.yourRef : prev.yourRef,
                 attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
               }));
             }
@@ -426,6 +428,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         ...prev,
         customerId: cust.id,
         customerName: cust.name,
+        customerAddress: cust.addressEn || '',
         contactPerson: cust.contactPerson || cust.representative || '',
         email: cust.email || cust.contactEmail || '',
         destinationPort: cust.shippingPort || prev.destinationPort,
@@ -456,6 +459,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         shippingPort: newCustForm.shippingPort.trim(),
         preferredIncoterms: newCustForm.preferredIncoterms.trim(),
         paymentTerms: newCustForm.paymentTerms.trim(),
+        addressEn: newCustForm.addressEn.trim(),
         tradeStatus: 'Active',
         tradeGrade: 'A',
         createdAt: serverTimestamp(),
@@ -471,6 +475,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         ...prev,
         customerId: newCode,
         customerName: newCustForm.name.trim(),
+        customerAddress: newCustForm.addressEn.trim(),
         contactPerson: newCustForm.contactPerson.trim(),
         email: newCustForm.email.trim(),
         destinationPort: newCustForm.shippingPort.trim() || prev.destinationPort,
@@ -478,7 +483,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         paymentTerms: newCustForm.paymentTerms.trim() || prev.paymentTerms,
       }));
       setShowNewCust(false);
-      setNewCustForm({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '' });
+      setNewCustForm({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '', addressEn: '' });
       alert(`✅ 신규 고객 [${newCustForm.name}] 등록 완료! (ID: ${newCode})`);
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
@@ -942,6 +947,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         items,
         exchangeRate: formData.exchangeRate,
         remarks: formData.remarks,
+        customerAddress: formData.customerAddress,
         incoterms: formData.incoterms,
         destinationPort: formData.destinationPort,
         paymentTerms: formData.paymentTerms,
@@ -1085,6 +1091,40 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     );
   };
 
+  const fetchExchangeRate = async () => {
+    if (!formData.piDate) {
+      alert("❌ PI Date를 먼저 선택해주세요.");
+      return;
+    }
+    
+    try {
+      // Frankfurter API handles historical dates (e.g. 2026-06-05) and fallback for weekends
+      const response = await fetch(`https://api.frankfurter.app/${formData.piDate}?from=USD&to=KRW`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data && data.rates && data.rates.KRW) {
+        const baseRate = data.rates.KRW;
+        
+        // Hana Bank TT Buying Rate spread is typically ~1.0% less than base rate (or base rate - 9.8 KRW)
+        // Let's use Base Rate * 0.99 (99% of base rate) to get a very close estimation of Hana Bank TT Buying Rate
+        // Round to 2 decimal places
+        const calculatedRate = Math.round(baseRate * 0.99 * 100) / 100;
+        
+        setFormData(prev => ({ ...prev, exchangeRate: calculatedRate }));
+        
+        // Show info toast/alert
+        alert(`💵 환율 조회 성공!\n\n* 고시일자: ${data.date}\n* 매매기준율: ${baseRate.toLocaleString('ko-KR')}원\n* 송금받을때 환율(우대스프레드 약 1% 반영): ${calculatedRate.toLocaleString('ko-KR')}원`);
+      } else {
+        alert("❌ 해당 날짜의 환율 데이터를 찾을 수 없습니다.");
+      }
+    } catch (error) {
+      console.error("Error fetching exchange rate:", error);
+      alert("❌ 환율 정보를 불러오는 데 실패했습니다. 네트워크 연결을 확인하거나 수동으로 입력해주세요.");
+    }
+  };
+
   const handleDeleteRevision = async () => {
     if (!selectedRevId || !initialPI) return;
     if (revisions.length <= 1) {
@@ -1181,6 +1221,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           ...prev,
           exchangeRate: data.exchangeRate !== undefined ? data.exchangeRate : prev.exchangeRate,
           remarks: data.remarks !== undefined ? data.remarks : prev.remarks,
+          customerAddress: data.customerAddress !== undefined ? data.customerAddress : prev.customerAddress,
           incoterms: data.incoterms !== undefined ? data.incoterms : prev.incoterms,
           destinationPort: data.destinationPort !== undefined ? data.destinationPort : prev.destinationPort,
           paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : prev.paymentTerms,
@@ -1310,7 +1351,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <Input label="작성자 (Author)" value={formData.createdByName} disabled />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
               <select value={showNewCust ? '__NEW__' : (formData.customerId || '')} onChange={(e) => handleCustomerChange(e.target.value)} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
@@ -1319,12 +1360,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
+            <Input label="Address" value={formData.customerAddress || ''} disabled />
             <Input label="Contact" value={formData.contactPerson} disabled />
             <Input label="Email" value={formData.email} disabled />
 
             {/* 신규 고객 입력 패널 */}
             {showNewCust && (
-              <div style={{ gridColumn: 'span 3', background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '10px', padding: '16px', marginTop: '4px' }}>
+              <div style={{ gridColumn: 'span 4', background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '10px', padding: '16px', marginTop: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <span style={{ fontSize: '14px' }}>🆕</span>
                   <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#1d4ed8' }}>신규 고객 등록</h4>
@@ -1335,6 +1377,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600, color: '#1d4ed8' }}>고객명 (Company Name) ★</label>
                     <input value={newCustForm.name} onChange={e => setNewCustForm(p => ({...p, name: e.target.value}))} placeholder="예: ABC TRADING CO." style={{ padding: '8px 10px', border: '1px solid #93c5fd', borderRadius: '6px', fontSize: '13px' }} />
+                  </div>
+                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>고객사 주소 (Company Address - English)</label>
+                    <input value={newCustForm.addressEn} onChange={e => setNewCustForm(p => ({...p, addressEn: e.target.value}))} placeholder="Company Address" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>담당자명 (Contact)</label>
@@ -1383,7 +1429,41 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
             <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
             <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
-            <Input label="Exchange Rate (KRW/USD)" type="number" step="0.01" value={formData.exchangeRate} onChange={(v: any) => setFormData(prev => ({...prev, exchangeRate: parseFloat(v)||1}))} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Exchange Rate (KRW/USD)</label>
+                <button
+                  type="button"
+                  onClick={fetchExchangeRate}
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: '#3b82f6',
+                    border: 'none',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    transition: 'all 0.2s',
+                    outline: 'none'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
+                >
+                  ⚡ 불러오기
+                </button>
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.exchangeRate ?? ''}
+                onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
+                style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+              />
+            </div>
             <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
               <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>

@@ -1559,7 +1559,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const h = parseFloat(piItem.h) || 0;
                     const nw = parseFloat(piItem.netWeight) || 0;
                     const gw = parseFloat(piItem.grossWeight) || 0;
-                    const qty = parseInt(piItem.qty, 10) || 1;
+                    const qty = Math.ceil(parseFloat(piItem.qty)) || 1;
                     
                     let hasDimensions = (w > 0 && d > 0 && h > 0);
                     
@@ -1873,7 +1873,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             netWeight: parseFloat(it.netWeight) || 0,
                             grossWeight: parseFloat(it.grossWeight) || 0,
                             weight: parseFloat(it.grossWeight) || 0, // compatibility
-                            qty: parseInt(it.qty, 10) || 0,
+                            qty: Math.ceil(parseFloat(it.qty)) || 0,
                             stackable: it.stackable !== false,
                             rotation: it.rotation !== false
                         })).filter(it => it.qty > 0 && it.w > 0 && it.d > 0 && it.h > 0);

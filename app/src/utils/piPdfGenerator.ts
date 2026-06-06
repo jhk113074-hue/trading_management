@@ -292,7 +292,7 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
   <div>
     <div class="section-title color-red">REMARKS</div>
     <div class="remarks-box">
-      ${piData.remarks ? piData.remarks.split('\n').map((line) => `
+      ${(piData.remarks !== undefined && piData.remarks !== null) ? piData.remarks.split('\n').map((line) => `
         <div class="remarks-line">${line}</div>
       `).join('') : `
         <div class="remarks-line">① This is a basic price. Prices are subject to change based on your additional requests.</div>

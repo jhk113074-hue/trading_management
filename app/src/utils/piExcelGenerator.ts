@@ -220,6 +220,8 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   applyTermsStyle(currentRow, "Departure Port", piData.departurePort || '-', "Shipping", piData.shippingMethod || '-');
   currentRow++;
   applyTermsStyle(currentRow, "Payment Terms", piData.paymentTerms || '-', "Packaging", piData.packagingSpec || '-');
+  currentRow++;
+  applyTermsStyle(currentRow, "Delivery Term", piData.deliveryTerm || '-', "Origin", piData.origin || '-');
   currentRow += 2;
 
   // 5. LINE ITEMS
@@ -419,8 +421,8 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   currentRow++;
 
   let remarkLines = ["① This is a basic price. Prices are subject to change based on your additional requests.", "② Shipping cost may vary monthly depending on the carrier's current conditions."];
-  if (piData.remarks) {
-    remarkLines = piData.remarks.split('\n');
+  if (piData.remarks !== undefined && piData.remarks !== null) {
+    remarkLines = piData.remarks ? piData.remarks.split('\n') : [];
   }
 
   const remarksStartRow = currentRow;
