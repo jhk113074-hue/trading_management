@@ -1044,10 +1044,125 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     setSavingType('normal');
     try {
       const piId = initialPI.id;
-      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), {
+      const piNum = formData.piNumber || piId;
+      const itemsSummary = items.slice(0, 3).map(i => `${i.description} (${i.quantity}${i.unit})`);
+      if (items.length > 3) itemsSummary.push('...');
+
+      const revisionsColRef = collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), "revisions");
+      let revRef;
+      let existingCreatedAt = null;
+      let version = 1;
+
+      if (selectedRevId) {
+        revRef = doc(db, "companies", COMPANY_ID, "proforma_invoices", piId, "revisions", selectedRevId);
+        const revDoc = await getDoc(revRef);
+        if (revDoc.exists()) {
+          existingCreatedAt = revDoc.data().createdAt;
+          version = Number(revDoc.data().version) || 1;
+        } else {
+          const revSnap = await getDocs(revisionsColRef);
+          if (!revSnap.empty) {
+            const latest = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
+            revRef = latest.ref;
+            existingCreatedAt = latest.data().createdAt;
+            version = Number(latest.data().version) || 1;
+          } else {
+            version = 1;
+            revRef = doc(revisionsColRef);
+          }
+        }
+      } else {
+        const revSnap = await getDocs(revisionsColRef);
+        if (!revSnap.empty) {
+          const latest = revSnap.docs.sort((a, b) => (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0))[0];
+          revRef = latest.ref;
+          existingCreatedAt = latest.data().createdAt;
+          version = Number(latest.data().version) || 1;
+        } else {
+          version = 1;
+          revRef = doc(revisionsColRef);
+        }
+      }
+
+      // Delete old line items
+      const liSnap = await getDocs(collection(revRef, "line_items"));
+      for (const d of liSnap.docs) {
+        await deleteDoc(d.ref);
+      }
+
+      // Save main PI doc
+      const piData: Partial<ProformaInvoice> = {
+        ...formData,
+        piNumber: piNum,
+        currentVersion: version,
+        itemsSummary,
         status: 'PO확정',
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      };
+      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), sanitizeForFirestore(piData), { merge: true });
+
+      // Save revision doc
+      const revData: PIRevision = {
+        version,
+        revisionReason: 'Edited active version (PO confirmed)',
+        items,
+        exchangeRate: formData.exchangeRate,
+        remarks: formData.remarks,
+        customerAddress: formData.customerAddress,
+        incoterms: formData.incoterms,
+        destinationPort: formData.destinationPort,
+        paymentTerms: formData.paymentTerms,
+        shippingMethod: formData.shippingMethod,
+        packagingSpec: formData.packagingSpec,
+        deliveryTerm: formData.deliveryTerm,
+        origin: formData.origin,
+        yourRef: formData.yourRef,
+        attachments: formData.attachments || [],
+        createdAt: existingCreatedAt || serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(revRef, sanitizeForFirestore(revData));
+
+      // Save line items
+      for (const item of items) {
+        const itemRef = doc(collection(revRef, "line_items"));
+        let rawCode = item.productCode;
+        if (rawCode.startsWith('[') && rawCode.includes(']')) {
+          rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+        }
+        await setDoc(itemRef, sanitizeForFirestore({ ...item, productCode: rawCode, id: itemRef.id }));
+
+        // Update product master with the latest purchase price and date
+        const prod = products.find(p => p.productCode === rawCode);
+        if (prod) {
+          const finalPrice = item.purchasePriceKrw > 0 ? item.purchasePriceKrw : item.purchasePriceUsd;
+          const finalCurrency = item.purchasePriceKrw > 0 ? 'KRW' : 'USD';
+          
+          if (finalPrice > 0) {
+            const isPriceChanged = prod.purchasePrice !== finalPrice || prod.currency !== finalCurrency;
+            if (isPriceChanged) {
+              const prodRef = doc(db, "companies", COMPANY_ID, "products", prod.id);
+              const newHistoryItem = {
+                validFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                validTo: '',
+                currency: finalCurrency,
+                price: finalPrice,
+                minQty: item.quantity || 1,
+                discountRate: 0,
+                remarks: `Updated from PI ${piNum}`
+              };
+              const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
+              currentHistory.push(newHistoryItem);
+              await setDoc(prodRef, {
+                purchasePrice: finalPrice,
+                currency: finalCurrency,
+                priceValidFrom: formData.piDate || new Date().toISOString().split('T')[0],
+                purchasePrices: currentHistory
+              }, { merge: true });
+            }
+          }
+        }
+      }
       
       // Navigate to /orders with createFromPi parameter
       window.location.href = `/orders?createFromPi=${piId}`;
