@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Order, OrderItem } from '../types/order';
@@ -305,6 +305,28 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const handleDeleteOrder = async () => {
+    if (!order) return;
+    if (!window.confirm("⚠️ 이 발주서(PO)를 영구 삭제하고 발주를 취소하시겠습니까?\n연결된 Proforma Invoice(PI)의 상태가 다시 'PO확정' 대기 상태로 되돌아갑니다.")) return;
+    
+    try {
+      // 1. Delete PO document
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await deleteDoc(orderRef);
+      
+      // 2. Revert PI status to 'confirmed' if quotationId is linked
+      if (order.quotationId) {
+        const piRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', order.quotationId);
+        await setDoc(piRef, { status: 'confirmed', updatedAt: serverTimestamp() }, { merge: true });
+      }
+      
+      alert("✅ 발주서(PO)가 취소 및 삭제되었으며, PI 상태가 복원되었습니다.");
+      navigate('/orders');
+    } catch (e: any) {
+      alert("❌ 발주 취소 중 오류 발생: " + e.message);
+    }
+  };
+
   if (loading) {
     return <div style={{ padding: '40px', color: '#475569', textAlign: 'center' }}>상세 발주 내역을 로드하는 중...</div>;
   }
@@ -322,14 +344,22 @@ export const OrderDetail: React.FC = () => {
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
       {/* Header Back Button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => navigate('/orders')}
+            style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            이전으로
+          </button>
+          <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>PO 상세 정보 - {order.id}</span>
+        </div>
         <button 
-          onClick={() => navigate('/orders')}
-          style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
+          onClick={handleDeleteOrder}
+          style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
         >
-          이전으로
+          ❌ PO 삭제 및 발주 취소
         </button>
-        <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>PO 상세 정보 - {order.id}</span>
       </div>
 
       {/* Stepper 현황 */}

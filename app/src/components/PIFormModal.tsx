@@ -1974,14 +1974,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </button>
           )}
 
-          {initialPI && formData.status !== 'PO확정' && (
+          {initialPI && (
             <button 
               type="button"
               onClick={handleConfirmPO}
               disabled={savingType !== null}
               style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer' }}
             >
-              🤝 PO 확정 & 발주등록
+              {formData.status === 'PO확정' ? '🤝 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
             </button>
           )}
         </div>
