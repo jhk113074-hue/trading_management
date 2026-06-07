@@ -147,6 +147,22 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               const matchedProd = currentProducts.find(p => p.productCode === rawCode || p.id === rawCode);
               const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
               
+              const selectedQuote = quotations.find(q => q.id === quoteId);
+              let buyPrice = 0;
+              if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                buyPrice = qi.purchasePriceUsd;
+              } else if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                const exRate = qi.exchangeRate || selectedQuote?.exchangeRate || 1400;
+                buyPrice = qi.purchasePriceKrw / exRate;
+              } else if (matchedProd) {
+                if (matchedProd.currency === 'KRW') {
+                  const exRate = selectedQuote?.exchangeRate || 1400;
+                  buyPrice = (matchedProd.purchasePrice || 0) / exRate;
+                } else {
+                  buyPrice = matchedProd.purchasePrice || 0;
+                }
+              }
+
               return {
                 itemId: (idx + 1).toString(),
                 name: qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '',
@@ -155,8 +171,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 grade: qi.grade || '',
                 qty: qi.quantity || 0,
                 unit: (qi.unit || 'kg') as any,
-                unitPrice: qi.salePriceUsd || 0,
-                amount: (qi.quantity || 0) * (qi.salePriceUsd || 0),
+                unitPrice: buyPrice,
+                amount: (qi.quantity || 0) * buyPrice,
                 currency: 'USD'
               };
             }));
