@@ -4,6 +4,7 @@ import { db, COMPANY_ID } from '../firebase';
 import type { Order, OrderItem } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
+import type { Product } from '../types/product';
 
 interface Props {
   onClose: () => void;
@@ -16,6 +17,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
@@ -36,7 +38,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     { itemId: '1', name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' }
   ]);
 
-  // Load Customers & Quotations
+  // Load Customers, Quotations & Products
   useEffect(() => {
     const loadSelectionData = async () => {
       try {
@@ -45,6 +47,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
         const quoteSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'proforma_invoices'));
         setQuotations(quoteSnap.docs.map(d => ({ id: d.id, ...d.data() } as ProformaInvoice)));
+
+        const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+        setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
       } catch (err) {
         console.error("Failed to load initial selection data:", err);
       }
@@ -126,18 +131,35 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           const quoteItems = liSnap.docs.map(d => d.data() as any);
           
           if (quoteItems.length > 0) {
-            setItems(quoteItems.map((qi, idx) => ({
-              itemId: (idx + 1).toString(),
-              name: qi.description || '',
-              supplier: qi.supplierName || '',
-              supplierContact: '',
-              grade: qi.grade || '',
-              qty: qi.quantity || 0,
-              unit: (qi.unit || 'kg') as any,
-              unitPrice: qi.salePriceUsd || 0,
-              amount: (qi.quantity || 0) * (qi.salePriceUsd || 0),
-              currency: 'USD'
-            })));
+            let currentProducts = products;
+            if (currentProducts.length === 0) {
+              const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+              currentProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+              setProducts(currentProducts);
+            }
+
+            setItems(quoteItems.map((qi, idx) => {
+              let rawCode = qi.productCode || '';
+              if (rawCode.startsWith('[') && rawCode.includes(']')) {
+                rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+              }
+              
+              const matchedProd = currentProducts.find(p => p.productCode === rawCode || p.id === rawCode);
+              const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
+              
+              return {
+                itemId: (idx + 1).toString(),
+                name: qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '',
+                supplier: matchedProd?.supplierName || qi.supplierName || '',
+                supplierContact: contactInfo || '',
+                grade: qi.grade || '',
+                qty: qi.quantity || 0,
+                unit: (qi.unit || 'kg') as any,
+                unitPrice: qi.salePriceUsd || 0,
+                amount: (qi.quantity || 0) * (qi.salePriceUsd || 0),
+                currency: 'USD'
+              };
+            }));
           }
         }
       }
