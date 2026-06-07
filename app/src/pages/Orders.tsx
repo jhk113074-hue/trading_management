@@ -12,6 +12,19 @@ export const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialSelectedQuoteId, setInitialSelectedQuoteId] = useState('');
+
+  // Check if we navigated to this page to create a PO from a PI
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const createFromPi = params.get('createFromPi');
+    if (createFromPi) {
+      setInitialSelectedQuoteId(createFromPi);
+      setIsModalOpen(true);
+      // Clean query parameter from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -369,9 +382,10 @@ export const Orders: React.FC = () => {
 
       {isModalOpen && (
         <NewOrderModal 
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => { setIsModalOpen(false); setInitialSelectedQuoteId(''); }}
           onSaveSuccess={() => {}}
           currentUser={currentUser}
+          initialQuotationId={initialSelectedQuoteId}
         />
       )}
 

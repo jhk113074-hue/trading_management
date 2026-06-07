@@ -9,9 +9,10 @@ interface Props {
   onClose: () => void;
   onSaveSuccess: () => void;
   currentUser: string;
+  initialQuotationId?: string;
 }
 
-export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, currentUser }) => {
+export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, currentUser, initialQuotationId }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
@@ -19,7 +20,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
     custPo: '',
-    quotationId: '',
+    quotationId: initialQuotationId || '',
     customerId: '',
     customerName: '',
     manager: currentUser,
@@ -50,6 +51,13 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     };
     loadSelectionData();
   }, []);
+
+  // Pre-load from initialQuotationId if passed
+  useEffect(() => {
+    if (initialQuotationId && quotations.length > 0) {
+      handleFormDataChange('quotationId', initialQuotationId);
+    }
+  }, [initialQuotationId, quotations]);
 
   // Auto-generate PO Number: PO-YYYY-NNNN
   useEffect(() => {

@@ -92,7 +92,7 @@ export interface ProformaInvoice {
   totalUsd: number;
   totalKrw: number;
   
-  status: 'draft' | 'confirmed' | 'sent';
+  status: 'draft' | 'confirmed' | 'sent' | 'PO확정';
   currentVersion: number;
   
   createdBy: string;

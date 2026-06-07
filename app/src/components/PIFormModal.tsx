@@ -1037,6 +1037,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }
   };
 
+  const handleConfirmPO = async () => {
+    if (!initialPI) return;
+    if (!window.confirm("이 견적서(PI)를 [PO확정] 상태로 전환하고 발주(PO) 생성 페이지로 이동하시겠습니까?")) return;
+    
+    setSavingType('normal');
+    try {
+      const piId = initialPI.id;
+      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", piId), {
+        status: 'PO확정',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      
+      // Navigate to /orders with createFromPi parameter
+      window.location.href = `/orders?createFromPi=${piId}`;
+    } catch (e: any) {
+      alert("PO 확정 처리 중 오류가 발생했습니다: " + e.message);
+    } finally {
+      setSavingType(null);
+    }
+  };
+
   const handleSimulation = () => {
     if (items.length === 0) {
       alert('시뮬레이션할 상품 라인이 없습니다.');
@@ -1950,6 +1971,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
             >
               {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
+            </button>
+          )}
+
+          {initialPI && formData.status !== 'PO확정' && (
+            <button 
+              type="button"
+              onClick={handleConfirmPO}
+              disabled={savingType !== null}
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer' }}
+            >
+              🤝 PO 확정 & 발주등록
             </button>
           )}
         </div>
