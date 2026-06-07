@@ -15,6 +15,8 @@ import { Suppliers } from './pages/Suppliers';
 import { ProformaInvoices } from './pages/ProformaInvoices';
 import { ContainerPacker } from './pages/ContainerPacker';
 import { AuthCallback } from './pages/AuthCallback';
+import { Orders } from './pages/Orders';
+import { OrderDetail } from './pages/OrderDetail';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +30,8 @@ const App: React.FC = () => {
               <Route index element={<Dashboard />} />
               <Route path="list" element={<TaskList />} />
               <Route path="proforma-invoices" element={<ProformaInvoices />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="products" element={<Products />} />
               <Route path="customers" element={<Customers />} />
               <Route path="suppliers" element={<Suppliers />} />
