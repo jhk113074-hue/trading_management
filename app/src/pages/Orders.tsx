@@ -74,7 +74,15 @@ export const Orders: React.FC = () => {
         const d = new Date(o.poDate);
         if (d.getFullYear() === currentYear && d.getMonth() === currentMonth) {
           thisMonthCount++;
-          thisMonthTotalUsd += o.totalAmount || 0;
+          const exRate = o.exchangeRate || 1400;
+          const orderUsdAmount = o.items?.reduce((sum, it) => {
+            if (it.currency === 'KRW') {
+              return sum + (it.amount || 0) / exRate;
+            } else {
+              return sum + (it.amount || 0);
+            }
+          }, 0) || o.totalAmount || 0;
+          thisMonthTotalUsd += orderUsdAmount;
         }
       }
       if (o.status === '대기') {
@@ -142,7 +150,7 @@ export const Orders: React.FC = () => {
 
     const headers = [
       'PO번호', '고객사PO번호', '고객사', '공급사', '품목',
-      '총수량', '총금액(USD)', 'Incoterms', 'PaymentTerms',
+      '총수량', '총금액', 'Incoterms', 'PaymentTerms',
       'PO접수일', '요청납기일', '상태', '담당자'
     ];
 
@@ -151,6 +159,13 @@ export const Orders: React.FC = () => {
       const itemsSummary = o.items?.map(it => `${it.name}(${it.qty}${it.unit})`).join(' | ');
       const totalQty = o.items?.reduce((sum, it) => sum + (it.qty || 0), 0) || 0;
 
+      const usdTotal = o.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+      const krwTotal = o.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+      const parts = [];
+      if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+      if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString()} KRW`);
+      const amtStr = parts.length > 0 ? parts.join(' / ') : '$0.00 USD';
+
       return [
         o.id,
         o.custPo || '-',
@@ -158,7 +173,7 @@ export const Orders: React.FC = () => {
         suppliers || '-',
         itemsSummary || '-',
         totalQty,
-        o.totalAmount || 0,
+        amtStr,
         o.incoterms || '-',
         o.paymentTerms || '-',
         o.poDate || '-',
@@ -299,7 +314,7 @@ export const Orders: React.FC = () => {
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>공급사</th>
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>품목 요약</th>
               <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>총 수량</th>
-              <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>총 금액 (USD)</th>
+              <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>총 금액</th>
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>Incoterms</th>
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>PO접수일</th>
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>요청납기일</th>
@@ -343,8 +358,16 @@ export const Orders: React.FC = () => {
                     </td>
                     <td style={{ padding: '12px 16px', color: '#64748b' }}>{itemsSummary}{itemsMore}</td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>{totalQty.toLocaleString('en-US')}</td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600 }}>
-                      ${(o.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <td style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {(() => {
+                        const usdTotal = o.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                        const krwTotal = o.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                        const parts = [];
+                        if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+                        if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString('en-US')}`);
+                        if (parts.length === 0) return '$0.00';
+                        return parts.join(' / ');
+                      })()}
                     </td>
                     <td style={{ padding: '12px 16px' }}>{o.incoterms || '-'}</td>
                     <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{o.poDate || '-'}</td>

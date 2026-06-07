@@ -8,7 +8,7 @@ export interface OrderItem {
   unit: "kg" | "MT" | "L" | "drum" | "set";
   unitPrice: number;
   amount: number;
-  currency: "USD";
+  currency: "USD" | "KRW";
 }
 
 export interface Order {
@@ -25,7 +25,8 @@ export interface Order {
   status: "대기" | "발행완료" | "납기확인중" | "납기확정" | "부킹완료" | "선적완료" | "완료";
   items: OrderItem[];
   totalAmount: number;
-  currency: "USD";
+  currency: "USD" | "KRW" | "mixed";
+  exchangeRate?: number;
   poIssuedAt: any | null;
   createdAt: any;
   updatedAt: any;

@@ -258,7 +258,7 @@ export const OrderDetail: React.FC = () => {
                 <th style="width: 80px; text-align: right;">수량</th>
                 <th style="width: 60px; text-align: center;">단위</th>
                 <th style="width: 100px; text-align: right;">단가</th>
-                <th style="width: 120px; text-align: right;">금액 (USD)</th>
+                <th style="width: 120px; text-align: right;">금액</th>
               </tr>
             </thead>
             <tbody>
@@ -269,15 +269,23 @@ export const OrderDetail: React.FC = () => {
                   <td>${it.grade || '-'}</td>
                   <td style="text-align: right;">${(it.qty || 0).toLocaleString()}</td>
                   <td style="text-align: center;">${it.unit}</td>
-                  <td style="text-align: right;">$${(it.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                  <td style="text-align: right; font-weight: bold;">$${(it.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td style="text-align: right;">${it.currency === 'KRW' ? '₩' : '$'}${(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                  <td style="text-align: right; font-weight: bold;">${it.currency === 'KRW' ? '₩' : '$'}${(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
 
           <div class="total-box">
-            총 발주 합계 금액 (Total Amount): $${items.reduce((sum, it) => sum + (it.amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+            총 발주 합계 금액 (Total Amount): ${(() => {
+              const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+              const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+              const parts = [];
+              if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+              if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString()} KRW`);
+              if (parts.length === 0) return '$0.00 USD';
+              return parts.join(' / ');
+            })()}
           </div>
 
           <div class="footer-info">
@@ -491,8 +499,8 @@ export const OrderDetail: React.FC = () => {
                   <th style={{ padding: '10px 12px' }}>Grade</th>
                   <th style={{ padding: '10px 12px', textAlign: 'right', width: '100px' }}>수량</th>
                   <th style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>단위</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '120px' }}>단가 (USD)</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '140px' }}>금액 (USD)</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '120px' }}>단가</th>
+                  <th style={{ padding: '10px 12px', textAlign: 'right', width: '140px' }}>금액</th>
                 </tr>
               </thead>
               <tbody>
@@ -504,8 +512,8 @@ export const OrderDetail: React.FC = () => {
                     <td style={{ padding: '10px 12px' }}>{it.grade || '-'}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'right' }}>{(it.qty || 0).toLocaleString()}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>{it.unit}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>${(it.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>${(it.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
                   </tr>
                 ))}
               </tbody>
@@ -513,7 +521,17 @@ export const OrderDetail: React.FC = () => {
             
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', borderTop: '2px solid #e2e8f0', paddingTop: '15px' }}>
               <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>총 수량: {order.items?.reduce((s, it) => s + (it.qty || 0), 0).toLocaleString()}</span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>총 금액 합계: ${order.totalAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</span>
+              <span style={{ fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
+                총 금액 합계: {(() => {
+                  const usdTotal = order.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                  const krwTotal = order.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                  const parts = [];
+                  if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
+                  if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString('en-US')} KRW`);
+                  if (parts.length === 0) return '$0.00 USD';
+                  return parts.join(' / ');
+                })()}
+              </span>
             </div>
           </div>
         )}
@@ -533,7 +551,6 @@ export const OrderDetail: React.FC = () => {
                 const cleanSupplierName = supplierName.replace(/\s+/g, '');
                 const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
                 const poNum = `${order.id}-${supplierCode}`;
-                const supplierTotal = items.reduce((sum, it) => sum + (it.amount || 0), 0);
 
                 return (
                   <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
@@ -590,7 +607,7 @@ export const OrderDetail: React.FC = () => {
                             <th style={{ padding: '8px', textAlign: 'right', width: '80px' }}>수량</th>
                             <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>단위</th>
                             <th style={{ padding: '8px', textAlign: 'right', width: '100px' }}>단가</th>
-                            <th style={{ padding: '8px', textAlign: 'right', width: '120px' }}>금액 (USD)</th>
+                            <th style={{ padding: '8px', textAlign: 'right', width: '120px' }}>금액</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -601,15 +618,23 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px' }}>{it.grade || '-'}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>{(it.qty || 0).toLocaleString()}</td>
                               <td style={{ padding: '8px', textAlign: 'center', color: '#64748b' }}>{it.unit}</td>
-                              <td style={{ padding: '8px', textAlign: 'right' }}>${(it.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                              <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>${(it.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
 
                       <div style={{ alignSelf: 'flex-end', fontWeight: 800, color: '#dc2626', fontSize: '14px', borderTop: '1px solid #cbd5e1', paddingTop: '8px', width: '100%', textAlign: 'right' }}>
-                        공급업체 발주 합계: ${supplierTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                        공급업체 발주 합계: {(() => {
+                          const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                          const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                          const parts = [];
+                          if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+                          if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString()} KRW`);
+                          if (parts.length === 0) return '$0.00 USD';
+                          return parts.join(' / ');
+                        })()}
                       </div>
 
                     </div>

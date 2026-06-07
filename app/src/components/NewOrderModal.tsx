@@ -31,7 +31,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     poDate: new Date().toISOString().split('T')[0],
     requestedDelivery: '',
     remark: '',
-    status: '대기' as const
+    status: '대기' as const,
+    exchangeRate: 1400
   });
 
   const [items, setItems] = useState<Partial<OrderItem>[]>([
@@ -107,9 +108,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           updated.customerName = selectedQuote.customerName || (selectedCust ? selectedCust.name : '');
           updated.incoterms = selectedQuote.incoterms as any || prev.incoterms;
           updated.paymentTerms = selectedQuote.paymentTerms || prev.paymentTerms;
+          updated.exchangeRate = selectedQuote.exchangeRate || prev.exchangeRate;
           
           // Auto-copy items from quotation if needed
-          // Let's load the quotation's latest revision line items
           fetchQuoteItems(selectedQuote.id);
         }
       }
@@ -147,21 +148,22 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               const matchedProd = currentProducts.find(p => p.productCode === rawCode || p.id === rawCode);
               const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
               
-              const selectedQuote = quotations.find(q => q.id === quoteId);
               let buyPrice = 0;
-              if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+              let itemCurrency: 'USD' | 'KRW' = 'USD';
+
+              if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                buyPrice = qi.purchasePriceKrw;
+                itemCurrency = 'KRW';
+              } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
                 buyPrice = qi.purchasePriceUsd;
-              } else if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
-                const exRate = qi.exchangeRate || selectedQuote?.exchangeRate || 1400;
-                buyPrice = qi.purchasePriceKrw / exRate;
+                itemCurrency = 'USD';
               } else if (matchedProd) {
-                if (matchedProd.currency === 'KRW') {
-                  const exRate = selectedQuote?.exchangeRate || 1400;
-                  buyPrice = (matchedProd.purchasePrice || 0) / exRate;
-                } else {
-                  buyPrice = matchedProd.purchasePrice || 0;
-                }
+                buyPrice = matchedProd.purchasePrice || 0;
+                itemCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
               }
+
+              const qty = qi.quantity || 0;
+              const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
               return {
                 itemId: (idx + 1).toString(),
@@ -169,11 +171,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 supplier: matchedProd?.supplierName || qi.supplierName || '',
                 supplierContact: contactInfo || '',
                 grade: qi.grade || '',
-                qty: qi.quantity || 0,
+                qty,
                 unit: (qi.unit || 'kg') as any,
                 unitPrice: buyPrice,
-                amount: (qi.quantity || 0) * buyPrice,
-                currency: 'USD'
+                amount: amt,
+                currency: itemCurrency
               };
             }));
           }
@@ -189,10 +191,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       const updated = [...prev];
       const it = { ...updated[index], [field]: value };
       
-      if (field === 'qty' || field === 'unitPrice') {
+      if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
         const qty = field === 'qty' ? parseFloat(value) || 0 : parseFloat(it.qty as any) || 0;
         const price = field === 'unitPrice' ? parseFloat(value) || 0 : parseFloat(it.unitPrice as any) || 0;
-        it.amount = parseFloat((qty * price).toFixed(2));
+        const curr = field === 'currency' ? value : it.currency;
+        if (curr === 'KRW') {
+          it.amount = Math.round(qty * price);
+        } else {
+          it.amount = parseFloat((qty * price).toFixed(2));
+        }
       }
       
       updated[index] = it;
@@ -223,6 +230,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', formData.poId);
       
+      const hasUsd = items.some(it => it.currency === 'USD');
+      const hasKrw = items.some(it => it.currency === 'KRW');
+      let orderCurrency: 'USD' | 'KRW' | 'mixed' = 'USD';
+      if (hasUsd && hasKrw) {
+        orderCurrency = 'mixed';
+      } else if (hasKrw) {
+        orderCurrency = 'KRW';
+      }
+      
       const orderPayload: Order = {
         id: formData.poId,
         custPo: formData.custPo,
@@ -245,10 +261,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
           amount: it.amount || 0,
-          currency: 'USD'
+          currency: (it.currency || 'USD') as any
         })),
         totalAmount,
-        currency: 'USD',
+        currency: orderCurrency,
+        exchangeRate: formData.exchangeRate || 1400,
         poIssuedAt: null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -377,13 +394,10 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ padding: '8px', textAlign: 'center', width: '40px' }}>No</th>
                   <th style={{ padding: '8px', textAlign: 'left' }}>품목명 ★</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '150px' }}>공급사</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '120px' }}>공급사 연락처</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '80px' }}>Grade</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '90px' }}>수량</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>단위</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '100px' }}>단가 (USD)</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '110px' }}>금액 (USD)</th>
+                                   <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>단위</th>
+                  <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>통화</th>
+                  <th style={{ padding: '8px', textAlign: 'right', width: '100px' }}>단가</th>
+                  <th style={{ padding: '8px', textAlign: 'right', width: '110px' }}>금액</th>
                   <th style={{ padding: '8px', textAlign: 'center', width: '50px' }}>삭제</th>
                 </tr>
               </thead>
@@ -416,10 +430,16 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       </select>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input type="number" step="0.01" value={item.unitPrice || ''} onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} />
+                      <select value={item.currency || 'USD'} onChange={e => handleItemChange(idx, 'currency', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }}>
+                        <option value="USD">USD ($)</option>
+                        <option value="KRW">KRW (₩)</option>
+                      </select>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input type="number" step={item.currency === 'KRW' ? '1' : '0.01'} value={item.unitPrice || ''} onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} />
                     </td>
                     <td style={{ padding: '6px', textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>
-                      ${(item.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
                       <button type="button" onClick={() => removeItemRow(idx)} disabled={items.length === 1} style={{ background: 'transparent', border: 'none', color: items.length === 1 ? '#cbd5e1' : '#ef4444', fontSize: '16px', cursor: items.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
@@ -429,12 +449,23 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </tbody>
             </table>
           </div>
-
+ 
           {/* Real-time Total sum */}
-          <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-            총 발주 금액 (Grand Total): <span style={{ color: '#dc2626' }}>${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</span>
+          <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
+            <span>총 발주 금액 (Grand Total):</span>
+            {(() => {
+              const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+              const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+              return (
+                <span style={{ color: '#dc2626' }}>
+                  {usdTotal > 0 && `$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`}
+                  {usdTotal > 0 && krwTotal > 0 && ' / '}
+                  {krwTotal > 0 && `₩${krwTotal.toLocaleString('en-US')} KRW`}
+                  {usdTotal === 0 && krwTotal === 0 && '$0.00 USD'}
+                </span>
+              );
+            })()}
           </div>
-
         </div>
 
         {/* Footer */}
