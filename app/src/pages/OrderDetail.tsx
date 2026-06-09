@@ -10,12 +10,13 @@ export const OrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'basic' | 'items' | 'supplierPo' | 'docs'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'shipping' | 'items' | 'supplierPo' | 'docs'>('basic');
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [piData, setPiData] = useState<any | null>(null);
 
-  // Form states for basic details editing
+  // Form states for details editing
   const [basicForm, setBasicForm] = useState({
     custPo: '',
     incoterms: 'FOB' as any,
@@ -25,7 +26,28 @@ export const OrderDetail: React.FC = () => {
     remark: '',
     manager: '',
     externalLinksStr: '', // comma or newline separated links
-    issuingCompany: 'YSACC' as 'YSACC' | 'YS'
+    issuingCompany: 'YSACC' as 'YSACC' | 'YS',
+    
+    // New progress tracking fields
+    ciNumber: '',
+    vesselBooking: '',
+    forwarderConfirmed: '',
+    cargoReadyDate: '',
+    cfsEntryDate: '',
+    cfsContactInfo: '',
+    docCutoffDate: '',
+    etd: '',
+    eta: '',
+    containerVolumeQuantities: '',
+    exportDeclarationNo: '',
+    lcNo: '',
+    customsExchangeRate: 0,
+    dispatchStatusByVendor: '',
+    containerWorkspaceType: '' as 'CFS' | 'Door' | '',
+    shipmentCompleted: '' as 'Y' | 'N' | '',
+    docsSentOrBankSubmitted: '',
+    purchaseCertificateByVendor: '',
+    paymentStatusByVendor: ''
   });
 
   // Load Order document
@@ -45,7 +67,27 @@ export const OrderDetail: React.FC = () => {
           remark: data.remark || '',
           manager: data.manager || '',
           externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : '',
-          issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS'
+          issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS',
+          
+          ciNumber: data.ciNumber || '',
+          vesselBooking: data.vesselBooking || '',
+          forwarderConfirmed: data.forwarderConfirmed || '',
+          cargoReadyDate: data.cargoReadyDate || '',
+          cfsEntryDate: data.cfsEntryDate || '',
+          cfsContactInfo: data.cfsContactInfo || '',
+          docCutoffDate: data.docCutoffDate || '',
+          etd: data.etd || '',
+          eta: data.eta || '',
+          containerVolumeQuantities: data.containerVolumeQuantities || '',
+          exportDeclarationNo: data.exportDeclarationNo || '',
+          lcNo: data.lcNo || '',
+          customsExchangeRate: data.customsExchangeRate || 0,
+          dispatchStatusByVendor: data.dispatchStatusByVendor || '',
+          containerWorkspaceType: data.containerWorkspaceType || '',
+          shipmentCompleted: data.shipmentCompleted || '',
+          docsSentOrBankSubmitted: data.docsSentOrBankSubmitted || '',
+          purchaseCertificateByVendor: data.purchaseCertificateByVendor || '',
+          paymentStatusByVendor: data.paymentStatusByVendor || ''
         });
       } else {
         setOrder(null);
@@ -57,6 +99,25 @@ export const OrderDetail: React.FC = () => {
     });
     return () => unsubscribe();
   }, [id]);
+
+  // Load connected PI document
+  useEffect(() => {
+    if (!order?.quotationId) {
+      setPiData(null);
+      return;
+    }
+    const piRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', order.quotationId);
+    const unsubscribe = onSnapshot(piRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setPiData(docSnap.data());
+      } else {
+        setPiData(null);
+      }
+    }, (err) => {
+      console.warn("Failed to sync connected PI details:", err);
+    });
+    return () => unsubscribe();
+  }, [order?.quotationId]);
 
   // Status steps list
   const steps = ["대기", "발행완료", "납기확인중", "납기확정", "부킹완료", "선적완료", "완료"];
@@ -92,7 +153,7 @@ export const OrderDetail: React.FC = () => {
     return groups;
   }, [order]);
 
-  // Save basic details changes
+  // Save details changes
   const handleSaveBasic = async () => {
     if (!order) return;
     try {
@@ -112,11 +173,32 @@ export const OrderDetail: React.FC = () => {
         manager: basicForm.manager,
         externalLinks: links,
         issuingCompany: basicForm.issuingCompany,
+        
+        ciNumber: basicForm.ciNumber,
+        vesselBooking: basicForm.vesselBooking,
+        forwarderConfirmed: basicForm.forwarderConfirmed,
+        cargoReadyDate: basicForm.cargoReadyDate,
+        cfsEntryDate: basicForm.cfsEntryDate,
+        cfsContactInfo: basicForm.cfsContactInfo,
+        docCutoffDate: basicForm.docCutoffDate,
+        etd: basicForm.etd,
+        eta: basicForm.eta,
+        containerVolumeQuantities: basicForm.containerVolumeQuantities,
+        exportDeclarationNo: basicForm.exportDeclarationNo,
+        lcNo: basicForm.lcNo,
+        customsExchangeRate: Number(basicForm.customsExchangeRate) || 0,
+        dispatchStatusByVendor: basicForm.dispatchStatusByVendor,
+        containerWorkspaceType: basicForm.containerWorkspaceType,
+        shipmentCompleted: basicForm.shipmentCompleted,
+        docsSentOrBankSubmitted: basicForm.docsSentOrBankSubmitted,
+        purchaseCertificateByVendor: basicForm.purchaseCertificateByVendor,
+        paymentStatusByVendor: basicForm.paymentStatusByVendor,
+        
         updatedAt: serverTimestamp()
       }, { merge: true });
 
       setIsEditing(false);
-      alert('✅ 기본 정보가 저장되었습니다.');
+      alert('✅ 저장되었습니다.');
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
     }
@@ -570,6 +652,7 @@ export const OrderDetail: React.FC = () => {
       <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '4px', borderRadius: '8px' }}>
         {[
           { id: 'basic', label: '📋 기본 정보' },
+          { id: 'shipping', label: '🚢 선적 & 진행 현황' },
           { id: 'items', label: '📦 품목 명세' },
           { id: 'supplierPo', label: '🚚 공급사 발주서' },
           { id: 'docs', label: '📂 서류 & 링크 관리' }
@@ -691,6 +774,218 @@ export const OrderDetail: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
               <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>비고 (Remarks)</span>
               <textarea rows={3} value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical' }} />
+            </div>
+          </div>
+        )}
+
+        {/* TAB: Shipping & Progress */}
+        {activeTab === 'shipping' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* PI Info & Shipping Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+              <div>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937' }}>🚢 선적 및 진행 현황 관리</span>
+                <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '4px' }}>수송/부킹/통관 및 대금지급 단계별 진행현황 입력 및 확인</div>
+              </div>
+              <button 
+                onClick={() => {
+                  if (isEditing) handleSaveBasic();
+                  else setIsEditing(true);
+                }}
+                style={{ padding: '8px 16px', background: isEditing ? '#16a34a' : '#2563eb', border: 'none', color: '#fff', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+              >
+                {isEditing ? '💾 저장 완료' : '✏️ 편집 모드'}
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '24px' }}>
+              {/* Left Column: Connected PI Information Summary */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', alignSelf: 'start' }}>
+                <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📄</span> 연결된 Proforma Invoice (PI) 정보
+                </div>
+                {piData ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>PI 번호</span>
+                      <strong style={{ color: '#0f172a' }}>{piData.piNumber}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>PI 발행일자</span>
+                      <span>{piData.piDate}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>고객사</span>
+                      <span>{piData.customerName}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>출발항 / 도착항</span>
+                      <span style={{ fontWeight: 600 }}>{piData.departurePort || '-'} / {piData.destinationPort || '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>인코텀즈 / 결제조건</span>
+                      <span>{piData.incoterms} / {piData.paymentTerms}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>운송 수단</span>
+                      <span>{piData.shippingMethod || '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>포장 스펙</span>
+                      <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={piData.packagingSpec}>{piData.packagingSpec || '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b' }}>면장 기준환율</span>
+                      <span>{piData.exchangeRate ? `1 USD = ${piData.exchangeRate.toLocaleString()} KRW` : '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #cbd5e1', paddingTop: '8px', marginTop: '4px' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>PI 총 합계</span>
+                      <strong style={{ color: '#2563eb' }}>${(piData.totalUsd || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>원화 환산금액</span>
+                      <strong style={{ color: '#059669' }}>₩{(piData.totalKrw || 0).toLocaleString()} KRW</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                    {order.quotationId ? '연결된 PI 문서를 로드할 수 없거나 없습니다.' : '연결된 PI 번호가 없습니다.'}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Step-by-Step Inputs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                
+                {/* 1. 물류 및 부킹 단계 */}
+                <div style={{ border: '1px solid #bfdbfe', background: '#f0f7ff', borderRadius: '8px', padding: '16px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e40af', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📦</span> 물류 예약 및 컨테이너 정보
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>CI 번호 확정</span>
+                      <input type="text" value={basicForm.ciNumber} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: CI-2026-0001" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>Vessel 부킹 (선박명/항차)</span>
+                      <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>지정 포워더(Forwarder)</span>
+                      <input type="text" value={basicForm.forwarderConfirmed} onChange={e => setBasicForm(p => ({ ...p, forwarderConfirmed: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 현대글로비스" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>컨테이너 규격 및 수량 (Container Volume/Qty)</span>
+                      <input type="text" value={basicForm.containerVolumeQuantities} onChange={e => setBasicForm(p => ({ ...p, containerVolumeQuantities: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 20' Dry x 2, 40' HQ x 1" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장 분류</span>
+                      {isEditing ? (
+                        <select value={basicForm.containerWorkspaceType} onChange={e => setBasicForm(p => ({ ...p, containerWorkspaceType: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                          <option value="">선택사항</option>
+                          <option value="CFS">CFS 작업</option>
+                          <option value="Door">Door 작업 (공장 직접 적재)</option>
+                        </select>
+                      ) : (
+                        <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 상세 스케줄 단계 */}
+                <div style={{ border: '1px solid #fed7aa', background: '#fff7ed', borderRadius: '8px', padding: '16px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#c2410c', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📅</span> 상세 운송 및 선적 일정
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>화물 준비 완료일 (Cargo Ready)</span>
+                      <input type="date" value={basicForm.cargoReadyDate} onChange={e => setBasicForm(p => ({ ...p, cargoReadyDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>CFS 입고일 / 반입일</span>
+                      <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>서류/화물 마감일 (Cut-off Date)</span>
+                      <input type="date" value={basicForm.docCutoffDate} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>ETD (출발예정일)</span>
+                      <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>ETA (도착예정일)</span>
+                      <input type="date" value={basicForm.eta} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '12px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 담당자 정보</span>
+                    <textarea rows={2} value={basicForm.cfsContactInfo} onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} disabled={!isEditing} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical', width: '100%', boxSizing: 'border-box' }} placeholder="창고 주소, 담당자 성함 및 전화번호 입력..." />
+                  </div>
+                </div>
+
+                {/* 3. 통관 및 금융 관련 */}
+                <div style={{ border: '1px solid #bbf7d0', background: '#f0fdf4', borderRadius: '8px', padding: '16px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#166534', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🧾</span> 수출 신고 및 대금 관련
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
+                      <input type="text" value={basicForm.exportDeclarationNo} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="000-00-00-000000U" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>L/C 번호</span>
+                      <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="L/C 번호 입력" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>수출면장 적용 환율 (면장환율)</span>
+                      <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1350.50" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. 작업 진척/체크 리스트 */}
+                <div style={{ border: '1px solid #ddd6fe', background: '#f5f3ff', borderRadius: '8px', padding: '16px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#5b21b6', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>✔</span> 거래처별 진척 및 마감 여부
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>거래처별 차량 배차 여부</span>
+                      <input type="text" value={basicForm.dispatchStatusByVendor} onChange={e => setBasicForm(p => ({ ...p, dispatchStatusByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 가나운수 배차완료" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>선적 완료 여부</span>
+                      {isEditing ? (
+                        <select value={basicForm.shipmentCompleted} onChange={e => setBasicForm(p => ({ ...p, shipmentCompleted: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                          <option value="">선택사항</option>
+                          <option value="N">미완료 (N)</option>
+                          <option value="Y">완료 (Y)</option>
+                        </select>
+                      ) : (
+                        <input type="text" value={basicForm.shipmentCompleted === 'Y' ? '완료 (Y)' : basicForm.shipmentCompleted === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>선적서류 발송 / 은행 제출 여부</span>
+                      <input type="text" value={basicForm.docsSentOrBankSubmitted} onChange={e => setBasicForm(p => ({ ...p, docsSentOrBankSubmitted: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 은행제출 완료(6/9)" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>구매확인서 발급 (업체별 여부)</span>
+                      <input type="text" value={basicForm.purchaseCertificateByVendor} onChange={e => setBasicForm(p => ({ ...p, purchaseCertificateByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 태성기술 완료, 현대이피 미완료" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>대금 지급 현황 (업체별 여부)</span>
+                      <input type="text" value={basicForm.paymentStatusByVendor} onChange={e => setBasicForm(p => ({ ...p, paymentStatusByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 원자재처 완납, 포워더 미지급" />
+                    </div>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         )}
@@ -950,3 +1245,15 @@ export const OrderDetail: React.FC = () => {
     </div>
   );
 };
+
+const inputStyle = (isEditing: boolean) => ({
+  padding: '8px 10px',
+  border: '1px solid #cbd5e1',
+  borderRadius: '6px',
+  fontSize: '13px',
+  background: isEditing ? '#fff' : '#f8fafc',
+  color: isEditing ? '#0f172a' : '#4b5563',
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box' as const
+});
