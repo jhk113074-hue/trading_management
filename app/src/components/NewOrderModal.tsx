@@ -31,7 +31,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     poDate: new Date().toISOString().split('T')[0],
     requestedDelivery: '',
     remark: '',
-    status: '대기' as const,
+    status: 'ORDER기본정보' as const,
     exchangeRate: 1400,
     issuingCompany: 'YSACC' as 'YSACC' | 'YS'
   });

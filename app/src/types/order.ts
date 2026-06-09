@@ -22,7 +22,7 @@ export interface Order {
   poDate: string; // YYYY-MM-DD
   requestedDelivery: string;
   remark: string;
-  status: "대기" | "발행완료" | "선적&진행현황" | "CI,PL작성" | "수출신고" | "COO,BL 작성" | "선적서류 발송" | "각업체별 대금결재" | "이익관리";
+  status: "ORDER기본정보" | "발주서 발행" | "공급사별 납기 결정" | "선적&진행현황" | "선적서류 작성 및 수출신고" | "공급사 세금계산서 및 결제" | "선적서류 발송 및 은행제출" | "이익계산";
   items: OrderItem[];
   totalAmount: number;
   currency: "USD" | "KRW" | "mixed";
@@ -55,7 +55,7 @@ export interface Order {
   purchaseCertificateByVendor?: string; // 구매확인서(업체별, 여부)
   paymentStatusByVendor?: string; // 대금지급(업체별여부)
 
-  // 9-step updates
+  // 8-step updates
   isLc?: 'Y' | 'N' | ''; // LC 여부
   supplierPoSent?: Record<string, boolean>; // 업체별 발주서 발송완료 여부
   supplierProductionDates?: Record<string, string>; // 업체별 생산완료일
@@ -70,4 +70,8 @@ export interface Order {
   shippingDocsSentDate?: string; // 발송일자
   shippingDocsTrackingNo?: string; // Tracking 번호
   supplierPayments?: Record<string, { status: string; date: string; }>; // 업체별 대금결재 상태
+  
+  supplierTaxInvoice?: Record<string, 'Y' | 'N' | ''>; // 공급사별 세금계산서 발행여부
+  supplierPurchaseCertificate?: Record<string, 'Y' | 'N' | ''>; // 공급사별 구매확인서 발행여부
+  bankSubmissionStatus?: 'Y' | 'N' | ''; // 은행 제출 여부
 }

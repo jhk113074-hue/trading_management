@@ -85,9 +85,9 @@ export const Orders: React.FC = () => {
           thisMonthTotalUsd += orderUsdAmount;
         }
       }
-      if (o.status === '대기') {
+      if (o.status === 'ORDER기본정보') {
         waitingCount++;
-      } else if (o.status === '발행완료') {
+      } else {
         issuedCount++;
       }
     });
@@ -100,18 +100,18 @@ export const Orders: React.FC = () => {
     };
   }, [orders]);
 
-  // Handle Order status transition to '발행완료' (trigger Purchase Order issued)
+  // Handle Order status transition to '발주서 발행' (trigger Purchase Order issued)
   const handleIssuePo = async (e: React.MouseEvent, order: Order) => {
     e.stopPropagation();
-    if (!window.confirm(`⚠️ PO [${order.id}]의 발주서를 발행 상태로 변경하시겠습니까?`)) return;
+    if (!window.confirm(`⚠️ PO [${order.id}]의 발주서를 '발주서 발행' 단계로 변경하시겠습니까?`)) return;
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await setDoc(orderRef, {
-        status: '발행완료',
+        status: '발주서 발행',
         poIssuedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
-      alert('✅ 발주서 발행이 완료되었습니다.');
+      alert('✅ 발주서 발행 단계로 변경되었습니다.');
     } catch (err: any) {
       alert('❌ 발행 오류: ' + err.message);
     }
@@ -204,13 +204,14 @@ export const Orders: React.FC = () => {
   };
 
   const statusColors: Record<string, { bg: string, text: string }> = {
-    '대기': { bg: '#fef3c7', text: '#d97706' },
-    '발행완료': { bg: '#dcfce7', text: '#15803d' },
-    '납기확인중': { bg: '#eff6ff', text: '#2563eb' },
-    '납기확정': { bg: '#faf5ff', text: '#7c3aed' },
-    '부킹완료': { bg: '#ecfeff', text: '#0891b2' },
-    '선적완료': { bg: '#f0fdf4', text: '#16a34a' },
-    '완료': { bg: '#f1f5f9', text: '#475569' }
+    'ORDER기본정보': { bg: '#fef3c7', text: '#d97706' },
+    '발주서 발행': { bg: '#dcfce7', text: '#15803d' },
+    '공급사별 납기 결정': { bg: '#eff6ff', text: '#2563eb' },
+    '선적&진행현황': { bg: '#faf5ff', text: '#7c3aed' },
+    '선적서류 작성 및 수출신고': { bg: '#ecfeff', text: '#0891b2' },
+    '공급사 세금계산서 및 결제': { bg: '#f0fdf4', text: '#16a34a' },
+    '선적서류 발송 및 은행제출': { bg: '#e0f2fe', text: '#0369a1' },
+    '이익계산': { bg: '#f1f5f9', text: '#475569' }
   };
 
   const currentUser = userProfile?.name || '담당자';
@@ -279,13 +280,14 @@ export const Orders: React.FC = () => {
           style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '150px' }}
         >
           <option value="">전체 상태</option>
-          <option value="대기">대기</option>
-          <option value="발행완료">발행완료</option>
-          <option value="납기확인중">납기확인중</option>
-          <option value="납기확정">납기확정</option>
-          <option value="부킹완료">부킹완료</option>
-          <option value="선적완료">선적완료</option>
-          <option value="완료">완료</option>
+          <option value="ORDER기본정보">ORDER기본정보</option>
+          <option value="발주서 발행">발주서 발행</option>
+          <option value="공급사별 납기 결정">공급사별 납기 결정</option>
+          <option value="선적&진행현황">선적&진행현황</option>
+          <option value="선적서류 작성 및 수출신고">선적서류 작성 및 수출신고</option>
+          <option value="공급사 세금계산서 및 결제">공급사 세금계산서 및 결제</option>
+          <option value="선적서류 발송 및 은행제출">선적서류 발송 및 은행제출</option>
+          <option value="이익계산">이익계산</option>
         </select>
 
         <select 
@@ -393,7 +395,7 @@ export const Orders: React.FC = () => {
                         >
                           👁 상세
                         </button>
-                        {o.status === '대기' && (
+                        {o.status === 'ORDER기본정보' && (
                           <button 
                             onClick={e => handleIssuePo(e, o)}
                             style={{ border: 'none', background: '#e2e8f0', color: '#1e293b', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
