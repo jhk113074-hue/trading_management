@@ -17,12 +17,15 @@ export const OrderDetail: React.FC = () => {
   const [piData, setPiData] = useState<any | null>(null);
 
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({
+    '대기': false,
     '발행완료': false,
-    '납기확인중': false,
-    '납기확정': false,
-    '부킹완료': false,
-    '선적완료': false,
-    '완료': false
+    '선적&진행현황': false,
+    'CI,PL작성': false,
+    '수출신고': false,
+    'COO,BL 작성': false,
+    '선적서류 발송': false,
+    '각업체별 대금결재': false,
+    '이익관리': false
   });
 
   useEffect(() => {
@@ -72,7 +75,23 @@ export const OrderDetail: React.FC = () => {
     shipmentCompleted: '' as 'Y' | 'N' | '',
     docsSentOrBankSubmitted: '',
     purchaseCertificateByVendor: '',
-    paymentStatusByVendor: ''
+    paymentStatusByVendor: '',
+
+    // 9-step fields
+    isLc: '' as 'Y' | 'N' | '',
+    supplierPoSent: {} as Record<string, boolean>,
+    supplierProductionDates: {} as Record<string, string>,
+    forwarderQuotationAmount: 0,
+    cfsAddress: '',
+    cfsContact: '',
+    ciPlStatus: '' as 'Y' | 'N' | '',
+    containerWorkStatus: '',
+    cooStatus: '' as 'Y' | 'N' | '',
+    blStatus: '' as 'Y' | 'N' | '',
+    shippingDocsSentStatus: '' as 'Y' | 'N' | '',
+    shippingDocsSentDate: '',
+    shippingDocsTrackingNo: '',
+    supplierPayments: {} as Record<string, { status: string; date: string; }>
   });
 
   // Load Order document
@@ -112,7 +131,22 @@ export const OrderDetail: React.FC = () => {
           shipmentCompleted: data.shipmentCompleted || '',
           docsSentOrBankSubmitted: data.docsSentOrBankSubmitted || '',
           purchaseCertificateByVendor: data.purchaseCertificateByVendor || '',
-          paymentStatusByVendor: data.paymentStatusByVendor || ''
+          paymentStatusByVendor: data.paymentStatusByVendor || '',
+
+          isLc: data.isLc || '',
+          supplierPoSent: data.supplierPoSent || {},
+          supplierProductionDates: data.supplierProductionDates || {},
+          forwarderQuotationAmount: data.forwarderQuotationAmount || 0,
+          cfsAddress: data.cfsAddress || '',
+          cfsContact: data.cfsContact || '',
+          ciPlStatus: data.ciPlStatus || '',
+          containerWorkStatus: data.containerWorkStatus || '',
+          cooStatus: data.cooStatus || '',
+          blStatus: data.blStatus || '',
+          shippingDocsSentStatus: data.shippingDocsSentStatus || '',
+          shippingDocsSentDate: data.shippingDocsSentDate || '',
+          shippingDocsTrackingNo: data.shippingDocsTrackingNo || '',
+          supplierPayments: data.supplierPayments || {}
         });
       } else {
         setOrder(null);
@@ -145,8 +179,8 @@ export const OrderDetail: React.FC = () => {
   }, [order?.quotationId]);
 
   // Status steps list
-  const steps = ["대기", "발행완료", "납기확인중", "납기확정", "부킹완료", "선적완료", "완료"];
-  const currentStepIdx = order ? steps.indexOf(order.status) : 0;
+  const steps = ["대기", "발행완료", "선적&진행현황", "CI,PL작성", "수출신고", "COO,BL 작성", "선적서류 발송", "각업체별 대금결재", "이익관리"] as const;
+  const currentStepIdx = order ? steps.indexOf(order.status as any) : 0;
 
   // Change order status manually or progress through stepper click
   const handleStepClick = async (stepName: typeof steps[number]) => {
@@ -230,6 +264,22 @@ export const OrderDetail: React.FC = () => {
         docsSentOrBankSubmitted: basicForm.docsSentOrBankSubmitted,
         purchaseCertificateByVendor: basicForm.purchaseCertificateByVendor,
         paymentStatusByVendor: basicForm.paymentStatusByVendor,
+
+        // 9-step inputs saving
+        isLc: basicForm.isLc,
+        supplierPoSent: basicForm.supplierPoSent,
+        supplierProductionDates: basicForm.supplierProductionDates,
+        forwarderQuotationAmount: Number(basicForm.forwarderQuotationAmount) || 0,
+        cfsAddress: basicForm.cfsAddress,
+        cfsContact: basicForm.cfsContact,
+        ciPlStatus: basicForm.ciPlStatus,
+        containerWorkStatus: basicForm.containerWorkStatus,
+        cooStatus: basicForm.cooStatus,
+        blStatus: basicForm.blStatus,
+        shippingDocsSentStatus: basicForm.shippingDocsSentStatus,
+        shippingDocsSentDate: basicForm.shippingDocsSentDate,
+        shippingDocsTrackingNo: basicForm.shippingDocsTrackingNo,
+        supplierPayments: basicForm.supplierPayments,
         
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -806,6 +856,40 @@ export const OrderDetail: React.FC = () => {
                   />
                 )}
               </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>L/C 거래 여부</span>
+                {isEditing ? (
+                  <select
+                    value={basicForm.isLc}
+                    onChange={e => setBasicForm(prev => ({ ...prev, isLc: e.target.value as any }))}
+                    style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px' }}
+                  >
+                    <option value="">선택사항 (기본 T/T)</option>
+                    <option value="Y">L/C 거래 (Y)</option>
+                    <option value="N">T/T 거래 (N)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={basicForm.isLc === 'Y' ? 'L/C 거래 (Y)' : basicForm.isLc === 'N' ? 'T/T 거래 (N)' : '일반 거래'}
+                    disabled
+                    style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', background: '#f8fafc' }}
+                  />
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>L/C 번호</span>
+                <input
+                  type="text"
+                  value={basicForm.lcNo}
+                  onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))}
+                  disabled={!isEditing}
+                  style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc' }}
+                  placeholder="L/C 번호 입력"
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
@@ -894,18 +978,27 @@ export const OrderDetail: React.FC = () => {
               {/* Right Column: Step-by-Step Inputs Accordion */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 
-                {/* ─── STEP 1: 대기 (No Fields) ─── */}
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', background: order.status === '대기' ? '#f0fdfa' : '#fff', opacity: order.status === '대기' ? 1 : 0.8 }}>
+                {/* ─── STEP 1: 대기 ─── */}
+                <div style={{ border: order.status === '대기' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
                   <div 
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                    onClick={() => toggleStepExpand('대기')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '대기' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['대기'] ? '1px solid #cbd5e1' : 'none' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#64748b', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>1</span>
                       <strong style={{ fontSize: '13.5px', color: '#334155' }}>대기 단계</strong>
                       {order.status === '대기' && <span style={{ fontSize: '10px', background: '#0d9488', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>계약 접수 및 검토 대기</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>계약 검토 및 대기</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['대기'] ? '▲' : '▼'}</span>
+                    </div>
                   </div>
+                  {expandedSteps['대기'] && (
+                    <div style={{ padding: '16px', background: '#fff', fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
+                      ℹ️ 기본 계약 및 거래 조건 검토가 완료되면 다음 단계로 상태를 전환하고 입력을 진행하세요.
+                    </div>
+                  )}
                 </div>
 
                 {/* ─── STEP 2: 발행완료 ─── */}
@@ -920,120 +1013,101 @@ export const OrderDetail: React.FC = () => {
                       {order.status === '발행완료' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>L/C 등록 및 구매확인서</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>업체별 발주서 및 생산완료일</span>
                       <span style={{ fontSize: '12px' }}>{expandedSteps['발행완료'] ? '▲' : '▼'}</span>
                     </div>
                   </div>
                   {expandedSteps['발행완료'] && (
-                    <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>L/C 번호</span>
-                        <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="L/C 번호 입력" />
+                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                        🚚 공급업체별 발주 및 일정 확인
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>구매확인서 발급 (업체별 여부)</span>
-                        <input type="text" value={basicForm.purchaseCertificateByVendor} onChange={e => setBasicForm(p => ({ ...p, purchaseCertificateByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 태성기술 완료, 현대이피 미완료" />
-                      </div>
+                      {Object.keys(groupedSupplierItems).length === 0 ? (
+                        <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>품목 명세에 등록된 공급업체가 없습니다.</span>
+                      ) : (
+                        Object.keys(groupedSupplierItems).map(supplier => {
+                          const isSent = basicForm.supplierPoSent[supplier] || false;
+                          const prodDate = basicForm.supplierProductionDates[supplier] || '';
+                          return (
+                            <div key={supplier} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px', padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <span style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b', minWidth: '120px' }}>{supplier}</span>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12.5px' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={isSent} 
+                                  disabled={!isEditing}
+                                  onChange={e => {
+                                    const val = e.target.checked;
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierPoSent: {
+                                        ...prev.supplierPoSent,
+                                        [supplier]: val
+                                      }
+                                    }));
+                                  }}
+                                />
+                                <span>발주서 발송 완료</span>
+                              </label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>생산완료일:</span>
+                                <input 
+                                  type="date" 
+                                  value={prodDate}
+                                  disabled={!isEditing}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierProductionDates: {
+                                        ...prev.supplierProductionDates,
+                                        [supplier]: val
+                                      }
+                                    }));
+                                  }}
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* ─── STEP 3: 납기확인중 ─── */}
-                <div style={{ border: order.status === '납기확인중' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                {/* ─── STEP 3: 선적&진행현황 ─── */}
+                <div style={{ border: order.status === '선적&진행현황' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
                   <div 
-                    onClick={() => toggleStepExpand('납기확인중')}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '납기확인중' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['납기확인중'] ? '1px solid #cbd5e1' : 'none' }}
+                    onClick={() => toggleStepExpand('선적&진행현황')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '선적&진행현황' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['선적&진행현황'] ? '1px solid #cbd5e1' : 'none' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>3</span>
-                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>납기확인중 단계</strong>
-                      {order.status === '납기확인중' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>선적&진행현황 단계</strong>
+                      {order.status === '선적&진행현황' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>화물 준비 상태 및 차량 배차</span>
-                      <span style={{ fontSize: '12px' }}>{expandedSteps['납기확인중'] ? '▲' : '▼'}</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>포워더, Vessel 예약 및 CFS 정보</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['선적&진행현황'] ? '▲' : '▼'}</span>
                     </div>
                   </div>
-                  {expandedSteps['납기확인중'] && (
+                  {expandedSteps['선적&진행현황'] && (
                     <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>화물 준비 완료일 (Cargo Ready)</span>
-                        <input type="date" value={basicForm.cargoReadyDate} onChange={e => setBasicForm(p => ({ ...p, cargoReadyDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>거래처별 차량 배차 여부</span>
-                        <input type="text" value={basicForm.dispatchStatusByVendor} onChange={e => setBasicForm(p => ({ ...p, dispatchStatusByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 가나운수 배차완료" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ─── STEP 4: 납기확정 ─── */}
-                <div style={{ border: order.status === '납기확정' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
-                  <div 
-                    onClick={() => toggleStepExpand('납기확정')}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '납기확정' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['납기확정'] ? '1px solid #cbd5e1' : 'none' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>4</span>
-                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>납기확정 단계</strong>
-                      {order.status === '납기확정' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>CFS 입고 및 창고 연락처</span>
-                      <span style={{ fontSize: '12px' }}>{expandedSteps['납기확정'] ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-                  {expandedSteps['납기확정'] && (
-                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '50%' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 입고일 / 반입일</span>
-                        <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 담당자 정보</span>
-                        <textarea rows={2} value={basicForm.cfsContactInfo} onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} disabled={!isEditing} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical', width: '100%', boxSizing: 'border-box' }} placeholder="창고 주소, 담당자 성함 및 전화번호 입력..." />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ─── STEP 5: 부킹완료 ─── */}
-                <div style={{ border: order.status === '부킹완료' ? '1.5px solid #ea580c' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
-                  <div 
-                    onClick={() => toggleStepExpand('부킹완료')}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '부킹완료' ? '#fff7ed' : '#f8fafc', borderBottom: expandedSteps['부킹완료'] ? '1px solid #cbd5e1' : 'none' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: order.status === '부킹완료' ? '#ea580c' : '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>5</span>
-                      <strong style={{ fontSize: '13.5px', color: order.status === '부킹완료' ? '#c2410c' : '#1e3a8a' }}>부킹완료 단계</strong>
-                      {order.status === '부킹완료' && <span style={{ fontSize: '10px', background: '#f97316', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>선박 예약, ETD, ETA 및 포워더</span>
-                      <span style={{ fontSize: '12px' }}>{expandedSteps['부킹완료'] ? '▲' : '▼'}</span>
-                    </div>
-                  </div>
-                  {expandedSteps['부킹완료'] && (
-                    <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CI 번호 확정</span>
-                        <input type="text" value={basicForm.ciNumber} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: CI-2026-0001" />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 부킹 (선박명/항차)</span>
-                        <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
-                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>지정 포워더(Forwarder)</span>
                         <input type="text" value={basicForm.forwarderConfirmed} onChange={e => setBasicForm(p => ({ ...p, forwarderConfirmed: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 현대글로비스" />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 규격 및 수량 (Container Volume/Qty)</span>
-                        <input type="text" value={basicForm.containerVolumeQuantities} onChange={e => setBasicForm(p => ({ ...p, containerVolumeQuantities: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 20' Dry x 2, 40' HQ x 1" />
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 견적금액 (KRW)</span>
+                        <input type="number" value={basicForm.forwarderQuotationAmount || ''} onChange={e => setBasicForm(p => ({ ...p, forwarderQuotationAmount: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 견적 금액" />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장 분류</span>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
+                        <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소 확정</span>
                         {isEditing ? (
                           <select value={basicForm.containerWorkspaceType} onChange={e => setBasicForm(p => ({ ...p, containerWorkspaceType: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
                             <option value="">선택사항</option>
@@ -1044,90 +1118,336 @@ export const OrderDetail: React.FC = () => {
                           <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
                         )}
                       </div>
+
+                      {basicForm.containerWorkspaceType === 'CFS' && (
+                        <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 입고일/반입일</span>
+                            <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 담당자 정보</span>
+                            <input type="text" style={inputStyle(isEditing)} value={basicForm.cfsAddress} onChange={e => setBasicForm(p => ({ ...p, cfsAddress: e.target.value }))} disabled={!isEditing} placeholder="창고 주소 및 연락처 담당자명" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── STEP 4: CI,PL작성 ─── */}
+                <div style={{ border: order.status === 'CI,PL작성' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                  <div 
+                    onClick={() => toggleStepExpand('CI,PL작성')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === 'CI,PL작성' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['CI,PL작성'] ? '1px solid #cbd5e1' : 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>4</span>
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>CI,PL작성 단계</strong>
+                      {order.status === 'CI,PL작성' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>상업송장 및 패킹리스트 작성</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['CI,PL작성'] ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
+                  {expandedSteps['CI,PL작성'] && (
+                    <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류/화물 마감일 (Cut-off Date)</span>
-                        <input type="date" value={basicForm.docCutoffDate} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CI / PL 작성여부</span>
+                        {isEditing ? (
+                          <select value={basicForm.ciPlStatus} onChange={e => setBasicForm(p => ({ ...p, ciPlStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                            <option value="">선택사항</option>
+                            <option value="N">미완료 (N)</option>
+                            <option value="Y">작성완료 (Y)</option>
+                          </select>
+                        ) : (
+                          <input type="text" value={basicForm.ciPlStatus === 'Y' ? '작성완료 (Y)' : basicForm.ciPlStatus === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
+                        )}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출발예정일)</span>
-                        <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (도착예정일)</span>
-                        <input type="date" value={basicForm.eta} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '10px', fontSize: '12.5px', color: '#64748b' }}>
+                        📄 작성된 상업송장(CI) 및 패킹리스트(PL)는 파일 업로드 탭(📂 서류 & 링크 관리)에 유첨하여 관리하실 수 있습니다.
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* ─── STEP 6: 선적완료 ─── */}
-                <div style={{ border: order.status === '선적완료' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                {/* ─── STEP 5: 수출신고 ─── */}
+                <div style={{ border: order.status === '수출신고' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
                   <div 
-                    onClick={() => toggleStepExpand('선적완료')}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '선적완료' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['선적완료'] ? '1px solid #cbd5e1' : 'none' }}
+                    onClick={() => toggleStepExpand('수출신고')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '수출신고' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['수출신고'] ? '1px solid #cbd5e1' : 'none' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>6</span>
-                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>선적완료 단계</strong>
-                      {order.status === '선적완료' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>5</span>
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>수출신고 단계</strong>
+                      {order.status === '수출신고' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>수출면장, 면장환율 및 은행 서류제출</span>
-                      <span style={{ fontSize: '12px' }}>{expandedSteps['선적완료'] ? '▲' : '▼'}</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>수출면장 신고번호 및 기준환율</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['수출신고'] ? '▲' : '▼'}</span>
                     </div>
                   </div>
-                  {expandedSteps['선적완료'] && (
+                  {expandedSteps['수출신고'] && (
                     <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
-                        <input type="text" value={basicForm.exportDeclarationNo} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="000-00-00-000000U" />
+                        <input type="text" value={basicForm.exportDeclarationNo} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 010-22-19-1234567" />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 적용 환율 (면장환율)</span>
-                        <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1350.50" />
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율 (원화/달러)</span>
+                        <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
                       </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 쇼링/작업 현황 및 메모</span>
+                        <input type="text" value={basicForm.containerWorkStatus} onChange={e => setBasicForm(p => ({ ...p, containerWorkStatus: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 20ft 컨테이너 적재 완료 및 실링 완료" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── STEP 6: COO,BL 작성 ─── */}
+                <div style={{ border: order.status === 'COO,BL 작성' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                  <div 
+                    onClick={() => toggleStepExpand('COO,BL 작성')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === 'COO,BL 작성' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['COO,BL 작성'] ? '1px solid #cbd5e1' : 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>6</span>
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>COO,BL 작성 단계</strong>
+                      {order.status === 'COO,BL 작성' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>원산지증명서 및 B/L 작성 현황</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['COO,BL 작성'] ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
+                  {expandedSteps['COO,BL 작성'] && (
+                    <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>선적 완료 여부</span>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>원산지증명서 (COO) 발급여부</span>
                         {isEditing ? (
-                          <select value={basicForm.shipmentCompleted} onChange={e => setBasicForm(p => ({ ...p, shipmentCompleted: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                          <select value={basicForm.cooStatus} onChange={e => setBasicForm(p => ({ ...p, cooStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                            <option value="">선택사항</option>
+                            <option value="N">미발급 (N)</option>
+                            <option value="Y">발급완료 (Y)</option>
+                          </select>
+                        ) : (
+                          <input type="text" value={basicForm.cooStatus === 'Y' ? '발급완료 (Y)' : basicForm.cooStatus === 'N' ? '미발급 (N)' : '-'} disabled style={inputStyle(false)} />
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>선하증권 (B/L) 작성여부</span>
+                        {isEditing ? (
+                          <select value={basicForm.blStatus} onChange={e => setBasicForm(p => ({ ...p, blStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
                             <option value="">선택사항</option>
                             <option value="N">미완료 (N)</option>
                             <option value="Y">완료 (Y)</option>
                           </select>
                         ) : (
-                          <input type="text" value={basicForm.shipmentCompleted === 'Y' ? '완료 (Y)' : basicForm.shipmentCompleted === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
+                          <input type="text" value={basicForm.blStatus === 'Y' ? '완료 (Y)' : basicForm.blStatus === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
                         )}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>선적서류 발송 / 은행 제출 여부</span>
-                        <input type="text" value={basicForm.docsSentOrBankSubmitted} onChange={e => setBasicForm(p => ({ ...p, docsSentOrBankSubmitted: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 은행제출 완료(6/9)" />
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* ─── STEP 7: 완료 ─── */}
-                <div style={{ border: order.status === '완료' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                {/* ─── STEP 7: 선적서류 발송 ─── */}
+                <div style={{ border: order.status === '선적서류 발송' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
                   <div 
-                    onClick={() => toggleStepExpand('완료')}
-                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '완료' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['완료'] ? '1px solid #cbd5e1' : 'none' }}
+                    onClick={() => toggleStepExpand('선적서류 발송')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '선적서류 발송' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['선적서류 발송'] ? '1px solid #cbd5e1' : 'none' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>7</span>
-                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>완료 단계</strong>
-                      {order.status === '완료' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>선적서류 발송 단계</strong>
+                      {order.status === '선적서류 발송' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>대금지급 정산 완료</span>
-                      <span style={{ fontSize: '12px' }}>{expandedSteps['완료'] ? '▲' : '▼'}</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>선적서류 우편발송 및 은행 제출</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['선적서류 발송'] ? '▲' : '▼'}</span>
                     </div>
                   </div>
-                  {expandedSteps['완료'] && (
+                  {expandedSteps['선적서류 발송'] && (
                     <div style={{ padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#fff' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>대금 지급 현황 (업체별 여부)</span>
-                        <input type="text" value={basicForm.paymentStatusByVendor} onChange={e => setBasicForm(p => ({ ...p, paymentStatusByVendor: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 원자재처 완납, 포워더 미지급" />
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>선적 서류 발송 여부</span>
+                        {isEditing ? (
+                          <select value={basicForm.shippingDocsSentStatus} onChange={e => setBasicForm(p => ({ ...p, shippingDocsSentStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                            <option value="">선택사항</option>
+                            <option value="N">미발송 (N)</option>
+                            <option value="Y">발송완료 (Y)</option>
+                          </select>
+                        ) : (
+                          <input type="text" value={basicForm.shippingDocsSentStatus === 'Y' ? '발송완료 (Y)' : basicForm.shippingDocsSentStatus === 'N' ? '미발송 (N)' : '-'} disabled style={inputStyle(false)} />
+                        )}
                       </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>발송 일자</span>
+                        <input type="date" value={basicForm.shippingDocsSentDate} onChange={e => setBasicForm(p => ({ ...p, shippingDocsSentDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>DHL/FedEx Tracking 번호 또는 특이사항</span>
+                        <input type="text" value={basicForm.shippingDocsTrackingNo} onChange={e => setBasicForm(p => ({ ...p, shippingDocsTrackingNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: DHL 송장번호 123-456-789" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── STEP 8: 각업체별 대금결재 ─── */}
+                <div style={{ border: order.status === '각업체별 대금결재' ? '1.5px solid #2563eb' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                  <div 
+                    onClick={() => toggleStepExpand('각업체별 대금결재')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '각업체별 대금결재' ? '#eff6ff' : '#f8fafc', borderBottom: expandedSteps['각업체별 대금결재'] ? '1px solid #cbd5e1' : 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>8</span>
+                      <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>각업체별 대금결재 단계</strong>
+                      {order.status === '각업체별 대금결재' && <span style={{ fontSize: '10px', background: '#3b82f6', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>공급업체별 정산 및 송금 여부</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['각업체별 대금결재'] ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
+                  {expandedSteps['각업체별 대금결재'] && (
+                    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px', background: '#fff' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                        💰 각 공급사 대금결제 내역 관리
+                      </div>
+                      {Object.keys(groupedSupplierItems).length === 0 ? (
+                        <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>품목 명세에 등록된 공급업체가 없습니다.</span>
+                      ) : (
+                        Object.keys(groupedSupplierItems).map(supplier => {
+                          const payment = basicForm.supplierPayments[supplier] || { status: '미결제', date: '' };
+                          return (
+                            <div key={supplier} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px', padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                              <span style={{ fontWeight: 700, fontSize: '13px', color: '#1e293b', minWidth: '120px' }}>{supplier}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>결제상태:</span>
+                                {isEditing ? (
+                                  <select 
+                                    value={payment.status}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierPayments: {
+                                          ...prev.supplierPayments,
+                                          [supplier]: { ...payment, status: val }
+                                        }
+                                      }));
+                                    }}
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                                  >
+                                    <option value="미결제">❌ 미결제</option>
+                                    <option value="일부결제">⚠️ 일부결제</option>
+                                    <option value="결제완료">✅ 결제완료</option>
+                                  </select>
+                                ) : (
+                                  <span style={{ fontWeight: 700, fontSize: '12.5px', color: payment.status === '결제완료' ? '#059669' : payment.status === '일부결제' ? '#d97706' : '#dc2626' }}>{payment.status}</span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
+                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>결제일자:</span>
+                                <input 
+                                  type="date" 
+                                  value={payment.date || ''}
+                                  disabled={!isEditing}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierPayments: {
+                                        ...prev.supplierPayments,
+                                        [supplier]: { ...payment, date: val }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── STEP 9: 이익관리 ─── */}
+                <div style={{ border: order.status === '이익관리' ? '1.5px solid #ea580c' : '1px solid #cbd5e1', borderRadius: '8px', background: '#fff', overflow: 'hidden' }}>
+                  <div 
+                    onClick={() => toggleStepExpand('이익관리')}
+                    style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', background: order.status === '이익관리' ? '#fff7ed' : '#f8fafc', borderBottom: expandedSteps['이익관리'] ? '1px solid #cbd5e1' : 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ width: '22px', height: '22px', borderRadius: '50%', background: order.status === '이익관리' ? '#ea580c' : '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>9</span>
+                      <strong style={{ fontSize: '13.5px', color: order.status === '이익관리' ? '#c2410c' : '#1e3a8a' }}>이익관리 단계</strong>
+                      {order.status === '이익관리' && <span style={{ fontSize: '10px', background: '#f97316', color: '#fff', padding: '2px 6px', borderRadius: '10px', fontWeight: 'bold' }}>진행중</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>매출/매입 기반 수익 분석</span>
+                      <span style={{ fontSize: '12px' }}>{expandedSteps['이익관리'] ? '▲' : '▼'}</span>
+                    </div>
+                  </div>
+                  {expandedSteps['이익관리'] && (
+                    <div style={{ padding: '16px', background: '#fff' }}>
+                      {(() => {
+                        const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
+                        
+                        // Consolidated Revenues (from PI)
+                        const revenueUsd = piData?.totalUsd || 0;
+                        const revenueKrw = piData?.totalKrw || 0;
+                        const consolidatedRevenueKrw = Math.round((revenueUsd * customsRate) + revenueKrw);
+
+                        // Purchase Costs (from order.items)
+                        const purchaseUsd = order.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                        const purchaseKrw = order.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                        const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
+
+                        // Expenses
+                        const forwarderExpenseKrw = basicForm.forwarderQuotationAmount || 0;
+                        const totalCostKrw = consolidatedPurchaseKrw + forwarderExpenseKrw;
+
+                        // Net Profit
+                        const profitKrw = consolidatedRevenueKrw - totalCostKrw;
+                        const profitMargin = consolidatedRevenueKrw > 0 ? ((profitKrw / consolidatedRevenueKrw) * 100).toFixed(2) : '0.00';
+
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div style={{ padding: '10px', background: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11.5px', color: '#1e40af' }}>
+                              💡 <strong>환율 기준 정보</strong>: {basicForm.customsExchangeRate ? `수출면장 기준환율(1 USD = ${basicForm.customsExchangeRate} KRW)` : piData?.exchangeRate ? `PI 기준환율(1 USD = ${piData.exchangeRate} KRW)` : '기본 임시 환율(1 USD = 1,350 KRW)'}을 사용하여 원화로 환산하여 자동 계산합니다.
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
+                                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 매출액 (PI 환산)</div>
+                                <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', marginTop: '6px' }}>₩{consolidatedRevenueKrw.toLocaleString()} KRW</div>
+                                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                                  ${revenueUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} + ₩{revenueKrw.toLocaleString()}
+                                </div>
+                              </div>
+
+                              <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
+                                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 매입 및 지출액</div>
+                                <div style={{ fontSize: '14px', fontWeight: 800, color: '#991b1b', marginTop: '6px' }}>₩{totalCostKrw.toLocaleString()} KRW</div>
+                                <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>
+                                  매입 ₩{consolidatedPurchaseKrw.toLocaleString()} + 포워더 ₩{forwarderExpenseKrw.toLocaleString()}
+                                </div>
+                              </div>
+
+                              <div style={{ border: '1px solid #1e3a8a', borderRadius: '6px', padding: '10px', background: '#eff6ff' }}>
+                                <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 700 }}>예상 순이익 (이익률)</div>
+                                <div style={{ fontSize: '15px', fontWeight: 900, color: '#1e3a8a', marginTop: '5px' }}>₩{profitKrw.toLocaleString()} KRW</div>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: parseFloat(profitMargin) >= 0 ? '#15803d' : '#b91c1c', marginTop: '2px' }}>
+                                  이익률: {profitMargin}%
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
