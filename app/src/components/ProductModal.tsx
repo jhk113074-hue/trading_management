@@ -642,30 +642,60 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                               supplierPhone: found.managerPhone || found.phone || '',
                               supplierEmail: found.purchaseEmail || '',
                               supplierAddress: found.address || '',
+                              ...(sameAsSupplier ? {
+                                manufacturerName: found.name || '',
+                                manufacturerCode: found.supplierCode || '',
+                                manufacturerContact: found.managerName || '',
+                                manufacturerPhone: found.managerPhone || found.phone || '',
+                                manufacturerEmail: found.purchaseEmail || '',
+                                manufacturerAddress: found.address || '',
+                              } : {})
                             }));
+                            if (sameAsSupplier) {
+                              setManufacturerInput(val);
+                            }
                           } else {
-                            setFormData(prev => ({ ...prev, supplierCode: val }));
+                            setFormData(prev => ({
+                              ...prev,
+                              supplierName: '',
+                              supplierCode: val,
+                              supplierContact: '',
+                              supplierPhone: '',
+                              supplierEmail: '',
+                              supplierAddress: '',
+                              ...(sameAsSupplier ? {
+                                manufacturerName: '',
+                                manufacturerCode: val,
+                                manufacturerContact: '',
+                                manufacturerPhone: '',
+                                manufacturerEmail: '',
+                                manufacturerAddress: '',
+                              } : {})
+                            }));
+                            if (sameAsSupplier) {
+                              setManufacturerInput(val);
+                            }
                           }
                         }}
                         style={{ padding: '9px 11px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
                       />
                       <datalist id="suppliers_datalist">
                         {suppliers.map(s => (
-                          <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
+                           <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
                             {s.name} ({s.supplierCode})
                           </option>
                         ))}
                       </datalist>
                     </div>
-                    <Input label="공급업체명" value={formData.supplierName} onChange={(v: any) => handleChange('supplierName', v)} />
-                    <Input label="공급업체코드" value={formData.supplierCode} onChange={(v: any) => handleChange('supplierCode', v)} />
-                    <Input label="공급처 주 담당자명" value={formData.supplierContact} onChange={(v: any) => handleChange('supplierContact', v)} />
-                    <Input label="공급처 연락처" value={formData.supplierPhone} onChange={(v: any) => handleChange('supplierPhone', v)} />
-                    <Input label="공급처 이메일" value={formData.supplierEmail} onChange={(v: any) => handleChange('supplierEmail', v)} type="email" />
+                    <Input label="공급업체명" value={formData.supplierName} onChange={(v: any) => handleChange('supplierName', v)} disabled={true} />
+                    <Input label="공급업체코드" value={formData.supplierCode} onChange={(v: any) => handleChange('supplierCode', v)} disabled={true} />
+                    <Input label="공급처 주 담당자명" value={formData.supplierContact} onChange={(v: any) => handleChange('supplierContact', v)} disabled={true} />
+                    <Input label="공급처 연락처" value={formData.supplierPhone} onChange={(v: any) => handleChange('supplierPhone', v)} disabled={true} />
+                    <Input label="공급처 이메일" value={formData.supplierEmail} onChange={(v: any) => handleChange('supplierEmail', v)} type="email" disabled={true} />
                     <Input label="최소주문수량 (MOQ)" value={formData.minOrderQty} onChange={(v: any) => handleChange('minOrderQty', parseFloat(v) || 0)} type="number" />
                   </div>
                   <div style={{ marginTop: '14px' }}>
-                    <Input label="공급업체 주소" value={formData.supplierAddress} onChange={(v: any) => handleChange('supplierAddress', v)} />
+                    <Input label="공급업체 주소" value={formData.supplierAddress} onChange={(v: any) => handleChange('supplierAddress', v)} disabled={true} />
                   </div>
                 </div>
 
@@ -726,7 +756,15 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                               manufacturerAddress: found.address || '',
                             }));
                           } else {
-                            setFormData(prev => ({ ...prev, manufacturerName: val, manufacturerCode: getRawSupplierCode(val) || val }));
+                            setFormData(prev => ({
+                              ...prev,
+                              manufacturerName: '',
+                              manufacturerCode: val,
+                              manufacturerContact: '',
+                              manufacturerPhone: '',
+                              manufacturerEmail: '',
+                              manufacturerAddress: '',
+                            }));
                           }
                         }}
                         style={{ padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: sameAsSupplier ? '#f0fdf4' : '#fff', color: sameAsSupplier ? '#6b7280' : undefined, cursor: sameAsSupplier ? 'not-allowed' : undefined }}
@@ -739,14 +777,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                         ))}
                       </datalist>
                     </div>
-                    <Input label="제조사명" value={formData.manufacturerName} onChange={(v: any) => handleChange('manufacturerName', v)} disabled={sameAsSupplier} />
-                    <Input label="제조사코드" value={formData.manufacturerCode} onChange={(v: any) => handleChange('manufacturerCode', v)} disabled={sameAsSupplier} />
-                    <Input label="제조사 담당자명" value={formData.manufacturerContact} onChange={(v: any) => handleChange('manufacturerContact', v)} disabled={sameAsSupplier} />
-                    <Input label="제조사 연락처" value={formData.manufacturerPhone} onChange={(v: any) => handleChange('manufacturerPhone', v)} disabled={sameAsSupplier} />
-                    <Input label="제조사 이메일" value={formData.manufacturerEmail} onChange={(v: any) => handleChange('manufacturerEmail', v)} disabled={sameAsSupplier} type="email" />
+                    <Input label="제조사명" value={formData.manufacturerName} onChange={(v: any) => handleChange('manufacturerName', v)} disabled={true} />
+                    <Input label="제조사코드" value={formData.manufacturerCode} onChange={(v: any) => handleChange('manufacturerCode', v)} disabled={true} />
+                    <Input label="제조사 담당자명" value={formData.manufacturerContact} onChange={(v: any) => handleChange('manufacturerContact', v)} disabled={true} />
+                    <Input label="제조사 연락처" value={formData.manufacturerPhone} onChange={(v: any) => handleChange('manufacturerPhone', v)} disabled={true} />
+                    <Input label="제조사 이메일" value={formData.manufacturerEmail} onChange={(v: any) => handleChange('manufacturerEmail', v)} disabled={true} type="email" />
                   </div>
                   <div style={{ marginTop: '14px' }}>
-                    <Input label="제조사 주소" value={formData.manufacturerAddress} onChange={(v: any) => handleChange('manufacturerAddress', v)} disabled={sameAsSupplier} />
+                    <Input label="제조사 주소" value={formData.manufacturerAddress} onChange={(v: any) => handleChange('manufacturerAddress', v)} disabled={true} />
                   </div>
                 </div>
               </>
