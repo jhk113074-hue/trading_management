@@ -31,16 +31,19 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
         const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
         snap.docs.forEach(d => {
           const code = d.data().supplierCode || d.id;
-          if (code && typeof code === 'string' && /^SUP-\d+$/i.test(code)) {
-            const num = parseInt(code.substring(4), 10);
-            if (num > maxNum) maxNum = num;
+          if (code && typeof code === 'string') {
+            const match = code.match(/^(?:SUP-|S)(\d+)$/i);
+            if (match) {
+              const num = parseInt(match[1], 10);
+              if (num > maxNum) maxNum = num;
+            }
           }
         });
       } catch (err) {
         console.error('공급업체코드 자동발번 오류:', err);
       }
       
-      const nextCode = `SUP-${String(maxNum + 1).padStart(3, '0')}`;
+      const nextCode = `S${String(maxNum + 1).padStart(4, '0')}`;
       setFormData(prev => ({ ...prev, supplierCode: nextCode }));
     };
 
