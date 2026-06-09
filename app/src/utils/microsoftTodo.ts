@@ -199,13 +199,13 @@ export const syncAddTaskToMsTodo = async (
   taskId: string,
   userProfile: User | null
 ): Promise<string | null> => {
-  const token = await refreshMicrosoftToken(userProfile);
-  if (!token) {
-    console.warn('MS To Do 연동 토큰이 존재하지 않거나 만료되었습니다.');
-    return null;
-  }
-
   try {
+    const token = await refreshMicrosoftToken(userProfile);
+    if (!token) {
+      console.warn('MS To Do 연동 토큰이 존재하지 않거나 만료되었습니다.');
+      return null;
+    }
+
     const listId = await getOrCreateTodoList(token, userProfile!);
 
     const body: any = {
@@ -258,18 +258,18 @@ export const syncUpdateTaskToMsTodo = async (
   task: Task,
   userProfile: User | null
 ): Promise<void> => {
-  const token = await refreshMicrosoftToken(userProfile);
-  if (!token) return;
-
-  const msTaskId = (task as any).microsoftTaskId;
-  if (!msTaskId) {
-    // YSACC에는 존재하나 MS To Do에 아직 동기화되지 않았다면 생성
-    const { id, createdAt, ...rest } = task;
-    await syncAddTaskToMsTodo(rest, task.id, userProfile);
-    return;
-  }
-
   try {
+    const token = await refreshMicrosoftToken(userProfile);
+    if (!token) return;
+
+    const msTaskId = (task as any).microsoftTaskId;
+    if (!msTaskId) {
+      // YSACC에는 존재하나 MS To Do에 아직 동기화되지 않았다면 생성
+      const { id, createdAt, ...rest } = task;
+      await syncAddTaskToMsTodo(rest, task.id, userProfile);
+      return;
+    }
+
     const listId = await getOrCreateTodoList(token, userProfile!);
 
     const body: any = {
@@ -311,13 +311,13 @@ export const syncDeleteTaskFromMsTodo = async (
   task: Task,
   userProfile: User | null
 ): Promise<void> => {
-  const token = await refreshMicrosoftToken(userProfile);
-  if (!token) return;
-
-  const msTaskId = (task as any).microsoftTaskId;
-  if (!msTaskId) return;
-
   try {
+    const token = await refreshMicrosoftToken(userProfile);
+    if (!token) return;
+
+    const msTaskId = (task as any).microsoftTaskId;
+    if (!msTaskId) return;
+
     const listId = await getOrCreateTodoList(token, userProfile!);
 
     await fetch(`https://graph.microsoft.com/v1.0/me/todo/lists/${listId}/tasks/${msTaskId}`, {

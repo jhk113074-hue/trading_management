@@ -107,7 +107,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // Microsoft To Do 동기화
-      await syncAddTaskToMsTodo(taskData, docRef.id, userProfile);
+      try {
+        await syncAddTaskToMsTodo(taskData, docRef.id, userProfile);
+      } catch (syncErr) {
+        console.error("MS To Do sync failed on add:", syncErr);
+      }
     } catch (err) {
       console.error("Add task error:", err);
       throw err;
@@ -123,7 +127,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // Microsoft To Do 동기화
-      await syncUpdateTaskToMsTodo(task, userProfile);
+      try {
+        await syncUpdateTaskToMsTodo(task, userProfile);
+      } catch (syncErr) {
+        console.error("MS To Do sync failed on update:", syncErr);
+      }
     } catch (err) {
       console.error("Update task error:", err);
       throw err;
@@ -141,7 +149,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Microsoft To Do 동기화
       const task = tasks.find(t => t.id === taskId);
       if (task) {
-        await syncUpdateTaskToMsTodo({ ...task, status }, userProfile);
+        try {
+          await syncUpdateTaskToMsTodo({ ...task, status }, userProfile);
+        } catch (syncErr) {
+          console.error("MS To Do sync failed on status update:", syncErr);
+        }
       }
     } catch (err) {
       console.error("Update status error:", err);
@@ -155,7 +167,11 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Microsoft To Do 동기화
       if (task) {
-        await syncDeleteTaskFromMsTodo(task, userProfile);
+        try {
+          await syncDeleteTaskFromMsTodo(task, userProfile);
+        } catch (syncErr) {
+          console.error("MS To Do sync failed on delete:", syncErr);
+        }
       }
     } catch (err) {
       console.error("Delete task error:", err);
