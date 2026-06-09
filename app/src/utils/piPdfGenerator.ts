@@ -19,17 +19,31 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
     ? "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea" 
     : "201-1HO, 1251, GAROSU-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28420, SOUTH KOREA";
 
-  const itemRows = items.map((item, index) => `
-    <tr>
-      <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; font-weight:500;">${index + 1}</td>
-      <td style="padding:4px 8px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${item.description}</td>
-      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(item.quantity || 0).toLocaleString('en-US')}</td>
-      <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; color:#475569;">${item.unit}</td>
-      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-      <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-      <td style="padding:4px 8px; border:1px solid #cbd5e1; font-style:italic; font-size:11px; color:#64748b; text-align:right;">${item.remarks || ''}</td>
-    </tr>
-  `).join('');
+  const itemRows = items.map((item, index) => {
+    let prodName = item.productName || '';
+    if (!prodName && item.productCode) {
+      const code = item.productCode;
+      if (code.startsWith('[') && code.includes(']')) {
+        prodName = code.substring(code.indexOf(']') + 1).trim();
+      } else {
+        prodName = code;
+      }
+    }
+    const spec = item.spec || item.description || '';
+
+    return `
+      <tr>
+        <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; background:#f8fafc; color:#64748b; font-weight:500;">${index + 1}</td>
+        <td style="padding:4px 8px; border:1px solid #cbd5e1; font-weight:600; color:#1e293b;">${prodName}</td>
+        <td style="padding:4px 8px; border:1px solid #cbd5e1; color:#334155; font-weight:500;">${spec}</td>
+        <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">${(item.quantity || 0).toLocaleString('en-US')}</td>
+        <td style="text-align:center; padding:4px 6px; border:1px solid #cbd5e1; color:#475569;">${item.unit}</td>
+        <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; color:#0f172a; font-weight:500;">$${(item.salePriceUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        <td style="text-align:right; padding:4px 8px; border:1px solid #cbd5e1; font-weight:700; color:#0f172a;">$${(item.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        <td style="padding:4px 8px; border:1px solid #cbd5e1; font-style:italic; font-size:10.5px; color:#64748b; text-align:left; white-space:pre-wrap; line-height:1.25;">${item.remarks || ''}</td>
+      </tr>
+    `;
+  }).join('');
 
   const freightTable = (piData.freightCharges && piData.freightCharges.length > 0) ? `
   <div style="margin-top: 10px;">
@@ -246,12 +260,13 @@ export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
       <thead>
         <tr>
           <th style="width:30px; text-align:center;">No</th>
-          <th>Description</th>
-          <th style="width:60px; text-align:right;">Qty</th>
-          <th style="width:40px; text-align:center;">Unit</th>
-          <th style="width:70px; text-align:right;">Unit Price</th>
-          <th style="width:95px; text-align:right;">Total (USD)</th>
-          <th style="width:80px; text-align:right;">Remarks</th>
+          <th style="width:110px; text-align:left;">Product</th>
+          <th style="width:130px; text-align:left;">Spec</th>
+          <th style="width:65px; text-align:right;">Qty</th>
+          <th style="width:45px; text-align:center;">Unit</th>
+          <th style="width:85px; text-align:right;">Unit Price</th>
+          <th style="width:105px; text-align:right;">Total (USD)</th>
+          <th style="width:140px; text-align:left;">Remarks</th>
         </tr>
       </thead>
       <tbody>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
-import { db, COMPANY_ID } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, COMPANY_ID, storage } from '../firebase';
 import type { Product, ProductPriceHistory } from '../types/product';
 
 interface Props {
@@ -19,7 +20,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
   const [sameAsSupplier, setSameAsSupplier] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Product>>({
-    productCode: undefined, nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', imageUrl: '',
+    productCode: undefined, nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', spec: '', imageUrl: '',
     supplierName: '', supplierCode: '', supplierContact: '', supplierPhone: '', supplierEmail: '', supplierAddress: '', minOrderQty: 0,
     manufacturerName: '', manufacturerCode: '', manufacturerContact: '', manufacturerPhone: '', manufacturerEmail: '', manufacturerAddress: '',
     purchasePrice: 0, currency: 'USD', priceValidFrom: '', priceValidTo: '', discountRate: 0, freightIncluded: 'N', purchasePrices: [],
@@ -141,6 +142,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
     
     const targetMethod = {
       ...editingMethod,
+      unit: (editingMethod.unit || 'KG').toUpperCase(),
       id: methodId,
       isDefault: list.length === 0 ? true : !!editingMethod.isDefault,
       unitWidth: parseFloat(editingMethod.unitWidth) || 0,
@@ -171,7 +173,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
     const defaultMethod = list.find(m => m.isDefault) || targetMethod;
     if (defaultMethod) {
-      const isPallet = defaultMethod.packageType?.endsWith('+ Pallet') || defaultMethod.packageType === 'Pallet';
+      const isPallet = defaultMethod.packageType === 'Pallet' || defaultMethod.packageType === 'Pallet(Pail)' || defaultMethod.packageType === 'Pallet(Drum)';
       setFormData(prev => ({
         ...prev,
         packingMethods: list,
@@ -192,6 +194,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
         weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
         grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+        stackable: defaultMethod.stackable || 'Y',
+        rotation: defaultMethod.rotation || 'Y',
       }));
     } else {
       setFormData(prev => ({ ...prev, packingMethods: list }));
@@ -208,7 +212,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
     
     const defaultMethod = list.find(m => m.isDefault);
     if (defaultMethod) {
-      const isPallet = defaultMethod.packageType?.endsWith('+ Pallet') || defaultMethod.packageType === 'Pallet';
+      const isPallet = defaultMethod.packageType === 'Pallet' || defaultMethod.packageType === 'Pallet(Pail)' || defaultMethod.packageType === 'Pallet(Drum)';
       setFormData(prev => ({
         ...prev,
         packingMethods: list,
@@ -229,6 +233,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
         weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
         grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+        stackable: defaultMethod.stackable || 'Y',
+        rotation: defaultMethod.rotation || 'Y',
       }));
     } else {
       setFormData(prev => ({ ...prev, packingMethods: list }));
@@ -245,6 +251,95 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
   const handleChange = (field: keyof Product, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const [isImageUploading, setIsImageUploading] = useState(false);
+
+  const handleImageUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setIsImageUploading(true);
+    const file = files[0];
+    const prodId = initialProduct?.id || formData.productCode || `temp_${Date.now()}`;
+    const uniqueFileName = `img_${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `products/${prodId}/${uniqueFileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, 
+          (error: any) => {
+            console.error("Image upload failed:", error);
+            reject(error);
+          }, 
+          () => resolve()
+        );
+      });
+      const url = await getDownloadURL(uploadTask.snapshot.ref);
+      handleChange('imageUrl', url);
+    } catch (e: any) {
+      alert("이미지 업로드 중 오류가 발생했습니다: " + e.message);
+    } finally {
+      setIsImageUploading(false);
+    }
+  };
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleDocUpload = async (files: FileList | null, category: 'TDS' | 'MSDS' | '기타') => {
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    const prodId = initialProduct?.id || formData.productCode || `temp_${Date.now()}`;
+    const newDocs = [...(formData.technicalDocuments || [])];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uniqueFileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `products/${prodId}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise<void>((resolve) => {
+        uploadTask.on('state_changed', null, 
+          (error: any) => {
+            console.error("Upload failed for", file.name, error);
+            resolve();
+          }, 
+          async () => {
+            try {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              newDocs.push({
+                name: file.name,
+                url,
+                size: file.size,
+                path: uploadTask.snapshot.ref.fullPath,
+                category
+              });
+            } catch(e) {
+              console.error("Download URL error", e);
+            }
+            resolve();
+          }
+        );
+      });
+    }
+    setFormData(prev => ({ ...prev, technicalDocuments: newDocs }));
+    setIsUploading(false);
+  };
+
+  const handleDocDelete = async (index: number) => {
+    const docItem = formData.technicalDocuments?.[index];
+    if (!docItem) return;
+    if (!window.confirm(`'${docItem.name}' 파일을 삭제하시겠습니까?`)) return;
+    try {
+      if (docItem.path) {
+        const storageRef = ref(storage, docItem.path);
+        await deleteObject(storageRef).catch(console.warn);
+      }
+      const newDocs = [...(formData.technicalDocuments || [])];
+      newDocs.splice(index, 1);
+      setFormData(prev => ({ ...prev, technicalDocuments: newDocs }));
+    } catch (e) {
+      console.error("Delete doc error:", e);
+    }
   };
 
   const handlePriceHistoryAdd = () => {
@@ -291,9 +386,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
     try {
       const docId = initialProduct?.id || formData.productCode;
       
-      const isPallet = formData.packageType?.endsWith('+ Pallet') || formData.packageType === 'Pallet';
+      const isPallet = formData.packageType === 'Pallet' || formData.packageType === 'Pallet(Pail)' || formData.packageType === 'Pallet(Drum)';
       const finalData: Partial<Product> = {
         ...formData,
+        unit: (formData.unit || 'KG').toUpperCase(),
+        packingMethods: (formData.packingMethods || []).map(m => ({
+          ...m,
+          unit: (m.unit || 'KG').toUpperCase()
+        })),
         specWidth: isPallet ? (formData.palletWidth || formData.unitWidth || 0) : (formData.unitWidth || 0),
         specLength: isPallet ? (formData.palletLength || formData.unitLength || 0) : (formData.unitLength || 0),
         specHeight: isPallet ? (formData.palletHeight || formData.unitHeight || 0) : (formData.unitHeight || 0),
@@ -324,7 +424,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '95%', maxWidth: '980px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '96%', maxWidth: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
         
         {/* Header */}
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
@@ -346,9 +446,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
               { id: 1, label: '📑 1. 기본 정보' },
               { id: 2, label: '🏭 2. 공급 & 공급처' },
               { id: 3, label: '💰 3. 구매 & 가격' },
-              { id: 4, label: '📏 4. 규격 & 물성' },
-              { id: 5, label: '📦 5. 재고 & 납기' },
-              { id: 6, label: '🔬 6. 품질 & 규제' },
+              { id: 4, label: '📦 4. 패킹 정보' },
+              { id: 6, label: '🔬 5. 기술 자료' },
             ].map(tab => (
               <button 
                 key={tab.id}
@@ -376,11 +475,139 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                   <Input label="중분류" value={formData.categoryMedium} onChange={(v: any) => handleChange('categoryMedium', v)} />
                   <Input label="소분류" value={formData.categorySmall} onChange={(v: any) => handleChange('categorySmall', v)} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>상품 상세 설명</label>
-                  <textarea rows={3} value={formData.description} onChange={(e: any) => handleChange('description', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>상품 상세 설명</label>
+                    <textarea 
+                      rows={2} 
+                      value={formData.description} 
+                      onChange={(e: any) => handleChange('description', e.target.value)} 
+                      style={{ 
+                        padding: '9px 12px', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '6px', 
+                        fontSize: '13px', 
+                        outline: 'none',
+                        color: '#0f172a',
+                        transition: 'border-color 0.15s, box-shadow 0.15s'
+                      }} 
+                      onFocus={e => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>규격 / 스펙 (Spec)</label>
+                    <textarea 
+                      rows={2} 
+                      value={formData.spec || ''} 
+                      onChange={(e: any) => handleChange('spec', e.target.value)} 
+                      placeholder="예: TPA Resin, Low Profile Additive 등" 
+                      style={{ 
+                        padding: '9px 12px', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '6px', 
+                        fontSize: '13px', 
+                        outline: 'none',
+                        color: '#0f172a',
+                        transition: 'border-color 0.15s, box-shadow 0.15s'
+                      }} 
+                      onFocus={e => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
                 </div>
-                <Input label="상품 이미지 URL" value={formData.imageUrl} onChange={(v: any) => handleChange('imageUrl', v)} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
+                  <Input label="색상" value={formData.color} onChange={(v: any) => handleChange('color', v)} />
+                  <Input label="재질" value={formData.material} onChange={(v: any) => handleChange('material', v)} />
+                  <Input label="원산지" value={formData.origin} onChange={(v: any) => handleChange('origin', v)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '14px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>상품 이미지</label>
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                    {/* Preview box */}
+                    <div style={{ 
+                      width: '78px', 
+                      height: '78px', 
+                      borderRadius: '8px', 
+                      border: '1px solid #cbd5e1', 
+                      background: '#f8fafc', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      overflow: 'hidden',
+                      flexShrink: 0
+                    }}>
+                      {formData.imageUrl ? (
+                        <img src={formData.imageUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ fontSize: '20px', color: '#94a3b8' }}>🖼️</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input 
+                          type="file" 
+                          id="product-image-upload" 
+                          accept="image/*" 
+                          style={{ display: 'none' }} 
+                          onChange={(e) => handleImageUpload(e.target.files)} 
+                        />
+                        <label 
+                          htmlFor="product-image-upload" 
+                          style={{ 
+                            padding: '8px 16px', 
+                            background: '#eff6ff', 
+                            color: '#2563eb', 
+                            borderRadius: '6px', 
+                            fontSize: '13px', 
+                            fontWeight: 600, 
+                            cursor: 'pointer', 
+                            border: '1px solid #bfdbfe',
+                            display: 'inline-block' 
+                          }}
+                        >
+                          {isImageUploading ? '📤 업로드 중...' : '＋ 이미지 파일 추가'}
+                        </label>
+                        {formData.imageUrl && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleChange('imageUrl', '')} 
+                            style={{ 
+                              padding: '8px 16px', 
+                              background: '#fff', 
+                              color: '#ef4444', 
+                              borderRadius: '6px', 
+                              fontSize: '13px', 
+                              fontWeight: 600, 
+                              cursor: 'pointer', 
+                              border: '1px solid #fca5a5' 
+                            }}
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+                      <input 
+                        type="text" 
+                        value={formData.imageUrl || ''} 
+                        onChange={(e) => handleChange('imageUrl', e.target.value)} 
+                        placeholder="또는 이미지 주소(URL)를 입력해주세요" 
+                        style={{ 
+                          width: '100%', 
+                          padding: '9px 12px', 
+                          border: '1px solid #cbd5e1', 
+                          borderRadius: '6px', 
+                          fontSize: '13px', 
+                          outline: 'none',
+                          background: '#fff',
+                          boxSizing: 'border-box'
+                        }} 
+                        onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
+                        onBlur={e => { e.target.style.borderColor = '#cbd5e1'; }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 
@@ -576,33 +803,31 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                 </div>
               </>
             )}
-
             {activeTab === 4 && (
               <>
-                <div style={{ background: '#f8fafc', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#2563eb', marginBottom: '12px' }}>📋 공통 사양</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                    <Select label="단위" value={formData.unit} onChange={(v: any) => handleChange('unit', v)} options={['KG', 'BOX', 'M', 'M2', 'M3', 'EA', 'SET']} />
-                    <Select label="다단 적재" value={formData.stackable} onChange={(v: any) => handleChange('stackable', v)} options={['Y', 'N']} />
-                    <Select label="회전 허용" value={formData.rotation} onChange={(v: any) => handleChange('rotation', v)} options={['Y', 'N']} />
-                    <Input label="색상" value={formData.color} onChange={(v: any) => handleChange('color', v)} />
-                    <Input label="재질" value={formData.material} onChange={(v: any) => handleChange('material', v)} />
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <Input label="원산지" value={formData.origin} onChange={(v: any) => handleChange('origin', v)} />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Packing Methods list */}
                 <div style={{ border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#2563eb', margin: 0 }}>📦 제품 패킹(포장) 방법 목록</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#2563eb', margin: 0 }}>📦 제품 패킹(포장) 방법 목록</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>기본 단위:</span>
+                        <select 
+                          value={formData.unit ?? ''} 
+                          onChange={e => handleChange('unit', e.target.value)} 
+                          style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                        >
+                          {['KG', 'BOX', 'M2', 'M', 'EA'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    </div>
                     <button 
                       type="button" 
                       onClick={() => setEditingMethod({
-                        name: '', packageType: 'Single', unit: formData.unit || 'KG', isDefault: (formData.packingMethods || []).length === 0,
+                        name: '', packageType: '단품', unit: formData.unit || 'KG', isDefault: (formData.packingMethods || []).length === 0,
                         unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
-                        qtyPerPallet: 0, palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0
+                        qtyPerPallet: 0, palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+                        stackable: 'Y', rotation: 'Y'
                       })} 
                       style={{ padding: '6px 12px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
                     >
@@ -615,10 +840,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e8ecf0', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>패킹 방법명</th>
-                          <th style={{ padding: '8px' }}>포장 형태</th>
                           <th style={{ padding: '8px' }}>단위</th>
-                          <th style={{ padding: '8px' }}>개별 규격 (가x세x높, mm)</th>
-                          <th style={{ padding: '8px' }}>파렛트 규격 (가x세x높, mm / 적재수량/중량)</th>
+                          <th style={{ padding: '8px' }}>포장 규격 (WxLxH, 적재수량/중량, 순중량, 총중량)</th>
+                          <th style={{ padding: '8px', textAlign: 'center' }}>다단 적재</th>
+                          <th style={{ padding: '8px', textAlign: 'center' }}>회전 허용</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>기본 설정</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>작업</th>
                         </tr>
@@ -631,30 +856,33 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                             </td>
                           </tr>
                         ) : (
-                          (formData.packingMethods || []).map((m: any) => (
-                            <tr key={m.id} style={{ borderBottom: '1px solid #e8ecf0', background: m.isDefault ? '#eff6ff' : 'transparent' }}>
-                              <td style={{ padding: '8px', fontWeight: m.isDefault ? 700 : 500 }}>{m.name} {m.isDefault && <span style={{ fontSize: '10px', background: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>기본</span>}</td>
-                              <td style={{ padding: '8px' }}>{m.packageType}</td>
-                              <td style={{ padding: '8px' }}>{m.unit}</td>
-                              <td style={{ padding: '8px' }}>
-                                {m.unitWidth} x {m.unitLength} x {m.unitHeight} mm ({m.unitWeight} kg)
-                              </td>
-                              <td style={{ padding: '8px' }}>
-                                {m.packageType?.endsWith('+ Pallet') || m.packageType === 'Pallet' ? (
-                                  `${m.palletWidth} x ${m.palletLength} x ${m.palletHeight} mm / ${m.qtyPerPallet} EA`
-                                ) : '-'}
-                              </td>
-                              <td style={{ padding: '8px', textAlign: 'center' }}>
-                                {!m.isDefault && (
-                                  <button type="button" onClick={() => handleSetDefaultPacking(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fff', border: '1px solid #e8ecf0', borderRadius: '4px', cursor: 'pointer' }}>기본 지정</button>
-                                )}
-                              </td>
-                              <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                <button type="button" onClick={() => setEditingMethod(m)} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
-                                <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
-                              </td>
-                            </tr>
-                          ))
+                          (formData.packingMethods || []).map((m: any) => {
+                            const isPallet = m.packageType === 'Pallet' || m.packageType === 'Pallet(Pail)' || m.packageType === 'Pallet(Drum)';
+                            const specStr = isPallet
+                              ? `Pallet: ${m.palletWidth || 0}x${m.palletLength || 0}x${m.palletHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.palletWeight || 0} kg, 총중량: ${m.palletGrossWeight || 0} kg`
+                              : `Single: ${m.unitWidth || 0}x${m.unitLength || 0}x${m.unitHeight || 0} mm / 순중량: ${m.unitWeight || 0} kg, 총중량: ${m.unitGrossWeight || 0} kg`;
+
+                            return (
+                              <tr key={m.id} style={{ borderBottom: '1px solid #e8ecf0', background: m.isDefault ? '#eff6ff' : 'transparent' }}>
+                                <td style={{ padding: '8px', fontWeight: m.isDefault ? 700 : 500 }}>
+                                  {m.name} {m.isDefault && <span style={{ fontSize: '10px', background: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>기본</span>}
+                                </td>
+                                <td style={{ padding: '8px' }}>{m.unit}</td>
+                                <td style={{ padding: '8px', color: '#475569' }}>{specStr}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{m.stackable || 'Y'}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{m.rotation || 'Y'}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>
+                                  {!m.isDefault && (
+                                    <button type="button" onClick={() => handleSetDefaultPacking(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fff', border: '1px solid #e8ecf0', borderRadius: '4px', cursor: 'pointer' }}>기본 지정</button>
+                                  )}
+                                </td>
+                                <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                  <button type="button" onClick={() => setEditingMethod(m)} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
+                                  <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>
@@ -663,21 +891,24 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
                 {/* Add/Edit Packing Method Sub-form */}
                 {editingMethod && (
-                  <div style={{ border: '2px solid #2563eb', borderRadius: '8px', padding: '16px', background: '#f8fafc' }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                      {editingMethod.id ? '⚙️ 패킹 방법 수정' : '⚙️ 새 패킹 방법 등록'}
-                    </h4>
+                  <div style={{ border: '1px solid #2563eb', borderRadius: '12px', padding: '20px', background: '#f8fafc', boxShadow: '0 4px 12px rgba(37,99,235,0.06)', marginTop: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+                      <span style={{ fontSize: '16px' }}>⚙️</span>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                        {editingMethod.id ? '패킹 방법 수정' : '새 패킹 방법 등록'}
+                      </h4>
+                    </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                      <Input label="패킹 방법명 (예: Pail 단품, Pail+Pallet 등) ★" value={editingMethod.name} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, name: v }))} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                      <Input label="패킹 방법명 (예: Pail 단품, Pail+Pallet 등) ★" value={editingMethod.name} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, name: v }))} placeholder="패킹명을 입력해 주세요" />
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>포장 형태 ★</label>
                         <select 
                           value={editingMethod.packageType} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, packageType: e.target.value }))} 
-                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
+                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
-                          {['Single', 'Pail', 'Drum', 'Pail + Pallet', 'Drum + Pallet', 'Pallet', 'Carton', 'Wooden Box', 'None'].map(opt => (
+                          {['단품', 'Pail', 'Drum', 'Pallet', 'Pallet(Pail)', 'Pallet(Drum)', 'BOX', 'Carton', 'IBC TANK'].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
@@ -687,9 +918,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                         <select 
                           value={editingMethod.unit} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, unit: e.target.value }))} 
-                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
+                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
-                          {['KG', 'BOX', 'M', 'M2', 'M3', 'EA', 'SET'].map(opt => (
+                          {['KG', 'BOX', 'M2', 'M', 'EA'].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
@@ -697,9 +928,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                     </div>
 
                     {/* Dynamic layout inside sub-form */}
-                    {(editingMethod.packageType === 'Single' || editingMethod.packageType === 'None' || editingMethod.packageType === 'Carton' || editingMethod.packageType === 'Wooden Box') && (
-                      <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '8px' }}>📦 단품별 규격 (Single Spec)</span>
+                    {(editingMethod.packageType === '단품' || editingMethod.packageType === 'BOX' || editingMethod.packageType === 'Carton' || editingMethod.packageType === 'Pail' || editingMethod.packageType === 'Drum' || editingMethod.packageType === 'IBC TANK') && (
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>📦 단품/포장별 규격 Spec</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
                           <Input label="가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
                           <Input label="세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
@@ -710,33 +941,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       </div>
                     )}
 
-                    {(editingMethod.packageType === 'Pail' || editingMethod.packageType === 'Pail + Pallet') && (
-                      <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669', display: 'block', marginBottom: '8px' }}>🧪 화학물 페일(Pail) 규격</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                          <Input label="페일 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
-                          <Input label="페일 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
-                          <Input label="페일 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
-                          <Input label="페일 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
-                        </div>
-                      </div>
-                    )}
-
-                    {(editingMethod.packageType === 'Drum' || editingMethod.packageType === 'Drum + Pallet') && (
-                      <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#7c3aed', display: 'block', marginBottom: '8px' }}>🛢️ 화학물 드럼(Drum) 규격</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                          <Input label="드럼 가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
-                          <Input label="드럼 세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
-                          <Input label="드럼 높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
-                          <Input label="드럼 순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
-                        </div>
-                      </div>
-                    )}
-
-                    {(editingMethod.packageType?.endsWith('+ Pallet') || editingMethod.packageType === 'Pallet') && (
-                      <div style={{ background: '#fff', border: '1px solid #e8ecf0', borderRadius: '6px', padding: '12px', marginBottom: '16px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '8px' }}>🪵 파렛트별 적재 및 규격 (Pallet Spec)</span>
+                    {(editingMethod.packageType === 'Pallet' || editingMethod.packageType === 'Pallet(Pail)' || editingMethod.packageType === 'Pallet(Drum)') && (
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '12px' }}>🪵 파렛트 적재 규격 (Pallet Spec)</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                           <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
                           <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: v }))} type="number" />
@@ -748,33 +955,103 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '6px 14px', fontSize: '11px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', color: '#475569' }}>취소</button>
-                      <button type="button" onClick={handleSavePackingMethod} style={{ padding: '6px 14px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>저장 및 적용</button>
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>🔄 적재 및 취급 옵션</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                        <Select label="다단 적재" value={editingMethod.stackable} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, stackable: v }))} options={['Y', 'N']} />
+                        <Select label="회전 허용" value={editingMethod.rotation} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, rotation: v }))} options={['Y', 'N']} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
+                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '8px 16px', fontSize: '12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>취소</button>
+                      <button type="button" onClick={handleSavePackingMethod} style={{ padding: '8px 18px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>저장 및 적용</button>
                     </div>
                   </div>
                 )}
               </>
             )}
 
-            {activeTab === 5 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                <Input label="현재 재고 수량" value={formData.stockQty} onChange={(v: any) => handleChange('stockQty', parseFloat(v) || 0)} type="number" />
-                <Input label="리드타임 (일수)" value={formData.leadTimeDays} onChange={(v: any) => handleChange('leadTimeDays', parseInt(v) || 0)} type="number" />
-                <Input label="보관 위치" value={formData.storageLocation} onChange={(v: any) => handleChange('storageLocation', v)} />
-                <Input label="보관 온도" value={formData.storageTemp} onChange={(v: any) => handleChange('storageTemp', v)} />
-                <Input label="보관 습도" value={formData.storageHumidity} onChange={(v: any) => handleChange('storageHumidity', v)} />
-              </div>
-            )}
+
 
             {activeTab === 6 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-                <Input label="제조사명" value={formData.manufacturer} onChange={(v: any) => handleChange('manufacturer', v)} />
-                <Input label="제조일자" value={formData.manufactureDate} onChange={(v: any) => handleChange('manufactureDate', v)} type="date" />
-                <Input label="품질유효 종료일" value={formData.expiryDate} onChange={(v: any) => handleChange('expiryDate', v)} type="date" />
-                <Select label="MSDS 관리" value={formData.msdsManaged} onChange={(v: any) => handleChange('msdsManaged', v)} options={['N', 'Y']} />
-                <div style={{ gridColumn: 'span 2' }}>
-                  <Input label="인증 정보" value={formData.certifications} onChange={(v: any) => handleChange('certifications', v)} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ fontSize: '13px', color: '#475569', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  📂 <strong>기술 자료 관리:</strong> 상품에 속한 TDS, MSDS 및 기타 기술 사양 문서를 업로드하고 통합 관리합니다. (각 카테고리별 최대 10MB)
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                  {(['TDS', 'MSDS', '기타'] as const).map(cat => {
+                    const docsOfCat = (formData.technicalDocuments || []).filter(d => d.category === cat);
+                    
+                    return (
+                      <div key={cat} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
+                            {cat === 'TDS' ? '📄 TDS (Technical Data Sheet)' : cat === 'MSDS' ? '🛢️ MSDS (Material Safety Data Sheet)' : '📎 기타 기술자료'}
+                          </span>
+                          <span style={{ fontSize: '11px', background: cat === 'TDS' ? '#eff6ff' : cat === 'MSDS' ? '#fef2f2' : '#f0fdf4', color: cat === 'TDS' ? '#2563eb' : cat === 'MSDS' ? '#dc2626' : '#16a34a', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                            {docsOfCat.length}개
+                          </span>
+                        </div>
+
+                        {/* File Upload Button */}
+                        <div style={{ marginBottom: '14px' }}>
+                          <input 
+                            type="file" 
+                            id={`file-upload-${cat}`} 
+                            style={{ display: 'none' }} 
+                            onChange={(e) => handleDocUpload(e.target.files, cat)}
+                          />
+                          <label 
+                            htmlFor={`file-upload-${cat}`} 
+                            style={{ display: 'block', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '10px', textAlign: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#475569', transition: 'border-color 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
+                            onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                          >
+                            {isUploading ? '📤 업로드 중...' : '＋ 파일 추가하기'}
+                          </label>
+                        </div>
+
+                        {/* File List */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '180px' }}>
+                          {docsOfCat.length === 0 ? (
+                            <div style={{ margin: 'auto', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
+                              등록된 문서가 없습니다.
+                            </div>
+                          ) : (
+                            docsOfCat.map(docItem => {
+                              // Find actual index in formData.technicalDocuments
+                              const origIdx = (formData.technicalDocuments || []).findIndex(d => d.path === docItem.path);
+                              return (
+                                <div key={docItem.path} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #f1f5f9', fontSize: '12px' }}>
+                                  <a 
+                                    href={docItem.url} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}
+                                    title={docItem.name}
+                                  >
+                                    {docItem.name}
+                                  </a>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>({(docItem.size / 1024).toFixed(1)}KB)</span>
+                                    <button 
+                                      type="button" 
+                                      onClick={() => handleDocDelete(origIdx)} 
+                                      style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: '2px' }}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -794,17 +1071,57 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
   );
 };
 
-const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = '#6b7280' }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = '#475569' }: any) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
     <label style={{ fontSize: '11px', fontWeight: 600, color: labelColor }}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f9fafb' : '#fff' }} />
+    <input 
+      type={type} 
+      value={value ?? ''} 
+      onChange={e => onChange(e.target.value)} 
+      disabled={disabled} 
+      placeholder={placeholder} 
+      step={step} 
+      style={{ 
+        width: '100%',
+        boxSizing: 'border-box',
+        minWidth: 0,
+        padding: '9px 12px', 
+        border: '1px solid #cbd5e1', 
+        borderRadius: '6px', 
+        fontSize: '13px', 
+        background: disabled ? '#f8fafc' : '#fff', 
+        color: disabled ? '#64748b' : '#0f172a',
+        outline: 'none',
+        transition: 'border-color 0.15s, box-shadow 0.15s'
+      }} 
+      onFocus={e => { if(!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; } }}
+      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
+    />
   </div>
 );
 
 const Select = ({ label, value, onChange, options }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-    <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>{label}</label>
-    <select value={value ?? ''} onChange={e => onChange(e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }}>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label}</label>
+    <select 
+      value={value ?? ''} 
+      onChange={e => onChange(e.target.value)} 
+      style={{ 
+        width: '100%',
+        boxSizing: 'border-box',
+        minWidth: 0,
+        padding: '9px 12px', 
+        border: '1px solid #cbd5e1', 
+        borderRadius: '6px', 
+        fontSize: '13px',
+        background: '#fff',
+        color: '#0f172a',
+        outline: 'none',
+        transition: 'border-color 0.15s'
+      }}
+      onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
+      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; }}
+    >
       {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
     </select>
   </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Supplier } from '../types/supplier';
 
@@ -20,6 +20,31 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
     if (initialSupplier) {
       setFormData(initialSupplier);
     }
+  }, [initialSupplier]);
+
+  useEffect(() => {
+    if (initialSupplier) return;
+
+    const generateCode = async () => {
+      let maxNum = 0;
+      try {
+        const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
+        snap.docs.forEach(d => {
+          const code = d.data().supplierCode || d.id;
+          if (code && typeof code === 'string' && /^SUP-\d+$/i.test(code)) {
+            const num = parseInt(code.substring(4), 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+      } catch (err) {
+        console.error('공급업체코드 자동발번 오류:', err);
+      }
+      
+      const nextCode = `SUP-${String(maxNum + 1).padStart(3, '0')}`;
+      setFormData(prev => ({ ...prev, supplierCode: nextCode }));
+    };
+
+    generateCode();
   }, [initialSupplier]);
 
   const handleChange = (field: keyof Supplier, value: any) => {

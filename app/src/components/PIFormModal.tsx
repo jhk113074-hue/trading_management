@@ -532,8 +532,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const p = products.find(prod => prod.productCode === parsedCode);
       if (p) {
         it.productCode = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
-        it.description = p.nameEn || p.nameKo || '';
-        it.unit = p.unit || 'KG';
+        it.productName = p.nameKo || p.nameEn || '';
+        it.spec = p.spec || p.description || '';
+        it.description = p.spec || p.description || p.nameEn || p.nameKo || '';
+        it.unit = (p.unit || 'KG').toUpperCase();
         // Assuming purchase price is in KRW or USD
         if (p.currency === 'KRW') {
           it.purchasePriceKrw = p.purchasePrice || 0;
@@ -550,7 +552,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (existingMethod) {
           // Keep existing loaded packing method and its overrides
           it.selectedPackingMethodId = existingMethod.id;
-          const isPallet = existingMethod.packageType?.endsWith('+ Pallet') || existingMethod.packageType === 'Pallet';
+          if (existingMethod.unit) {
+            it.unit = existingMethod.unit;
+          }
+          const isPallet = existingMethod.packageType?.includes('Pallet') || existingMethod.packageType?.endsWith('+ Pallet');
           if (!it.packingSpecOverride) {
             it.packingSpecOverride = {
               packageType: existingMethod.packageType,
@@ -570,7 +575,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         } else if (defaultMethod) {
           // If no existing method was loaded, fallback to defaultMethod
           it.selectedPackingMethodId = defaultMethod.id;
-          const isPallet = defaultMethod.packageType?.endsWith('+ Pallet') || defaultMethod.packageType === 'Pallet';
+          if (defaultMethod.unit) {
+            it.unit = defaultMethod.unit;
+          }
+          const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
           it.packingSpecOverride = {
             packageType: defaultMethod.packageType,
             qtyPerPallet: defaultMethod.qtyPerPallet || 0,
@@ -605,7 +613,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       if (p && p.packingMethods) {
         const method = p.packingMethods.find((m: any) => m.id === value);
         if (method) {
-          const isPallet = method.packageType?.endsWith('+ Pallet') || method.packageType === 'Pallet';
+          if (method.unit) {
+            it.unit = method.unit;
+          }
+          const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
           it.packingSpecOverride = {
             packageType: method.packageType,
             qtyPerPallet: method.qtyPerPallet || 0,
@@ -670,7 +681,46 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     setItems(newItems);
   };
 
-  const removeItem = (index: number) => {
+
+  // 상품 마스터의 패킹 데이터가 변경된 경우 PI 라인 아이템을 최신 데이터로 재동기화
+  const refreshPackingData = () => {
+    let updatedCount = 0;
+    const newItems = items.map(it => {
+      if (!it.productCode) return it;
+      const parsedCode = getRawProductCode(it.productCode);
+      const p = products.find(prod => prod.productCode === parsedCode);
+      if (!p || !p.packingMethods || p.packingMethods.length === 0) return it;
+      const method = it.selectedPackingMethodId
+        ? p.packingMethods.find((m: any) => m.id === it.selectedPackingMethodId)
+        : (p.packingMethods.find((m: any) => m.isDefault) || p.packingMethods[0]);
+      if (!method) return it;
+      const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
+      const newOverride = {
+        packageType: method.packageType,
+        qtyPerPallet: method.qtyPerPallet || 0,
+        specWidth: isPallet ? (method.palletWidth || method.unitWidth || 0) : (method.unitWidth || 0),
+        specLength: isPallet ? (method.palletLength || method.unitLength || 0) : (method.unitLength || 0),
+        specHeight: isPallet ? (method.palletHeight || method.unitHeight || 0) : (method.unitHeight || 0),
+        weight: isPallet ? (method.palletWeight || method.unitWeight || 0) : (method.unitWeight || 0),
+        grossWeight: isPallet ? (method.palletGrossWeight || method.unitGrossWeight || 0) : (method.unitGrossWeight || method.unitWeight || 0),
+      };
+      const updated = { ...it, packingSpecOverride: newOverride, selectedPackingMethodId: method.id };
+      if (p.spec || p.description) {
+        updated.spec = p.spec || p.description || '';
+      }
+      if (method.unit) {
+        updated.unit = method.unit;
+      }
+      if (newOverride.qtyPerPallet > 0 && it.palletQty && it.palletQty > 0) {
+        updated.quantity = it.palletQty * newOverride.qtyPerPallet;
+        updated.lineTotalUsd = (updated.salePriceUsd || 0) * updated.quantity;
+        updatedCount++;
+      }
+      return updated;
+    });
+    setItems(newItems);
+    alert(`✅ ${updatedCount}개 라인의 패킹/수량 데이터가 상품 마스터 기준으로 업데이트되었습니다.`);
+  };  const removeItem = (index: number) => {
     const newItems = [...items];
     newItems.splice(index, 1);
     // Re-assign line numbers
@@ -1181,13 +1231,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     
     const payloadItems = items.map(it => {
       const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
+      const isPallet = p?.packageType?.includes('Pallet') || p?.packageType?.endsWith('+ Pallet');
       const spec = it.packingSpecOverride || {
         packageType: p?.packageType || 'Pallet',
-        specWidth: p?.palletWidth || p?.specWidth || 0,
-        specLength: p?.palletLength || p?.specLength || 0,
-        specHeight: p?.palletHeight || p?.specHeight || 0,
-        weight: p?.palletWeight || p?.weight || 0,
-        grossWeight: p?.palletGrossWeight || p?.grossWeight || 0
+        specWidth: isPallet ? (p?.palletWidth || p?.specWidth || 0) : (p?.unitWidth || p?.specWidth || 0),
+        specLength: isPallet ? (p?.palletLength || p?.specLength || 0) : (p?.unitLength || p?.specLength || 0),
+        specHeight: isPallet ? (p?.palletHeight || p?.specHeight || 0) : (p?.unitHeight || p?.specHeight || 0),
+        weight: isPallet ? (p?.palletWeight || p?.weight || 0) : (p?.unitWeight || p?.weight || 0),
+        grossWeight: isPallet ? (p?.palletGrossWeight || p?.grossWeight || 0) : (p?.unitGrossWeight || p?.grossWeight || p?.weight || 0)
       };
       
       return {
@@ -1611,6 +1662,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#475569', margin: 0 }}>④ 상품 라인 (Line Items)</h4>
               <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={refreshPackingData} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} title="상품 마스터의 최신 패킹 데이터로 수량을 재계산합니다">🔄 패킹 데이터 새로고침</button>
                 <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>🚢 적재 시뮬레이션</button>
                 <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
@@ -1618,9 +1670,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '8px 4px', width: '480px' }}>상품코드</th>
+                  <th style={{ padding: '8px 4px', width: '260px' }}>상품코드</th>
+                  <th style={{ padding: '8px 4px', width: '120px' }}>스펙 (Spec)</th>
                   <th style={{ padding: '8px 4px', width: '110px' }}>패킹 방식</th>
-                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>PLT수량</th>
+                  <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>패킹수량</th>
                   <th style={{ padding: '8px 4px', width: '95px', textAlign: 'right' }}>수량(자동계산)</th>
                   <th style={{ padding: '8px 4px', width: '50px' }}>단위</th>
                   <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>매입(₩)</th>
@@ -1631,7 +1684,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>단가($)</th>
                   <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'right' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '90px' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '150px' }}>비고</th>
                   <th style={{ padding: '8px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
@@ -1658,6 +1711,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               </option>
                             ))}
                           </datalist>
+                          {(() => {
+                            const rawCode = getRawProductCode(it.productCode);
+                            const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                            if (p && p.supplierName) {
+                              return (
+                                <div style={{ fontSize: '11px', color: '#0891b2', marginTop: '2px', fontWeight: 600 }}>
+                                  🏢 {p.supplierName}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                           <button
                             type="button"
@@ -1671,9 +1736,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               border: '1px solid #bfdbfe',
                               color: '#2563eb',
                               borderRadius: '4px',
-                              padding: '4px 8px',
+                              padding: '2px 6px',
                               cursor: 'pointer',
-                              fontSize: '12px',
+                              fontSize: '10px',
                               fontWeight: 600,
                               whiteSpace: 'nowrap'
                             }}
@@ -1701,9 +1766,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
                                   color: p ? '#16a34a' : '#94a3b8',
                                   borderRadius: '4px',
-                                  padding: '4px 8px',
+                                  padding: '2px 6px',
                                   cursor: p ? 'pointer' : 'not-allowed',
-                                  fontSize: '12px',
+                                  fontSize: '10px',
                                   fontWeight: 600,
                                   whiteSpace: 'nowrap'
                                 }}
@@ -1713,6 +1778,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             );
                           })()}
                         </div>
+                    </td>
+                    <td style={{ padding: '4px' }}>
+                      <input 
+                        type="text" 
+                        value={it.spec || ''} 
+                        placeholder="스펙 (Spec)" 
+                        onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
+                        style={gridInputStyle} 
+                      />
                     </td>
                     <td style={{ padding: '4px' }}>
                       {it.productCode ? (() => {
@@ -1753,7 +1827,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         style={{ ...gridInputStyle, textAlign: 'right', backgroundColor: '#f1f5f9', color: '#64748b' }} 
                       />
                     </td>
-                    <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value)} style={gridInputStyle} /></td>
+                    <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} style={gridInputStyle} /></td>
                     <td style={{ padding: '4px' }}>
                       <input 
                         type="text" 
@@ -1819,12 +1893,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
+                      <textarea 
                         value={it.remarks || ''} 
                         placeholder="비고"
                         onChange={(e) => updateItem(idx, 'remarks', e.target.value)} 
-                        style={gridInputStyle} 
+                        rows={2}
+                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '34px', fontFamily: 'inherit' }} 
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
@@ -1863,6 +1937,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     >
                       <option value="LCL">LCL</option>
                       <option value="20GP">20GP</option>
+                      <option value="20RF">20RF</option>
                       <option value="20DG">20DG</option>
                       <option value="40FT">40FT</option>
                       <option value="40HQ">40HQ</option>
@@ -2049,56 +2124,59 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px', flexWrap: 'wrap' }}>
-          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
-          
-          <button 
-            type="button" 
-            onClick={() => generatePIPdf(formData as ProformaInvoice, items)} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #ef4444', background: '#fff', fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
-          >
-            📄 PDF로 저장하기
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={() => generatePIExcel(formData as ProformaInvoice, items)} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
-          >
-            📊 Excel 견적서
-          </button>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            {initialPI && (
+              <button 
+                type="button"
+                onClick={handleConfirmPO}
+                disabled={savingType !== null}
+                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)' }}
+              >
+                {formData.status === 'PO확정' ? '🤝 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
+              </button>
+            )}
+          </div>
 
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
+            
+            <button 
+              type="button" 
+              onClick={() => generatePIPdf(formData as ProformaInvoice, items)} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #ef4444', background: '#fff', fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
+            >
+              📄 PDF로 저장하기
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={() => generatePIExcel(formData as ProformaInvoice, items)} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
+            >
+              📊 Excel 견적서
+            </button>
 
-          <button 
-            type="button"
-            onClick={() => handleSave(false)} 
-            disabled={savingType !== null} 
-            style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}
-          >
-            {savingType === 'normal' ? '✔ 일반저장 중...' : '✔ 일반저장'}
-          </button>
-
-          {initialPI && (
             <button 
               type="button"
-              onClick={() => handleSave(true)} 
+              onClick={() => handleSave(false)} 
               disabled={savingType !== null} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}
             >
-              {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
+              {savingType === 'normal' ? '✔ 일반저장 중...' : '✔ 일반저장'}
             </button>
-          )}
 
-          {initialPI && (
-            <button 
-              type="button"
-              onClick={handleConfirmPO}
-              disabled={savingType !== null}
-              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer' }}
-            >
-              {formData.status === 'PO확정' ? '🤝 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
-            </button>
-          )}
+            {initialPI && (
+              <button 
+                type="button"
+                onClick={() => handleSave(true)} 
+                disabled={savingType !== null} 
+                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
+              >
+                {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
+              </button>
+            )}
+          </div>
         </div>
 
       </div>

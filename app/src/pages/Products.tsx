@@ -14,6 +14,7 @@ const excelMapping = [
   { header: "중분류", key: "categoryMedium" },
   { header: "소분류", key: "categorySmall" },
   { header: "상세설명", key: "description" },
+  { header: "규격/스펙(Spec)", key: "spec" },
   { header: "이미지URL", key: "imageUrl" },
   { header: "공급업체명", key: "supplierName" },
   { header: "공급업체코드", key: "supplierCode" },
@@ -119,7 +120,9 @@ export const Products: React.FC = () => {
           let productData: any = {};
           excelMapping.forEach(m => {
             if (row[m.header] !== undefined && row[m.header] !== null) {
-               productData[m.key] = String(row[m.header]).trim();
+               let val = String(row[m.header]).trim();
+               if (m.key === 'unit') val = val.toUpperCase();
+               productData[m.key] = val;
             }
           });
           

@@ -32,4 +32,5 @@ export interface Order {
   updatedAt: any;
   externalLinks?: string[]; // Dropbox / Google Drive links
   attachments?: Array<{ name: string; url: string; size: number; path: string }>;
+  issuingCompany?: 'YSACC' | 'YS';
 }

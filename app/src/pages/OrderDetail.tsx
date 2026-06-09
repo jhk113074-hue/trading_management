@@ -24,7 +24,8 @@ export const OrderDetail: React.FC = () => {
     requestedDelivery: '',
     remark: '',
     manager: '',
-    externalLinksStr: '' // comma or newline separated links
+    externalLinksStr: '', // comma or newline separated links
+    issuingCompany: 'YSACC' as 'YSACC' | 'YS'
   });
 
   // Load Order document
@@ -43,7 +44,8 @@ export const OrderDetail: React.FC = () => {
           requestedDelivery: data.requestedDelivery || '',
           remark: data.remark || '',
           manager: data.manager || '',
-          externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : ''
+          externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : '',
+          issuingCompany: (data.issuingCompany || 'YSACC') as 'YSACC' | 'YS'
         });
       } else {
         setOrder(null);
@@ -109,6 +111,7 @@ export const OrderDetail: React.FC = () => {
         remark: basicForm.remark,
         manager: basicForm.manager,
         externalLinks: links,
+        issuingCompany: basicForm.issuingCompany,
         updatedAt: serverTimestamp()
       }, { merge: true });
 
@@ -196,101 +199,255 @@ export const OrderDetail: React.FC = () => {
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = `${order.id}-${supplierCode}`;
 
+    const logoVersion = Date.now();
+    const isYS = order.issuingCompany === 'YS';
+
     const printHtml = `
       <html>
         <head>
-          <title>PURCHASE ORDER - ${poNum}</title>
+          <title>발주서 - ${poNum}</title>
           <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1e293b; font-size: 13px; }
-            .po-header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; }
-            .po-title { font-size: 24px; font-weight: 800; color: #1e40af; }
-            .po-meta { text-align: right; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-            .info-box { border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; background: #f8fafc; }
-            .info-title { font-weight: bold; color: #475569; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; }
-            th { background: #1e40af; color: #fff; padding: 10px; font-weight: bold; text-align: left; }
-            td { border: 1px solid #e2e8f0; padding: 10px; }
-            .total-box { font-size: 16px; font-weight: bold; text-align: right; margin-top: 20px; color: #dc2626; border-top: 2px solid #1e40af; padding-top: 10px; }
-            .footer-info { margin-top: 40px; border-top: 1px dashed #cbd5e1; padding-top: 20px; font-size: 11px; color: #64748b; text-align: center; }
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 12px; line-height: 1.4; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
             @media print {
+              .no-print { display: none !important; }
               body { padding: 0; }
-              button { display: none; }
             }
-            .print-btn { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+            .po-title-container { text-align: center; margin-bottom: 25px; position: relative; }
+            .po-title { font-size: 36px; font-weight: 800; letter-spacing: 12px; margin: 0; display: inline-block; border-bottom: 2px solid #000; padding-bottom: 5px; }
+            .po-subtitle { position: absolute; right: 0; bottom: 5px; font-size: 11px; font-weight: bold; }
+            
+            .meta-grid { display: grid; grid-template-columns: 1.1fr 1.3fr; gap: 10px; margin-bottom: 15px; }
+            .meta-left { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+            .meta-left div { font-size: 11px; }
+            .meta-left strong { width: 70px; display: inline-block; }
+
+            .business-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
+            .business-table th, .business-table td { border: 1px solid #000; padding: 4px; height: 26px; }
+            .business-table th { background-color: #f3f4f6; font-weight: 600; width: 25%; }
+            .business-table td { width: 75%; position: relative; }
+            
+            .supplier-seal-container { display: flex; align-items: center; justify-content: space-between; font-weight: bold; padding: 0 10px; width: 100%; height: 100%; box-sizing: border-box; }
+            .supplier-seal-container img.seal-bg { position: absolute; left: 45%; top: 50%; transform: translate(-50%, -50%); height: 28px; width: auto; z-index: 1; opacity: 0.12; }
+            .supplier-seal-container img.seal-stamp { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); height: 48px; width: auto; z-index: 5; opacity: 0.85; }
+
+            .delivery-info { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 0; margin-bottom: 15px; font-size: 12px; }
+            .delivery-info div { margin-bottom: 4px; }
+            .delivery-info div:last-child { margin-bottom: 0; }
+
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+            .items-table th, .items-table td { border: 1px solid #000; padding: 6px 4px; }
+            .items-table th { background-color: #f3f4f6; font-weight: 600; text-align: center; }
+            .items-table td { text-align: left; }
+            .items-table td.center { text-align: center; }
+            .items-table td.right { text-align: right; }
+
+            .notes-box { border: 1.5px solid #000; padding: 10px; margin-bottom: 15px; font-size: 11px; }
+            .notes-title { font-weight: 700; margin-bottom: 5px; text-decoration: underline; }
+            .notes-box ol { margin: 0; padding-left: 15px; }
+            .notes-box li { margin-bottom: 4px; }
+
+            .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; }
+            .bottom-box { border: 1px solid #000; padding: 8px; min-height: 80px; }
+            .bottom-box-title { font-weight: 700; margin-bottom: 4px; }
+            
+            .bottom-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+            .bottom-table td { border: 1px solid #000; padding: 3px; font-size: 10px; }
+            .bottom-table td.label { background-color: #f3f4f6; text-align: center; font-weight: 600; width: 20%; }
+            .bottom-table td.value { text-align: center; width: 80%; }
+
+            .footer-name { text-align: center; margin-top: 25px; font-size: 18px; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+            .footer-logo { height: 24px; width: auto; object-fit: contain; }
           </style>
         </head>
         <body>
-          <button class="print-btn" onclick="window.print()">🖨️ 인쇄하기 / PDF 저장</button>
+          <button class="no-print" onclick="window.print()">🖨️ 인쇄하기 / PDF 저장</button>
           
-          <div class="po-header">
+          <div class="po-title-container">
+            <h1 class="po-title">발 주 서</h1>
+            <div class="po-subtitle">* 물탱크용 부자재 및 관련 자재</div>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-left">
+              <div><strong>발주번호 :</strong> ${poNum}</div>
+              <div><strong>발주일자 :</strong> ${new Date().toISOString().split('T')[0].replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일')}</div>
+              <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
+              <div><strong>참&nbsp;&nbsp;&nbsp;&nbsp;조 :</strong> ${items[0]?.supplierContact || '-'}</div>
+              <div><strong>전화번호 :</strong> -</div>
+              <div><strong>F A X :</strong> -</div>
+            </div>
             <div>
-              <div class="po-title">PURCHASE ORDER</div>
-              <div style="font-weight: bold; margin-top: 5px;">YSACC CO., LTD.</div>
-            </div>
-            <div class="po-meta">
-              <div><strong>발주 번호:</strong> ${poNum}</div>
-              <div><strong>발행 일자:</strong> ${new Date().toISOString().split('T')[0]}</div>
+              <table class="business-table">
+                <tr>
+                  <th>등록번호</th>
+                  <td style="font-weight: bold; letter-spacing: 1px;">${isYS ? '730-17-00185' : '217-87-00384'}</td>
+                </tr>
+                <tr>
+                  <th>상  호</th>
+                  <td style="position: relative; padding: 0;">
+                    <div class="supplier-seal-container">
+                      <img src="/logo.png?v=${logoVersion}" class="seal-bg" />
+                      <img src="${isYS ? '/YS_ACC_STAMP.jpg' : '/YSACC_STAMP.png'}?v=${logoVersion}" class="seal-stamp" />
+                      <div style="width: 100%; display: flex; justify-content: space-between; padding: 0 10px; z-index: 3; position: relative;">
+                        <span>${isYS ? '영성에이씨씨(영성ACC)' : '(주)와이에스에이씨씨'}</span>
+                        <span style="font-weight: normal; margin-right: 50px;">김 주 한</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th>사업장</th>
+                  <td style="font-size: 10px; text-align: left; padding-left: 8px;">${isYS ? '충북 청주시 흥덕구 월명로 76, 111-201호' : '충북 청주시 흥덕구 가로수로 1251, 201-1호'}</td>
+                </tr>
+                <tr>
+                  <th>업  태</th>
+                  <td>${isYS ? '도소매업 외' : '제조업 외'}</td>
+                </tr>
+                <tr>
+                  <th>종  목</th>
+                  <td>${isYS ? '물탱크 및 기자재' : '물탱크 및 관련부품'}</td>
+                </tr>
+              </table>
             </div>
           </div>
 
-          <div class="info-grid">
-            <div class="info-box">
-              <div class="info-title">To (수신 공급업체)</div>
-              <div><strong>공급사명:</strong> ${supplierName}</div>
-              <div><strong>담당자 연락처:</strong> ${items[0]?.supplierContact || '-'}</div>
-            </div>
-            <div class="info-box">
-              <div class="info-title">From (발주처)</div>
-              <div><strong>회사명:</strong> YSACC CO., LTD.</div>
-              <div><strong>주소:</strong> 111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Korea</div>
-              <div><strong>인코텀즈:</strong> ${order.incoterms || '-'}</div>
-              <div><strong>납기요청일:</strong> ${order.requestedDelivery || '-'}</div>
-            </div>
+          <div style="font-weight: bold; font-size: 12px; margin-bottom: 15px;">하기와 같이 발주 드립니다.</div>
+
+          <div class="delivery-info">
+            <div><strong>입고요청일 :</strong> 추후 안내 예정</div>
+            <div><strong>납품처(주소, 담당자, 연락처) :</strong> 추후 통보예정</div>
           </div>
 
-          <table>
+          <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 50px;">No</th>
-                <th>품목 및 사양</th>
-                <th style="width: 80px;">Grade</th>
-                <th style="width: 80px; text-align: right;">수량</th>
-                <th style="width: 60px; text-align: center;">단위</th>
-                <th style="width: 100px; text-align: right;">단가</th>
-                <th style="width: 120px; text-align: right;">금액</th>
+                <th style="width: 250px;">품 명</th>
+                <th style="width: 120px;">규 격</th>
+                <th style="width: 70px;">수량</th>
+                <th style="width: 90px;">단 가</th>
+                <th style="width: 110px;">금 액</th>
+                <th style="width: 100px;">부가세</th>
+                <th>비 고</th>
               </tr>
             </thead>
             <tbody>
-              ${items.map((it, idx) => `
+              ${items.map((it) => {
+                const isKrw = it.currency === 'KRW';
+                const currencySymbol = isKrw ? '' : '$';
+                const rawAmt = it.amount || 0;
+                const vatAmt = isKrw ? Math.round(rawAmt * 0.1) : parseFloat((rawAmt * 0.1).toFixed(2));
+                return `
+                  <tr>
+                    <td><strong>${it.name}</strong></td>
+                    <td class="center">${it.grade || '-'}</td>
+                    <td class="right">${(it.qty || 0).toLocaleString()}</td>
+                    <td class="right">${currencySymbol}${(it.unitPrice || 0).toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td style="font-size: 10px; color: #475569;">${it.unit} 발주</td>
+                  </tr>
+                `;
+              }).join('')}
+              
+              <!-- Blank rows for layout stability -->
+              ${Array.from({ length: Math.max(0, 5 - items.length) }).map(() => `
                 <tr>
-                  <td>${idx + 1}</td>
-                  <td><strong>${it.name}</strong></td>
-                  <td>${it.grade || '-'}</td>
-                  <td style="text-align: right;">${(it.qty || 0).toLocaleString()}</td>
-                  <td style="text-align: center;">${it.unit}</td>
-                  <td style="text-align: right;">${it.currency === 'KRW' ? '₩' : '$'}${(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
-                  <td style="text-align: right; font-weight: bold;">${it.currency === 'KRW' ? '₩' : '$'}${(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                  <td style="height: 25px;"></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                 </tr>
               `).join('')}
+
+              <tr style="font-weight: bold; background-color: #fafafa;">
+                <td colspan="2" class="center">합   계</td>
+                <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
+                <td></td>
+                <td class="right">
+                  ${(() => {
+                    const usdSub = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const krwSub = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const parts = [];
+                    if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                    if (krwSub > 0) parts.push(`${krwSub.toLocaleString()}`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+                <td class="right">
+                  ${(() => {
+                    const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const usdVat = parseFloat((usdTotal * 0.1).toFixed(2));
+                    const krwVat = Math.round(krwTotal * 0.1);
+                    const parts = [];
+                    if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                    if (krwTotal > 0) parts.push(`${krwVat.toLocaleString()}`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+                <td class="right" style="color: #dc2626;">
+                  ${(() => {
+                    const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                    const usdGrand = parseFloat((usdTotal * 1.1).toFixed(2));
+                    const krwGrand = Math.round(krwTotal * 1.1);
+                    const parts = [];
+                    if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+                    if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+              </tr>
             </tbody>
           </table>
 
-          <div class="total-box">
-            총 발주 합계 금액 (Total Amount): ${(() => {
-              const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
-              const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
-              const parts = [];
-              if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
-              if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString()} KRW`);
-              if (parts.length === 0) return '$0.00 USD';
-              return parts.join(' / ');
-            })()}
+          <div class="notes-box">
+            <div class="notes-title">※ 특이사항:</div>
+            <ol>
+              <li>부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})</li>
+              <li>세금계산서는 일반 전자세금계산서 발급조건입니다.</li>
+              <li>Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.</li>
+            </ol>
           </div>
 
-          <div class="footer-info">
-            본 발주서는 전산 발행되었으며, 날인이 없어도 동일한 효력을 지닙니다.<br/>
-            YSACC CO., LTD. &nbsp;·&nbsp; Tel: +82-50-7081-1130 &nbsp;·&nbsp; www.ysacc.co.kr
+          <div class="bottom-grid">
+            <div class="bottom-box">
+              <div class="bottom-box-title">※ 일반사항</div>
+              <div style="font-size: 10px; color: #334155; line-height: 1.4;">
+                1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
+                2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}
+              </div>
+            </div>
+            <div class="bottom-box" style="padding: 4px;">
+              <div class="bottom-box-title" style="margin-left: 4px; font-size: 11px;">※ 참고사항</div>
+              <table class="bottom-table">
+                <tr>
+                  <td colspan="2" class="label" style="height: 18px; padding: 2px;">발주담당</td>
+                </tr>
+                <tr>
+                  <td class="label">직 위</td>
+                  <td class="value">대표이사</td>
+                </tr>
+                <tr>
+                  <td class="label">성 명</td>
+                  <td class="value">김 주 한</td>
+                </tr>
+                <tr>
+                  <td class="label">연락처</td>
+                  <td class="value">010-4494-1028</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="footer-name">
+            <img src="/logo.png?v=${logoVersion}" class="footer-logo" />
+            <span>${isYS ? '영성에이씨씨' : '(주)와이에스에이씨씨'}</span>
           </div>
         </body>
       </html>
@@ -507,6 +664,28 @@ export const OrderDetail: React.FC = () => {
                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>상태</span>
                 <input type="text" value={order.status} disabled style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', background: '#f8fafc', fontWeight: 'bold' }} />
               </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>발행사 (발주서 기준)</span>
+                {isEditing ? (
+                  <select
+                    value={basicForm.issuingCompany}
+                    onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))}
+                    style={{ padding: '9px 11px', border: '2px solid #3b82f6', borderRadius: '6px', fontSize: '13px', fontWeight: 700, background: '#eff6ff' }}
+                  >
+                    <option value="YSACC">YSACC (와이에스에이씨씨)</option>
+                    <option value="YS">영성ACC (YS ACC)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={order.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : 'YSACC (와이에스에이씨씨)'}
+                    disabled
+                    style={{ padding: '9px 11px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '13px', background: '#f8fafc',
+                      color: order.issuingCompany === 'YS' ? '#059669' : '#2563eb', fontWeight: 700 }}
+                  />
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
@@ -602,7 +781,7 @@ export const OrderDetail: React.FC = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
                           <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e40af' }}>PURCHASE ORDER</div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginTop: '4px' }}>YSACC CO., LTD.</div>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginTop: '4px' }}>{order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</div>
                         </div>
                         <div style={{ textAlign: 'right', fontSize: '12px', color: '#475569' }}>
                           <div><strong>발주번호:</strong> {poNum}</div>

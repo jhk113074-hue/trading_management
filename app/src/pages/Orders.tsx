@@ -319,19 +319,20 @@ export const Orders: React.FC = () => {
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>PO접수일</th>
               <th style={{ padding: '12px 16px', fontWeight: 700 }}>요청납기일</th>
               <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'center' }}>상태</th>
+              <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'center' }}>발행사</th>
               <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'center' }}>액션</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   데이터 실시간 동기화 중...
                 </td>
               </tr>
             ) : filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <td colSpan={12} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   등록된 발주 내역이 없거나 검색 결과가 없습니다.
                 </td>
               </tr>
@@ -376,6 +377,13 @@ export const Orders: React.FC = () => {
                       <span style={{ display: 'inline-block', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, backgroundColor: sBadge.bg, color: sBadge.text }}>
                         {o.status}
                       </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      {o.issuingCompany === 'YS' ? (
+                        <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, backgroundColor: '#dcfce7', color: '#15803d', whiteSpace: 'nowrap' }}>영성ACC</span>
+                      ) : (
+                        <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, backgroundColor: '#dbeafe', color: '#1d4ed8', whiteSpace: 'nowrap' }}>YSACC</span>
+                      )}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>

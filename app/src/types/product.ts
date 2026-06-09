@@ -19,6 +19,7 @@ export interface Product {
   categoryMedium: string;
   categorySmall: string;
   description: string;
+  spec?: string;
   imageUrl: string;
 
   // 2. 구매/공급 정보 - 공급사
@@ -96,6 +97,13 @@ export interface Product {
   createdAt?: any;
   updatedAt?: any;
   packingMethods?: PackingMethod[];
+  technicalDocuments?: {
+    name: string;
+    url: string;
+    size: number;
+    path: string;
+    category: 'TDS' | 'MSDS' | '기타';
+  }[];
 }
 
 export interface PackingMethod {
@@ -115,5 +123,7 @@ export interface PackingMethod {
   palletHeight?: number;
   palletWeight?: number;
   palletGrossWeight?: number;
+  stackable?: string; // Y/N
+  rotation?: string;  // Y/N
 }
 

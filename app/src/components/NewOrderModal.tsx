@@ -17,7 +17,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [, setProducts] = useState<Product[]>([]);
   
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
@@ -32,7 +32,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     requestedDelivery: '',
     remark: '',
     status: '대기' as const,
-    exchangeRate: 1400
+    exchangeRate: 1400,
+    issuingCompany: 'YSACC' as 'YSACC' | 'YS'
   });
 
   const [items, setItems] = useState<Partial<OrderItem>[]>([
@@ -109,13 +110,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           updated.incoterms = selectedQuote.incoterms as any || prev.incoterms;
           updated.paymentTerms = selectedQuote.paymentTerms || prev.paymentTerms;
           updated.exchangeRate = selectedQuote.exchangeRate || prev.exchangeRate;
-          
-          // Auto-copy items from quotation if needed
-          fetchQuoteItems(selectedQuote.id);
+          updated.issuingCompany = selectedQuote.issuingCompany || prev.issuingCompany;
         }
       }
       return updated;
     });
+
+    if (field === 'quotationId' && value) {
+      fetchQuoteItems(value);
+    }
   };
 
   const fetchQuoteItems = async (quoteId: string) => {
@@ -123,7 +126,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       const revSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID, 'proforma_invoices', quoteId), 'revisions'));
       if (!revSnap.empty) {
         const sortedRevs = revSnap.docs.map(d => ({ id: d.id, ...d.data() } as any))
-          .sort((a, b) => (b.version || 0) - (a.version || 0));
+          .sort((a, b) => (Number(b.version) || 0) - (Number(a.version) || 0));
         
         const latestRev = sortedRevs[0];
         const latestRevDoc = revSnap.docs.find(d => d.id === latestRev.id);
@@ -132,12 +135,10 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           const quoteItems = liSnap.docs.map(d => d.data() as any);
           
           if (quoteItems.length > 0) {
-            let currentProducts = products;
-            if (currentProducts.length === 0) {
-              const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
-              currentProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
-              setProducts(currentProducts);
-            }
+            // Always fetch the fresh products list directly from Firestore to avoid stale React closure state
+            const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+            const currentProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+            setProducts(currentProducts);
 
             setItems(quoteItems.map((qi, idx) => {
               let rawCode = qi.productCode || '';
@@ -145,7 +146,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
               }
               
-              const matchedProd = currentProducts.find(p => p.productCode === rawCode || p.id === rawCode);
+              const cleanRaw = rawCode.trim().toUpperCase();
+              const matchedProd = currentProducts.find(p => 
+                (p.productCode || '').trim().toUpperCase() === cleanRaw || 
+                p.id.trim().toUpperCase() === cleanRaw
+              );
+
+              console.log(`PO item load [${idx}]: rawCode="${rawCode}", matchedProd=`, matchedProd ? { id: matchedProd.id, supplier: matchedProd.supplierName } : "NOT_FOUND");
+              
               const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
               
               let buyPrice = 0;
@@ -168,7 +176,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               return {
                 itemId: (idx + 1).toString(),
                 name: qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '',
-                supplier: matchedProd?.supplierName || qi.supplierName || '',
+                supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
                 supplierContact: contactInfo || '',
                 grade: qi.grade || '',
                 qty,
@@ -268,7 +276,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         exchangeRate: formData.exchangeRate || 1400,
         poIssuedAt: null,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        issuingCompany: formData.issuingCompany
       };
 
       // 1. Save to orders collection
@@ -394,7 +403,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ padding: '8px', textAlign: 'center', width: '40px' }}>No</th>
                   <th style={{ padding: '8px', textAlign: 'left' }}>품목명 ★</th>
-                                   <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>단위</th>
+                  <th style={{ padding: '8px', textAlign: 'left', width: '150px' }}>공급사</th>
+                  <th style={{ padding: '8px', textAlign: 'left', width: '120px' }}>공급사 연락처</th>
+                  <th style={{ padding: '8px', textAlign: 'left', width: '80px' }}>Grade</th>
+                  <th style={{ padding: '8px', textAlign: 'right', width: '90px' }}>수량</th>
+                  <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>단위</th>
                   <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>통화</th>
                   <th style={{ padding: '8px', textAlign: 'right', width: '100px' }}>단가</th>
                   <th style={{ padding: '8px', textAlign: 'right', width: '110px' }}>금액</th>

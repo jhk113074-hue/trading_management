@@ -2,6 +2,8 @@ export interface PIItem {
   id?: string;
   lineNumber: number;
   productCode: string;
+  productName?: string;
+  spec?: string;
   description: string;
   quantity: number;
   unit: string;
