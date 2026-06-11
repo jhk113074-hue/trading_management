@@ -802,7 +802,15 @@ export const Dashboard: React.FC = () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={e => handleStatusDrop(e, basket.id)}
-            style={{ background: basket.columnBg, borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
+            style={{
+              background: basket.columnBg,
+              border: `2.5px solid ${basket.countBg}`,
+              borderRadius: '12px',
+              padding: '12px',
+              minHeight: '450px',
+              transition: 'all 0.15s',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+            }}
           >
             <div style={{
               display: 'flex',
