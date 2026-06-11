@@ -836,6 +836,11 @@ export const Dashboard: React.FC = () => {
                       <span style={{ fontSize: '0.62rem', background: '#f0fdf4', color: '#16a34a', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
                         {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
                       </span>
+                      {filter === '전체' && (
+                        <span style={{ fontSize: '0.62rem', background: '#f3e8ff', color: '#7c3aed', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                          👤 {task.assigneeName || '미배정'}
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
