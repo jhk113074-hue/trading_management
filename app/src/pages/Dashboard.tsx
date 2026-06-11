@@ -220,37 +220,45 @@ export const Dashboard: React.FC = () => {
     setDelegatedQuickTitle('');
   };
 
-  const quadrantColors: Record<string, string> = {
-    Q1: '#ef4444', Q2: '#3b82f6', Q3: '#f59e0b', Q4: '#94a3b8',
-  };
 
-  const TaskChip: React.FC<{ task: Task }> = ({ task }) => (
-    <div
-      draggable
-      onDragStart={e => handleDragStart(e, task.id)}
-      onDragEnd={handleDragEnd}
-      onClick={() => setEditingTask(task)}
-      style={{
-        background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px',
-        padding: '10px 12px', marginBottom: '8px', cursor: 'grab',
-        opacity: draggingId === task.id ? 0.4 : 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        transition: 'box-shadow 0.15s',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-        <span style={{ fontSize: '0.875rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
-        <span style={{
-          fontSize: '0.65rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px',
-          color: '#fff', flexShrink: 0, background: quadrantColors[task.quadrant] || '#94a3b8',
-        }}>{task.quadrant}</span>
+  const TaskChip: React.FC<{ task: Task }> = ({ task }) => {
+    const quad = (task.quadrant || 'Q2').toUpperCase();
+    const badgeStyles: Record<string, { color: string; bg: string; border: string }> = {
+      Q1: { color: '#ef4444', bg: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.2)' },
+      Q2: { color: '#3b82f6', bg: '#eff6ff', border: '1px solid rgba(59, 130, 246, 0.2)' },
+      Q3: { color: '#f59e0b', bg: '#fffbeb', border: '1px solid rgba(245, 158, 11, 0.2)' },
+      Q4: { color: '#94a3b8', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
+    };
+    const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
+
+    return (
+      <div
+        draggable
+        onDragStart={e => handleDragStart(e, task.id)}
+        onDragEnd={handleDragEnd}
+        onClick={() => setEditingTask(task)}
+        style={{
+          background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px',
+          padding: '10px 12px', marginBottom: '8px', cursor: 'grab',
+          opacity: draggingId === task.id ? 0.4 : 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+          transition: 'box-shadow 0.15s',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+          <span style={{ fontSize: '0.875rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+            color: badgeStyle.color, background: badgeStyle.bg, border: badgeStyle.border, flexShrink: 0,
+          }}>{quad}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+          {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
+          {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
+          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 5px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-        {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
-        {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
-        {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 5px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const DropZone: React.FC<{ memberId: string | null; label: string; badge?: string; tasks: Task[]; color?: string }> = ({
     memberId, label, badge, tasks: zoneTasks, color = '#f8fafc',
@@ -796,7 +804,29 @@ export const Dashboard: React.FC = () => {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', flex: 1, lineHeight: '1.25' }}>{task.title}</div>
-                      <div style={{ fontSize: '0.6rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px', background: task.quadrant === 'Q1' ? '#fee2e2' : '#f1f5f9', color: task.quadrant === 'Q1' ? '#ef4444' : '#64748b', marginLeft: '6px' }}>{task.quadrant || 'Q2'}</div>
+                      {(() => {
+                        const quad = (task.quadrant || 'Q2').toUpperCase();
+                        const badgeStyles: Record<string, { color: string; bg: string; border: string }> = {
+                          Q1: { color: '#ef4444', bg: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.2)' },
+                          Q2: { color: '#3b82f6', bg: '#eff6ff', border: '1px solid rgba(59, 130, 246, 0.2)' },
+                          Q3: { color: '#f59e0b', bg: '#fffbeb', border: '1px solid rgba(245, 158, 11, 0.2)' },
+                          Q4: { color: '#94a3b8', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
+                        };
+                        const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
+                        return (
+                          <div style={{
+                            fontSize: '0.6rem',
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: '3px',
+                            color: badgeStyle.color,
+                            background: badgeStyle.bg,
+                            border: badgeStyle.border,
+                            marginLeft: '6px',
+                            flexShrink: 0
+                          }}>{quad}</div>
+                        );
+                      })()}
                     </div>
                     
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
