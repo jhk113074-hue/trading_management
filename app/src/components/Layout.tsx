@@ -66,7 +66,7 @@ export const Layout: React.FC = () => {
         { path: '/', label: '⊞ Dashboard' },
         { path: '/list', label: '📋 전체 업무 리스트' },
         { path: '/proforma-invoices', label: '≡ Proforma Invoice', external: false },
-        { path: '/orders', label: '📦 발주서 관리 (PO)', external: false },
+        { path: '/orders', label: '📦 주문관리', external: false },
         { path: '/products', label: '◫ 상품 DB', external: false },
         { path: '/customers', label: '◎ 고객사 관리', external: false },
         { path: '/suppliers', label: '◉ 공급업체 관리', external: false },

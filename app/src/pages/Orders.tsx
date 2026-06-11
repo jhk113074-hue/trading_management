@@ -223,7 +223,7 @@ export const Orders: React.FC = () => {
       {/* Page Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>발주서 관리 (PO)</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>주문관리</h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>수주 확정 내역 관리 및 공급사 발주서 생성 모듈</p>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
