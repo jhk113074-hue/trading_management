@@ -598,14 +598,26 @@ export const Dashboard: React.FC = () => {
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
         </div>
 
-        {/* 프랭클린 시간 관리 범례 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', background: '#f8fafc', fontSize: '11px', minWidth: '220px' }}>
-          <div style={{ fontWeight: 700, color: '#64748b', fontSize: '10.5px' }}>프랭클린 시간 관리</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
-            <div><strong style={{ color: '#ef4444' }}>Q1</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-중요</span></div>
-            <div><strong style={{ color: '#3b82f6' }}>Q2</strong> <span style={{ color: '#334155', fontWeight: 600 }}>중요-비긴급</span></div>
-            <div><strong style={{ color: '#f59e0b' }}>Q3</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-비중요</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Q4</strong> <span style={{ color: '#334155', fontWeight: 600 }}>비긴급-비중요</span></div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {/* 프랭클린 시간 관리 범례 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', background: '#f8fafc', fontSize: '11px', minWidth: '220px' }}>
+            <div style={{ fontWeight: 700, color: '#64748b', fontSize: '10.5px' }}>프랭클린 시간 관리</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
+              <div><strong style={{ color: '#ef4444' }}>Q1</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-중요</span></div>
+              <div><strong style={{ color: '#3b82f6' }}>Q2</strong> <span style={{ color: '#334155', fontWeight: 600 }}>중요-비긴급</span></div>
+              <div><strong style={{ color: '#f59e0b' }}>Q3</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-비중요</span></div>
+              <div><strong style={{ color: '#94a3b8' }}>Q4</strong> <span style={{ color: '#334155', fontWeight: 600 }}>비긴급-비중요</span></div>
+            </div>
+          </div>
+
+          {/* 권장 운영 흐름 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', background: '#f8fafc', fontSize: '11px', minWidth: '200px' }}>
+            <div style={{ fontWeight: 700, color: '#64748b', fontSize: '10.5px' }}>권장 운영 흐름</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', color: '#334155', fontWeight: 600 }}>
+              <div>1. 아침 점검 ➔ 대기 바스켓</div>
+              <div>2. 업무 착수 ➔ 업무중 이동</div>
+              <div>3. 종료 보고 ➔ 완료 처리</div>
+            </div>
           </div>
         </div>
 
