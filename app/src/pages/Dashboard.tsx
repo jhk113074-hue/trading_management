@@ -404,7 +404,8 @@ export const Dashboard: React.FC = () => {
       headerText: '#1e40af',
       headerBorder: 'rgba(30, 64, 175, 0.2)',
       countBg: '#1e40af',
-      countText: '#ffffff'
+      countText: '#ffffff',
+      columnBg: '#f0f7ff'
     },
     {
       id: 'IN_PROGRESS',
@@ -413,7 +414,8 @@ export const Dashboard: React.FC = () => {
       headerText: '#166534',
       headerBorder: 'rgba(22, 101, 52, 0.2)',
       countBg: '#166534',
-      countText: '#ffffff'
+      countText: '#ffffff',
+      columnBg: '#f4fcf7'
     },
     {
       id: 'DONE',
@@ -422,7 +424,8 @@ export const Dashboard: React.FC = () => {
       headerText: '#334155',
       headerBorder: 'rgba(51, 65, 85, 0.2)',
       countBg: '#334155',
-      countText: '#ffffff'
+      countText: '#ffffff',
+      columnBg: '#f8fafc'
     },
     {
       id: 'HOLDING',
@@ -431,7 +434,8 @@ export const Dashboard: React.FC = () => {
       headerText: '#b45309',
       headerBorder: 'rgba(180, 83, 9, 0.2)',
       countBg: '#b45309',
-      countText: '#ffffff'
+      countText: '#ffffff',
+      columnBg: '#fffdf4'
     }
   ];
 
@@ -787,7 +791,7 @@ export const Dashboard: React.FC = () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={e => handleStatusDrop(e, basket.id)}
-            style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
+            style={{ background: basket.columnBg, borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
           >
             <div style={{
               display: 'flex',
