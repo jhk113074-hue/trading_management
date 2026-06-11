@@ -543,6 +543,17 @@ export const Dashboard: React.FC = () => {
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>업무는 상태 바스켓, 프랭클린 중요도 기준으로 관리됩니다.</p>
         </div>
 
+        {/* 프랭클린 시간 관리 범례 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', background: '#f8fafc', fontSize: '11px', minWidth: '220px' }}>
+          <div style={{ fontWeight: 700, color: '#64748b', fontSize: '10.5px' }}>프랭클린 시간 관리</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
+            <div><strong style={{ color: '#ef4444' }}>Q1</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-중요</span></div>
+            <div><strong style={{ color: '#3b82f6' }}>Q2</strong> <span style={{ color: '#334155', fontWeight: 600 }}>중요-비긴급</span></div>
+            <div><strong style={{ color: '#f59e0b' }}>Q3</strong> <span style={{ color: '#334155', fontWeight: 600 }}>긴급-비중요</span></div>
+            <div><strong style={{ color: '#94a3b8' }}>Q4</strong> <span style={{ color: '#334155', fontWeight: 600 }}>비긴급-비중요</span></div>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* ── 조회 모드 탭 ── */}
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
