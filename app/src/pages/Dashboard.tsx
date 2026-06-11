@@ -245,16 +245,16 @@ export const Dashboard: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-          <span style={{ fontSize: '0.875rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
+          <span style={{ fontSize: '1rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
           <span style={{
-            fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
+            fontSize: '0.75rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px',
             color: badgeStyle.color, background: badgeStyle.bg, border: badgeStyle.border, flexShrink: 0,
           }}>{quad}</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-          {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
-          {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
-          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 5px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
+          {task.projectName && <span style={{ fontSize: '0.78rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
+          {task.dueDate && <span style={{ fontSize: '0.78rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
+          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
         </div>
       </div>
     );
@@ -758,11 +758,11 @@ export const Dashboard: React.FC = () => {
             style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 4px' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>{basket.title}</span>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '2px', fontWeight: 600 }}>{basket.title}</span>
                 {basket.subTitle}
               </div>
-              <div style={{ background: '#fff', color: '#3b82f6', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <div style={{ background: '#fff', color: '#3b82f6', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                 {filteredTasks.filter(t => {
                   const s = t.status?.toUpperCase();
                   if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
@@ -803,7 +803,7 @@ export const Dashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e293b', flex: 1, lineHeight: '1.25' }}>{task.title}</div>
+                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', flex: 1, lineHeight: '1.3' }}>{task.title}</div>
                       {(() => {
                         const quad = (task.quadrant || 'Q2').toUpperCase();
                         const badgeStyles: Record<string, { color: string; bg: string; border: string }> = {
@@ -815,9 +815,9 @@ export const Dashboard: React.FC = () => {
                         const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
                         return (
                           <div style={{
-                            fontSize: '0.6rem',
+                            fontSize: '0.75rem',
                             fontWeight: 800,
-                            padding: '2px 6px',
+                            padding: '3px 8px',
                             borderRadius: '3px',
                             color: badgeStyle.color,
                             background: badgeStyle.bg,
@@ -830,24 +830,24 @@ export const Dashboard: React.FC = () => {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.62rem', background: '#eff6ff', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
                         {task.type === 'PROJECT' ? '프로젝트' : '일반'}
                       </span>
-                      <span style={{ fontSize: '0.62rem', background: '#f0fdf4', color: '#16a34a', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.75rem', background: '#f0fdf4', color: '#16a34a', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
                         {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
                       </span>
                       {filter === '전체' && (
-                        <span style={{ fontSize: '0.62rem', background: '#f3e8ff', color: '#7c3aed', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.75rem', background: '#f3e8ff', color: '#7c3aed', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
                           👤 {task.assigneeName || '미배정'}
                         </span>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>마감 {task.dueDate || '-'}</span>
                         {(task.commentCount ?? 0) > 0 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 4px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 6px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
                         )}
                       </div>
                       <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
