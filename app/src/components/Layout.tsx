@@ -62,8 +62,10 @@ export const Layout: React.FC = () => {
 
   const menuItems = React.useMemo(() => {
     const groups = [
+      { section: '', items: [
+        { path: '/', label: '⊞ Dashboard' }
+      ] as any },
       { section: '업무관리', items: [
-        { path: '/', label: '⊞ Dashboard' },
         { path: '/list', label: '📋 전체 업무 리스트' }
       ] as any },
       { section: '영업관리', items: [
@@ -99,7 +101,7 @@ export const Layout: React.FC = () => {
 
         {menuItems.map((group, gIdx) => (
           <div key={gIdx} className="sidebar-section">
-            <div className="sidebar-section-title">{group.section}</div>
+            {group.section && <div className="sidebar-section-title">{group.section}</div>}
             {group.items.map((item: any) => (
               (item as any).external ? (
                 <a 
