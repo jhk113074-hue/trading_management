@@ -141,6 +141,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       scheduleType,
       importance,
       urgency,
+      quadrant: currentQuadrant,
       dueDate,
       projectName,
       customerName,
