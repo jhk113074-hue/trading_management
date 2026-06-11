@@ -397,10 +397,42 @@ export const Dashboard: React.FC = () => {
   };
 
   const baskets = [
-    { id: 'TODO', title: 'BASKET 1', subTitle: '업무대기', color: 'var(--q1-color)' },
-    { id: 'IN_PROGRESS', title: 'BASKET 2', subTitle: '업무중', color: 'var(--q2-color)' },
-    { id: 'DONE', title: 'BASKET 3', subTitle: '완료', color: 'var(--text-secondary)' },
-    { id: 'HOLDING', title: 'BASKET 4', subTitle: '보류 (Holding)', color: 'var(--text-muted)' }
+    {
+      id: 'TODO',
+      title: '업무대기 BASKET',
+      headerBg: '#eff6ff',
+      headerText: '#1e40af',
+      headerBorder: 'rgba(30, 64, 175, 0.2)',
+      countBg: '#1e40af',
+      countText: '#ffffff'
+    },
+    {
+      id: 'IN_PROGRESS',
+      title: '업무중 BASKET',
+      headerBg: '#f0fdf4',
+      headerText: '#166534',
+      headerBorder: 'rgba(22, 101, 52, 0.2)',
+      countBg: '#166534',
+      countText: '#ffffff'
+    },
+    {
+      id: 'DONE',
+      title: '완료 BASKET',
+      headerBg: '#f1f5f9',
+      headerText: '#334155',
+      headerBorder: 'rgba(51, 65, 85, 0.2)',
+      countBg: '#334155',
+      countText: '#ffffff'
+    },
+    {
+      id: 'HOLDING',
+      title: '보류 BASKET',
+      headerBg: '#fffbeb',
+      headerText: '#b45309',
+      headerBorder: 'rgba(180, 83, 9, 0.2)',
+      countBg: '#b45309',
+      countText: '#ffffff'
+    }
   ];
 
   const handleQuickAdd = async (e: React.KeyboardEvent) => {
@@ -757,12 +789,32 @@ export const Dashboard: React.FC = () => {
             onDrop={e => handleStatusDrop(e, basket.id)}
             style={{ background: '#f1f5f9', borderRadius: '10px', padding: '10px', minHeight: '300px', transition: 'background 0.15s' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 4px' }}>
-              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#334155' }}>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '2px', fontWeight: 600 }}>{basket.title}</span>
-                {basket.subTitle}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '10px',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              background: basket.headerBg,
+              border: `1px solid ${basket.headerBorder}`
+            }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: basket.headerText }}>
+                {basket.title}
               </div>
-              <div style={{ background: '#fff', color: '#3b82f6', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <div style={{
+                background: basket.countBg,
+                color: basket.countText,
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.9rem',
+                fontWeight: 800,
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              }}>
                 {filteredTasks.filter(t => {
                   const s = t.status?.toUpperCase();
                   if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
