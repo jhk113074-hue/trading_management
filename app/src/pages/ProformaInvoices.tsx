@@ -185,7 +185,7 @@ export const ProformaInvoices: React.FC = () => {
     <div className="page-container" style={{ padding: '24px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Proforma Invoice</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>견적관리(Proforma Invoice)</h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>전체 PI 목록 · Firestore 실시간 연동</p>
         </div>
         <button 

@@ -65,7 +65,7 @@ export const Layout: React.FC = () => {
       { section: '무역 관리 시스템', items: [
         { path: '/', label: '⊞ Dashboard' },
         { path: '/list', label: '📋 전체 업무 리스트' },
-        { path: '/proforma-invoices', label: '≡ Proforma Invoice', external: false },
+        { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },
         { path: '/orders', label: '📦 주문관리', external: false },
         { path: '/products', label: '◫ 상품 DB', external: false },
         { path: '/customers', label: '◎ 고객사 관리', external: false },
