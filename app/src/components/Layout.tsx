@@ -62,15 +62,19 @@ export const Layout: React.FC = () => {
 
   const menuItems = React.useMemo(() => {
     const groups = [
-      { section: '무역 관리 시스템', items: [
+      { section: '업무관리', items: [
         { path: '/', label: '⊞ Dashboard' },
-        { path: '/list', label: '📋 전체 업무 리스트' },
+        { path: '/list', label: '📋 전체 업무 리스트' }
+      ] as any },
+      { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },
         { path: '/orders', label: '📦 주문관리', external: false },
+        { path: '/container/index.html', label: '🚢 컨테이너 적재 (새 창)', external: true }
+      ] as any },
+      { section: 'DB관리', items: [
         { path: '/products', label: '◫ 상품 DB', external: false },
         { path: '/customers', label: '◎ 고객사 관리', external: false },
-        { path: '/suppliers', label: '◉ 공급업체 관리', external: false },
-        { path: '/container/index.html', label: '🚢 컨테이너 적재 (새 창)', external: true }
+        { path: '/suppliers', label: '◉ 공급업체 관리', external: false }
       ] as any }
     ];
 
