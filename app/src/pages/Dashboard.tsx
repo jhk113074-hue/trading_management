@@ -376,7 +376,7 @@ export const Dashboard: React.FC = () => {
       });
     }
 
-    return base.filter(t => {
+    const result = base.filter(t => {
       if (filter === '전체') return true;
       if (filter === '내 업무') return t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name;
       
@@ -387,6 +387,17 @@ export const Dashboard: React.FC = () => {
       
       return t.quadrant === filter;
     });
+
+    const quadOrder: Record<string, number> = { Q1: 1, Q2: 2, Q3: 3, Q4: 4 };
+    result.sort((a, b) => {
+      const qA = (a.quadrant || 'Q2').toUpperCase();
+      const qB = (b.quadrant || 'Q2').toUpperCase();
+      const orderA = quadOrder[qA] || 5;
+      const orderB = quadOrder[qB] || 5;
+      return orderA - orderB;
+    });
+
+    return result;
   }, [tasks, location.pathname, filter, userProfile, users, dateMode, selectedDate, startDate, endDate, weekOffset]);
 
   const stats = {
