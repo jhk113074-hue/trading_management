@@ -83,4 +83,6 @@ export interface Order {
   supplierTaxInvoice?: Record<string, 'Y' | 'N' | ''>; // 공급사별 세금계산서 발행여부
   supplierPurchaseCertificate?: Record<string, 'Y' | 'N' | ''>; // 공급사별 구매확인서 발행여부
   bankSubmissionStatus?: 'Y' | 'N' | ''; // 은행 제출 여부
+  forwarderFreightAmount?: number; // 포워딩 운송비 금액
+  forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화
 }

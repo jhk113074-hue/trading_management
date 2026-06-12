@@ -17,6 +17,7 @@ const COLUMN_OPTIONS = [
   { key: 'supplier', label: '구입사 (공급업체)' },
   { key: 'items', label: '품목' },
   { key: 'supplierAmount', label: '발주금액' },
+  { key: 'orderSubtotal', label: '오더 Subtotal' },
   { key: 'supplierRemitted', label: '결제' },
   { key: 'invoiceSent', label: '인보이스 송부' },
   { key: 'inco', label: 'INCO' },
@@ -42,7 +43,7 @@ export const Orders: React.FC = () => {
   // Outlook-style column settings
   const defaultVisibleCols = [
     'customer', 'issuingCompany', 'invoiceAmount', 'cargoReady', 'volumeVessel', 'shipmentSchedule',
-    'supplier', 'items', 'supplierAmount', 'supplierRemitted', 'invoiceSent', 'inco', 'paymentTerms',
+    'supplier', 'items', 'supplierAmount', 'orderSubtotal', 'supplierRemitted', 'invoiceSent', 'inco', 'paymentTerms',
     'exportNo', 'docsSent', 'bankSubmitted', 'trackingNo', 'paymentCollected',
     'status', 'remark'
   ];
@@ -84,6 +85,7 @@ export const Orders: React.FC = () => {
     invoiceAmount: 130,
     supplier: 160,
     supplierAmount: 160,
+    orderSubtotal: 140,
     invoiceSent: 80,
     inco: 60,
     paymentTerms: 60,
@@ -809,6 +811,14 @@ export const Orders: React.FC = () => {
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('supplierAmount', e)} />
                   </th>
                 )}
+                {visibleCols.includes('orderSubtotal') && (
+                  <th 
+                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.orderSubtotal, minWidth: colWidths.orderSubtotal, maxWidth: colWidths.orderSubtotal, boxSizing: 'border-box', overflow: 'hidden', userSelect: 'none', backgroundColor: '#fef9c3' }}
+                  >
+                    오더 Subtotal
+                    <ResizeHandle onMouseDown={(e) => handleResizeStart('orderSubtotal', e)} />
+                  </th>
+                )}
                 {visibleCols.includes('supplierRemitted') && (
                   <th 
                     onClick={() => handleSort('supplierRemitted')}
@@ -1063,13 +1073,14 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
-                          {/* 포워딩회사 행 */}
-                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: suppliers.length > 0 ? '1px solid #ddd6fe' : 'none' }}>
-                            포: {o.forwarderConfirmed || '-'}
-                          </div>
+                          {o.forwarderConfirmed && (
+                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: '2px solid #ddd6fe' }}>
+                              🚢 {o.forwarderConfirmed}
+                            </div>
+                          )}
                         </td>
                       )}
-                      
+
                       {visibleCols.includes('items') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'items', title: '품목 수정' }); }}
@@ -1077,12 +1088,17 @@ export const Orders: React.FC = () => {
                         >
                           {o.items && o.items.length > 0 ? (
                             o.items.map((it, iIdx) => (
-                              <div key={iIdx} style={{ padding: '8px', borderBottom: iIdx < o.items.length - 1 ? '1px solid #e2e8f0' : 'none', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div key={iIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {it.name}
                               </div>
                             ))
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                          )}
+                          {o.forwarderConfirmed && (
+                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: '2px solid #ddd6fe' }}>
+                              운송비
+                            </div>
                           )}
                         </td>
                       )}
@@ -1093,38 +1109,55 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
-                            <>
-                              {suppliers.map((sup, sIdx) => {
-                                const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
-                                const parts = [];
-                                if (amt.usd > 0) parts.push(`$${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                                if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
-                                const amtStr = parts.join(' / ') || '-';
-                                return (
-                                  <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {amtStr}
-                                  </div>
-                                );
-                              })}
-                              {/* Sub Total 행 */}
-                              {(() => {
-                                const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0);
-                                const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0);
-                                const parts = [];
-                                if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                                if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
-                                return (
-                                  <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', borderTop: '2px solid #cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
-                                    Σ {parts.join(' / ') || '-'}
-                                  </div>
-                                );
-                              })()}
-                            </>
+                            suppliers.map((sup, sIdx) => {
+                              const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
+                              const parts = [];
+                              if (amt.usd > 0) parts.push(`$${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                              if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
+                              const amtStr = parts.join(' / ') || '-';
+                              return (
+                                <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {amtStr}
+                                </div>
+                              );
+                            })
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
+                          {o.forwarderConfirmed && (
+                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', borderTop: '2px solid #ddd6fe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                              {o.forwarderFreightCurrency === 'USD'
+                                ? `$${(o.forwarderFreightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                : `₩${(o.forwarderFreightAmount || 0).toLocaleString()}`
+                              }
+                            </div>
+                          )}
                         </td>
                       )}
+
+                      {/* 오더 Subtotal 콜럼 */}
+                      {visibleCols.includes('orderSubtotal') && (
+                        <td 
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierAmount', title: '발주금액 수정' }); }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', textAlign: 'right', verticalAlign: 'middle', width: colWidths.orderSubtotal, minWidth: colWidths.orderSubtotal, maxWidth: colWidths.orderSubtotal, boxSizing: 'border-box', overflow: 'hidden', backgroundColor: '#fefce8', cursor: 'pointer' }}
+                        >
+                          {(() => {
+                            const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0)
+                              + (o.forwarderFreightCurrency === 'USD' ? (o.forwarderFreightAmount || 0) : 0);
+                            const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0)
+                              + (o.forwarderFreightCurrency !== 'USD' ? (o.forwarderFreightAmount || 0) : 0);
+                            const parts = [];
+                            if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                            if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
+                            return (
+                              <div style={{ padding: '10px 8px', fontSize: '12px', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {parts.join(' + ') || '-'}
+                              </div>
+                            );
+                          })()}
+                        </td>
+                      )}
+
                       
                       {visibleCols.includes('supplierRemitted') && (
                         <td 
