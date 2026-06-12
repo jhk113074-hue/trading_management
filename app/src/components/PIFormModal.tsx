@@ -1724,59 +1724,48 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 ) : items.map((it, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <input 
-                            type="text" 
-                            list={`products_datalist_${idx}`}
-                            value={it.productCode} 
-                            placeholder="상품코드 검색/입력"
-                            onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
-                            style={{ ...gridInputStyle, paddingRight: '22px' }} 
-                          />
-                          {it.productCode && (
-                            <button
-                              type="button"
-                              onClick={() => updateItem(idx, 'productCode', '')}
-                              style={{
-                                position: 'absolute',
-                                right: '6px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#94a3b8',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                                padding: '2px',
-                                zIndex: 5,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                              title="비우기"
-                            >
-                              ✕
-                            </button>
-                          )}
-                          <datalist id={`products_datalist_${idx}`}>
-                            {products.map(p => (
-                              <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
-                                [{p.productCode}] {p.nameKo || p.nameEn}
-                              </option>
-                            ))}
-                          </datalist>
-                          {(() => {
-                            const rawCode = getRawProductCode(it.productCode);
-                            const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                            if (p && p.supplierName) {
-                              return (
-                                <div style={{ fontSize: '11px', color: '#0891b2', marginTop: '2px', fontWeight: 600 }}>
-                                  🏢 {p.supplierName}
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <input 
+                              type="text" 
+                              list={`products_datalist_${idx}`}
+                              value={it.productCode} 
+                              placeholder="상품코드 검색/입력"
+                              onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
+                              style={{ ...gridInputStyle, paddingRight: '22px' }} 
+                            />
+                            {it.productCode && (
+                              <button
+                                type="button"
+                                onClick={() => updateItem(idx, 'productCode', '')}
+                                style={{
+                                  position: 'absolute',
+                                  right: '6px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  cursor: 'pointer',
+                                  fontSize: '11px',
+                                  padding: '2px',
+                                  zIndex: 5,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                                title="비우기"
+                              >
+                                ✕
+                              </button>
+                            )}
+                            <datalist id={`products_datalist_${idx}`}>
+                              {products.map(p => (
+                                <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
+                                  [{p.productCode}] {p.nameKo || p.nameEn}
+                                </option>
+                              ))}
+                            </datalist>
+                          </div>
                           <button
                             type="button"
                             onClick={() => {
@@ -1831,6 +1820,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             );
                           })()}
                         </div>
+                        {(() => {
+                          const rawCode = getRawProductCode(it.productCode);
+                          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                          if (p && p.supplierName) {
+                            return (
+                              <div style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px' }}>
+                                🏢 {p.supplierName}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </td>
                     <td style={{ padding: '4px' }}>
                       <input 
