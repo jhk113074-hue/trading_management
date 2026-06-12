@@ -651,47 +651,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
 
-  // 상품 마스터의 패킹 데이터가 변경된 경우 PI 라인 아이템을 최신 데이터로 재동기화
-  const refreshPackingData = () => {
-    let updatedCount = 0;
-    const newItems = items.map(it => {
-      if (!it.productCode) return it;
-      const parsedCode = getRawProductCode(it.productCode);
-      const p = products.find(prod => prod.productCode === parsedCode);
-      if (!p) return it;
-      const methods = getProductPackingMethods(p);
-      if (methods.length === 0) return it;
-      const method = it.selectedPackingMethodId
-        ? methods.find((m: any) => m.id === it.selectedPackingMethodId)
-        : (methods.find((m: any) => m.isDefault) || methods[0]);
-      if (!method) return it;
-      const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
-      const newOverride = {
-        packageType: method.packageType,
-        qtyPerPallet: method.qtyPerPallet || 0,
-        specWidth: isPallet ? (method.palletWidth || method.unitWidth || 0) : (method.unitWidth || 0),
-        specLength: isPallet ? (method.palletLength || method.unitLength || 0) : (method.unitLength || 0),
-        specHeight: isPallet ? (method.palletHeight || method.unitHeight || 0) : (method.unitHeight || 0),
-        weight: isPallet ? (method.palletWeight || method.unitWeight || 0) : (method.unitWeight || 0),
-        grossWeight: isPallet ? (method.palletGrossWeight || method.unitGrossWeight || 0) : (method.unitGrossWeight || method.unitWeight || 0),
-      };
-      const updated = { ...it, packingSpecOverride: newOverride, selectedPackingMethodId: method.id };
-      if (p.spec || p.description) {
-        updated.spec = p.spec || p.description || '';
-      }
-      if (method.unit) {
-        updated.unit = method.unit;
-      }
-      if (newOverride.qtyPerPallet > 0 && it.palletQty && it.palletQty > 0) {
-        updated.quantity = it.palletQty * newOverride.qtyPerPallet;
-        updated.lineTotalUsd = (updated.salePriceUsd || 0) * updated.quantity;
-        updatedCount++;
-      }
-      return updated;
-    });
-    setItems(newItems);
-    alert(`✅ ${updatedCount}개 라인의 패킹/수량 데이터가 상품 마스터 기준으로 업데이트되었습니다.`);
-  };  const removeItem = (index: number) => {
+  const removeItem = (index: number) => {
     const newItems = [...items];
     newItems.splice(index, 1);
     // Re-assign line numbers
@@ -1709,7 +1669,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#475569', margin: 0 }}>④ 상품 라인 (Line Items)</h4>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={refreshPackingData} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} title="상품 마스터의 최신 패킹 데이터로 수량을 재계산합니다">🔄 패킹 데이터 새로고침</button>
                 <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>🚢 적재 시뮬레이션</button>
                 <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
