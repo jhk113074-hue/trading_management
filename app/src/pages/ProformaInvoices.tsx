@@ -490,7 +490,7 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '8px 10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
                     <td style={{ padding: '8px 10px', maxWidth: '300px', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '52px', overflowY: 'auto', paddingRight: '4px' }}>
                           {p.itemsSummary.map((item, idx) => (
                             <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</div>
                           ))}
