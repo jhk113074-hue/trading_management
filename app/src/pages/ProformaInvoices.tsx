@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
@@ -173,6 +173,100 @@ export const ProformaInvoices: React.FC = () => {
       alert("✅ 성공적으로 삭제되었습니다.");
     } catch (e: any) {
       alert("❌ 삭제 실패: " + e.message);
+    }
+  };
+
+  const handleCopy = async (originalPi: ProformaInvoice) => {
+    if (!window.confirm(`📋 PI [${originalPi.piNumber}]을(를) 복사하여 새 PI를 만드시겠습니까?`)) return;
+    
+    try {
+      // 1. Calculate new PI number
+      const regex = /(\d+)$/;
+      const match = originalPi.piNumber.match(regex);
+      let nextNumStr = '';
+      if (match) {
+        const numStr = match[1];
+        const nextNum = parseInt(numStr, 10) + 1;
+        nextNumStr = nextNum.toString().padStart(numStr.length, '0');
+      } else {
+        nextNumStr = '02'; // default fallback sequence
+      }
+
+      let newPiNumber = originalPi.piNumber;
+      if (match) {
+        newPiNumber = originalPi.piNumber.replace(regex, nextNumStr);
+      } else {
+        newPiNumber = originalPi.piNumber + '-' + nextNumStr;
+      }
+
+      // Check uniqueness and keep incrementing if already exists
+      while (pis.some(p => p.piNumber === newPiNumber)) {
+        const innerMatch = newPiNumber.match(regex);
+        if (innerMatch) {
+          const numStr = innerMatch[1];
+          const nextNum = parseInt(numStr, 10) + 1;
+          const padded = nextNum.toString().padStart(numStr.length, '0');
+          newPiNumber = newPiNumber.replace(regex, padded);
+        } else {
+          newPiNumber = newPiNumber + '-02';
+        }
+      }
+
+      const newPiId = newPiNumber;
+
+      // 2. Load the original PI's revisions to find the latest version
+      const originalRevisionsColRef = collection(db, "companies", COMPANY_ID, "proforma_invoices", originalPi.id, "revisions");
+      const revSnap = await getDocs(originalRevisionsColRef);
+      if (revSnap.empty) {
+        throw new Error("원본 PI의 Revision 기록을 찾을 수 없습니다.");
+      }
+
+      const latestRevDoc = revSnap.docs.sort((a, b) => (b.data().version || 0) - (a.data().version || 0))[0];
+      const latestRevData = latestRevDoc.data();
+
+      // 3. Load original line items for this revision
+      const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+      const originalLineItems = liSnap.docs.map(d => d.data());
+
+      // 4. Save new main PI document
+      const newPiData = {
+        ...originalPi,
+        id: newPiId,
+        piNumber: newPiNumber,
+        currentVersion: 1,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser,
+        updatedAt: serverTimestamp()
+      };
+      // Delete any metadata/auto-generated ID from the object to prevent copying wrong keys
+      delete (newPiData as any).id;
+
+      await setDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", newPiId), newPiData);
+
+      // 5. Save new revision document
+      const newRevRef = doc(collection(db, "companies", COMPANY_ID, "proforma_invoices", newPiId, "revisions"));
+      const newRevData = {
+        ...latestRevData,
+        version: 1,
+        revisionReason: `Copied from ${originalPi.piNumber}`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      await setDoc(newRevRef, newRevData);
+
+      // 6. Save new line items in subcollection
+      for (const item of originalLineItems) {
+        const itemRef = doc(collection(newRevRef, "line_items"));
+        await setDoc(itemRef, {
+          ...item,
+          id: itemRef.id
+        });
+      }
+
+      alert(`✅ PI 복사 완료! 새 PI 번호: ${newPiNumber}`);
+    } catch (e: any) {
+      console.error(e);
+      alert(`❌ 복사 실패: ` + e.message);
     }
   };
 
@@ -416,6 +510,7 @@ export const ProformaInvoices: React.FC = () => {
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
                       <button onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} style={{ background: '#fff', border: '1px solid #2563eb', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>✏ 수정</button>
+                      <button onClick={() => handleCopy(p)} style={{ background: '#fff', border: '1px solid #10b981', color: '#10b981', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, marginRight: '4px', cursor: 'pointer' }}>📋 복사</button>
                       <button 
                         onClick={() => handleDelete(p.id, p.piNumber)}
                         style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
