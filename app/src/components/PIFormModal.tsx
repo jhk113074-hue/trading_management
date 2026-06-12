@@ -340,7 +340,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     };
   }, [initialPI, currentUser]);
 
-  // Auto-format productCode in items when products list is loaded
+  // Auto-format productCode and update unit in items when products list is loaded/updated
   useEffect(() => {
     if (products.length > 0 && items.length > 0) {
       let changed = false;
@@ -350,9 +350,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (p) {
           const formatted = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
           const latestDesc = p.nameKo || p.nameEn || '';
-          if (item.productCode !== formatted || item.description !== latestDesc) {
+          
+          // Sync unit with the active packing method
+          const methods = getProductPackingMethods(p);
+          const activeMethod = methods.find(m => m.id === item.selectedPackingMethodId) || methods.find(m => m.isDefault) || methods[0];
+          const latestUnit = activeMethod ? (activeMethod.unit || p.unit || 'KG').toUpperCase() : (p.unit || 'KG').toUpperCase();
+
+          if (item.productCode !== formatted || item.description !== latestDesc || item.unit !== latestUnit) {
             changed = true;
-            return { ...item, productCode: formatted, description: latestDesc };
+            return { 
+              ...item, 
+              productCode: formatted, 
+              description: latestDesc,
+              unit: latestUnit
+            };
           }
         }
         return item;
