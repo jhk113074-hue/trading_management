@@ -1697,22 +1697,22 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '8px 4px', width: '260px' }}>상품코드</th>
-                  <th style={{ padding: '8px 4px', width: '120px' }}>스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', width: '110px' }}>패킹방식/수량</th>
-                  <th style={{ padding: '8px 4px', width: '95px', textAlign: 'right' }}>수량</th>
-                  <th style={{ padding: '8px 4px', width: '50px' }}>단위</th>
-                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>매입(₩ / $)</th>
-                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>환율</th>
-                  <th style={{ padding: '8px 4px', width: '50px', textAlign: 'right' }}>마진%</th>
-                  <th style={{ padding: '8px 4px', width: '65px' }}>올림</th>
-                  <th style={{ padding: '8px 4px', width: '60px', textAlign: 'right' }}>단가($)</th>
-                  <th style={{ padding: '8px 4px', width: '100px', textAlign: 'right' }}>이익/총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '150px' }}>비고</th>
-                  <th style={{ padding: '8px 4px', width: '35px' }}></th>
+                  <th style={{ padding: '10px 4px', width: '280px' }}>상품코드</th>
+                  <th style={{ padding: '10px 4px', width: '140px' }}>스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '130px' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '95px', textAlign: 'right' }}>수량</th>
+                  <th style={{ padding: '10px 4px', width: '55px' }}>단위</th>
+                  <th style={{ padding: '10px 4px', width: '120px', textAlign: 'right' }}>매입(₩ / $)</th>
+                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>환율</th>
+                  <th style={{ padding: '10px 4px', width: '60px', textAlign: 'right' }}>마진%</th>
+                  <th style={{ padding: '10px 4px', width: '65px' }}>올림</th>
+                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '10px 4px', width: '135px', textAlign: 'right' }}>이익/총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '160px' }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -1824,7 +1824,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                           if (p && p.supplierName) {
                             return (
-                              <div style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px' }}>
+                              <div style={{ fontSize: '12px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px', marginTop: '2px' }}>
                                 🏢 {p.supplierName}
                               </div>
                             );
@@ -2319,7 +2319,7 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
   </div>
 );
 
-const gridInputStyle = { width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' };
+const gridInputStyle = { width: '100%', padding: '7px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
