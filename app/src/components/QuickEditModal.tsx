@@ -109,6 +109,10 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           payload.shipmentCompleted = shipmentCompleted;
           payload.docsDeadlineDate = docsDeadlineDate;
           break;
+        case 'volumeVessel':
+          payload.containerVolumeQuantities = volume;
+          payload.vesselBooking = vessel;
+          break;
         case 'volume':
           payload.containerVolumeQuantities = volume;
           break;
@@ -311,7 +315,34 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           </div>
         );
 
+      case 'volumeVessel':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>VOLUME (수량/컨테이너 볼륨)</label>
+              <input
+                type="text"
+                placeholder="예: 1x20' GP"
+                value={volume}
+                onChange={(e) => setVolume(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>선명 / 항차 (Vessel / Voyage)</label>
+              <input
+                type="text"
+                placeholder="예: EVER GIVEN V.0123W"
+                value={vessel}
+                onChange={(e) => setVessel(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              />
+            </div>
+          </div>
+        );
+
       case 'volume':
+
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>VOLUME (수량/컨테이너 볼륨)</label>

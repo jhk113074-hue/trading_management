@@ -10,11 +10,10 @@ import { QuickEditModal } from '../components/QuickEditModal';
 const COLUMN_OPTIONS = [
   { key: 'customer', label: '고객사' },
   { key: 'issuingCompany', label: '매출사' },
-  { key: 'cargoReady', label: '화물준비 / CFS입고' },
-  { key: 'shipmentSchedule', label: '서류마감 / ETD / ETA' },
-  { key: 'volume', label: 'VOLUME' },
-  { key: 'vessel', label: '선명 / 항차' },
   { key: 'invoiceAmount', label: '인보이스 금액' },
+  { key: 'cargoReady', label: '화물준비 / CFS입고' },
+  { key: 'volumeVessel', label: 'VOLUME / 선명·항차' },
+  { key: 'shipmentSchedule', label: '서류마감 / ETD / ETA' },
   { key: 'supplier', label: '구입사 (공급업체)' },
   { key: 'items', label: '품목' },
   { key: 'supplierAmount', label: '발주금액' },
@@ -42,7 +41,7 @@ export const Orders: React.FC = () => {
 
   // Outlook-style column settings
   const defaultVisibleCols = [
-    'customer', 'issuingCompany', 'invoiceAmount', 'cargoReady', 'shipmentSchedule', 'volume', 'vessel',
+    'customer', 'issuingCompany', 'invoiceAmount', 'cargoReady', 'volumeVessel', 'shipmentSchedule',
     'supplier', 'items', 'supplierAmount', 'supplierRemitted', 'invoiceSent', 'inco', 'paymentTerms',
     'exportNo', 'docsSent', 'bankSubmitted', 'trackingNo', 'paymentCollected',
     'status', 'remark'
@@ -80,9 +79,8 @@ export const Orders: React.FC = () => {
     issuingCompany: 100,
     items: 180,
     cargoReady: 120,
+    volumeVessel: 150,
     shipmentSchedule: 120,
-    volume: 120,
-    vessel: 130,
     invoiceAmount: 130,
     supplier: 160,
     supplierAmount: 160,
@@ -756,6 +754,16 @@ export const Orders: React.FC = () => {
                   </th>
                 )}
 
+                {visibleCols.includes('volumeVessel') && (
+                  <th 
+                    onClick={() => handleSort('volumeVessel')}
+                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    VOLUME / 선명·항차
+                    <ResizeHandle onMouseDown={(e) => handleResizeStart('volumeVessel', e)} />
+                  </th>
+                )}
+
                 {visibleCols.includes('shipmentSchedule') && (
                   <th 
                     onClick={() => handleSort('etd')}
@@ -763,24 +771,6 @@ export const Orders: React.FC = () => {
                   >
                     서류마감/ETD/ETA {sortField === 'etd' && (sortOrder === 'asc' ? '▲' : '▼')}
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('shipmentSchedule', e)} />
-                  </th>
-                )}
-                {visibleCols.includes('volume') && (
-                  <th 
-                    onClick={() => handleSort('volume')}
-                    style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.volume, minWidth: colWidths.volume, maxWidth: colWidths.volume, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    VOLUME {sortField === 'volume' && (sortOrder === 'asc' ? '▲' : '▼')}
-                    <ResizeHandle onMouseDown={(e) => handleResizeStart('volume', e)} />
-                  </th>
-                )}
-                {visibleCols.includes('vessel') && (
-                  <th 
-                    onClick={() => handleSort('vessel')}
-                    style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.vessel, minWidth: colWidths.vessel, maxWidth: colWidths.vessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    선명 / 항차 {sortField === 'vessel' && (sortOrder === 'asc' ? '▲' : '▼')}
-                    <ResizeHandle onMouseDown={(e) => handleResizeStart('vessel', e)} />
                   </th>
                 )}
                 {visibleCols.includes('invoiceAmount') && (
@@ -1008,6 +998,20 @@ export const Orders: React.FC = () => {
                         </td>
                       )}
                       
+                      {visibleCols.includes('volumeVessel') && (
+                        <td 
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volumeVessel', title: 'VOLUME / 선명·항차 수정' }); }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                        >
+                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            VOL: {o.containerVolumeQuantities || '-'}
+                          </div>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            선명: {o.vesselBooking || '-'}
+                          </div>
+                        </td>
+                      )}
+
                       {visibleCols.includes('shipmentSchedule') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'shipmentSchedule', title: '서류마감 / ETD / ETA 수정' }); }}
@@ -1025,24 +1029,7 @@ export const Orders: React.FC = () => {
                         </td>
                       )}
                       
-                      {visibleCols.includes('volume') && (
-                        <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volume', title: 'VOLUME 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', width: colWidths.volume, minWidth: colWidths.volume, maxWidth: colWidths.volume, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                        >
-                          {o.containerVolumeQuantities || '-'}
-                        </td>
-                      )}
-                      
-                      {visibleCols.includes('vessel') && (
-                        <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'vessel', title: '선명 / 항차 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', width: colWidths.vessel, minWidth: colWidths.vessel, maxWidth: colWidths.vessel, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                        >
-                          {o.vesselBooking || '-'}
-                        </td>
-                      )}
-                      
+
                       {visibleCols.includes('invoiceAmount') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'invoiceAmount', title: '인보이스 금액 / 견적 정보 수정' }); }}
@@ -1243,7 +1230,7 @@ export const Orders: React.FC = () => {
             <tfoot style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', fontWeight: 800 }}>
               <tr>
                 {(() => {
-                  const colsBeforeInvoice = ['customer', 'issuingCompany', 'cargoReady', 'shipmentSchedule', 'volume', 'vessel'];
+                  const colsBeforeInvoice = ['customer', 'issuingCompany', 'cargoReady', 'volumeVessel', 'shipmentSchedule'];
                   const span = 2 + colsBeforeInvoice.filter(key => visibleCols.includes(key)).length;
                   return (
                     <td colSpan={span} style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#1e293b', fontSize: '12.5px' }}>
