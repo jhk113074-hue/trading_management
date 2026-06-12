@@ -462,7 +462,7 @@ export const ProformaInvoices: React.FC = () => {
               <th onClick={() => handleSort('piNumber')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '150px' }}>PI NUMBER {getSortIcon('piNumber')}</th>
               <th onClick={() => handleSort('currentVersion')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #cbd5e1', width: '55px' }}>VER. {getSortIcon('currentVersion')}</th>
               <th onClick={() => handleSort('customerName')} style={{ padding: '10px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: '180px' }}>CUSTOMER {getSortIcon('customerName')}</th>
-              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1' }}>ITEMS</th>
+              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1', width: '240px' }}>ITEMS</th>
               <th onClick={() => handleSort('totalUsd')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '120px' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
               <th style={{ padding: '10px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '85px' }}>ISSUER</th>
               <th onClick={() => handleSort('createdByName')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '75px' }}>WRITER {getSortIcon('createdByName')}</th>
@@ -488,7 +488,7 @@ export const ProformaInvoices: React.FC = () => {
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
                     </td>
                     <td style={{ padding: '8px 10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '8px 10px', maxWidth: '300px', fontSize: '12px', color: '#6b7280' }}>
+                    <td style={{ padding: '8px 10px', width: '240px', maxWidth: '240px', overflow: 'hidden', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '52px', overflowY: 'auto', paddingRight: '4px' }}>
                           {p.itemsSummary.map((item, idx) => (
