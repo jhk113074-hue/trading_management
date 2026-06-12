@@ -12,7 +12,7 @@ const COLUMN_OPTIONS = [
   { key: 'issuingCompany', label: '매출사' },
   { key: 'invoiceAmount', label: '인보이스 금액' },
   { key: 'cargoReady', label: '화물준비 / CFS입고' },
-  { key: 'volumeVessel', label: 'VOLUME / 선명·항차' },
+  { key: 'volumeVessel', label: '선명·항차 / VOLUME' },
   { key: 'shipmentSchedule', label: '서류마감 / ETD / ETA' },
   { key: 'supplier', label: '구입사 (공급업체)' },
   { key: 'items', label: '품목' },
@@ -759,7 +759,7 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('volumeVessel')}
                     style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    VOLUME / 선명·항차
+                    선명·항차 / VOLUME
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('volumeVessel', e)} />
                   </th>
                 )}
@@ -1003,11 +1003,11 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volumeVessel', title: 'VOLUME / 선명·항차 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            VOL: {o.containerVolumeQuantities || '-'}
-                          </div>
-                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             선명: {o.vesselBooking || '-'}
+                          </div>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            VOL: {o.containerVolumeQuantities || '-'}
                           </div>
                         </td>
                       )}
