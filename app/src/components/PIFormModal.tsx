@@ -8,6 +8,7 @@ import type { Product } from '../types/product';
 import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
+import { ProductSearchModal } from './ProductSearchModal';
 
 const getProductPackingMethods = (product: any): any[] => {
   if (!product) return [];
@@ -43,6 +44,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [newCustForm, setNewCustForm] = useState({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '', addressEn: '' });
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+  const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
 
   const [tradeTermsDB, setTradeTermsDB] = useState<any>({
     incoterms: ["EXW", "FOB", "CIF", "CFR", "DAP", "DDP"],
@@ -1730,7 +1733,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               value={it.productCode} 
                               placeholder="상품코드 검색/입력"
                               onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
-                              style={{ ...gridInputStyle, paddingRight: '22px' }} 
+                              style={{ ...gridInputStyle, paddingRight: '42px' }} 
                             />
                             {it.productCode && (
                               <button
@@ -1738,7 +1741,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 onClick={() => updateItem(idx, 'productCode', '')}
                                 style={{
                                   position: 'absolute',
-                                  right: '6px',
+                                  right: '24px',
                                   background: 'transparent',
                                   border: 'none',
                                   color: '#94a3b8',
@@ -1755,6 +1758,30 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 ✕
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchItemIndex(idx);
+                                setIsProductSearchOpen(true);
+                              }}
+                              style={{
+                                position: 'absolute',
+                                right: '6px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#3b82f6',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                padding: '2px',
+                                zIndex: 5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="상품 검색 (Subwindow)"
+                            >
+                              🔍
+                            </button>
                             <datalist id={`products_datalist_${idx}`}>
                               {products.map(p => (
                                 <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
@@ -2247,6 +2274,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           initialProduct={editingProd}
           onClose={() => setIsProdModalOpen(false)}
           products={products}
+        />
+      )}
+      {isProductSearchOpen && searchItemIndex !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => {
+            setIsProductSearchOpen(false);
+            setSearchItemIndex(null);
+          }}
+          onSelect={(p) => {
+            updateItem(searchItemIndex, 'productCode', p.productCode);
+            setIsProductSearchOpen(false);
+            setSearchItemIndex(null);
+          }}
         />
       )}
       {activePreviewUrl && (
