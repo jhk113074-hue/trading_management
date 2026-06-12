@@ -40,6 +40,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
   // Items / Supplier / SupplierAmount fields
   const [items, setItems] = useState<OrderItem[]>(order.items ? JSON.parse(JSON.stringify(order.items)) : []);
+  const [forwarderConfirmed, setForwarderConfirmed] = useState(order.forwarderConfirmed || '');
 
   // Supplier payments (supplierRemitted)
   const [supplierPayments, setSupplierPayments] = useState<Record<string, { status: string; date: string }>>(
@@ -128,6 +129,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
         case 'items':
         case 'supplierAmount':
           payload.items = items;
+          payload.forwarderConfirmed = forwarderConfirmed;
           break;
         case 'supplierRemitted':
           payload.supplierPayments = supplierPayments;
@@ -541,6 +543,17 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             </div>
             <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'right' }}>
               총 품목 수: {items.length}개
+            </div>
+            {/* 포워딩회사 입력 영역 */}
+            <div style={{ marginTop: '12px', padding: '12px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed', display: 'block', marginBottom: '8px' }}>🚢 포워딩회사</label>
+              <input
+                type="text"
+                value={forwarderConfirmed}
+                onChange={(e) => setForwarderConfirmed(e.target.value)}
+                placeholder="예: Pantos Logistics, 포워딩회사명 입력"
+                style={{ width: '100%', padding: '10px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
+              />
             </div>
           </div>
         );

@@ -1051,18 +1051,22 @@ export const Orders: React.FC = () => {
                       
                       {visibleCols.includes('supplier') && (
                         <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplier', title: '구입사 (공급업체) 수정' }); }}
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplier', title: '구입사 / 포워딩사 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.supplier, minWidth: colWidths.supplier, maxWidth: colWidths.supplier, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => (
-                              <div key={sIdx} style={{ padding: '8px', borderBottom: sIdx < suppliers.length - 1 ? '1px solid #e2e8f0' : 'none', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {sup}
                               </div>
                             ))
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
+                          {/* 포워딩회사 행 */}
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: suppliers.length > 0 ? '1px solid #ddd6fe' : 'none' }}>
+                            포: {o.forwarderConfirmed || '-'}
+                          </div>
                         </td>
                       )}
                       
@@ -1089,18 +1093,33 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
-                            suppliers.map((sup, sIdx) => {
-                              const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
-                              const parts = [];
-                              if (amt.usd > 0) parts.push(`$${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                              if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
-                              const amtStr = parts.join(' / ') || '-';
-                              return (
-                                <div key={sIdx} style={{ padding: '8px', borderBottom: sIdx < suppliers.length - 1 ? '1px solid #e2e8f0' : 'none', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {amtStr}
-                                </div>
-                              );
-                            })
+                            <>
+                              {suppliers.map((sup, sIdx) => {
+                                const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
+                                const parts = [];
+                                if (amt.usd > 0) parts.push(`$${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
+                                const amtStr = parts.join(' / ') || '-';
+                                return (
+                                  <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {amtStr}
+                                  </div>
+                                );
+                              })}
+                              {/* Sub Total 행 */}
+                              {(() => {
+                                const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0);
+                                const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0);
+                                const parts = [];
+                                if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
+                                return (
+                                  <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', borderTop: '2px solid #cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                                    Σ {parts.join(' / ') || '-'}
+                                  </div>
+                                );
+                              })()}
+                            </>
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
