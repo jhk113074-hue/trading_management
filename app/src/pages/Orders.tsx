@@ -1117,14 +1117,12 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
-                          {o.forwarderConfirmed ? (
+                          {o.forwarderConfirmed && (
                             <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: '2px solid #ddd6fe' }}>
                               운송비
                             </div>
-                          ) : (
-                            <div style={{ padding: '8px', borderTop: '1px solid #e2e8f0', color: 'transparent' }}>-</div>
                           )}
-                          {/* Subtotal 지시자 행 (구입사 칸과 높이 맞춤) */}
+                          {/* Subtotal 지시자 행 */}
                           <div style={{ padding: '8px', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', color: 'transparent' }}>-</div>
                         </td>
                       )}
@@ -1195,9 +1193,11 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8', textAlign: 'center' }}>-</div>
                           )}
-                          {/* 포워더 행 (높이 맞춤) */}
-                          <div style={{ padding: '8px', borderTop: '2px solid #ddd6fe', backgroundColor: '#f5f3ff', color: 'transparent' }}>-</div>
-                          {/* Subtotal 행 (높이 맞춤) */}
+                          {/* 포워더 행 - 포워더 있을 때만 */}
+                          {o.forwarderConfirmed && (
+                            <div style={{ padding: '8px', borderTop: '2px solid #ddd6fe', backgroundColor: '#f5f3ff', color: 'transparent' }}>-</div>
+                          )}
+                          {/* Subtotal 행 - 항상 */}
                           <div style={{ padding: '8px', borderTop: '2px solid #fde047', backgroundColor: '#fef9c3', color: 'transparent' }}>-</div>
                         </td>
                       )}
