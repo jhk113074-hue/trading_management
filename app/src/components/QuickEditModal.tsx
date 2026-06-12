@@ -73,7 +73,15 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   const [bankSubmitted, setBankSubmitted] = useState(order.bankSubmissionDate || '');
   const [trackingNo, setTrackingNo] = useState(order.shippingDocsTrackingNo || '');
   const [paymentCollected, setPaymentCollected] = useState(order.paymentCollectedDate || '');
-  const [status, setStatus] = useState<any>(order.status || 'ORDER기본정보');
+  const mapStatusToStep = (st: string): string => {
+    if (st === "ORDER기본정보" || st === "주문") return "주문";
+    if (st === "발주서 발행" || st === "공급사별 납기 결정" || st === "공급사 세금계산서 및 결제" || st === "발주") return "발주";
+    if (st === "선적&진행현황" || st === "선적서류 작성 및 수출신고" || st === "선적서류 발송 및 은행제출" || st === "선적관리") return "선적관리";
+    if (st === "이익계산" || st === "이익관리") return "이익관리";
+    return "주문";
+  };
+
+  const [status, setStatus] = useState<any>(mapStatusToStep(order.status || ''));
   const [remark, setRemark] = useState(order.remark || '');
 
   // Load selection options
@@ -805,20 +813,16 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
       case 'status':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>진행 상태 (8단계 진행 상황)</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>진행 상태</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
               style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
             >
-              <option value="ORDER기본정보">ORDER기본정보</option>
-              <option value="발주서 발행">발주서 발행</option>
-              <option value="공급사별 납기 결정">공급사별 납기 결정</option>
-              <option value="선적&진행현황">선적&진행현황</option>
-              <option value="선적서류 작성 및 수출신고">선적서류 작성 및 수출신고</option>
-              <option value="공급사 세금계산서 및 결제">공급사 세금계산서 및 결제</option>
-              <option value="선적서류 발송 및 은행제출">선적서류 발송 및 은행제출</option>
-              <option value="이익계산">이익계산</option>
+              <option value="주문">주문</option>
+              <option value="발주">발주</option>
+              <option value="선적관리">선적관리</option>
+              <option value="이익관리">이익관리</option>
             </select>
           </div>
         );

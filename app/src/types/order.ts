@@ -13,6 +13,7 @@ export interface OrderItem {
   qty: number;
   unit: "kg" | "MT" | "L" | "drum" | "set";
   unitPrice: number;
+  purchaseUnitPrice?: number;
   amount: number;
   currency: "USD" | "KRW";
 }
@@ -28,7 +29,7 @@ export interface Order {
   poDate: string; // YYYY-MM-DD
   requestedDelivery: string;
   remark: string;
-  status: "ORDER기본정보" | "발주서 발행" | "공급사별 납기 결정" | "선적&진행현황" | "선적서류 작성 및 수출신고" | "공급사 세금계산서 및 결제" | "선적서류 발송 및 은행제출" | "이익계산";
+  status: "주문" | "발주" | "선적관리" | "이익관리";
   items: OrderItem[];
   totalAmount: number;
   currency: "USD" | "KRW" | "mixed";
@@ -88,6 +89,10 @@ export interface Order {
   
   supplierTaxInvoice?: Record<string, 'Y' | 'N' | ''>; // 공급사별 세금계산서 발행여부
   supplierPurchaseCertificate?: Record<string, 'Y' | 'N' | ''>; // 공급사별 구매확인서 발행여부
+  supplierTaxTypes?: Record<string, '영세' | '과세'>; // 공급사별 과세구분 (영세/과세)
+  supplierTaxInvoiceDetails?: Record<string, { date: string; invoiceNo: string; }>; // 공급사별 세금계산서 정보
+  supplierPurchaseCertFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>; // 공급사별 구매확인서 파일
+  supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; }>>; // 공급사별 3-4차 분할 결제 정보
   bankSubmissionStatus?: 'Y' | 'N' | ''; // 은행 제출 여부
   forwarderFreightAmount?: number; // 포워딩 운송비 금액 (legacy)
   forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화 (legacy)

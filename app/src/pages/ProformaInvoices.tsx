@@ -94,6 +94,56 @@ export const ProformaInvoices: React.FC = () => {
     currentUser = '대표이사 김주한';
   }
 
+  // Resizable column widths state
+  const [colWidths, setColWidths] = useState<Record<string, number>>({
+    piDate: 95,
+    piNumber: 150,
+    currentVersion: 55,
+    customerName: 180,
+    itemsSummary: 240,
+    totalUsd: 120,
+    issuingCompany: 85,
+    createdByName: 75,
+    action: 150
+  });
+
+  // Load saved column widths from localStorage on load
+  useEffect(() => {
+    const userId = auth.currentUser?.uid || 'default';
+    const saved = localStorage.getItem(`pi_col_widths_${userId}`);
+    if (saved) {
+      try {
+        setColWidths(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [auth.currentUser]);
+
+  const handleResizeStart = (colKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.pageX;
+    const startWidth = colWidths[colKey];
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const currentWidth = Math.max(30, startWidth + (moveEvent.pageX - startX));
+      setColWidths(prev => {
+        const next = { ...prev, [colKey]: currentWidth };
+        const userId = auth.currentUser?.uid || 'default';
+        localStorage.setItem(`pi_col_widths_${userId}`, JSON.stringify(next));
+        return next;
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   useEffect(() => {
     // Load Customers
     const unsubCust = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "customers"), (snap) => {
@@ -458,15 +508,39 @@ export const ProformaInvoices: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
           <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
             <tr>
-              <th onClick={() => handleSort('piDate')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '95px', resize: 'horizontal', overflow: 'auto', textAlign: 'center' }}>DATE {getSortIcon('piDate')}</th>
-              <th onClick={() => handleSort('piNumber')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '150px', resize: 'horizontal', overflow: 'auto', textAlign: 'center' }}>PI NUMBER {getSortIcon('piNumber')}</th>
-              <th onClick={() => handleSort('currentVersion')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #cbd5e1', width: '55px', resize: 'horizontal', overflow: 'auto' }}>VER. {getSortIcon('currentVersion')}</th>
-              <th onClick={() => handleSort('customerName')} style={{ padding: '10px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: '180px', resize: 'horizontal', overflow: 'auto', textAlign: 'center' }}>CUSTOMER {getSortIcon('customerName')}</th>
-              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1', width: '240px', resize: 'horizontal', overflow: 'auto', textAlign: 'center' }}>ITEMS</th>
-              <th onClick={() => handleSort('totalUsd')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '120px', resize: 'horizontal', overflow: 'auto' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
-              <th style={{ padding: '10px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '85px', resize: 'horizontal', overflow: 'auto' }}>ISSUER</th>
-              <th onClick={() => handleSort('createdByName')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '75px', resize: 'horizontal', overflow: 'auto', textAlign: 'center' }}>WRITER {getSortIcon('createdByName')}</th>
-              <th style={{ padding: '10px 10px', textAlign: 'center', width: '150px' }}>작업</th>
+              <th onClick={() => handleSort('piDate')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none' }}>
+                DATE {getSortIcon('piDate')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('piDate', e)} />
+              </th>
+              <th onClick={() => handleSort('piNumber')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none' }}>
+                PI NUMBER {getSortIcon('piNumber')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('piNumber', e)} />
+              </th>
+              <th onClick={() => handleSort('currentVersion')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #cbd5e1', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none' }}>
+                VER. {getSortIcon('currentVersion')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('currentVersion', e)} />
+              </th>
+              <th onClick={() => handleSort('customerName')} style={{ padding: '10px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none' }}>
+                CUSTOMER {getSortIcon('customerName')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('customerName', e)} />
+              </th>
+              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none' }}>
+                ITEMS
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('itemsSummary', e)} />
+              </th>
+              <th onClick={() => handleSort('totalUsd')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none' }}>
+                TOTAL (USD) {getSortIcon('totalUsd')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('totalUsd', e)} />
+              </th>
+              <th style={{ padding: '10px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none' }}>
+                ISSUER
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('issuingCompany', e)} />
+              </th>
+              <th onClick={() => handleSort('createdByName')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none' }}>
+                WRITER {getSortIcon('createdByName')}
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('createdByName', e)} />
+              </th>
+              <th style={{ padding: '10px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden' }}>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -482,13 +556,13 @@ export const ProformaInvoices: React.FC = () => {
  
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0' }} className="hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}>
-                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '8px 10px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap' }}>{p.piNumber || '-'}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                    <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.piDate || '-'}</td>
+                    <td style={{ padding: '8px 10px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.piNumber || '-'}</td>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
                     </td>
-                    <td style={{ padding: '8px 10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '8px 10px', width: '240px', maxWidth: '240px', overflow: 'hidden', fontSize: '12px', color: '#6b7280' }}>
+                    <td style={{ padding: '8px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '8px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {p.itemsSummary.slice(0, 3).map((item, idx) => (
@@ -502,18 +576,18 @@ export const ProformaInvoices: React.FC = () => {
                         </div>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600 }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 600, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>{issuerBadge}</td>
-                    <td style={{ padding: '8px 10px', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{issuerBadge}</td>
+                    <td style={{ padding: '8px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {(() => {
                         const name = p.createdByName || '-';
                         if (name === 'jhkim1130' || name === '대표이사 김주한') return '김주한';
                         return name.replace('대표이사 ', '');
                       })()}
                     </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                    <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                         <button onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} style={{ background: '#eff6ff', color: '#1d4ed8', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>수정</button>
                         <button onClick={() => handleCopy(p)} style={{ background: '#ecfdf5', color: '#047857', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>복사</button>
@@ -539,5 +613,27 @@ export const ProformaInvoices: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+const ResizeHandle: React.FC<{ onMouseDown: (e: React.MouseEvent) => void }> = ({ onMouseDown }) => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: '6px',
+        cursor: 'col-resize',
+        zIndex: 10,
+        backgroundColor: hovered ? '#cbd5e1' : 'transparent',
+        transition: 'background-color 0.2s'
+      }}
+    />
   );
 };

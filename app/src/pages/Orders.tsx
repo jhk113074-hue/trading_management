@@ -7,6 +7,14 @@ import type { Order } from '../types/order';
 import { NewOrderModal } from '../components/NewOrderModal';
 import { QuickEditModal } from '../components/QuickEditModal';
 
+const mapStatusToStep = (st: string): string => {
+  if (st === "ORDER기본정보" || st === "주문") return "주문";
+  if (st === "발주서 발행" || st === "공급사별 납기 결정" || st === "공급사 세금계산서 및 결제" || st === "발주") return "발주";
+  if (st === "선적&진행현황" || st === "선적서류 작성 및 수출신고" || st === "선적서류 발송 및 은행제출" || st === "선적관리") return "선적관리";
+  if (st === "이익계산" || st === "이익관리") return "이익관리";
+  return "주문";
+};
+
 const COLUMN_OPTIONS = [
   { key: 'customer', label: '고객사' },
   { key: 'issuingCompany', label: '매출사' },
@@ -231,7 +239,7 @@ export const Orders: React.FC = () => {
           thisMonthTotalUsd += orderUsdAmount;
         }
       }
-      if (o.status === 'ORDER기본정보') {
+      if (mapStatusToStep(o.status || '') === '주문') {
         waitingCount++;
       } else {
         issuedCount++;
@@ -246,18 +254,18 @@ export const Orders: React.FC = () => {
     };
   }, [orders]);
 
-  // Handle Order status transition to '발주서 발행' (trigger Purchase Order issued)
+  // Handle Order status transition to '발주' (trigger Purchase Order issued)
   const handleIssuePo = async (e: React.MouseEvent, order: Order) => {
     e.stopPropagation();
-    if (!window.confirm(`⚠️ PO [${order.id}]의 발주서를 '발주서 발행' 단계로 변경하시겠습니까?`)) return;
+    if (!window.confirm(`⚠️ PO [${order.id}]의 단계를 '발주' 단계로 변경하시겠습니까?`)) return;
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await setDoc(orderRef, {
-        status: '발주서 발행',
+        status: '발주',
         poIssuedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }, { merge: true });
-      alert('✅ 발주서 발행 단계로 변경되었습니다.');
+      alert('✅ 발주 단계로 변경되었습니다.');
     } catch (err: any) {
       alert('❌ 발행 오류: ' + err.message);
     }
@@ -283,7 +291,7 @@ export const Orders: React.FC = () => {
         if (!matchesId && !matchesCust && !matchesCustPo) return false;
       }
       // 2. Status Filter
-      if (statusFilter && o.status !== statusFilter) {
+      if (statusFilter && mapStatusToStep(o.status || '') !== statusFilter) {
         return false;
       }
       // 3. Supplier Filter
@@ -429,7 +437,7 @@ export const Orders: React.FC = () => {
       const amtStr = parts.length > 0 ? parts.join(' / ') : '$0.00 USD';
 
       return [
-        o.ciNumber || o.id,
+        o.ciNumber || o.custPo || o.id,
         o.custPo || '-',
         o.customer || '-',
         suppliers || '-',
@@ -466,14 +474,10 @@ export const Orders: React.FC = () => {
   };
 
   const statusColors: Record<string, { bg: string, text: string }> = {
-    'ORDER기본정보': { bg: '#fef3c7', text: '#d97706' },
-    '발주서 발행': { bg: '#dcfce7', text: '#15803d' },
-    '공급사별 납기 결정': { bg: '#eff6ff', text: '#2563eb' },
-    '선적&진행현황': { bg: '#faf5ff', text: '#7c3aed' },
-    '선적서류 작성 및 수출신고': { bg: '#ecfeff', text: '#0891b2' },
-    '공급사 세금계산서 및 결제': { bg: '#f0fdf4', text: '#16a34a' },
-    '선적서류 발송 및 은행제출': { bg: '#e0f2fe', text: '#0369a1' },
-    '이익계산': { bg: '#f1f5f9', text: '#475569' }
+    '주문': { bg: '#fef3c7', text: '#d97706' },
+    '발주': { bg: '#eff6ff', text: '#2563eb' },
+    '선적관리': { bg: '#faf5ff', text: '#7c3aed' },
+    '이익관리': { bg: '#f1f5f9', text: '#475569' }
   };
 
   const currentUser = userProfile?.name || '담당자';
@@ -566,14 +570,10 @@ export const Orders: React.FC = () => {
           style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '150px' }}
         >
           <option value="">전체 상태</option>
-          <option value="ORDER기본정보">ORDER기본정보</option>
-          <option value="발주서 발행">발주서 발행</option>
-          <option value="공급사별 납기 결정">공급사별 납기 결정</option>
-          <option value="선적&진행현황">선적&진행현황</option>
-          <option value="선적서류 작성 및 수출신고">선적서류 작성 및 수출신고</option>
-          <option value="공급사 세금계산서 및 결제">공급사 세금계산서 및 결제</option>
-          <option value="선적서류 발송 및 은행제출">선적서류 발송 및 은행제출</option>
-          <option value="이익계산">이익계산</option>
+          <option value="주문">주문</option>
+          <option value="발주">발주</option>
+          <option value="선적관리">선적관리</option>
+          <option value="이익관리">이익관리</option>
         </select>
 
         <select 
@@ -651,7 +651,7 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      <td style={{ padding: '12px 16px', color: '#2563eb', fontWeight: 600 }}>{o.ciNumber || o.id}</td>
+                      <td style={{ padding: '12px 16px', color: '#2563eb', fontWeight: 600 }}>{o.ciNumber || o.custPo || o.id}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 500 }}>{o.customer || '-'}</td>
                       <td style={{ padding: '12px 16px', color: '#475569' }}>
                         {suppliers.length > 0 ? suppliers.slice(0, 2).join(', ') + (suppliers.length > 2 ? '...' : '') : '-'}
@@ -694,7 +694,7 @@ export const Orders: React.FC = () => {
                           >
                             👁 상세
                           </button>
-                          {o.status === 'ORDER기본정보' && (
+                          {mapStatusToStep(o.status || '') === '주문' && (
                             <button 
                               onClick={e => handleIssuePo(e, o)}
                               style={{ border: 'none', background: '#e2e8f0', color: '#1e293b', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
@@ -963,7 +963,7 @@ export const Orders: React.FC = () => {
                         onClick={() => navigate(`/orders/${o.id}`)}
                         style={{ padding: '8px', borderRight: '1px solid #cbd5e1', color: '#2563eb', fontWeight: 700, width: colWidths.piPo, minWidth: colWidths.piPo, maxWidth: colWidths.piPo, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                       >
-                        {o.ciNumber || o.id}
+                        {o.ciNumber || o.custPo || o.id}
                         {o.quotationId && <div style={{ fontSize: '9.5px', color: '#64748b', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis' }}>({o.quotationId})</div>}
                       </td>
                       
@@ -1012,7 +1012,7 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'cargoReady', title: '화물준비 / CFS입고 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             준비: {o.cargoReadyDate || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
@@ -1026,7 +1026,7 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volumeVessel', title: 'VOLUME / 선명·항차 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             선명: {o.vesselBooking || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
@@ -1040,7 +1040,7 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 / 면장환율 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             번호: {o.exportDeclarationNo || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
@@ -1054,10 +1054,10 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'shipmentSchedule', title: '서류마감 / ETD / ETA 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             서류: {o.docsDeadlineDate || '-'}
                           </div>
-                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             ETD: {o.etd || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
@@ -1089,11 +1089,11 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('supplier') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplier', title: '구입사 / 포워딩사 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.supplier, minWidth: colWidths.supplier, maxWidth: colWidths.supplier, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplier, minWidth: colWidths.supplier, maxWidth: colWidths.supplier, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => (
-                              <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {sup}
                               </div>
                             ))
@@ -1101,13 +1101,13 @@ export const Orders: React.FC = () => {
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
                           {orderForwarders.map((fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe' }}>
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               🚢 {fw.name}
                             </div>
                           ))}
                           {/* 오더 Subtotal 레이블 행 */}
-                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            오더 Subtotal
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            Sub total
                           </div>
                         </td>
                       )}
@@ -1115,11 +1115,11 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('items') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'items', title: '품목 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.items, minWidth: colWidths.items, maxWidth: colWidths.items, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.items, minWidth: colWidths.items, maxWidth: colWidths.items, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {o.items && o.items.length > 0 ? (
                             o.items.map((it, iIdx) => (
-                              <div key={iIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div key={iIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {it.name}
                               </div>
                             ))
@@ -1127,19 +1127,19 @@ export const Orders: React.FC = () => {
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
                           {orderForwarders.map((_fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe' }}>
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               운송비
                             </div>
                           ))}
                           {/* Subtotal 지시자 행 */}
-                          <div style={{ padding: '8px', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', color: 'transparent' }}>-</div>
+                          <div style={{ padding: '8px', backgroundColor: '#f1f5f9', color: 'transparent' }}>-</div>
                         </td>
                       )}
                       
                       {visibleCols.includes('supplierAmount') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierAmount', title: '발주금액 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => {
@@ -1149,7 +1149,7 @@ export const Orders: React.FC = () => {
                               if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
                               const amtStr = parts.join(' / ') || '-';
                               return (
-                                <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {amtStr}
                                 </div>
                               );
@@ -1158,7 +1158,7 @@ export const Orders: React.FC = () => {
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
                           {orderForwarders.map((fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
                               {fw.freightCurrency === 'USD'
                                 ? `$${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                 : `₩${(fw.freightAmount || 0).toLocaleString()}`
@@ -1175,7 +1175,7 @@ export const Orders: React.FC = () => {
                             if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                             if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
                             return (
-                              <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                              <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
                                 {parts.join(' / ') || '-'}
                               </div>
                             );
@@ -1187,14 +1187,14 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('supplierRemitted') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierRemitted', title: '결제일 및 상태 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.supplierRemitted, minWidth: colWidths.supplierRemitted, maxWidth: colWidths.supplierRemitted, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplierRemitted, minWidth: colWidths.supplierRemitted, maxWidth: colWidths.supplierRemitted, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => {
                               const pay = o.supplierPayments?.[sup];
                               const dateStr = pay?.date || '-';
                               return (
-                                <div key={sIdx} style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
+                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
                                   {dateStr}
                                 </div>
                               );
@@ -1204,10 +1204,10 @@ export const Orders: React.FC = () => {
                           )}
                           {/* 포워더 행 - 포워더마다 1행 */}
                           {orderForwarders.map((_fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe', backgroundColor: '#f5f3ff', color: 'transparent' }}>-</div>
+                            <div key={fwIdx} style={{ padding: '8px', color: 'transparent' }}>-</div>
                           ))}
                           {/* Subtotal 행 - 항상 */}
-                          <div style={{ padding: '8px', borderTop: '2px solid #fde047', backgroundColor: '#fef9c3', color: 'transparent' }}>-</div>
+                          <div style={{ padding: '8px', backgroundColor: '#f1f5f9', color: 'transparent' }}>-</div>
                         </td>
                       )}
                       
