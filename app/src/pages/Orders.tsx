@@ -41,9 +41,9 @@ export const Orders: React.FC = () => {
 
   // Outlook-style column settings
   const defaultVisibleCols = [
-    'customer', 'issuingCompany', 'invoiceAmount', 'cargoReady', 'volumeVessel', 'shipmentSchedule',
-    'supplier', 'items', 'supplierAmount', 'supplierRemitted', 'invoiceSent', 'inco', 'paymentTerms',
-    'exportNo', 'docsSent', 'bankSubmitted', 'trackingNo', 'paymentCollected',
+    'customer', 'issuingCompany', 'inco', 'paymentTerms', 'invoiceAmount', 'cargoReady', 'volumeVessel', 'exportNo', 'shipmentSchedule',
+    'supplier', 'items', 'supplierAmount', 'supplierRemitted', 'invoiceSent',
+    'docsSent', 'bankSubmitted', 'trackingNo', 'paymentCollected',
     'status', 'remark'
   ];
 
@@ -744,6 +744,24 @@ export const Orders: React.FC = () => {
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('issuingCompany', e)} />
                   </th>
                 )}
+                {visibleCols.includes('inco') && (
+                  <th 
+                    onClick={() => handleSort('inco')}
+                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.inco, minWidth: colWidths.inco, maxWidth: colWidths.inco, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    INCO {sortField === 'inco' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <ResizeHandle onMouseDown={(e) => handleResizeStart('inco', e)} />
+                  </th>
+                )}
+                {visibleCols.includes('paymentTerms') && (
+                  <th 
+                    onClick={() => handleSort('paymentTerms')}
+                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.paymentTerms, minWidth: colWidths.paymentTerms, maxWidth: colWidths.paymentTerms, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    LC/TT {sortField === 'paymentTerms' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <ResizeHandle onMouseDown={(e) => handleResizeStart('paymentTerms', e)} />
+                  </th>
+                )}
                 {visibleCols.includes('cargoReady') && (
                   <th 
                     onClick={() => handleSort('cargoReady')}
@@ -761,6 +779,16 @@ export const Orders: React.FC = () => {
                   >
                     선명·항차 / VOLUME
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('volumeVessel', e)} />
+                  </th>
+                )}
+
+                {visibleCols.includes('exportNo') && (
+                  <th 
+                    onClick={() => handleSort('exportNo')}
+                    style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    수출신고번호 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <ResizeHandle onMouseDown={(e) => handleResizeStart('exportNo', e)} />
                   </th>
                 )}
 
@@ -825,33 +853,6 @@ export const Orders: React.FC = () => {
                   >
                     인보이스 송부 {sortField === 'invoiceSent' && (sortOrder === 'asc' ? '▲' : '▼')}
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('invoiceSent', e)} />
-                  </th>
-                )}
-                {visibleCols.includes('inco') && (
-                  <th 
-                    onClick={() => handleSort('inco')}
-                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.inco, minWidth: colWidths.inco, maxWidth: colWidths.inco, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    INCO {sortField === 'inco' && (sortOrder === 'asc' ? '▲' : '▼')}
-                    <ResizeHandle onMouseDown={(e) => handleResizeStart('inco', e)} />
-                  </th>
-                )}
-                {visibleCols.includes('paymentTerms') && (
-                  <th 
-                    onClick={() => handleSort('paymentTerms')}
-                    style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.paymentTerms, minWidth: colWidths.paymentTerms, maxWidth: colWidths.paymentTerms, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    LC/TT {sortField === 'paymentTerms' && (sortOrder === 'asc' ? '▲' : '▼')}
-                    <ResizeHandle onMouseDown={(e) => handleResizeStart('paymentTerms', e)} />
-                  </th>
-                )}
-                {visibleCols.includes('exportNo') && (
-                  <th 
-                    onClick={() => handleSort('exportNo')}
-                    style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
-                  >
-                    수출신고번호 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}
-                    <ResizeHandle onMouseDown={(e) => handleResizeStart('exportNo', e)} />
                   </th>
                 )}
                 {visibleCols.includes('docsSent') && (
@@ -984,6 +985,24 @@ export const Orders: React.FC = () => {
                         </td>
                       )}
                       
+                      {visibleCols.includes('inco') && (
+                        <td 
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'inco', title: 'INCO 조건 수정' }); }}
+                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 600, width: colWidths.inco, minWidth: colWidths.inco, maxWidth: colWidths.inco, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        >
+                          {o.incoterms || '-'}
+                        </td>
+                      )}
+
+                      {visibleCols.includes('paymentTerms') && (
+                        <td 
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'paymentTerms', title: '결제방식 (LC/TT) 수정' }); }}
+                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', width: colWidths.paymentTerms, minWidth: colWidths.paymentTerms, maxWidth: colWidths.paymentTerms, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        >
+                          {o.isLc === 'Y' ? 'L/C' : o.isLc === 'N' ? 'T/T' : 'T/T'}
+                        </td>
+                      )}
+
                       {visibleCols.includes('cargoReady') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'cargoReady', title: '화물준비 / CFS입고 수정' }); }}
@@ -1009,6 +1028,15 @@ export const Orders: React.FC = () => {
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             VOL: {o.containerVolumeQuantities || '-'}
                           </div>
+                        </td>
+                      )}
+
+                      {visibleCols.includes('exportNo') && (
+                        <td 
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 수정' }); }}
+                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        >
+                          {o.exportDeclarationNo || '-'}
                         </td>
                       )}
 
@@ -1180,33 +1208,6 @@ export const Orders: React.FC = () => {
                           style={{ padding: '8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', width: colWidths.invoiceSent, minWidth: colWidths.invoiceSent, maxWidth: colWidths.invoiceSent, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                         >
                           {o.ciPlSentDate || '-'}
-                        </td>
-                      )}
-                      
-                      {visibleCols.includes('inco') && (
-                        <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'inco', title: 'INCO 조건 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', fontWeight: 600, width: colWidths.inco, minWidth: colWidths.inco, maxWidth: colWidths.inco, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                        >
-                          {o.incoterms || '-'}
-                        </td>
-                      )}
-                      
-                      {visibleCols.includes('paymentTerms') && (
-                        <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'paymentTerms', title: '결제방식 (LC/TT) 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', textAlign: 'center', width: colWidths.paymentTerms, minWidth: colWidths.paymentTerms, maxWidth: colWidths.paymentTerms, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                        >
-                          {o.isLc === 'Y' ? 'L/C' : o.isLc === 'N' ? 'T/T' : 'T/T'}
-                        </td>
-                      )}
-                      
-                      {visibleCols.includes('exportNo') && (
-                        <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                        >
-                          {o.exportDeclarationNo || '-'}
                         </td>
                       )}
                       
