@@ -68,6 +68,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   const [incoterms, setIncoterms] = useState<any>(order.incoterms || '');
   const [paymentTerms, setPaymentTerms] = useState(order.paymentTerms || '');
   const [exportNo, setExportNo] = useState(order.exportDeclarationNo || '');
+  const [customsExchangeRate, setCustomsExchangeRate] = useState<number | ''>(order.customsExchangeRate || '');
   const [docsSent, setDocsSent] = useState(order.shippingDocsSentDate || '');
   const [bankSubmitted, setBankSubmitted] = useState(order.bankSubmissionDate || '');
   const [trackingNo, setTrackingNo] = useState(order.shippingDocsTrackingNo || '');
@@ -166,6 +167,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           break;
         case 'exportNo':
           payload.exportDeclarationNo = exportNo;
+          payload.customsExchangeRate = customsExchangeRate === '' ? undefined : Number(customsExchangeRate);
           break;
         case 'docsSent':
           payload.shippingDocsSentDate = docsSent;
@@ -723,15 +725,27 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
       case 'exportNo':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>수출신고번호</label>
-            <input
-              type="text"
-              placeholder="예: 010-12-345678U"
-              value={exportNo}
-              onChange={(e) => setExportNo(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>수출신고번호</label>
+              <input
+                type="text"
+                placeholder="예: 010-12-345678U"
+                value={exportNo}
+                onChange={(e) => setExportNo(e.target.value)}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>면장상 환율 (₩/1$)</label>
+              <input
+                type="number"
+                placeholder="예: 1400"
+                value={customsExchangeRate}
+                onChange={(e) => setCustomsExchangeRate(e.target.value === '' ? '' : Number(e.target.value))}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              />
+            </div>
           </div>
         );
 

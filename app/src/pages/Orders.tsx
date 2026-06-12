@@ -787,7 +787,7 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('exportNo')}
                     style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    수출신고번호 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    수출신고번호/면장환율 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('exportNo', e)} />
                   </th>
                 )}
@@ -1037,10 +1037,15 @@ export const Orders: React.FC = () => {
 
                       {visibleCols.includes('exportNo') && (
                         <td 
-                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 수정' }); }}
-                          style={{ padding: '8px', borderRight: '1px solid #cbd5e1', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 / 면장환율 수정' }); }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          {o.exportDeclarationNo || '-'}
+                          <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            번호: {o.exportDeclarationNo || '-'}
+                          </div>
+                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                            환율: {o.customsExchangeRate ? `₩${Number(o.customsExchangeRate).toLocaleString()}` : '-'}
+                          </div>
                         </td>
                       )}
 

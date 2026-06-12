@@ -35,15 +35,45 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
   useEffect(() => {
     if (initialProduct) {
+      const existing = initialProduct.packingMethods || [];
+      const hasDefault = existing.some((m: any) => m.name === 'Default');
+      let updatedMethods = [...existing];
+      
+      if (!hasDefault) {
+        const defaultMethod = {
+          id: 'default_' + Math.random().toString(36).substr(2, 9),
+          name: 'Default',
+          packageType: '단품',
+          unit: initialProduct.unit || 'KG',
+          isDefault: !existing.some((m: any) => m.isDefault),
+          unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+          qtyPerPallet: 1,
+          palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+          stackable: 'Y', rotation: 'Y'
+        };
+        updatedMethods = [defaultMethod, ...existing];
+      }
+      
       setFormData({
         ...initialProduct,
-        packingMethods: initialProduct.packingMethods || []
+        packingMethods: updatedMethods
       });
     } else {
+      const defaultMethod = {
+        id: 'default_' + Math.random().toString(36).substr(2, 9),
+        name: 'Default',
+        packageType: '단품',
+        unit: 'KG',
+        isDefault: true,
+        unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+        qtyPerPallet: 1,
+        palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+        stackable: 'Y', rotation: 'Y'
+      };
       setFormData(prev => ({
         ...prev,
         priceValidFrom: new Date().toISOString().split('T')[0],
-        packingMethods: []
+        packingMethods: [defaultMethod]
       }));
     }
   }, [initialProduct]);
@@ -242,6 +272,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
   };
 
   const handleDeletePackingMethod = (id: string) => {
+    const method = (formData.packingMethods || []).find(m => m.id === id);
+    if (method?.name === 'Default') {
+      alert('기본 "Default" 패킹 방법은 삭제할 수 없습니다.');
+      return;
+    }
     let list = (formData.packingMethods || []).filter(m => m.id !== id);
     if (list.length > 0 && !list.some(m => m.isDefault)) {
       list[0].isDefault = true;
@@ -250,7 +285,15 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
   };
 
   const handleChange = (field: keyof Product, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'unit' && prev.packingMethods) {
+        next.packingMethods = prev.packingMethods.map((m: any) => 
+          m.name === 'Default' ? { ...m, unit: (value || 'KG').toUpperCase() } : m
+        );
+      }
+      return next;
+    });
   };
 
   const [isImageUploading, setIsImageUploading] = useState(false);

@@ -523,6 +523,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const numVal = parseFloat(value) || 0;
       if (qpp > 0) {
         it.quantity = numVal * qpp;
+      } else {
+        it.quantity = numVal;
       }
     }
 
@@ -657,22 +659,26 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     if (field === 'productCode' || field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits' || field === 'palletQty') {
       it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
       
-      // Auto calculate palletQty when quantity changes (backward compatibility if quantity is updated directly somehow)
+      // Auto calculate palletQty when quantity changes
       if (field === 'quantity') {
         const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
         if (it.packingSpecOverride) {
           const qpp = it.packingSpecOverride.qtyPerPallet;
           if (qpp && qpp > 0) {
-            it.palletQty = parseFloat((value / qpp).toFixed(1));
+            it.palletQty = parseFloat((value / qpp).toFixed(2));
           } else {
-            it.palletQty = 1;
+            it.palletQty = value;
           }
         } else if (p) {
           if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.palletQty = parseFloat((value / p.qtyPerPallet).toFixed(1));
+            it.palletQty = parseFloat((value / p.qtyPerPallet).toFixed(2));
           } else if (p.weight && p.weight > 0) {
-            it.palletQty = parseFloat((value / p.weight).toFixed(1));
+            it.palletQty = parseFloat((value / p.weight).toFixed(2));
+          } else {
+            it.palletQty = value;
           }
+        } else {
+          it.palletQty = value;
         }
       }
     }
@@ -1674,7 +1680,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '8px 4px', width: '120px' }}>스펙 (Spec)</th>
                   <th style={{ padding: '8px 4px', width: '110px' }}>패킹 방식</th>
                   <th style={{ padding: '8px 4px', width: '70px', textAlign: 'right' }}>패킹수량</th>
-                  <th style={{ padding: '8px 4px', width: '95px', textAlign: 'right' }}>수량(자동계산)</th>
+                  <th style={{ padding: '8px 4px', width: '95px', textAlign: 'right' }}>수량</th>
                   <th style={{ padding: '8px 4px', width: '50px' }}>단위</th>
                   <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right' }}>매입(₩)</th>
                   <th style={{ padding: '8px 4px', width: '65px', textAlign: 'right' }}>환율</th>
@@ -1821,10 +1827,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px' }}>
                       <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.quantity)} 
-                        readOnly
-                        style={{ ...gridInputStyle, textAlign: 'right', backgroundColor: '#f1f5f9', color: '#64748b' }} 
+                        type="number" 
+                        value={it.quantity || ''} 
+                        onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
+                        style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
                     </td>
                     <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} style={gridInputStyle} /></td>
