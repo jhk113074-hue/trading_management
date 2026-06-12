@@ -16,6 +16,7 @@ export const OrderDetail: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles' | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
 
   // Form states for details editing
@@ -50,6 +51,9 @@ export const OrderDetail: React.FC = () => {
     docsSentOrBankSubmitted: '',
     purchaseCertificateByVendor: '',
     paymentStatusByVendor: '',
+    ciPlSentDate: '',
+    bankSubmissionDate: '',
+    paymentCollectedDate: '',
 
     // 8-step fields
     isLc: '' as 'Y' | 'N' | '',
@@ -113,6 +117,9 @@ export const OrderDetail: React.FC = () => {
           docsSentOrBankSubmitted: data.docsSentOrBankSubmitted || '',
           purchaseCertificateByVendor: data.purchaseCertificateByVendor || '',
           paymentStatusByVendor: data.paymentStatusByVendor || '',
+          ciPlSentDate: data.ciPlSentDate || '',
+          bankSubmissionDate: data.bankSubmissionDate || '',
+          paymentCollectedDate: data.paymentCollectedDate || '',
 
           isLc: data.isLc || '',
           supplierPoSent: data.supplierPoSent || {},
@@ -242,6 +249,9 @@ export const OrderDetail: React.FC = () => {
         docsSentOrBankSubmitted: basicForm.docsSentOrBankSubmitted,
         purchaseCertificateByVendor: basicForm.purchaseCertificateByVendor,
         paymentStatusByVendor: basicForm.paymentStatusByVendor,
+        ciPlSentDate: basicForm.ciPlSentDate,
+        bankSubmissionDate: basicForm.bankSubmissionDate,
+        paymentCollectedDate: basicForm.paymentCollectedDate,
 
         // 8-step inputs saving
         isLc: basicForm.isLc,
@@ -271,6 +281,135 @@ export const OrderDetail: React.FC = () => {
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
     }
+  };
+
+  // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles') => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !order) return;
+    
+    setUploadingField(fieldName);
+
+    const file = files[0];
+    const uniqueFileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `tasks/${order.id}/${uniqueFileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed', 
+      () => {}, 
+      (error) => {
+        console.error("Upload failed", error);
+        alert("업로드 중 에러가 발생했습니다: " + error.message);
+        setUploadingField(null);
+      }, 
+      async () => {
+        try {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          const newAttachment = {
+            name: file.name,
+            url: downloadUrl,
+            size: file.size,
+            path: uploadTask.snapshot.ref.fullPath
+          };
+
+          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+          const updatedList = [...(order[fieldName] || []), newAttachment];
+          await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+          
+          alert("✅ 파일이 성공적으로 업로드되었습니다.");
+        } catch (err: any) {
+          alert("파일 정보 저장 실패: " + err.message);
+        } finally {
+          setUploadingField(null);
+        }
+      }
+    );
+  };
+
+  // Delete document attachment from Storage & Firestore for specific fields
+  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles', idx: number) => {
+    if (!order) return;
+    const fileList = order[fieldName] || [];
+    const target = fileList[idx];
+    if (!target) return;
+    if (!window.confirm(`'${target.name}' 파일을 영구 삭제하시겠습니까?`)) return;
+
+    try {
+      if (target.path) {
+        const fileRef = ref(storage, target.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete from storage:", e));
+      }
+      const updatedList = fileList.filter((_, i) => i !== idx);
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+      alert("✅ 파일이 삭제되었습니다.");
+    } catch (err: any) {
+      alert("파일 삭제 실패: " + err.message);
+    }
+  };
+
+  // Helper render for document file attachment widgets
+  const renderFileField = (
+    label: string,
+    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles',
+    inputDocId: string
+  ) => {
+    const fileList = order?.[fieldName] || [];
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>📎 {label}</span>
+          {isEditing && (
+            <div>
+              <input
+                type="file"
+                id={inputDocId}
+                style={{ display: 'none' }}
+                onChange={(e) => handleDocUpload(e, fieldName)}
+                disabled={uploadingField !== null}
+              />
+              <label
+                htmlFor={inputDocId}
+                style={{
+                  padding: '4px 8px',
+                  background: uploadingField === fieldName ? '#94a3b8' : '#3b82f6',
+                  color: '#fff',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
+                  fontWeight: 600
+                }}
+              >
+                {uploadingField === fieldName ? '업로드 중...' : '파일 추가'}
+              </label>
+            </div>
+          )}
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+          {fileList.length > 0 ? (
+            fileList.map((file, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                  📄 {file.name}
+                </a>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDoc(fieldName, idx)}
+                    style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))
+          ) : (
+            <span style={{ fontSize: '11.5px', color: '#94a3b8', fontStyle: 'italic' }}>첨부 파일 없음</span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Upload attachment file to Firebase Storage
@@ -1076,6 +1215,17 @@ export const OrderDetail: React.FC = () => {
                   );
                 })
               )}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', maxWidth: '300px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>화물준비일</span>
+                <input 
+                  type="date" 
+                  value={basicForm.cargoReadyDate} 
+                  onChange={e => setBasicForm(p => ({ ...p, cargoReadyDate: e.target.value }))} 
+                  disabled={!isEditing} 
+                  style={inputStyle(isEditing)} 
+                />
+              </div>
             </div>
           )}
 
@@ -1106,12 +1256,12 @@ export const OrderDetail: React.FC = () => {
                   <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
                 )}
               </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
+                <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+              </div>
               {basicForm.containerWorkspaceType === 'CFS' && (
-                <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 입고일</span>
-                    <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                  </div>
+                <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: '1fr', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 정보</span>
                     <input type="text" style={inputStyle(isEditing)} value={basicForm.cfsAddress} onChange={e => setBasicForm(p => ({ ...p, cfsAddress: e.target.value }))} disabled={!isEditing} placeholder="주소 및 담당자 정보" />
@@ -1124,53 +1274,41 @@ export const OrderDetail: React.FC = () => {
           {/* 5. 선적서류 작성 및 수출신고 */}
           {activeStep === '선적서류 작성 및 수출신고' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CI / PL 작성여부</span>
-                {isEditing ? (
-                  <select value={basicForm.ciPlStatus} onChange={e => setBasicForm(p => ({ ...p, ciPlStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
-                    <option value="">선택사항</option>
-                    <option value="N">미완료 (N)</option>
-                    <option value="Y">작성완료 (Y)</option>
-                  </select>
-                ) : (
-                  <input type="text" value={basicForm.ciPlStatus === 'Y' ? '작성완료 (Y)' : basicForm.ciPlStatus === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
-                )}
+              {renderFileField('CI (Commercial Invoice) 유첨', 'ciFiles', 'ci-file-input')}
+              {renderFileField('PL (Packing List) 유첨', 'plFiles', 'pl-file-input')}
+              {renderFileField('COO (원산지증명서) 유첨', 'cooFiles', 'coo-file-input')}
+              {renderFileField('B/L (선하증권) 유첨', 'blFiles', 'bl-file-input')}
+              <div style={{ gridColumn: 'span 2' }}>
+                {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
               </div>
+              
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
                 <input type="text" value={basicForm.exportDeclarationNo} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 010-22-19-1234567" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>인보이스 송부 일자</span>
+                <input type="date" value={basicForm.ciPlSentDate} onChange={e => setBasicForm(p => ({ ...p, ciPlSentDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
                 <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>COO 발급여부</span>
-                {isEditing ? (
-                  <select value={basicForm.cooStatus} onChange={e => setBasicForm(p => ({ ...p, cooStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
-                    <option value="">선택사항</option>
-                    <option value="N">미발급 (N)</option>
-                    <option value="Y">발급완료 (Y)</option>
-                  </select>
-                ) : (
-                  <input type="text" value={basicForm.cooStatus === 'Y' ? '발급완료 (Y)' : basicForm.cooStatus === 'N' ? '미발급 (N)' : '-'} disabled style={inputStyle(false)} />
-                )}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>B/L 작성여부</span>
-                {isEditing ? (
-                  <select value={basicForm.blStatus} onChange={e => setBasicForm(p => ({ ...p, blStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
-                    <option value="">선택사항</option>
-                    <option value="N">미완료 (N)</option>
-                    <option value="Y">완료 (Y)</option>
-                  </select>
-                ) : (
-                  <input type="text" value={basicForm.blStatus === 'Y' ? '완료 (Y)' : basicForm.blStatus === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
-                )}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>쇼링/적재 현황</span>
                 <input type="text" value={basicForm.containerWorkStatus} onChange={e => setBasicForm(p => ({ ...p, containerWorkStatus: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 적재완료" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감 여부</span>
+                {isEditing ? (
+                  <select value={basicForm.shipmentCompleted} onChange={e => setBasicForm(p => ({ ...p, shipmentCompleted: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
+                    <option value="">선택사항</option>
+                    <option value="N">미완료 (N)</option>
+                    <option value="Y">마감완료 (Y)</option>
+                  </select>
+                ) : (
+                  <input type="text" value={basicForm.shipmentCompleted === 'Y' ? '마감완료 (Y)' : basicForm.shipmentCompleted === 'N' ? '미완료 (N)' : '-'} disabled style={inputStyle(false)} />
+                )}
               </div>
             </div>
           )}
@@ -1268,6 +1406,10 @@ export const OrderDetail: React.FC = () => {
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>은행 네고 제출 일자</span>
+                <input type="date" value={basicForm.bankSubmissionDate} onChange={e => setBasicForm(p => ({ ...p, bankSubmissionDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Tracking 번호</span>
                 <input type="text" value={basicForm.shippingDocsTrackingNo} onChange={e => setBasicForm(p => ({ ...p, shippingDocsTrackingNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="DHL 등 번호" />
               </div>
@@ -1308,6 +1450,10 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ fontSize: '15px', fontWeight: 900, color: '#1e3a8a', marginTop: '5px' }}>₩{profitKrw.toLocaleString()} KRW ({profitMargin}%)</div>
                       </div>
                     </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '300px', marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>대금 영수 일자</span>
+                      <input type="date" value={basicForm.paymentCollectedDate} onChange={e => setBasicForm(p => ({ ...p, paymentCollectedDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
                   </div>
                 );
               })()}
@@ -1317,54 +1463,56 @@ export const OrderDetail: React.FC = () => {
         </div>
 
       {/* Bottom Section: 품목 명세 요약 상시 노출 */}
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '24px', marginTop: '24px' }}>
-        <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'block', marginBottom: '14px' }}>
-          📦 수주 품목 명세 요약 (상시 노출)
-        </span>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-          <thead>
-            <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-              <th style={{ padding: '10px 12px', width: '50px', textAlign: 'center' }}>No</th>
-              <th style={{ padding: '10px 12px' }}>품목 사양명</th>
-              <th style={{ padding: '10px 12px' }}>공급업체</th>
-              <th style={{ padding: '10px 12px' }}>Grade</th>
-              <th style={{ padding: '10px 12px', textAlign: 'right', width: '100px' }}>수량</th>
-              <th style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>단위</th>
-              <th style={{ padding: '10px 12px', textAlign: 'right', width: '120px' }}>단가</th>
-              <th style={{ padding: '10px 12px', textAlign: 'right', width: '140px' }}>금액</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items?.map((it, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
-                <td style={{ padding: '10px 12px', fontWeight: 600 }}>{it.name}</td>
-                <td style={{ padding: '10px 12px', color: '#475569' }}>{it.supplier}</td>
-                <td style={{ padding: '10px 12px' }}>{it.grade || '-'}</td>
-                <td style={{ padding: '10px 12px', textAlign: 'right' }}>{(it.qty || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>{it.unit}</td>
-                <td style={{ padding: '10px 12px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
-                <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', borderTop: '2px solid #e2e8f0', paddingTop: '15px', marginTop: '15px' }}>
-          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>총 수량: {order.items?.reduce((s, it) => s + (it.qty || 0), 0).toLocaleString()}</span>
-          <span style={{ fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
-            총 금액 합계: {(() => {
-              const usdTotal = order.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
-              const krwTotal = order.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
-              const parts = [];
-              if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
-              if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString('en-US')} KRW`);
-              if (parts.length === 0) return '$0.00 USD';
-              return parts.join(' / ');
-            })()}
+      {(activeStep === 'ORDER기본정보' || activeStep === '발주서 발행') && (
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '24px', marginTop: '24px' }}>
+          <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'block', marginBottom: '14px' }}>
+            📦 수주 품목 명세 요약 (상시 노출)
           </span>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                <th style={{ padding: '10px 12px', width: '50px', textAlign: 'center' }}>No</th>
+                <th style={{ padding: '10px 12px' }}>품목 사양명</th>
+                <th style={{ padding: '10px 12px' }}>공급업체</th>
+                <th style={{ padding: '10px 12px' }}>Grade</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', width: '100px' }}>수량</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', width: '80px' }}>단위</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', width: '120px' }}>단가</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', width: '140px' }}>금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items?.map((it, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{it.name}</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>{it.supplier}</td>
+                  <td style={{ padding: '10px 12px' }}>{it.grade || '-'}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{(it.qty || 0).toLocaleString()}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', color: '#64748b' }}>{it.unit}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.unitPrice || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{it.currency === 'KRW' ? '₩' : '$'}{(it.amount || 0).toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', borderTop: '2px solid #e2e8f0', paddingTop: '15px', marginTop: '15px' }}>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>총 수량: {order.items?.reduce((s, it) => s + (it.qty || 0), 0).toLocaleString()}</span>
+            <span style={{ fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
+              총 금액 합계: {(() => {
+                const usdTotal = order.items?.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                const krwTotal = order.items?.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+                const parts = [];
+                if (usdTotal > 0) parts.push(`$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`);
+                if (krwTotal > 0) parts.push(`₩${krwTotal.toLocaleString('en-US')} KRW`);
+                if (parts.length === 0) return '$0.00 USD';
+                return parts.join(' / ');
+              })()}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

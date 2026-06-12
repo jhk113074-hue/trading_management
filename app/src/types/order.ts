@@ -32,6 +32,14 @@ export interface Order {
   updatedAt: any;
   externalLinks?: string[]; // Dropbox / Google Drive links
   attachments?: Array<{ name: string; url: string; size: number; path: string }>;
+  ciFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  plFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  cooFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  blFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  ciPlSentDate?: string;
+  bankSubmissionDate?: string;
+  paymentCollectedDate?: string;
   issuingCompany?: 'YSACC' | 'YS';
   
   // New progress tracking fields
