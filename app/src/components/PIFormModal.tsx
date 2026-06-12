@@ -1883,20 +1883,26 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} style={gridInputStyle} /></td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="매입(₩)"
-                          value={formatNumberWithCommas(it.purchasePriceKrw)} 
-                          onChange={(e) => updateItem(idx, 'purchasePriceKrw', parseCommas(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'right' }} 
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="매입($)"
-                          value={formatNumberWithCommas(it.purchasePriceUsd, 2)} 
-                          onChange={(e) => updateItem(idx, 'purchasePriceUsd', parseCommas(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'right' }} 
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, width: '12px', textAlign: 'center' }}>₩</span>
+                          <input 
+                            type="text" 
+                            placeholder="매입(₩)"
+                            value={formatNumberWithCommas(it.purchasePriceKrw)} 
+                            onChange={(e) => updateItem(idx, 'purchasePriceKrw', parseCommas(e.target.value))} 
+                            style={{ ...gridInputStyle, textAlign: 'right' }} 
+                          />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, width: '12px', textAlign: 'center' }}>$</span>
+                          <input 
+                            type="text" 
+                            placeholder="매입($)"
+                            value={formatNumberWithCommas(it.purchasePriceUsd, 2)} 
+                            onChange={(e) => updateItem(idx, 'purchasePriceUsd', parseCommas(e.target.value))} 
+                            style={{ ...gridInputStyle, textAlign: 'right' }} 
+                          />
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '4px' }}>
