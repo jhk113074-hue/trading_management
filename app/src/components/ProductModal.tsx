@@ -898,7 +898,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                           onChange={e => handleChange('unit', e.target.value)} 
                           style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
                         >
-                          {['KG', 'BOX', 'M2', 'M', 'EA'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
                       </div>
                     </div>
@@ -1001,7 +1001,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, unit: e.target.value }))} 
                           style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
-                          {['KG', 'BOX', 'M2', 'M', 'EA'].map(opt => (
+                          {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
