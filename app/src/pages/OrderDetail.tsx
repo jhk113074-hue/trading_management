@@ -14,8 +14,6 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("주문");
   const isEditing = true;
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles' | null>(null);
   const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
@@ -460,75 +458,7 @@ export const OrderDetail: React.FC = () => {
     );
   };
 
-  // Upload attachment file to Firebase Storage
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !order) return;
-    
-    setIsUploading(true);
-    setUploadProgress(0);
 
-    const file = files[0];
-    const uniqueFileName = `${Date.now()}_${file.name}`;
-    // Store in tasks/{orderId} to match Firebase Storage path rules
-    const storageRef = ref(storage, `tasks/${order.id}/${uniqueFileName}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        setUploadProgress(progress);
-      }, 
-      (error) => {
-        console.error("Upload failed", error);
-        alert("업로드 중 에러가 발생했습니다: " + error.message);
-        setIsUploading(false);
-        setUploadProgress(null);
-      }, 
-      async () => {
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          const newAttachment = {
-            name: file.name,
-            url: downloadUrl,
-            size: file.size,
-            path: uploadTask.snapshot.ref.fullPath
-          };
-
-          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-          const updatedAttachments = [...(order.attachments || []), newAttachment];
-          await setDoc(orderRef, { attachments: updatedAttachments, updatedAt: serverTimestamp() }, { merge: true });
-          
-          alert("✅ 파일이 성공적으로 업로드되었습니다.");
-        } catch (err: any) {
-          alert("파일 정보 저장 실패: " + err.message);
-        } finally {
-          setIsUploading(false);
-          setUploadProgress(null);
-        }
-      }
-    );
-  };
-
-  // Delete attachment from Storage & Firestore
-  const handleDeleteAttachment = async (idx: number) => {
-    if (!order || !order.attachments) return;
-    const target = order.attachments[idx];
-    if (!window.confirm(`'${target.name}' 파일을 영구 삭제하시겠습니까?`)) return;
-
-    try {
-      if (target.path) {
-        const fileRef = ref(storage, target.path);
-        await deleteObject(fileRef).catch(e => console.warn("Failed to delete from storage:", e));
-      }
-      const updatedAttachments = order.attachments.filter((_, i) => i !== idx);
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      await setDoc(orderRef, { attachments: updatedAttachments, updatedAt: serverTimestamp() }, { merge: true });
-      alert("✅ 파일이 삭제되었습니다.");
-    } catch (err: any) {
-      alert("파일 삭제 실패: " + err.message);
-    }
-  };
 
   // Grouped Supplier PO Print handler
   const handlePrintSupplierPo = (supplierName: string, items: OrderItem[]) => {
@@ -888,25 +818,24 @@ export const OrderDetail: React.FC = () => {
       </div>
 
       {/* Tab Menu */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', background: '#fff', borderRadius: '10px 10px 0 0', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
-        {steps.map((step, idx) => {
+      <div style={{ display: 'flex', gap: '6px', padding: '4px 0', borderBottom: '1px solid #e2e8f0' }}>
+        {steps.map((step) => {
           const isCurrent = step === activeStep;
           return (
             <button
               key={step}
               onClick={() => handleStepClick(step)}
               style={{
-                flex: 1,
-                padding: '14px 20px',
-                border: 'none',
-                background: isCurrent ? '#fff' : '#f8fafc',
-                color: isCurrent ? '#2563eb' : '#64748b',
-                fontWeight: isCurrent ? 800 : 600,
-                fontSize: '14px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: isCurrent ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                background: isCurrent ? '#2563eb' : '#f8fafc',
+                color: isCurrent ? '#fff' : '#64748b',
+                fontWeight: isCurrent ? 700 : 500,
+                fontSize: '12.5px',
                 cursor: 'pointer',
-                borderBottom: isCurrent ? '3px solid #2563eb' : 'none',
-                borderRight: idx < steps.length - 1 ? '1px solid #cbd5e1' : 'none',
-                transition: 'all 0.15s'
+                transition: 'all 0.15s',
+                boxShadow: isCurrent ? '0 2px 4px rgba(37, 99, 235, 0.2)' : 'none'
               }}
             >
               {step}
@@ -915,8 +844,8 @@ export const OrderDetail: React.FC = () => {
         })}
       </div>
 
-      {/* Top Panel: PI Info & CI, Items Summary, File/Link Manager */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.3fr 1.1fr', gap: '16px', alignItems: 'stretch' }}>
+      {/* Top Panel: PI Info & CI, Items Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.2fr', gap: '16px', alignItems: 'stretch' }}>
         {/* 1. 연결된 PI 정보 및 CI 번호 */}
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ fontWeight: 700, fontSize: '13px', color: '#1e3a8a', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -965,16 +894,16 @@ export const OrderDetail: React.FC = () => {
         </div>
 
         {/* 2. 수주품목 명세요약 */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>📋 수주품목 명세요약</div>
-          <div style={{ overflowY: 'auto', maxHeight: '130px', flex: 1 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📋 수주품목 명세요약</div>
+          <div style={{ overflowY: 'auto', maxHeight: '180px', flex: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                  <th style={{ padding: '4px 6px', textAlign: 'left' }}>품목명</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'right' }}>수량</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'right' }}>단가</th>
-                  <th style={{ padding: '4px 6px', textAlign: 'right' }}>금액</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left' }}>품목명</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right', width: '120px' }}>수량</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right', width: '120px' }}>단가</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right', width: '140px' }}>금액</th>
                 </tr>
               </thead>
               <tbody>
@@ -984,71 +913,20 @@ export const OrderDetail: React.FC = () => {
                     const totalAmt = price * (it.qty || 0);
                     return (
                       <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '4px 6px', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={it.name}>{it.name}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{price?.toLocaleString()}</td>
-                        <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 600 }}>{it.currency === 'KRW' ? '₩' : '$'}{totalAmt?.toLocaleString()}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#334155' }} title={it.name}>{it.name}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{price?.toLocaleString()}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{it.currency === 'KRW' ? '₩' : '$'}{totalAmt?.toLocaleString()}</td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={4} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>등록된 수주 품목이 없습니다.</td>
+                    <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 수주 품목이 없습니다.</td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        {/* 3. 파일 및 외부 클라우드 링크 관리 (컴팩트 병합) */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1f2937' }}>📂 첨부파일 & 클라우드 링크</span>
-            <label 
-              htmlFor="order-file-uploader"
-              style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
-            >
-              {isUploading ? `업로드 중 (${uploadProgress}%)` : '📁 파일 업로드'}
-            </label>
-            <input 
-              type="file" 
-              id="order-file-uploader" 
-              onChange={handleFileUpload} 
-              disabled={isUploading}
-              style={{ display: 'none' }} 
-            />
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto', maxHeight: '130px' }}>
-            {/* Cloud links editor */}
-            <textarea 
-              rows={1} 
-              value={basicForm.externalLinksStr} 
-              onChange={e => setBasicForm(prev => ({ ...prev, externalLinksStr: e.target.value }))}
-              placeholder="클라우드 외부 링크 (줄바꿈 구분)" 
-              style={{ padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', resize: 'none' }} 
-            />
-
-            {/* List of uploaded files */}
-            {order.attachments && order.attachments.length > 0 ? (
-              order.attachments.map((att, idx) => (
-                <div key={idx} style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-                  <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontWeight: 600, fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
-                    📄 {att.name}
-                  </a>
-                  <button 
-                    type="button" 
-                    onClick={() => handleDeleteAttachment(idx)}
-                    style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '11px' }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))
-            ) : (
-              <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' }}>첨부 파일 없음</span>
-            )}
           </div>
         </div>
       </div>
