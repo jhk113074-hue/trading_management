@@ -458,14 +458,14 @@ export const ProformaInvoices: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
           <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
             <tr>
-              <th onClick={() => handleSort('piDate')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '95px' }}>DATE {getSortIcon('piDate')}</th>
-              <th onClick={() => handleSort('piNumber')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '150px' }}>PI NUMBER {getSortIcon('piNumber')}</th>
-              <th onClick={() => handleSort('currentVersion')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #cbd5e1', width: '55px' }}>VER. {getSortIcon('currentVersion')}</th>
-              <th onClick={() => handleSort('customerName')} style={{ padding: '10px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: '180px' }}>CUSTOMER {getSortIcon('customerName')}</th>
-              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1', width: '240px' }}>ITEMS</th>
-              <th onClick={() => handleSort('totalUsd')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '120px' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
-              <th style={{ padding: '10px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '85px' }}>ISSUER</th>
-              <th onClick={() => handleSort('createdByName')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '75px' }}>WRITER {getSortIcon('createdByName')}</th>
+              <th onClick={() => handleSort('piDate')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '95px', resize: 'horizontal', overflow: 'auto' }}>DATE {getSortIcon('piDate')}</th>
+              <th onClick={() => handleSort('piNumber')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '150px', resize: 'horizontal', overflow: 'auto' }}>PI NUMBER {getSortIcon('piNumber')}</th>
+              <th onClick={() => handleSort('currentVersion')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #cbd5e1', width: '55px', resize: 'horizontal', overflow: 'auto' }}>VER. {getSortIcon('currentVersion')}</th>
+              <th onClick={() => handleSort('customerName')} style={{ padding: '10px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: '180px', resize: 'horizontal', overflow: 'auto' }}>CUSTOMER {getSortIcon('customerName')}</th>
+              <th style={{ padding: '10px 10px', borderRight: '1px solid #cbd5e1', width: '240px', resize: 'horizontal', overflow: 'auto' }}>ITEMS</th>
+              <th onClick={() => handleSort('totalUsd')} style={{ padding: '10px 10px', cursor: 'pointer', textAlign: 'right', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '120px', resize: 'horizontal', overflow: 'auto' }}>TOTAL (USD) {getSortIcon('totalUsd')}</th>
+              <th style={{ padding: '10px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '85px', resize: 'horizontal', overflow: 'auto' }}>ISSUER</th>
+              <th onClick={() => handleSort('createdByName')} style={{ padding: '10px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: '75px', resize: 'horizontal', overflow: 'auto' }}>WRITER {getSortIcon('createdByName')}</th>
               <th style={{ padding: '10px 10px', textAlign: 'center', width: '150px' }}>작업</th>
             </tr>
           </thead>
@@ -490,10 +490,15 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '8px 10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{customers[p.customerId]?.name || '-'}</td>
                     <td style={{ padding: '8px 10px', width: '240px', maxWidth: '240px', overflow: 'hidden', fontSize: '12px', color: '#6b7280' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '52px', overflowY: 'auto', paddingRight: '4px' }}>
-                          {p.itemsSummary.map((item, idx) => (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {p.itemsSummary.slice(0, 3).map((item, idx) => (
                             <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item}</div>
                           ))}
+                          {p.itemsSummary.length > 3 && (
+                            <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '11px', marginTop: '2px' }}>
+                              외 {p.itemsSummary.length - 3}건
+                            </div>
+                          )}
                         </div>
                       ) : '-'}
                     </td>
