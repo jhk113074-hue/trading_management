@@ -1763,59 +1763,61 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               ))}
                             </datalist>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingProd(undefined);
-                              setIsProdModalOpen(true);
-                            }}
-                            title="신규 상품 등록"
-                            style={{
-                              background: '#eff6ff',
-                              border: '1px solid #bfdbfe',
-                              color: '#2563eb',
-                              borderRadius: '4px',
-                              padding: '2px 6px',
-                              cursor: 'pointer',
-                              fontSize: '10px',
-                              fontWeight: 600,
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            ➕
-                          </button>
-                          {(() => {
-                            const rawCode = getRawProductCode(it.productCode);
-                            const p = products.find(prod => prod.productCode === rawCode);
-                            return (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (p) {
-                                    setEditingProd(p);
-                                    setIsProdModalOpen(true);
-                                  } else {
-                                    alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                  }
-                                }}
-                                disabled={!p}
-                                title="선택된 상품 수정"
-                                style={{
-                                  background: p ? '#f0fdf4' : '#f1f5f9',
-                                  border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
-                                  color: p ? '#16a34a' : '#94a3b8',
-                                  borderRadius: '4px',
-                                  padding: '2px 6px',
-                                  cursor: p ? 'pointer' : 'not-allowed',
-                                  fontSize: '10px',
-                                  fontWeight: 600,
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                ✏️
-                              </button>
-                            );
-                          })()}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingProd(undefined);
+                                setIsProdModalOpen(true);
+                              }}
+                              title="신규 상품 등록"
+                              style={{
+                                background: '#eff6ff',
+                                border: '1px solid #bfdbfe',
+                                color: '#2563eb',
+                                borderRadius: '4px',
+                                padding: '2px 6px',
+                                cursor: 'pointer',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              ➕
+                            </button>
+                            {(() => {
+                              const rawCode = getRawProductCode(it.productCode);
+                              const p = products.find(prod => prod.productCode === rawCode);
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (p) {
+                                      setEditingProd(p);
+                                      setIsProdModalOpen(true);
+                                    } else {
+                                      alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                    }
+                                  }}
+                                  disabled={!p}
+                                  title="선택된 상품 수정"
+                                  style={{
+                                    background: p ? '#f0fdf4' : '#f1f5f9',
+                                    border: p ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
+                                    color: p ? '#16a34a' : '#94a3b8',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    cursor: p ? 'pointer' : 'not-allowed',
+                                    fontSize: '10px',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  ✏️
+                                </button>
+                              );
+                            })()}
+                          </div>
                         </div>
                         {(() => {
                           const rawCode = getRawProductCode(it.productCode);
