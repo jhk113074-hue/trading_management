@@ -9,6 +9,8 @@ import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
+import { CustomerModal } from './CustomerModal';
+import { CustomerSearchModal } from './CustomerSearchModal';
 
 const getProductPackingMethods = (product: any): any[] => {
   if (!product) return [];
@@ -40,12 +42,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [showNewCust, setShowNewCust] = useState(false);
-  const [newCustForm, setNewCustForm] = useState({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '', addressEn: '' });
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [isCustModalOpen, setIsCustModalOpen] = useState(false);
+  const [editingCust, setEditingCust] = useState<Customer | undefined>(undefined);
 
   const [tradeTermsDB, setTradeTermsDB] = useState<any>({
     incoterms: ["EXW", "FOB", "CIF", "CFR", "DAP", "DDP"],
@@ -228,34 +231,28 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const isLoadedRef = useRef(false);
 
   useEffect(() => {
-    // Load Customers
-    const loadData = async () => {
-      try {
-        const custSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "customers"));
-        const loadedCusts = custSnap.docs.map(d => ({ id: d.id, ...d.data() } as Customer));
-        setCustomers(loadedCusts);
+    // Subscribe to customers in real-time
+    const unsubCustomers = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "customers"), (snap) => {
+      const loadedCusts = snap.docs.map(d => ({ id: d.id, ...d.data() } as Customer));
+      setCustomers(loadedCusts);
 
-        // Self-healing customer details if customerName is empty but customerId exists
-        setFormData(prev => {
-          if (prev.customerId) {
-            const cust = loadedCusts.find(c => c.id === prev.customerId);
-            if (cust) {
-              return {
-                ...prev,
-                customerName: prev.customerName || cust.name,
-                customerAddress: prev.customerAddress || cust.addressEn || '',
-                contactPerson: prev.contactPerson || cust.contactPerson || cust.representative || '',
-                email: prev.email || cust.email || cust.contactEmail || ''
-              };
-            }
+      // Self-healing customer details if customerName is empty but customerId exists
+      setFormData(prev => {
+        if (prev.customerId) {
+          const cust = loadedCusts.find(c => c.id === prev.customerId);
+          if (cust) {
+            return {
+              ...prev,
+              customerName: prev.customerName || cust.name,
+              customerAddress: prev.customerAddress || cust.addressEn || '',
+              contactPerson: prev.contactPerson || cust.contactPerson || cust.representative || '',
+              email: prev.email || cust.email || cust.contactEmail || ''
+            };
           }
-          return prev;
-        });
-      } catch (err) {
-        console.error("Error loading data:", err);
-      }
-    };
-    loadData();
+        }
+        return prev;
+      });
+    });
 
     // Subscribe to products in real-time
     const unsubProducts = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "products"), (snap) => {
@@ -267,6 +264,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       if (isLoadedRef.current) {
         return () => {
           unsubProducts();
+          unsubCustomers();
         };
       }
 
@@ -338,6 +336,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return () => {
       unsubProducts();
+      unsubCustomers();
     };
   }, [initialPI, currentUser]);
 
@@ -439,79 +438,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     suggestPiNumber();
   }, [initialPI, formData.customerId, formData.issuingCompany, formData.piDate, customers]);
 
-  const handleCustomerChange = (custId: string) => {
-    if (custId === '__NEW__') {
-      setShowNewCust(true);
-      return;
-    }
-    setShowNewCust(false);
-    const cust = customers.find(c => c.id === custId);
-    if (cust) {
-      setFormData(prev => ({
-        ...prev,
-        customerId: cust.id,
-        customerName: cust.name,
-        customerAddress: cust.addressEn || '',
-        contactPerson: cust.contactPerson || cust.representative || '',
-        email: cust.email || cust.contactEmail || '',
-        destinationPort: cust.shippingPort || prev.destinationPort,
-        incoterms: cust.preferredIncoterms || prev.incoterms,
-        paymentTerms: cust.paymentTerms || prev.paymentTerms
-      }));
-    }
-  };
 
-  const saveNewCustomer = async () => {
-    if (!newCustForm.name.trim()) { alert('고객명을 입력해주세요.'); return; }
-    try {
-      // 코드 자동 생성: CUST-YYYYMMDD-XXX
-      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
-      const existingCodesWithDate = customers
-        .map(c => c.customerCode || '')
-        .filter(code => code.startsWith(`CUST-${dateStr}`));
-      const nextNum = existingCodesWithDate.length + 1;
-      const newCode = `CUST-${dateStr}-${String(nextNum).padStart(3,'0')}`;
-
-      const newCustData: any = {
-        customerCode: newCode,
-        name: newCustForm.name.trim(),
-        contactPerson: newCustForm.contactPerson.trim(),
-        email: newCustForm.email.trim(),
-        phone: newCustForm.phone.trim(),
-        countryName: newCustForm.countryName.trim(),
-        shippingPort: newCustForm.shippingPort.trim(),
-        preferredIncoterms: newCustForm.preferredIncoterms.trim(),
-        paymentTerms: newCustForm.paymentTerms.trim(),
-        addressEn: newCustForm.addressEn.trim(),
-        tradeStatus: 'Active',
-        tradeGrade: 'A',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      await setDoc(doc(db, 'companies', COMPANY_ID, 'customers', newCode), newCustData);
-
-      // 로컬 상태 추가 후 자동 선택
-      const addedCust: Customer = { id: newCode, ...newCustData } as Customer;
-      setCustomers(prev => [...prev, addedCust]);
-      setFormData(prev => ({
-        ...prev,
-        customerId: newCode,
-        customerName: newCustForm.name.trim(),
-        customerAddress: newCustForm.addressEn.trim(),
-        contactPerson: newCustForm.contactPerson.trim(),
-        email: newCustForm.email.trim(),
-        destinationPort: newCustForm.shippingPort.trim() || prev.destinationPort,
-        incoterms: newCustForm.preferredIncoterms.trim() || prev.incoterms,
-        paymentTerms: newCustForm.paymentTerms.trim() || prev.paymentTerms,
-      }));
-      setShowNewCust(false);
-      setNewCustForm({ name: '', contactPerson: '', email: '', phone: '', countryName: '', shippingPort: '', preferredIncoterms: '', paymentTerms: '', addressEn: '' });
-      alert(`✅ 신규 고객 [${newCustForm.name}] 등록 완료! (ID: ${newCode})`);
-    } catch (e: any) {
-      alert('❌ 저장 실패: ' + e.message);
-    }
-  };
 
   const addItem = () => {
     setItems(prev => [...prev, {
@@ -1574,69 +1501,145 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-              <select value={showNewCust ? '__NEW__' : (formData.customerId || '')} onChange={(e) => handleCustomerChange(e.target.value)} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
-                <option value="">— 선택 —</option>
-                <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 700 }}>➕ 신규 고객 등록...</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    value={formData.customerName || ''} 
+                    placeholder="고객사 검색/선택"
+                    readOnly
+                    onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{
+                      width: '100%',
+                      padding: '9px 42px 9px 11px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      background: '#fff',
+                      boxSizing: 'border-box'
+                    }} 
+                  />
+                  {formData.customerId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          customerId: '',
+                          customerName: '',
+                          customerAddress: '',
+                          contactPerson: '',
+                          email: '',
+                        }));
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: '24px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        padding: '2px',
+                        zIndex: 5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="비우기"
+                    >
+                      ✕
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{
+                      position: 'absolute',
+                      right: '6px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#3b82f6',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      padding: '2px',
+                      zIndex: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="고객 검색 (Subwindow)"
+                  >
+                    🔍
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingCust(undefined);
+                      setIsCustModalOpen(true);
+                    }}
+                    title="신규 고객 등록"
+                    style={{
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      color: '#2563eb',
+                      borderRadius: '6px',
+                      padding: '8px 10px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      height: '37px'
+                    }}
+                  >
+                    ➕
+                  </button>
+                  {(() => {
+                    const c = customers.find(cust => cust.id === formData.customerId);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (c) {
+                            setEditingCust(c);
+                            setIsCustModalOpen(true);
+                          }
+                        }}
+                        disabled={!c}
+                        title="선택된 고객 수정"
+                        style={{
+                          background: c ? '#f0fdf4' : '#f1f5f9',
+                          border: c ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
+                          color: c ? '#16a34a' : '#94a3b8',
+                          borderRadius: '6px',
+                          padding: '8px 10px',
+                          cursor: c ? 'pointer' : 'not-allowed',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          height: '37px'
+                        }}
+                      >
+                        ✏️
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
             <Input label="Address" value={formData.customerAddress || ''} disabled />
             <Input label="Contact" value={formData.contactPerson} disabled />
             <Input label="Email" value={formData.email} disabled />
 
-            {/* 신규 고객 입력 패널 */}
-            {showNewCust && (
-              <div style={{ gridColumn: 'span 4', background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '10px', padding: '16px', marginTop: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '14px' }}>🆕</span>
-                  <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#1d4ed8' }}>신규 고객 등록</h4>
-                  <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>저장 후 자동으로 선택됩니다</span>
-                  <button onClick={() => { setShowNewCust(false); setFormData(prev => ({...prev, customerId: ''})); }} style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '16px' }}>✕</button>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#1d4ed8' }}>고객명 (Company Name) ★</label>
-                    <input value={newCustForm.name} onChange={e => setNewCustForm(p => ({...p, name: e.target.value}))} placeholder="예: ABC TRADING CO." style={{ padding: '8px 10px', border: '1px solid #93c5fd', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>고객사 주소 (Company Address - English)</label>
-                    <input value={newCustForm.addressEn} onChange={e => setNewCustForm(p => ({...p, addressEn: e.target.value}))} placeholder="Company Address" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>담당자명 (Contact)</label>
-                    <input value={newCustForm.contactPerson} onChange={e => setNewCustForm(p => ({...p, contactPerson: e.target.value}))} placeholder="담당자 이름" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Email</label>
-                    <input type="email" value={newCustForm.email} onChange={e => setNewCustForm(p => ({...p, email: e.target.value}))} placeholder="email@example.com" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>전화번호 (Phone)</label>
-                    <input value={newCustForm.phone} onChange={e => setNewCustForm(p => ({...p, phone: e.target.value}))} placeholder="+82-10-0000-0000" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>국가 (Country)</label>
-                    <input value={newCustForm.countryName} onChange={e => setNewCustForm(p => ({...p, countryName: e.target.value}))} placeholder="예: Turkey" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>도착항 (Port)</label>
-                    <input value={newCustForm.shippingPort} onChange={e => setNewCustForm(p => ({...p, shippingPort: e.target.value}))} placeholder="예: MERSIN PORT, TURKEY" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Incoterms</label>
-                    <input value={newCustForm.preferredIncoterms} onChange={e => setNewCustForm(p => ({...p, preferredIncoterms: e.target.value}))} placeholder="CIF / FOB" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>결제 조건 (Payment)</label>
-                    <input value={newCustForm.paymentTerms} onChange={e => setNewCustForm(p => ({...p, paymentTerms: e.target.value}))} placeholder="T/T in advance" style={{ padding: '8px 10px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px' }} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                  <button onClick={() => { setShowNewCust(false); setFormData(prev => ({...prev, customerId: ''})); }} style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>취소</button>
-                  <button onClick={saveNewCustomer} style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>💾 고객 등록 후 선택</button>
-                </div>
-              </div>
-            )}
+
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
@@ -2288,6 +2291,32 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             setIsProductSearchOpen(false);
             setSearchItemIndex(null);
           }}
+        />
+      )}
+      {isCustomerSearchOpen && (
+        <CustomerSearchModal
+          customers={customers}
+          onClose={() => setIsCustomerSearchOpen(false)}
+          onSelect={(c) => {
+            setFormData(prev => ({
+              ...prev,
+              customerId: c.id,
+              customerName: c.name,
+              customerAddress: c.addressEn || '',
+              contactPerson: c.contactPerson || c.representative || '',
+              email: c.email || c.contactEmail || '',
+              destinationPort: c.shippingPort || prev.destinationPort,
+              incoterms: c.preferredIncoterms || prev.incoterms,
+              paymentTerms: c.paymentTerms || prev.paymentTerms
+            }));
+            setIsCustomerSearchOpen(false);
+          }}
+        />
+      )}
+      {isCustModalOpen && (
+        <CustomerModal
+          initialCustomer={editingCust}
+          onClose={() => setIsCustModalOpen(false)}
         />
       )}
       {activePreviewUrl && (
