@@ -27,7 +27,8 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   // Shipment Schedule fields
   const [etd, setEtd] = useState(order.etd || '');
   const [eta, setEta] = useState(order.eta || '');
-  const [shipmentCompleted, setShipmentCompleted] = useState<any>(order.shipmentCompleted || '');
+  const [shipmentCompleted] = useState<any>(order.shipmentCompleted || '');
+  const [docsDeadlineDate, setDocsDeadlineDate] = useState(order.docsDeadlineDate || '');
 
   const [volume, setVolume] = useState(order.containerVolumeQuantities || '');
   const [vessel, setVessel] = useState(order.vesselBooking || '');
@@ -106,6 +107,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           payload.etd = etd;
           payload.eta = eta;
           payload.shipmentCompleted = shipmentCompleted;
+          payload.docsDeadlineDate = docsDeadlineDate;
           break;
         case 'volume':
           payload.containerVolumeQuantities = volume;
@@ -280,16 +282,13 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>서류마감 여부</label>
-              <select
-                value={shipmentCompleted}
-                onChange={(e) => setShipmentCompleted(e.target.value)}
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>서류마감일</label>
+              <input
+                type="date"
+                value={docsDeadlineDate}
+                onChange={(e) => setDocsDeadlineDate(e.target.value)}
                 style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-              >
-                <option value="">미선택</option>
-                <option value="Y">완료 (Y)</option>
-                <option value="N">미완료 (N)</option>
-              </select>
+              />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>ETD (선적 예정일)</label>

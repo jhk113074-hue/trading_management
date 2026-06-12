@@ -1014,7 +1014,7 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            서류: {o.shipmentCompleted === 'Y' ? '완료' : '-'}
+                            서류: {o.docsDeadlineDate || '-'}
                           </div>
                           <div style={{ padding: '8px', borderBottom: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             ETD: {o.etd || '-'}

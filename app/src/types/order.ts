@@ -59,6 +59,7 @@ export interface Order {
   dispatchStatusByVendor?: string; // 거래처별 배차여부
   containerWorkspaceType?: 'CFS' | 'Door' | ''; // 콘테이너작업장 (CFS/Door)
   shipmentCompleted?: 'Y' | 'N' | ''; // 선적완료여부
+  docsDeadlineDate?: string; // 서류마감일
   docsSentOrBankSubmitted?: string; // 선적서류발송/은행제출여부
   purchaseCertificateByVendor?: string; // 구매확인서(업체별, 여부)
   paymentStatusByVendor?: string; // 대금지급(업체별여부)
