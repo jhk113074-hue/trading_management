@@ -928,7 +928,11 @@ export const Orders: React.FC = () => {
                 filteredOrders.map((o, idx) => {
                   const sBadge = statusColors[o.status] || { bg: '#f1f5f9', text: '#475569' };
                   const suppliers = Array.from(new Set(o.items?.map(it => it.supplier).filter(Boolean)));
-                  
+                  // forwarders 배열 (legacy 단일 필드 fallback)
+                  const orderForwarders = (o.forwarders && o.forwarders.length > 0)
+                    ? o.forwarders
+                    : (o.forwarderConfirmed ? [{ name: o.forwarderConfirmed, freightAmount: o.forwarderFreightAmount || 0, freightCurrency: (o.forwarderFreightCurrency || 'KRW') as 'USD' | 'KRW' }] : []);
+
                   // Calculate amounts per supplier
                   const supplierAmounts: Record<string, { usd: number; krw: number }> = {};
                   o.items?.forEach(it => {
@@ -1091,11 +1095,11 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
-                          {o.forwarderConfirmed && (
-                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: '2px solid #ddd6fe' }}>
-                              🚢 {o.forwarderConfirmed}
+                          {orderForwarders.map((fw, fwIdx) => (
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe' }}>
+                              🚢 {fw.name}
                             </div>
-                          )}
+                          ))}
                           {/* 오더 Subtotal 레이블 행 */}
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             오더 Subtotal
@@ -1117,11 +1121,11 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
-                          {o.forwarderConfirmed && (
-                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: '2px solid #ddd6fe' }}>
+                          {orderForwarders.map((_fw, fwIdx) => (
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe' }}>
                               운송비
                             </div>
-                          )}
+                          ))}
                           {/* Subtotal 지시자 행 */}
                           <div style={{ padding: '8px', backgroundColor: '#fef9c3', borderTop: '2px solid #fde047', color: 'transparent' }}>-</div>
                         </td>
@@ -1148,20 +1152,20 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
                           )}
-                          {o.forwarderConfirmed && (
-                            <div style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', borderTop: '2px solid #ddd6fe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
-                              {o.forwarderFreightCurrency === 'USD'
-                                ? `$${(o.forwarderFreightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                                : `₩${(o.forwarderFreightAmount || 0).toLocaleString()}`
+                          {orderForwarders.map((fw, fwIdx) => (
+                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', backgroundColor: '#f5f3ff', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                              {fw.freightCurrency === 'USD'
+                                ? `$${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                : `₩${(fw.freightAmount || 0).toLocaleString()}`
                               }
                             </div>
-                          )}
+                          ))}
                           {/* 합계 행 (Subtotal 레이블에 대응) */}
                           {(() => {
                             const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0)
-                              + (o.forwarderFreightCurrency === 'USD' ? (o.forwarderFreightAmount || 0) : 0);
+                              + orderForwarders.filter(fw => fw.freightCurrency === 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
                             const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0)
-                              + (o.forwarderFreightCurrency !== 'USD' && o.forwarderConfirmed ? (o.forwarderFreightAmount || 0) : 0);
+                              + orderForwarders.filter(fw => fw.freightCurrency !== 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
                             const parts = [];
                             if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                             if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
@@ -1193,10 +1197,10 @@ export const Orders: React.FC = () => {
                           ) : (
                             <div style={{ padding: '8px', color: '#94a3b8', textAlign: 'center' }}>-</div>
                           )}
-                          {/* 포워더 행 - 포워더 있을 때만 */}
-                          {o.forwarderConfirmed && (
-                            <div style={{ padding: '8px', borderTop: '2px solid #ddd6fe', backgroundColor: '#f5f3ff', color: 'transparent' }}>-</div>
-                          )}
+                          {/* 포워더 행 - 포워더마다 1행 */}
+                          {orderForwarders.map((_fw, fwIdx) => (
+                            <div key={fwIdx} style={{ padding: '8px', borderTop: fwIdx === 0 ? '2px solid #ddd6fe' : '1px solid #ddd6fe', backgroundColor: '#f5f3ff', color: 'transparent' }}>-</div>
+                          ))}
                           {/* Subtotal 행 - 항상 */}
                           <div style={{ padding: '8px', borderTop: '2px solid #fde047', backgroundColor: '#fef9c3', color: 'transparent' }}>-</div>
                         </td>

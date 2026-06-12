@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, doc, getDocs } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
-import type { Order, OrderItem } from '../types/order';
+import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 
@@ -40,9 +40,24 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
   // Items / Supplier / SupplierAmount fields
   const [items, setItems] = useState<OrderItem[]>(order.items ? JSON.parse(JSON.stringify(order.items)) : []);
-  const [forwarderConfirmed, setForwarderConfirmed] = useState(order.forwarderConfirmed || '');
-  const [forwarderFreightAmount, setForwarderFreightAmount] = useState<number>(order.forwarderFreightAmount || 0);
-  const [forwarderFreightCurrency, setForwarderFreightCurrency] = useState<'USD' | 'KRW'>(order.forwarderFreightCurrency || 'KRW');
+
+  // 포워더 배열 상태 (기존 단일 필드에서 마이그레이션)
+  const initForwarders = (): ForwarderEntry[] => {
+    if (order.forwarders && order.forwarders.length > 0) {
+      return JSON.parse(JSON.stringify(order.forwarders));
+    }
+    // legacy single forwarder migration
+    if (order.forwarderConfirmed) {
+      return [{ name: order.forwarderConfirmed, freightAmount: order.forwarderFreightAmount || 0, freightCurrency: order.forwarderFreightCurrency || 'KRW' }];
+    }
+    return [];
+  };
+  const [forwarders, setForwarders] = useState<ForwarderEntry[]>(initForwarders);
+
+  const addForwarder = () => setForwarders(prev => [...prev, { name: '', freightAmount: 0, freightCurrency: 'KRW' }]);
+  const removeForwarder = (idx: number) => setForwarders(prev => prev.filter((_, i) => i !== idx));
+  const updateForwarder = (idx: number, field: keyof ForwarderEntry, value: string | number) =>
+    setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, [field]: value } : f));
 
   // Supplier payments (supplierRemitted)
   const [supplierPayments, setSupplierPayments] = useState<Record<string, { status: string; date: string }>>(
@@ -131,9 +146,11 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
         case 'items':
         case 'supplierAmount':
           payload.items = items;
-          payload.forwarderConfirmed = forwarderConfirmed;
-          payload.forwarderFreightAmount = forwarderFreightAmount;
-          payload.forwarderFreightCurrency = forwarderFreightCurrency;
+          payload.forwarders = forwarders;
+          // 기존 레거시 필드 동기화 (1번째 포워더로)
+          payload.forwarderConfirmed = forwarders[0]?.name || '';
+          payload.forwarderFreightAmount = forwarders[0]?.freightAmount || 0;
+          payload.forwarderFreightCurrency = forwarders[0]?.freightCurrency || 'KRW';
           break;
         case 'supplierRemitted':
           payload.supplierPayments = supplierPayments;
@@ -548,43 +565,60 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'right' }}>
               총 품목 수: {items.length}개
             </div>
-            {/* 포워딩회사 + 운송비 입력 영역 */}
-            <div style={{ marginTop: '12px', padding: '14px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed', display: 'block' }}>🚢 포워딩회사 & 운송비</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>포워딩회사명</span>
-                <input
-                  type="text"
-                  value={forwarderConfirmed}
-                  onChange={(e) => setForwarderConfirmed(e.target.value)}
-                  placeholder="예: Pantos Logistics"
-                  style={{ padding: '9px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                />
+            {/* 포워딩회사 & 운송비 입력 영역 */}
+            <div style={{ marginTop: '12px', padding: '14px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
+                <button
+                  onClick={addForwarder}
+                  style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                >
+                  + 운송사 추가
+                </button>
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>운송비 (품목: 운송비)</span>
-                  <input
-                    type="number"
-                    step="1"
-                    value={forwarderFreightAmount}
-                    onChange={(e) => setForwarderFreightAmount(parseFloat(e.target.value) || 0)}
-                    placeholder="0"
-                    style={{ padding: '9px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '90px' }}>
-                  <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>통화</span>
-                  <select
-                    value={forwarderFreightCurrency}
-                    onChange={(e) => setForwarderFreightCurrency(e.target.value as 'USD' | 'KRW')}
-                    style={{ padding: '9px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }}
-                  >
-                    <option value="KRW">KRW (₩)</option>
-                    <option value="USD">USD ($)</option>
-                  </select>
-                </div>
+              {/* 헤더 라벨 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px 32px', gap: '6px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비</span>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>통화</span>
+                <span></span>
               </div>
+              {/* 포워더 행 목록 */}
+              {forwarders.length === 0 ? (
+                <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
+              ) : (
+                forwarders.map((fw, idx) => (
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={fw.name}
+                      onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
+                      placeholder="예: Pantos Logistics"
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    />
+                    <input
+                      type="number"
+                      step="1"
+                      value={fw.freightAmount}
+                      onChange={(e) => updateForwarder(idx, 'freightAmount', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    />
+                    <select
+                      value={fw.freightCurrency}
+                      onChange={(e) => updateForwarder(idx, 'freightCurrency', e.target.value)}
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    >
+                      <option value="KRW">KRW (₩)</option>
+                      <option value="USD">USD ($)</option>
+                    </select>
+                    <button
+                      onClick={() => removeForwarder(idx)}
+                      style={{ padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    >✕</button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         );
