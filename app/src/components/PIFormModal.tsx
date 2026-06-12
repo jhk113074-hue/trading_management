@@ -1725,38 +1725,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <div style={{ flex: 1, position: 'relative' }}>
                           <input 
                             type="text" 
                             list={`products_datalist_${idx}`}
                             value={it.productCode} 
                             placeholder="상품코드 검색/입력"
                             onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
-                            style={{ ...gridInputStyle, paddingRight: '22px' }} 
+                            style={gridInputStyle} 
                           />
-                          {it.productCode && (
-                            <button
-                              type="button"
-                              onClick={() => updateItem(idx, 'productCode', '')}
-                              style={{
-                                position: 'absolute',
-                                right: '6px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#94a3b8',
-                                cursor: 'pointer',
-                                fontSize: '11px',
-                                padding: '2px',
-                                zIndex: 5,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                              title="비우기"
-                            >
-                              ✕
-                            </button>
-                          )}
                           <datalist id={`products_datalist_${idx}`}>
                             {products.map(p => (
                               <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
