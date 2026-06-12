@@ -9,6 +9,26 @@ import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
 
+const getProductPackingMethods = (product: any): any[] => {
+  if (!product) return [];
+  const list = product.packingMethods ? JSON.parse(JSON.stringify(product.packingMethods)) : [];
+  const hasDefault = list.some((m: any) => m.name === 'Default');
+  if (!hasDefault) {
+    list.unshift({
+      id: 'default_injected',
+      name: 'Default',
+      packageType: '단품',
+      unit: product.unit || 'KG',
+      isDefault: list.length === 0 || !list.some((m: any) => m.isDefault),
+      unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+      qtyPerPallet: 1,
+      palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+      stackable: 'Y', rotation: 'Y'
+    });
+  }
+  return list;
+};
+
 interface Props {
   initialPI?: ProformaInvoice;
   onClose: () => void;
@@ -548,8 +568,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
         
         // Auto select default packing method if exists
-        const existingMethod = p.packingMethods?.find((m: any) => m.id === it.selectedPackingMethodId);
-        const defaultMethod = p.packingMethods?.find((m: any) => m.isDefault) || p.packingMethods?.[0];
+        const methods = getProductPackingMethods(p);
+        const existingMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
+        const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
         
         if (existingMethod) {
           // Keep existing loaded packing method and its overrides
@@ -612,8 +633,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     if (field === 'selectedPackingMethodId') {
       const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
-      if (p && p.packingMethods) {
-        const method = p.packingMethods.find((m: any) => m.id === value);
+      const methods = getProductPackingMethods(p);
+      if (p && methods.length > 0) {
+        const method = methods.find((m: any) => m.id === value);
         if (method) {
           if (method.unit) {
             it.unit = method.unit;
@@ -695,10 +717,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       if (!it.productCode) return it;
       const parsedCode = getRawProductCode(it.productCode);
       const p = products.find(prod => prod.productCode === parsedCode);
-      if (!p || !p.packingMethods || p.packingMethods.length === 0) return it;
+      if (!p) return it;
+      const methods = getProductPackingMethods(p);
+      if (methods.length === 0) return it;
       const method = it.selectedPackingMethodId
-        ? p.packingMethods.find((m: any) => m.id === it.selectedPackingMethodId)
-        : (p.packingMethods.find((m: any) => m.isDefault) || p.packingMethods[0]);
+        ? methods.find((m: any) => m.id === it.selectedPackingMethodId)
+        : (methods.find((m: any) => m.isDefault) || methods[0]);
       if (!method) return it;
       const isPallet = method.packageType?.includes('Pallet') || method.packageType?.endsWith('+ Pallet');
       const newOverride = {
@@ -1797,7 +1821,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}>
                       {it.productCode ? (() => {
                         const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
-                        const methods = prod?.packingMethods || [];
+                        const methods = getProductPackingMethods(prod);
                         return (
                           <select
                             value={it.selectedPackingMethodId || ''}
