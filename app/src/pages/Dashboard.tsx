@@ -136,6 +136,7 @@ export const Dashboard: React.FC = () => {
   const [quickTaskTitle, setQuickTaskTitle] = useState('');
   
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverBasketId, setDragOverBasketId] = useState<string | null>(null);
   const [delegatedQuickTitle, setDelegatedQuickTitle] = useState('');
 
   const todoTasks = useMemo(() => tasks.filter(t => t.status === 'TODO'), [tasks]);
@@ -182,7 +183,6 @@ export const Dashboard: React.FC = () => {
 
   const handleStatusDrop = async (e: React.DragEvent, newStatus: string) => {
     e.preventDefault();
-    (e.currentTarget as HTMLElement).style.background = '';
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
     const task = tasks.find(t => t.id === taskId);
@@ -811,11 +811,17 @@ export const Dashboard: React.FC = () => {
           <div
             key={basket.id}
             className="board-column"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={e => handleStatusDrop(e, basket.id)}
+            onDragOver={e => {
+              e.preventDefault();
+              setDragOverBasketId(basket.id);
+            }}
+            onDragLeave={() => setDragOverBasketId(null)}
+            onDrop={e => {
+              handleStatusDrop(e, basket.id);
+              setDragOverBasketId(null);
+            }}
             style={{
-              background: basket.columnBg,
+              background: dragOverBasketId === basket.id ? 'var(--primary-light, #eff6ff)' : basket.columnBg,
               border: `2.5px solid ${basket.countBg}`,
               borderRadius: '12px',
               padding: '12px',
