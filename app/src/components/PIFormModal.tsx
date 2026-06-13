@@ -1705,15 +1705,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '10px 4px', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '100px' }}>패킹방식/수량</th>
-                  <th style={{ padding: '10px 4px', width: '85px' }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '120px' }}>매입가</th>
-                  <th style={{ padding: '10px 4px', width: '75px' }}>마진/올림</th>
+                  <th style={{ padding: '10px 4px', width: '380px' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'center' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'center' }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '120px', textAlign: 'center' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>이익($)</th>
-                  <th style={{ padding: '10px 4px', width: '130px' }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '130px', textAlign: 'center' }}>비고</th>
                   <th style={{ padding: '10px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
@@ -1798,7 +1798,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                             if (p && p.supplierName) {
                               return (
-                                <span style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, whiteSpace: 'nowrap' }} title={p.supplierName}>
+                                <span style={{ fontSize: '10px', color: '#0891b2', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '130px' }} title={p.supplierName}>
                                   🏢 {p.supplierName}
                                 </span>
                               );
@@ -1879,7 +1879,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             <select
                               value={it.selectedPackingMethodId || ''}
                               onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
-                              style={{ ...gridInputStyle, fontSize: '11px' }}
+                              style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center' }}
                             >
                               <option value="">-- 기본 규격 --</option>
                               {methods.map((m: any) => (
@@ -1916,7 +1916,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="단위"
                           value={it.unit} 
                           onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} 
-                          style={gridInputStyle} 
+                          style={{ ...gridInputStyle, textAlign: 'center' }} 
                         />
                       </div>
                     </td>
@@ -2003,7 +2003,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, fontSize: '11px' }}
+                          style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center' }}
                         >
                           <option value="none">없음</option>
                           <option value="0">0</option>
