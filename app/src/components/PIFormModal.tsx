@@ -2397,8 +2397,8 @@ const PurchasePriceInput: React.FC<{
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     if (curCurrency === 'USD') {
-      // Allow valid decimal inputs (digits followed optionally by one dot and more digits)
-      if (/^\d*\.?\d*$/.test(raw)) {
+      // Allow valid decimal inputs (digits followed optionally by one dot and up to 2 digits)
+      if (/^\d*\.?\d{0,2}$/.test(raw)) {
         setLocalVal(raw);
         const parsed = parseFloat(raw) || 0;
         onChange({
