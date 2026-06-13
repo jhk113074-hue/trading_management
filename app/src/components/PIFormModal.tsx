@@ -1767,7 +1767,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             <select
                               value={it.selectedPackingMethodId || ''}
                               onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
-                              style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center' }}
+                              style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center' }}
                             >
                               <option value="">-- 기본 규격 --</option>
                               {methods.map((m: any) => (
@@ -1778,7 +1778,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             </select>
                           );
                         })() : (
-                          <select style={{ ...gridInputStyle, fontSize: '11px' }} disabled><option>--</option></select>
+                          <select style={{ ...gridInputStyle }} disabled><option>--</option></select>
                         )}
                         <input 
                           type="number" 
@@ -1786,7 +1786,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="패킹수량"
                           value={it.palletQty || ''} 
                           onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                          style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', width: '50%', marginLeft: 'auto' }} 
+                          style={{ ...gridInputStyle, textAlign: 'right', width: '50%', marginLeft: 'auto' }} 
                         />
                       </div>
                     </td>
@@ -1873,7 +1873,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
                                   onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', width: '50%', marginLeft: 'auto' }} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', width: '50%', marginLeft: 'auto' }} 
                                 />
                               </div>
                             );
@@ -1897,7 +1897,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center', width: '50%', marginLeft: 'auto' }}
+                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '50%', marginLeft: 'auto' }}
                         >
                           <option value="none">없음</option>
                           <option value="0">0</option>
