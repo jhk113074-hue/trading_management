@@ -973,7 +973,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                   )}
                                 </td>
                                 <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                  <button type="button" onClick={() => setEditingMethod(m)} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
+                                  <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
                                   <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
                                 </td>
                               </tr>
