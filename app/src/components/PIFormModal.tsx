@@ -1492,7 +1492,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <Input label="작성자 (Author)" value={formData.createdByName} disabled />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1fr 1.2fr', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -1574,58 +1574,65 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <Input label="Address" value={formData.customerAddress || ''} disabled />
             <Input label="Contact" value={formData.contactPerson} disabled />
             <Input label="Email" value={formData.email} disabled />
-
-
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
-            <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
-            <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
-            <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
-            <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
-            <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
-            <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
-            <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
-            <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
-            <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Exchange Rate (KRW/USD)</label>
-                <button
-                  type="button"
-                  onClick={fetchExchangeRate}
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    background: '#3b82f6',
-                    border: 'none',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2px',
-                    transition: 'all 0.2s',
-                    outline: 'none'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
-                >
-                  ⚡ 불러오기
-                </button>
-              </div>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.exchangeRate ?? ''}
-                onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
-              />
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+            {/* Trade terms Row 1 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '8px' }}>
+              <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+              <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+              <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
+              <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
+              <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
             </div>
-            <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+
+            {/* Trade terms Row 2 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '8px' }}>
+              <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+              <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
+              <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
+              <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Exchange Rate (KRW/USD)</label>
+                  <button
+                    type="button"
+                    onClick={fetchExchangeRate}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: '#3b82f6',
+                      border: 'none',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
+                  >
+                    ⚡ 불러오기
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.exchangeRate ?? ''}
+                  onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
+                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+                />
+              </div>
+            </div>
+
+            {/* Remarks row */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-<textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}></textarea>
             </div>
           </div>
 
