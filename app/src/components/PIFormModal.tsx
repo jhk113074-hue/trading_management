@@ -350,8 +350,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         const rawCode = getRawProductCode(item.productCode);
         const p = products.find(prod => prod.productCode === rawCode);
         if (p) {
-          const formatted = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
-          const latestDesc = p.nameKo || p.nameEn || '';
+          const isLevelIndicator = p.nameKo?.includes('수위계');
+          const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+          const formatted = `[${p.productCode}] ${displayName}`;
+          const latestDesc = displayName;
           
           // Sync unit with the active packing method
           const methods = getProductPackingMethods(p);
@@ -496,10 +498,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const parsedCode = getRawProductCode(value);
       const p = products.find(prod => prod.productCode === parsedCode);
       if (p) {
-        it.productCode = `[${p.productCode}] ${p.nameKo || p.nameEn}`;
-        it.productName = p.nameKo || p.nameEn || '';
-        it.spec = p.spec || p.description || '';
-        it.description = p.spec || p.description || p.nameEn || p.nameKo || '';
+        const isLevelIndicator = p.nameKo?.includes('수위계');
+        const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+        it.productCode = `[${p.productCode}] ${displayName}`;
+        it.productName = displayName;
+        it.spec = p.spec || '';
+        it.description = displayName;
         it.unit = (p.unit || 'KG').toUpperCase();
         // Assuming purchase price is in KRW or USD
         if (p.currency === 'KRW') {
@@ -1758,11 +1762,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               🔍
                             </button>
                             <datalist id={`products_datalist_${idx}`}>
-                              {products.map(p => (
-                                <option key={p.productCode} value={`[${p.productCode}] ${p.nameKo || p.nameEn}`}>
-                                  [{p.productCode}] {p.nameKo || p.nameEn}
-                                </option>
-                              ))}
+                              {products.map(p => {
+                                const isLevelIndicator = p.nameKo?.includes('수위계');
+                                const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+                                return (
+                                  <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                    [{p.productCode}] {displayName}
+                                  </option>
+                                );
+                              })}
                             </datalist>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
