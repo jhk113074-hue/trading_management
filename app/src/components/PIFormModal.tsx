@@ -1793,6 +1793,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               })}
                             </datalist>
                           </div>
+                          {(() => {
+                            const rawCode = getRawProductCode(it.productCode);
+                            const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                            if (p && p.supplierName) {
+                              return (
+                                <span style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, whiteSpace: 'nowrap' }} title={p.supplierName}>
+                                  🏢 {p.supplierName}
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
                           <div style={{ display: 'flex', gap: '2px' }}>
                             <button
                               type="button"
@@ -1849,18 +1861,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             })()}
                           </div>
                         </div>
-                        {(() => {
-                          const rawCode = getRawProductCode(it.productCode);
-                          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                          if (p && p.supplierName) {
-                            return (
-                              <div style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px' }}>
-                                🏢 {p.supplierName}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
                         <textarea 
                           value={it.spec || ''} 
                           placeholder="스펙 (Spec)" 
