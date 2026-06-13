@@ -1594,7 +1594,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Exchange Rate (KRW/USD)</label>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
                   <button
                     type="button"
                     onClick={fetchExchangeRate}
@@ -1834,9 +1834,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 <input 
                                   type="text" 
                                   placeholder="금액"
-                                  value={curCurrency === 'USD' ? formatNumberWithCommas(it.purchasePriceUsd, 2, 2) : formatNumberWithCommas(it.purchasePriceKrw)} 
+                                  value={curCurrency === 'USD' ? (it.purchasePriceUsd === 0 ? '' : it.purchasePriceUsd.toString()) : formatNumberWithCommas(it.purchasePriceKrw)} 
                                   onChange={(e) => {
-                                    const parsed = parseCommas(e.target.value);
+                                    const raw = e.target.value;
+                                    // If typing decimal dot, don't parse yet to prevent losing dot
+                                    if (raw.endsWith('.')) {
+                                      // We can temporarily update the display or allow it
+                                      e.target.value = raw;
+                                    }
+                                    const parsed = parseCommas(raw);
                                     if (curCurrency === 'USD') {
                                       updateItem(idx, {
                                         purchasePriceUsd: parsed,
