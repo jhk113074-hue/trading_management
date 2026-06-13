@@ -9,6 +9,8 @@ export interface Supplier {
   address: string;
   managerName: string;
   managerPhone: string;
+  bankKrw?: string;
+  bankUsd?: string;
   createdAt?: any;
   updatedAt?: any;
 }

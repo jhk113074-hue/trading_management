@@ -121,6 +121,12 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
               <Input label="본사주소" value={formData.address} onChange={(v: any) => handleChange('address', v)} placeholder="도로명 주소 또는 영문 주소" />
             </div>
 
+            <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#0891b2', marginBottom: '12px', borderLeft: '3px solid #0891b2', paddingLeft: '8px' }}>💳 통장정보</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', marginBottom: '24px' }}>
+              <Input label="원화통장 정보" value={formData.bankKrw} onChange={(v: any) => handleChange('bankKrw', v)} placeholder="예: 국민은행 123-45-67890 (주)와이에스" />
+              <Input label="외화통장 정보" value={formData.bankUsd} onChange={(v: any) => handleChange('bankUsd', v)} placeholder="예: 신한은행 987-654-321 (USD)" />
+            </div>
+
             <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#0891b2', marginBottom: '12px', borderLeft: '3px solid #0891b2', paddingLeft: '8px' }}>👥 담당자정보</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
               <Input label="구매담당자명" value={formData.managerName} onChange={(v: any) => handleChange('managerName', v)} placeholder="담당 대리/과장 성명" />

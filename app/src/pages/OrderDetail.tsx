@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Order, OrderItem } from '../types/order';
+import type { Supplier } from '../types/supplier';
 
 const steps = ["주문", "발주", "선적관리", "이익관리"] as const;
 
@@ -18,6 +19,18 @@ export const OrderDetail: React.FC = () => {
   const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
+  const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
+      const list: Supplier[] = [];
+      snapshot.forEach(docSnap => {
+        list.push({ id: docSnap.id, ...docSnap.data() } as Supplier);
+      });
+      setSuppliersList(list);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Form states for details editing
   const [basicForm, setBasicForm] = useState({
@@ -1454,6 +1467,7 @@ export const OrderDetail: React.FC = () => {
                       Object.keys(groupedSupplierItems).map(supplier => {
                         const list = basicForm.supplierPaymentInstallments[supplier] || [];
                         const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
+                        const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
 
                         // Calculate grand total from tax invoice items for this supplier
                         const items = groupedSupplierItems[supplier] || [];
@@ -1597,6 +1611,12 @@ export const OrderDetail: React.FC = () => {
                                 </span>
                               </div>
                             </div>
+                            {matchingSupplier && (
+                              <div style={{ display: 'flex', gap: '20px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', color: '#1e40af', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '등록정보 없음'}</span>
+                                <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '등록정보 없음'}</span>
+                              </div>
+                            )}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                               {installments.map((inst, idx) => (
                                 <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>

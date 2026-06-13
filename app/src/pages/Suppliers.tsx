@@ -15,7 +15,9 @@ const excelMapping = [
   { header: "구매담당이메일", key: "purchaseEmail" },
   { header: "본사주소", key: "address" },
   { header: "구매담당자명", key: "managerName" },
-  { header: "구매담당자연락처", key: "managerPhone" }
+  { header: "구매담당자연락처", key: "managerPhone" },
+  { header: "원화통장 정보", key: "bankKrw" },
+  { header: "외화통장 정보", key: "bankUsd" }
 ];
 
 export const Suppliers: React.FC = () => {
