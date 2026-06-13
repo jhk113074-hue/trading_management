@@ -1842,33 +1842,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   <option value="KRW">KRW</option>
                                   <option value="USD">USD</option>
                                 </select>
-                                <input 
-                                  type="text" 
-                                  placeholder="금액"
-                                  value={curCurrency === 'USD' ? (it.purchasePriceUsd === 0 ? '' : it.purchasePriceUsd.toString()) : formatNumberWithCommas(it.purchasePriceKrw)} 
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    // If typing decimal dot, don't parse yet to prevent losing dot
-                                    if (raw.endsWith('.')) {
-                                      // We can temporarily update the display or allow it
-                                      e.target.value = raw;
-                                    }
-                                    const parsed = parseCommas(raw);
-                                    if (curCurrency === 'USD') {
-                                      updateItem(idx, {
-                                        purchasePriceUsd: parsed,
-                                        purchasePriceKrw: 0,
-                                        purchasePriceCurrency: 'USD'
-                                      });
-                                    } else {
-                                      updateItem(idx, {
-                                        purchasePriceKrw: parsed,
-                                        purchasePriceUsd: 0,
-                                        purchasePriceCurrency: 'KRW'
-                                      });
-                                    }
-                                  }} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                                <PurchasePriceInput
+                                  curCurrency={curCurrency}
+                                  purchasePriceUsd={it.purchasePriceUsd}
+                                  purchasePriceKrw={it.purchasePriceKrw}
+                                  onChange={(updates) => updateItem(idx, updates)}
                                 />
                               </>
                             );
@@ -2392,5 +2370,64 @@ const sanitizeForFirestore = (obj: any): any => {
     return cleaned;
   }
   return obj;
+};
+
+const PurchasePriceInput: React.FC<{
+  curCurrency: 'USD' | 'KRW';
+  purchasePriceUsd: number;
+  purchasePriceKrw: number;
+  onChange: (updates: { purchasePriceUsd?: number; purchasePriceKrw?: number; purchasePriceCurrency?: 'USD' | 'KRW' }) => void;
+}> = ({ curCurrency, purchasePriceUsd, purchasePriceKrw, onChange }) => {
+  const [localVal, setLocalVal] = useState('');
+
+  useEffect(() => {
+    if (curCurrency === 'USD') {
+      const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+      if (parsedLocal !== purchasePriceUsd || (purchasePriceUsd === 0 && localVal !== '')) {
+        setLocalVal(purchasePriceUsd === 0 ? '' : purchasePriceUsd.toString());
+      }
+    } else {
+      const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+      if (parsedLocal !== purchasePriceKrw || (purchasePriceKrw === 0 && localVal !== '')) {
+        setLocalVal(formatNumberWithCommas(purchasePriceKrw));
+      }
+    }
+  }, [curCurrency, purchasePriceUsd, purchasePriceKrw]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (curCurrency === 'USD') {
+      // Allow valid decimal inputs (digits followed optionally by one dot and more digits)
+      if (/^\d*\.?\d*$/.test(raw)) {
+        setLocalVal(raw);
+        const parsed = parseFloat(raw) || 0;
+        onChange({
+          purchasePriceUsd: parsed,
+          purchasePriceKrw: 0,
+          purchasePriceCurrency: 'USD'
+        });
+      }
+    } else {
+      // KRW handles commas and integer numbers
+      const clean = raw.replace(/[^\d]/g, '');
+      setLocalVal(formatNumberWithCommas(clean));
+      const parsed = parseInt(clean, 10) || 0;
+      onChange({
+        purchasePriceKrw: parsed,
+        purchasePriceUsd: 0,
+        purchasePriceCurrency: 'KRW'
+      });
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      placeholder="금액"
+      value={localVal}
+      onChange={handleChange}
+      style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }}
+    />
+  );
 };
 
