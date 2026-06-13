@@ -1865,8 +1865,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           value={it.spec || ''} 
                           placeholder="스펙 (Spec)" 
                           onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
-                          rows={2}
-                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit', marginTop: '2px' }} 
+                          rows={1}
+                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '26px', fontFamily: 'inherit', marginTop: '2px' }} 
                         />
                       </div>
                     </td>
@@ -1946,7 +1946,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 <input 
                                   type="text" 
                                   placeholder="금액"
-                                  value={curCurrency === 'USD' ? formatNumberWithCommas(it.purchasePriceUsd, 2) : formatNumberWithCommas(it.purchasePriceKrw)} 
+                                  value={curCurrency === 'USD' ? formatNumberWithCommas(it.purchasePriceUsd, 2, 2) : formatNumberWithCommas(it.purchasePriceKrw)} 
                                   onChange={(e) => {
                                     const parsed = parseCommas(e.target.value);
                                     if (curCurrency === 'USD') {
@@ -2016,7 +2016,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px', textAlign: 'right' }}>
                       <input 
                         type="text" 
-                        value={formatNumberWithCommas(it.salePriceUsd, 2)} 
+                        value={formatNumberWithCommas(it.salePriceUsd, 2, 2)} 
                         onChange={(e) => updateItem(idx, 'salePriceUsd', parseCommas(e.target.value))} 
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
@@ -2434,7 +2434,7 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
 
 const gridInputStyle = { width: '100%', padding: '7px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' };
 
-const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number) => {
+const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
   const str = value.toString().replace(/,/g, '');
   if (isNaN(Number(str))) return str;
@@ -2443,6 +2443,13 @@ const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?
       if (parts[1].length > maxDecimals) {
           parts[1] = parts[1].substring(0, maxDecimals);
       }
+  }
+  if (minDecimals !== undefined) {
+    if (parts.length === 1) {
+      parts.push('0'.repeat(minDecimals));
+    } else if (parts[1].length < minDecimals) {
+      parts[1] = parts[1] + '0'.repeat(minDecimals - parts[1].length);
+    }
   }
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return parts.length > 1 && maxDecimals !== 0 ? parts.join('.') : parts[0];
