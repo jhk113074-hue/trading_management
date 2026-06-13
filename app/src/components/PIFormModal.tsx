@@ -1741,8 +1741,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                             if (p && p.supplierName) {
                               return (
-                                <span style={{ fontSize: '10px', color: '#0891b2', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '130px' }} title={p.supplierName}>
-                                  🏢 {p.supplierName}
+                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '130px' }} title={p.supplierName}>
+                                  {p.supplierName}
                                 </span>
                               );
                             }
