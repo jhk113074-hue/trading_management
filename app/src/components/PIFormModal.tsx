@@ -1649,8 +1649,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
                   <th style={{ padding: '10px 4px', width: '304px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'center' }}>패킹방식/수량</th>
-                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'center' }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '70px', textAlign: 'center' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '60px', textAlign: 'center' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '120px', textAlign: 'center' }}>매입가</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
@@ -1793,10 +1793,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <input 
-                          type="number" 
+                          type="text" 
                           placeholder="수량"
-                          value={it.quantity || ''} 
-                          onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
+                          value={formatNumberWithCommas(it.quantity)} 
+                          onChange={(e) => updateItem(idx, 'quantity', parseCommas(e.target.value))} 
                           style={{ ...gridInputStyle, textAlign: 'right' }} 
                         />
                         <input 
