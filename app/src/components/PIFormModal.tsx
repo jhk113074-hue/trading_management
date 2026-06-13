@@ -8,7 +8,6 @@ import type { Product } from '../types/product';
 import { generatePIPdf } from '../utils/piPdfGenerator';
 import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductSearchModal } from './ProductSearchModal';
-import { CustomerModal } from './CustomerModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 
 const getProductPackingMethods = (product: any): any[] => {
@@ -44,8 +43,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
-  const [isCustModalOpen, setIsCustModalOpen] = useState(false);
-  const [editingCust, setEditingCust] = useState<Customer | undefined>(undefined);
 
   const [tradeTermsDB, setTradeTermsDB] = useState<any>({
     incoterms: ["EXW", "FOB", "CIF", "CFR", "DAP", "DDP"],
@@ -1572,64 +1569,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     🔍
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingCust(undefined);
-                      setIsCustModalOpen(true);
-                    }}
-                    title="신규 고객 등록"
-                    style={{
-                      background: '#eff6ff',
-                      border: '1px solid #bfdbfe',
-                      color: '#2563eb',
-                      borderRadius: '6px',
-                      padding: '6px 10px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                      display: 'flex',
-                      alignItems: 'center',
-                      height: '31px'
-                    }}
-                  >
-                    ➕
-                  </button>
-                  {(() => {
-                    const c = customers.find(cust => cust.id === formData.customerId);
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (c) {
-                            setEditingCust(c);
-                            setIsCustModalOpen(true);
-                          }
-                        }}
-                        disabled={!c}
-                        title="선택된 고객 수정"
-                        style={{
-                          background: c ? '#f0fdf4' : '#f1f5f9',
-                          border: c ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
-                          color: c ? '#16a34a' : '#94a3b8',
-                          borderRadius: '6px',
-                          padding: '6px 10px',
-                          cursor: c ? 'pointer' : 'not-allowed',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          whiteSpace: 'nowrap',
-                          display: 'flex',
-                          alignItems: 'center',
-                          height: '31px'
-                        }}
-                      >
-                        ✏️
-                      </button>
-                    );
-                  })()}
-                </div>
               </div>
             </div>
             <Input label="Address" value={formData.customerAddress || ''} disabled />
@@ -2289,12 +2228,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             }));
             setIsCustomerSearchOpen(false);
           }}
-        />
-      )}
-      {isCustModalOpen && (
-        <CustomerModal
-          initialCustomer={editingCust}
-          onClose={() => setIsCustModalOpen(false)}
         />
       )}
       {activePreviewUrl && (

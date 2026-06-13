@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { Customer } from '../types/customer';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db, COMPANY_ID } from '../firebase';
+import { CustomerModal } from './CustomerModal';
 
 interface Props {
   onClose: () => void;
@@ -10,6 +13,8 @@ interface Props {
 export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, customers }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('All');
+  const [isCustModalOpen, setIsCustModalOpen] = useState(false);
+  const [editingCust, setEditingCust] = useState<Customer | undefined>(undefined);
 
   // Extract unique countries for filtering
   const countries = useMemo(() => {
@@ -159,6 +164,22 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
               초기화
             </button>
           )}
+          <button
+            onClick={() => {
+              setEditingCust(undefined);
+              setIsCustModalOpen(true);
+            }}
+            style={{
+              background: '#2563eb', border: 'none', padding: '9px 16px',
+              borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+              color: '#fff', cursor: 'pointer', marginLeft: 'auto',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+          >
+            ➕ 고객 등록
+          </button>
         </div>
 
         {/* Results Info */}
@@ -182,7 +203,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                 <th style={{ padding: '12px 8px' }}>국가</th>
                 <th style={{ padding: '12px 8px' }}>담당자 / 이메일</th>
                 <th style={{ padding: '12px 8px' }}>도착항 / 인코텀즈 / 결제조건</th>
-                <th style={{ padding: '12px 8px', width: '80px', textAlign: 'center' }}>선택</th>
+                <th style={{ padding: '12px 8px', width: '160px', textAlign: 'center' }}>선택 / 관리</th>
               </tr>
             </thead>
             <tbody>
@@ -239,22 +260,74 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
                       </div>
                     </td>
                     <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelect(c);
-                        }}
-                        style={{
-                          background: '#2563eb', color: '#fff', border: 'none',
-                          padding: '6px 12px', borderRadius: '6px', fontSize: '12px',
-                          fontWeight: 600, cursor: 'pointer',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                      >
-                        선택
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(c);
+                          }}
+                          style={{
+                            background: '#2563eb', color: '#fff', border: 'none',
+                            padding: '6px 10px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                        >
+                          선택
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCust(c);
+                            setIsCustModalOpen(true);
+                          }}
+                          style={{
+                            background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1',
+                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                          title="수정"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`정말 "${c.name || c.customerCode}" 고객사를 삭제하시겠습니까?`)) {
+                              try {
+                                const cRef = doc(db, 'companies', COMPANY_ID, 'customers', c.id);
+                                await deleteDoc(cRef);
+                                alert('고객사가 삭제되었습니다.');
+                              } catch (err) {
+                                console.error('Failed to delete customer:', err);
+                                alert('고객사 삭제에 실패했습니다.');
+                              }
+                            }
+                          }}
+                          style={{
+                            background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2',
+                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fee2e2';
+                            e.currentTarget.style.borderColor = '#fca5a5';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fef2f2';
+                            e.currentTarget.style.borderColor = '#fee2e2';
+                          }}
+                          title="삭제"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -263,6 +336,12 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
           </table>
         </div>
       </div>
+      {isCustModalOpen && (
+        <CustomerModal
+          initialCustomer={editingCust}
+          onClose={() => setIsCustModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
