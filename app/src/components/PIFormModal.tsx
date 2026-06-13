@@ -1648,7 +1648,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 4px', width: '380px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600 }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '340px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600 }}>상품코드 / 스펙 (Spec)</th>
                   <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center', fontWeight: 600 }}>패킹방식/수량</th>
                   <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 600 }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '170px', textAlign: 'center', fontWeight: 600 }}>매입가</th>
