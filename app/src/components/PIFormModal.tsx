@@ -245,8 +245,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               ...prev,
               customerName: prev.customerName || cust.name,
               customerAddress: prev.customerAddress || cust.addressEn || '',
-              contactPerson: prev.contactPerson || cust.contactPerson || cust.representative || '',
-              email: prev.email || cust.email || cust.contactEmail || ''
+              contactPerson: prev.contactPerson || cust.nameKo || '',
+              email: prev.email || cust.email || ''
             };
           }
         }
@@ -2273,8 +2273,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               customerId: c.id,
               customerName: c.name,
               customerAddress: c.addressEn || '',
-              contactPerson: c.contactPerson || c.representative || '',
-              email: c.email || c.contactEmail || '',
+              contactPerson: c.nameKo || '',
+              email: c.email || '',
               destinationPort: c.shippingPort || prev.destinationPort,
               incoterms: c.preferredIncoterms || prev.incoterms,
               paymentTerms: c.paymentTerms || prev.paymentTerms
