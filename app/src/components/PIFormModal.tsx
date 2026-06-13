@@ -1786,7 +1786,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="패킹수량"
                           value={it.palletQty || ''} 
                           onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                          style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px' }} 
+                          style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', width: '50%', marginLeft: 'auto' }} 
                         />
                       </div>
                     </td>
@@ -1797,14 +1797,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="수량"
                           value={formatNumberWithCommas(it.quantity)} 
                           onChange={(e) => updateItem(idx, 'quantity', parseCommas(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'right' }} 
+                          style={{ ...gridInputStyle, textAlign: 'right', width: '80%', marginLeft: 'auto' }} 
                         />
                         <input 
                           type="text" 
                           placeholder="단위"
                           value={it.unit} 
                           onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} 
-                          style={{ ...gridInputStyle, textAlign: 'center' }} 
+                          style={{ ...gridInputStyle, textAlign: 'center', width: '50%', marginLeft: 'auto' }} 
                         />
                       </div>
                     </td>
@@ -1862,12 +1862,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           if (curCurrency === 'KRW') {
                             return (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>환율:</span>
+                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>기준환율:</span>
                                 <input 
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
                                   onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', flex: 1 }} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', width: '50%', marginLeft: 'auto' }} 
                                 />
                               </div>
                             );
