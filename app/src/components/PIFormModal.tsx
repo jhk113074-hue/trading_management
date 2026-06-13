@@ -344,8 +344,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         const rawCode = getRawProductCode(item.productCode);
         const p = products.find(prod => prod.productCode === rawCode);
         if (p) {
-          const isLevelIndicator = p.nameKo?.includes('수위계');
-          const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+          const displayName = p.nameEn || p.nameKo || '';
           const formatted = `[${p.productCode}] ${displayName}`;
           const latestDesc = displayName;
           
@@ -516,8 +515,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const parsedCode = getRawProductCode(productCodeVal);
       const p = products.find(prod => prod.productCode === parsedCode);
       if (p) {
-        const isLevelIndicator = p.nameKo?.includes('수위계');
-        const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+        const displayName = p.nameEn || p.nameKo || '';
         it.productCode = `[${p.productCode}] ${displayName}`;
         it.productName = displayName;
         it.spec = p.spec || '';
@@ -1728,8 +1726,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             </button>
                             <datalist id={`products_datalist_${idx}`}>
                               {products.map(p => {
-                                const isLevelIndicator = p.nameKo?.includes('수위계');
-                                const displayName = isLevelIndicator ? (p.nameEn || p.nameKo || '') : (p.nameKo || p.nameEn || '');
+                                const displayName = p.nameEn || p.nameKo || '';
                                 return (
                                   <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
                                     [{p.productCode}] {displayName}
