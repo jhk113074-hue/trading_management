@@ -1754,7 +1754,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="스펙 (Spec)" 
                           onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
                           rows={1}
-                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '26px', fontFamily: 'inherit', marginTop: '2px' }} 
+                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '29px', height: '29px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px' }} 
                         />
                       </div>
                     </td>
@@ -2313,7 +2313,7 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
   </div>
 );
 
-const gridInputStyle = { width: '100%', padding: '7px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' };
+const gridInputStyle = { width: '100%', height: '29px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
