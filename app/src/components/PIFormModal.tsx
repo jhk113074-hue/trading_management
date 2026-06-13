@@ -751,42 +751,49 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     if (isNewMode) {
       return (
-        <div style={piStyles.fieldGroup}>
-          <label style={piStyles.label}>{label} {required && <span style={piStyles.required}>*</span>}</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
           <div style={{ display: 'flex', gap: '4px' }}>
-            <input
-              type="text"
-              value={newVal}
-              onChange={e => setNewVal(e.target.value)}
-              placeholder="직접 입력..."
-              style={{ ...piStyles.input, flex: 1 }}
+            <input 
+              type="text" 
+              value={newVal} 
+              onChange={e => setNewVal(e.target.value)} 
+              placeholder="직접 입력..." 
+              style={{ flex: 1, padding: '8px 10px', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '13px' }}
               autoFocus
             />
-            <button
+            <button 
               type="button"
-              onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
-              style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '14px' }}
-            >✓</button>
-            <button
+              onClick={() => {
+                if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
+                setIsNewMode(false);
+              }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✓
+            </button>
+            <button 
               type="button"
               onClick={() => setIsNewMode(false)}
-              style={{ background: '#e5e7eb', color: '#6b7280', border: 'none', padding: '0 10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}
-            >✕</button>
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              ✕
+            </button>
           </div>
         </div>
       );
     }
 
     return (
-      <div style={piStyles.fieldGroup}>
-        <label style={piStyles.label}>{label} {required && <span style={piStyles.required}>*</span>}</label>
-        <select
-          value={value}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
+        <select 
+          value={value} 
           onChange={e => {
             if (e.target.value === '__NEW__') setIsNewMode(true);
             else setFormData(prev => ({...prev, [field]: e.target.value}));
           }}
-          style={piStyles.select}
+          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
         >
           <option value="">{placeholder || '-- 선택 --'}</option>
           {options.map((opt: string) => (
@@ -1376,191 +1383,288 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(8,12,28,0.6)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, fontFamily: "'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-      <div style={{ background: '#eef2f7', borderRadius: '16px', width: '92%', maxWidth: '1450px', maxHeight: '96vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 64px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1)' }}>
-
-        {/* ── Header ── */}
-        <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #1a3561 0%, #2563eb 100%)', borderRadius: '16px 16px 0 0', flexShrink: 0 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '90%', maxWidth: '1400px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+        
+        {/* Header */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div>
-              <div style={{ fontSize: '17px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '20px' }}>📋</span>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
                 {initialPI ? 'Edit Proforma Invoice' : 'New Proforma Invoice'}
               </div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.65)', marginTop: '3px', fontWeight: 500 }}>
-                {initialPI ? `문서번호: ${initialPI.piNumber || ''}` : '신규 견적서 작성 · Firestore 자동저장'}
+              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                신규 견적서 작성 · Firebase Firestore 저장
               </div>
             </div>
             {initialPI && revisions.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(4px)', padding: '7px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#bfdbfe', whiteSpace: 'nowrap' }}>🕒 Revision:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
                 <select
                   value={dropdownRevId}
                   onChange={(e) => setDropdownRevId(e.target.value)}
-                  style={{ padding: '5px 8px', borderRadius: '7px', border: '1px solid rgba(255,255,255,0.3)', fontSize: '12px', fontWeight: 700, color: '#1e293b', cursor: 'pointer', background: '#fff' }}
+                  style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
                 >
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
                     const suffix = v > 1 ? `R${v - 1}` : '';
-                    return (<option key={rev.id} value={rev.id}>{initialPI.piNumber}{suffix}</option>);
+                    return (
+                      <option key={rev.id} value={rev.id}>
+                        {initialPI.piNumber}{suffix}
+                      </option>
+                    );
                   })}
                 </select>
                 <button
                   type="button"
                   onClick={() => handleRevisionChange(dropdownRevId)}
                   disabled={savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId}
-                  style={{ background: '#dbeafe', border: 'none', color: '#1d4ed8', borderRadius: '7px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-                >📥 불러오기</button>
+                  style={{
+                    marginLeft: '4px',
+                    background: '#e0e7ff',
+                    border: '1px solid #c7d2fe',
+                    color: '#4338ca',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer'
+                  }}
+                  title="선택한 Revision 불러오기"
+                >
+                  📥 불러오기
+                </button>
                 <button
                   type="button"
                   onClick={handleDeleteRevision}
                   disabled={savingType !== null}
-                  style={{ background: '#fee2e2', border: 'none', color: '#dc2626', borderRadius: '7px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer' }}
-                >🗑️ 삭제</button>
+                  style={{
+                    marginLeft: '4px',
+                    background: '#fef2f2',
+                    border: '1px solid #fee2e2',
+                    color: '#ef4444',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: savingType !== null ? 'not-allowed' : 'pointer'
+                  }}
+                  title="선택된 Revision 기록 삭제"
+                >
+                  🗑️ 삭제
+                </button>
               </div>
             )}
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: '18px', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, transition: 'background 0.2s' }} onMouseOver={e => (e.currentTarget.style.background='rgba(255,255,255,0.25)')} onMouseOut={e => (e.currentTarget.style.background='rgba(255,255,255,0.15)')}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
-        {/* ── Body ── */}
-        <div style={{ padding: '18px 22px', overflowY: 'auto', flex: 1, backgroundColor: '#eef2f7', gap: '14px', display: 'flex', flexDirection: 'column' }}>
-
-          {/* 발행사 선택 */}
-          <div style={piStyles.card}>
-            <div style={piStyles.sectionTitle}><span>🏢</span> 견적 발행사 선택 <span style={piStyles.required}>*</span></div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', border: formData.issuingCompany === 'YSACC' ? '2.5px solid #2563eb' : '2px solid #e5e7eb', borderRadius: '10px', cursor: 'pointer', background: formData.issuingCompany === 'YSACC' ? '#eff6ff' : '#fafafa', transition: 'all 0.2s' }}>
-                <input type="radio" checked={formData.issuingCompany === 'YSACC'} onChange={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))} style={{ width: '18px', height: '18px', accentColor: '#2563eb' }} />
+        {/* Body */}
+        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
+          
+          {/* Issuer */}
+          <div style={{ background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '2px solid #3b82f6', borderRadius: '10px', padding: '16px', marginBottom: '16px' }}>
+            <h4 style={{ color: '#1d4ed8', fontSize: '11px', fontWeight: 700, marginBottom: '12px' }}>⓪ 견적 발행사 선택 ★</h4>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: formData.issuingCompany === 'YSACC' ? '2px solid #3b82f6' : '2px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff' }}>
+                <input type="radio" checked={formData.issuingCompany === 'YSACC'} onChange={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))} style={{ width: '18px', height: '18px', accentColor: '#3b82f6' }} />
                 <div>
-                  <div style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '15px' }}>(주)와이에스에이씨씨</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '1px' }}>YSACC CO., LTD.</div>
+                  <div style={{ fontWeight: 800, color: '#1d4ed8', fontSize: '14px' }}>(주)와이에스에이씨씨</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>YSACC CO., LTD.</div>
                 </div>
               </label>
-              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px', border: formData.issuingCompany === 'YS' ? '2.5px solid #10b981' : '2px solid #e5e7eb', borderRadius: '10px', cursor: 'pointer', background: formData.issuingCompany === 'YS' ? '#f0fdf4' : '#fafafa', transition: 'all 0.2s' }}>
+              <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', border: formData.issuingCompany === 'YS' ? '2px solid #10b981' : '2px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', background: '#fff' }}>
                 <input type="radio" checked={formData.issuingCompany === 'YS'} onChange={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))} style={{ width: '18px', height: '18px', accentColor: '#10b981' }} />
                 <div>
-                  <div style={{ fontWeight: 800, color: '#059669', fontSize: '15px' }}>영성ACC</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '1px' }}>YS ACC</div>
+                  <div style={{ fontWeight: 800, color: '#059669', fontSize: '14px' }}>영성ACC</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>YS ACC</div>
                 </div>
               </label>
             </div>
           </div>
 
-          {/* 문서 기본 정보 */}
-          <div style={piStyles.card}>
-            <div style={piStyles.sectionTitle}><span>📄</span> 문서 기본 정보</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
-              <Input label="📌 PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
-              <Input label="📎 Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
-              <Input label="📅 PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
-              <Input label="⏳ Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
-              <Input label="📆 Valid Until (자동)" value={formData.validUntilDate} disabled />
-              <Input label="👤 작성자 (Author)" value={formData.createdByName} disabled />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+            <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
+            <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
+            <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
+            <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
+            <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
+            <Input label="작성자 (Author)" value={formData.createdByName} disabled />
           </div>
 
-          {/* 고객 정보 */}
-          <div style={piStyles.card}>
-            <div style={piStyles.sectionTitle}><span>🌍</span> 고객 정보</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 0.9fr 1.2fr', gap: '12px' }}>
-              <div style={piStyles.fieldGroup}>
-                <label style={piStyles.label}>🏬 Customer <span style={piStyles.required}>*</span></label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    value={formData.customerName || ''}
-                    placeholder="고객사 클릭하여 검색"
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr 1fr 1.2fr', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    value={formData.customerName || ''} 
+                    placeholder="고객사 검색/선택"
                     readOnly
                     onClick={() => setIsCustomerSearchOpen(true)}
-                    style={{ ...piStyles.input, paddingRight: '70px', cursor: 'pointer', fontWeight: 600, color: formData.customerName ? '#1e3a5f' : '#9ca3af' }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 42px 6px 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      background: '#fff',
+                      boxSizing: 'border-box'
+                    }} 
                   />
                   {formData.customerId && (
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, customerId: '', customerName: '', customerAddress: '', contactPerson: '', email: '' }))}
-                      style={{ position: 'absolute', right: '38px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center' }}
-                    >✕</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          customerId: '',
+                          customerName: '',
+                          customerAddress: '',
+                          contactPerson: '',
+                          email: '',
+                        }));
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: '24px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#94a3b8',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        padding: '2px',
+                        zIndex: 5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="비우기"
+                    >
+                      ✕
+                    </button>
                   )}
-                  <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
-                    style={{ position: 'absolute', right: '6px', background: '#2563eb', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '12px', borderRadius: '6px', padding: '4px 8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}
-                  >🔍 검색</button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{
+                      position: 'absolute',
+                      right: '6px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#3b82f6',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      padding: '2px',
+                      zIndex: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="고객 검색 (Subwindow)"
+                  >
+                    🔍
+                  </button>
                 </div>
               </div>
-              <Input label="📍 Address" value={formData.customerAddress || ''} disabled />
-              <Input label="👤 Contact" value={formData.contactPerson} disabled />
-              <Input label="📧 Email" value={formData.email} disabled />
             </div>
+            <Input label="Address" value={formData.customerAddress || ''} disabled />
+            <Input label="Contact" value={formData.contactPerson} disabled />
+            <Input label="Email" value={formData.email} disabled />
           </div>
 
-          {/* 무역 조건 */}
-          <div style={piStyles.card}>
-            <div style={piStyles.sectionTitle}><span>🚢</span> 무역 조건 (Trade Terms)</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '12px' }}>
-              <ComboSelect label="🔖 Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
-              <ComboSelect label="🚢 Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
-              <ComboSelect label="⚓ Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
-              <ComboSelect label="📦 Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
-              <ComboSelect label="📅 Validity Desc." field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+            {/* Trade terms Row 1 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '8px' }}>
+              <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+              <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+              <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
+              <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
+              <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '12px' }}>
-              <ComboSelect label="💳 Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
-              <ComboSelect label="🚛 Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
-              <ComboSelect label="⏱ Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
-              <ComboSelect label="🌏 Origin" field="origin" options={tradeTermsDB.origins || []} />
-              <div style={piStyles.fieldGroup}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={piStyles.label}>💱 KRW/USD 환율</label>
-                  <button type="button" onClick={fetchExchangeRate}
-                    style={{ fontSize: '11px', fontWeight: 700, background: 'linear-gradient(135deg,#2563eb,#3b82f6)', border: 'none', padding: '4px 9px', borderRadius: '6px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', boxShadow: '0 2px 4px rgba(37,99,235,0.25)' }}
-                    onMouseOver={e => (e.currentTarget.style.opacity='0.85')} onMouseOut={e => (e.currentTarget.style.opacity='1')}
-                  >⚡ 조회</button>
+
+            {/* Trade terms Row 2 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '8px' }}>
+              <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+              <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
+              <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
+              <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
+                  <button
+                    type="button"
+                    onClick={fetchExchangeRate}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: '#3b82f6',
+                      border: 'none',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
+                  >
+                    ⚡ 불러오기
+                  </button>
                 </div>
-                <input type="number" step="0.01" value={formData.exchangeRate ?? ''}
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.exchangeRate ?? ''}
                   onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                  style={{ ...piStyles.input, fontWeight: 700, color: '#1d4ed8', fontSize: '15px', textAlign: 'right' }}
+                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
                 />
               </div>
             </div>
-            <div style={piStyles.fieldGroup}>
-              <label style={piStyles.label}>📝 Remarks (비고)</label>
-              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2}
-                style={{ ...piStyles.input, height: 'auto', resize: 'vertical', minHeight: '56px', fontFamily: 'inherit', lineHeight: '1.5' }}
-              />
+
+            {/* Remarks row */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}></textarea>
             </div>
           </div>
 
-          {/* 상품 라인 */}
-          <div style={{ ...piStyles.card, padding: 0, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid #e5e7eb' }}>
-              <div style={piStyles.sectionTitle} className="m-0"><span>📦</span> 상품 라인 (Line Items)</div>
+          {/* Line Items */}
+          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', overflowX: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#475569', margin: 0 }}>④ 상품 라인 (Line Items)</h4>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleSimulation} style={{ background: 'linear-gradient(135deg,#0ea5e9,#2563eb)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 6px rgba(37,99,235,0.25)', display: 'flex', alignItems: 'center', gap: '5px' }}>🚢 적재 시뮬레이션</button>
-                <button onClick={addItem} style={{ background: '#fff', border: '2px solid #2563eb', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s' }} onMouseOver={e => { e.currentTarget.style.background='#eff6ff'; }} onMouseOut={e => { e.currentTarget.style.background='#fff'; }}>＋ 상품 추가</button>
+                <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>🚢 적재 시뮬레이션</button>
+                <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <div style={{ overflowX: 'auto', padding: '0 0 4px 0' }}>
-            <table style={{ width: '100%', minWidth: '1380px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ background: 'linear-gradient(135deg,#1e3a5f,#2d5fa8)', textAlign: 'left' }}>
-                  <th style={{ padding: '11px 8px', width: '390px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700, letterSpacing: '0.3px' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '11px 6px', width: '115px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>패킹방식/수량</th>
-                  <th style={{ padding: '11px 6px', width: '95px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>수량 / 단위</th>
-                  <th style={{ padding: '11px 6px', width: '175px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>매입가</th>
-                  <th style={{ padding: '11px 6px', width: '115px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>마진 / 올림</th>
-                  <th style={{ padding: '11px 8px', width: '115px', textAlign: 'right', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>단가 (USD)</th>
-                  <th style={{ padding: '11px 8px', width: '105px', textAlign: 'right', color: '#86efac', fontSize: '12px', fontWeight: 700 }}>총액 ($)</th>
-                  <th style={{ padding: '11px 8px', width: '105px', textAlign: 'right', color: '#93c5fd', fontSize: '12px', fontWeight: 700 }}>이익 ($)</th>
-                  <th style={{ padding: '11px 6px', width: '150px', textAlign: 'center', color: '#bfdbfe', fontSize: '12px', fontWeight: 700 }}>비고</th>
-                  <th style={{ padding: '11px 6px', width: '36px' }}></th>
+                <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
+                  <th style={{ padding: '10px 4px', width: '380px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center' }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '170px', textAlign: 'center' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center' }}>마진/올림</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'right' }}>단가(USD)</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right' }}>총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right' }}>이익($)</th>
+                  <th style={{ padding: '10px 4px', width: '150px', textAlign: 'center' }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '32px', color: '#94a3b8', fontSize: '14px', background: '#fafafa' }}>＋ 위의 "상품 추가" 버튼을 눌러 상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background 0.15s' }}
-                    onMouseOver={e => (e.currentTarget.style.background='#eff6ff')}
-                    onMouseOut={e => (e.currentTarget.style.background=idx%2===0?'#ffffff':'#f8fafc')}
-                  >
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -1801,110 +1905,123 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, color: '#059669', fontSize: '14px' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
                       ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, color: '#2563eb', fontSize: '14px' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#3b82f6' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '5px 6px' }}>
-                      <textarea
-                        value={it.remarks || ''}
+                    <td style={{ padding: '4px' }}>
+                      <textarea 
+                        value={it.remarks || ''} 
                         placeholder="비고"
-                        onChange={(e) => updateItem(idx, 'remarks', e.target.value)}
+                        onChange={(e) => updateItem(idx, 'remarks', e.target.value)} 
                         rows={2}
-                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '44px', fontFamily: 'inherit', lineHeight: '1.4', height: 'auto' }}
+                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }} 
                       />
                     </td>
-                    <td style={{ padding: '5px 6px', textAlign: 'center' }}>
-                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontWeight: 700, fontSize: '13px', transition: 'all 0.15s' }}
-                        onMouseOver={e => (e.currentTarget.style.background='#dc2626', e.currentTarget.style.color='#fff')}
-                        onMouseOut={e => (e.currentTarget.style.background='#fee2e2', e.currentTarget.style.color='#dc2626')}
-                      >✕</button>
+                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            </div>
           </div>
 
-          {/* 운송비 & 보험 */}
-          <div style={piStyles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={piStyles.sectionTitle} className="m-0"><span>💼</span> 추가 비용 (Freight Charges / Insurance)</div>
-              <button type="button" onClick={addFreightCharge} style={{ background: '#f0f9ff', border: '2px solid #0ea5e9', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#0284c7', display: 'flex', alignItems: 'center', gap: '4px' }}>＋ 운송비 추가</button>
-            </div>
-            {(formData.freightCharges || []).length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 3.5fr 36px', gap: '8px', paddingBottom: '6px', borderBottom: '2px solid #e5e7eb', fontSize: '11px', color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  <div>Container Type</div><div style={{ textAlign: 'right' }}>Qty</div><div style={{ textAlign: 'right' }}>Unit Price (USD)</div><div style={{ textAlign: 'right' }}>Total</div><div>비고 (Remarks)</div><div></div>
+          {/* Extras and Totals */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+            
+            {/* Freight Charges (USD) */}
+            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '16px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Freight Charges (USD)</span>
+                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Freight Headers */}
+                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #e2e8f0', marginBottom: '4px', fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ flex: 1.5 }}>Container Type</div>
+                  <div style={{ flex: 1, textAlign: 'right' }}>Quantities</div>
+                  <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
+                  <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
+                  <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
                 </div>
                 {(formData.freightCharges || []).map((fc, fcIdx) => (
-                  <div key={fcIdx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 3.5fr 36px', gap: '8px', alignItems: 'center' }}>
-                    <select value={fc.type || 'LCL'} onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)}
-                      style={{ ...piStyles.select, fontSize: '13px' }}>
-                      <option value="LCL">LCL</option><option value="20GP">20GP</option><option value="20RF">20RF</option><option value="20DG">20DG</option><option value="40FT">40FT</option><option value="40HQ">40HQ</option>
+                  <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select 
+                      value={fc.type || 'LCL'} 
+                      onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)} 
+                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                    >
+                      <option value="LCL">LCL</option>
+                      <option value="20GP">20GP</option>
+                      <option value="20RF">20RF</option>
+                      <option value="20DG">20DG</option>
+                      <option value="40FT">40FT</option>
+                      <option value="40HQ">40HQ</option>
                     </select>
-                    <input type="number" placeholder="수량" value={fc.qty ?? 1} onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)}
-                      style={{ ...piStyles.input, textAlign: 'right' }} />
-                    <input type="number" step="0.01" placeholder="금액 (USD)" value={fc.price ?? 0} onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)}
-                      style={{ ...piStyles.input, textAlign: 'right' }} />
-                    <div style={{ textAlign: 'right', fontSize: '13px', fontWeight: 700, color: '#1e3a5f' }}>${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                    <input type="text" placeholder="비고" value={fc.remarks || ''} onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)}
-                      style={piStyles.input} />
-                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: 700 }}>✕</button>
+                    <input 
+                      type="number" 
+                      placeholder="수량" 
+                      value={fc.qty ?? 1} 
+                      onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
+                      style={{ flex: 1, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                    />
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      placeholder="금액 (USD)" 
+                      value={fc.price ?? 0} 
+                      onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
+                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                    />
+                    <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
+                      ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="비고" 
+                      value={fc.remarks || ''} 
+                      onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
+                      style={{ flex: 3.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
+                    />
+                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
                   </div>
                 ))}
-                <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#374151', paddingTop: '6px', borderTop: '1px solid #e5e7eb' }}>
-                  운송비 합계: <span style={{ color: '#1d4ed8', fontSize: '15px' }}>${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
-                </div>
               </div>
-            )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <Input label="🛡 Insurance (USD)" type="number" step="0.01" value={formData.insurance} onChange={(v: any) => setFormData(prev => ({...prev, insurance: parseFloat(v)||0}))} />
-              <Input label="💵 원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
+              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+                운송비 합계: ${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </div>
             </div>
+
+            <Input label="Insurance (USD)" type="number" step="0.01" value={formData.insurance} onChange={(v: any) => setFormData(prev => ({...prev, insurance: parseFloat(v)||0}))} />
+            <Input label="원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
           </div>
 
           {initialPI && (
-            <div style={{ background: 'linear-gradient(135deg,#eff6ff,#eef2ff)', border: '2px solid #6366f1', padding: '16px 20px', borderRadius: '12px' }}>
-              <label style={{ ...piStyles.label, color: '#4338ca', marginBottom: '8px', display: 'block' }}>✏️ Revision Reason (변경 사유) <span style={piStyles.required}>*</span></label>
-              <input type="text" value={revisionReason} onChange={(e) => setRevisionReason(e.target.value)} placeholder="예: 고객 단가 인하 요청 수용, 환율 변동 반영..."
-                style={{ ...piStyles.input, borderColor: '#818cf8', fontSize: '14px' }}
-              />
+            <div style={{ background: 'rgba(37,99,235,0.05)', border: '2px solid #2563eb', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+              <Input label="Revision Reason (변경 사유) ★" value={revisionReason} onChange={(v: any) => setRevisionReason(v)} placeholder="예: 고객 단가 인하 요청 수용" />
             </div>
           )}
 
-          {/* 합계 영역 */}
-          <div style={{ background: 'linear-gradient(135deg,#1a3561,#1e40af)', borderRadius: '12px', padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 16px rgba(30,64,175,0.3)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>예상 총 이익 (Total Profit)</div>
-              <div style={{ color: '#86efac', fontSize: '20px', fontWeight: 800 }}>{(() => {
+          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
                   const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
-                  return sum + (((it.salePriceUsd || 0) - costUsd) * (it.quantity || 0));
+                  const profit = (it.salePriceUsd || 0) - costUsd;
+                  return sum + (profit * (it.quantity || 0));
                 }, 0);
                 const totalSales = formData.totalUsd || formData.subtotalUsd || 0;
                 const marginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
                 return `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPercent.toFixed(1)}%)`;
-              })()}</div>
+              })()}</b></div>
             </div>
             <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Subtotal</div>
-                <div style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              </div>
-              <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.2)' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Extras</div>
-                <div style={{ color: '#fff', fontSize: '16px', fontWeight: 700 }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              </div>
-              <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.2)' }} />
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>GRAND TOTAL</div>
-                <div style={{ color: '#6ee7b7', fontSize: '26px', fontWeight: 900, letterSpacing: '-0.5px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              </div>
+              <div style={{ color: '#64748b', fontSize: '14px' }}>Subtotal: <b style={{ color: '#334155' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+              <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
+              <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
             </div>
           </div>
 
@@ -2025,45 +2142,58 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         </div>
 
-        {/* ── Footer ── */}
-        <div style={{ padding: '14px 22px', borderTop: '1px solid #e5e7eb', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 16px 16px', flexWrap: 'wrap', gap: '10px', flexShrink: 0 }}>
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             {initialPI && (
-              <button
+              <button 
                 type="button"
                 onClick={handleConfirmPO}
                 disabled={savingType !== null}
-                style={{ padding: '10px 20px', borderRadius: '9px', border: 'none', background: savingType !== null ? '#fca5a5' : 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff', fontWeight: 800, cursor: savingType !== null ? 'not-allowed' : 'pointer', boxShadow: '0 3px 8px rgba(220,38,38,0.3)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)' }}
               >
                 {formData.status === 'PO확정' ? '🤝 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
               </button>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button onClick={onClose}
-              style={{ padding: '10px 18px', borderRadius: '9px', border: '1.5px solid #d1d5db', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontSize: '13px' }}
-              onMouseOver={e => (e.currentTarget.style.borderColor='#9ca3af')} onMouseOut={e => (e.currentTarget.style.borderColor='#d1d5db')}
-            >✕ 취소</button>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
+            
+            <button 
+              type="button" 
+              onClick={() => generatePIPdf(formData as ProformaInvoice, items)} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #ef4444', background: '#fff', fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
+            >
+              📄 PDF로 저장하기
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={() => generatePIExcel(formData as ProformaInvoice, items)} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
+            >
+              📊 Excel 견적서
+            </button>
 
-            <button type="button" onClick={() => generatePIPdf(formData as ProformaInvoice, items)}
-              style={{ padding: '10px 16px', borderRadius: '9px', border: '1.5px solid #ef4444', background: '#fff', fontWeight: 700, color: '#ef4444', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}
-              onMouseOver={e => { e.currentTarget.style.background='#fef2f2'; }} onMouseOut={e => { e.currentTarget.style.background='#fff'; }}
-            >📄 PDF 저장</button>
-
-            <button type="button" onClick={() => generatePIExcel(formData as ProformaInvoice, items)}
-              style={{ padding: '10px 16px', borderRadius: '9px', border: '1.5px solid #10b981', background: '#fff', fontWeight: 700, color: '#10b981', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}
-              onMouseOver={e => { e.currentTarget.style.background='#f0fdf4'; }} onMouseOut={e => { e.currentTarget.style.background='#fff'; }}
-            >📊 Excel 견적서</button>
-
-            <button type="button" onClick={() => handleSave(false)} disabled={savingType !== null}
-              style={{ padding: '10px 20px', borderRadius: '9px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : 'linear-gradient(135deg,#1d4ed8,#2563eb)', color: '#fff', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.6 : 1, fontSize: '13px', boxShadow: '0 3px 8px rgba(37,99,235,0.3)', display: 'flex', alignItems: 'center', gap: '5px' }}
-            >{savingType === 'normal' ? '⏳ 저장 중...' : '💾 일반저장'}</button>
+            <button 
+              type="button"
+              onClick={() => handleSave(false)} 
+              disabled={savingType !== null} 
+              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}
+            >
+              {savingType === 'normal' ? '✔ 일반저장 중...' : '✔ 일반저장'}
+            </button>
 
             {initialPI && (
-              <button type="button" onClick={() => handleSave(true)} disabled={savingType !== null}
-                style={{ padding: '10px 20px', borderRadius: '9px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : 'linear-gradient(135deg,#5b21b6,#7c3aed)', color: '#fff', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.6 : 1, fontSize: '13px', boxShadow: '0 3px 8px rgba(124,58,237,0.3)', display: 'flex', alignItems: 'center', gap: '5px' }}
-              >{savingType === 'revision' ? '⏳ Revision 저장 중...' : '⚙ Revision 저장'}</button>
+              <button 
+                type="button"
+                onClick={() => handleSave(true)} 
+                disabled={savingType !== null} 
+                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
+              >
+                {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
+              </button>
             )}
           </div>
         </div>
@@ -2166,110 +2296,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   );
 };
 
-// ── Design System ──────────────────────────────────────────────
-const piStyles = {
-  card: {
-    background: '#ffffff',
-    borderRadius: '12px',
-    padding: '16px 20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-    border: '1px solid #e5e7eb',
-  } as React.CSSProperties,
-  sectionTitle: {
-    fontSize: '13px',
-    fontWeight: 800,
-    color: '#1e3a5f',
-    marginBottom: '14px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.4px',
-  } as React.CSSProperties,
-  label: {
-    fontSize: '11px',
-    fontWeight: 700,
-    color: '#374151',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.4px',
-    marginBottom: '5px',
-    display: 'block',
-  } as React.CSSProperties,
-  required: {
-    color: '#dc2626',
-    fontWeight: 800,
-  } as React.CSSProperties,
-  input: {
-    width: '100%',
-    padding: '9px 12px',
-    border: '1.5px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#111827',
-    background: '#fff',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-    transition: 'border-color 0.15s, box-shadow 0.15s',
-    fontFamily: "'Pretendard', 'Inter', sans-serif",
-  } as React.CSSProperties,
-  select: {
-    width: '100%',
-    padding: '9px 12px',
-    border: '1.5px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 500,
-    color: '#111827',
-    background: '#fff',
-    outline: 'none',
-    boxSizing: 'border-box' as const,
-    cursor: 'pointer',
-    appearance: 'auto' as const,
-  } as React.CSSProperties,
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '5px',
-  } as React.CSSProperties,
-};
-
 const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
-  <div style={piStyles.fieldGroup}>
-    <label style={piStyles.label}>{label}</label>
-    <input
-      type={type}
-      value={value ?? ''}
-      onChange={e => onChange?.(e.target.value)}
-      disabled={disabled}
-      placeholder={placeholder}
-      step={step}
-      style={{
-        ...piStyles.input,
-        background: disabled ? '#f3f4f6' : '#fff',
-        color: disabled ? '#6b7280' : '#111827',
-        borderColor: disabled ? '#e5e7eb' : '#d1d5db',
-      }}
-      onFocus={e => { if (!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,130,246,0.12)'; } }}
-      onBlur={e => { e.target.style.borderColor = disabled ? '#e5e7eb' : '#d1d5db'; e.target.style.boxShadow = 'none'; }}
-    />
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label}</label>
+    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f1f5f9' : '#fff' }} />
   </div>
 );
 
-const gridInputStyle = {
-  width: '100%',
-  height: '32px',
-  padding: '0 9px',
-  border: '1.5px solid #d1d5db',
-  borderRadius: '7px',
-  fontSize: '13px',
-  fontWeight: 500,
-  color: '#111827',
-  outline: 'none',
-  boxSizing: 'border-box' as const,
-  background: '#fff',
-  fontFamily: "'Pretendard', 'Inter', sans-serif",
-};
+const gridInputStyle = { width: '100%', height: '29px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
