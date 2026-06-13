@@ -15,7 +15,12 @@ export const Layout: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
 
   // Drag-to-resize sidebar width states
-  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    return window.innerWidth <= 1100 ? 180 : 240;
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return window.innerWidth <= 1028;
+  });
   const [isDragging, setIsDragging] = useState(false);
 
   const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
@@ -94,7 +99,17 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <aside className="sidebar" style={{ width: `${sidebarWidth}px`, flexShrink: 0, overflowY: 'auto' }}>
+      <aside 
+        className="sidebar" 
+        style={{ 
+          width: sidebarCollapsed ? '0px' : `${sidebarWidth}px`, 
+          flexShrink: 0, 
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          transition: 'width 0.2s ease-in-out',
+          borderRight: sidebarCollapsed ? 'none' : '1px solid var(--border-color)'
+        }}
+      >
         <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', height: '64px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '0 16px' }}>
           <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '44px', objectFit: 'contain' }} />
         </Link>
@@ -137,31 +152,56 @@ export const Layout: React.FC = () => {
       </aside>
 
       {/* Resizable Divider Handle with premium micro-interactions */}
-      <div 
-        onMouseDown={startResizing}
-        style={{
-          width: '6px',
-          cursor: 'col-resize',
-          background: isDragging ? '#3b82f6' : 'transparent',
-          borderLeft: '1px solid var(--border-color)',
-          transition: 'background 0.1s',
-          zIndex: 10,
-          position: 'relative',
-          marginLeft: '-3px',
-          marginRight: '-3px',
-          height: '100%',
-          alignSelf: 'stretch',
-          userSelect: 'none'
-        }}
-        onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = '#e2e8f0'; }}
-        onMouseLeave={(e) => { if (!isDragging) e.currentTarget.style.background = 'transparent'; }}
-      />
+      {!sidebarCollapsed && (
+        <div 
+          onMouseDown={startResizing}
+          style={{
+            width: '6px',
+            cursor: 'col-resize',
+            background: isDragging ? '#3b82f6' : 'transparent',
+            borderLeft: '1px solid var(--border-color)',
+            transition: 'background 0.1s',
+            zIndex: 10,
+            position: 'relative',
+            marginLeft: '-3px',
+            marginRight: '-3px',
+            height: '100%',
+            alignSelf: 'stretch',
+            userSelect: 'none'
+          }}
+          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = '#e2e8f0'; }}
+          onMouseLeave={(e) => { if (!isDragging) e.currentTarget.style.background = 'transparent'; }}
+        />
+      )}
 
       <div className="main-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         <header className="header" style={{ height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-          <div style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
-            <span style={{ color: '#dc2626', marginRight: '6px' }}>YSACC</span>
-            <span style={{ color: '#334155' }}>업무포탈</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontSize: '18px',
+                cursor: 'pointer',
+                color: '#475569',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '6px',
+                transition: 'background 0.1s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              title={sidebarCollapsed ? "메뉴 열기" : "메뉴 접기"}
+            >
+              ☰
+            </button>
+            <div style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+              <span style={{ color: '#dc2626', marginRight: '6px' }}>YSACC</span>
+              <span style={{ color: '#334155' }}>업무포탈</span>
+            </div>
           </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

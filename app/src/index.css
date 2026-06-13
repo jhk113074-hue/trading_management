@@ -127,7 +127,13 @@ body {
 .content-area {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 16px 20px;
+}
+
+@media (min-width: 1200px) {
+  .content-area {
+    padding: 24px 32px;
+  }
 }
 
 .btn {
