@@ -1666,7 +1666,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
             <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>
+<textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}></textarea>
             </div>
           </div>
 
@@ -1682,28 +1682,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '10px 4px', width: '280px' }}>상품코드</th>
-                  <th style={{ padding: '10px 4px', width: '140px' }}>스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '130px' }}>패킹방식/수량</th>
-                  <th style={{ padding: '10px 4px', width: '95px', textAlign: 'right' }}>수량</th>
-                  <th style={{ padding: '10px 4px', width: '55px' }}>단위</th>
-                  <th style={{ padding: '10px 4px', width: '120px', textAlign: 'right' }}>매입(₩ / $)</th>
-                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>환율</th>
-                  <th style={{ padding: '10px 4px', width: '60px', textAlign: 'right' }}>마진%</th>
-                  <th style={{ padding: '10px 4px', width: '65px' }}>올림</th>
+                  <th style={{ padding: '10px 4px', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '100px' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '85px' }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '120px' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '75px' }}>마진/올림</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
-                  <th style={{ padding: '10px 4px', width: '135px', textAlign: 'right' }}>이익/총액($)</th>
-                  <th style={{ padding: '10px 4px', width: '160px' }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>이익($)</th>
+                  <th style={{ padding: '10px 4px', width: '130px' }}>비고</th>
                   <th style={{ padding: '10px 4px', width: '35px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={15} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '4px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
                             <input 
@@ -1773,7 +1770,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               })}
                             </datalist>
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ display: 'flex', gap: '2px' }}>
                             <button
                               type="button"
                               onClick={() => {
@@ -1834,23 +1831,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                           if (p && p.supplierName) {
                             return (
-                              <div style={{ fontSize: '12px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px', marginTop: '2px' }}>
+                              <div style={{ fontSize: '11px', color: '#0891b2', fontWeight: 600, paddingLeft: '4px' }}>
                                 🏢 {p.supplierName}
                               </div>
                             );
                           }
                           return null;
                         })()}
+                        <textarea 
+                          value={it.spec || ''} 
+                          placeholder="스펙 (Spec)" 
+                          onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
+                          rows={2}
+                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit', marginTop: '2px' }} 
+                        />
                       </div>
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <textarea 
-                        value={it.spec || ''} 
-                        placeholder="스펙 (Spec)" 
-                        onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
-                        rows={3}
-                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '50px', fontFamily: 'inherit' }} 
-                      />
                     </td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1861,7 +1856,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             <select
                               value={it.selectedPackingMethodId || ''}
                               onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
-                              style={gridInputStyle}
+                              style={{ ...gridInputStyle, fontSize: '11px' }}
                             >
                               <option value="">-- 기본 규격 --</option>
                               {methods.map((m: any) => (
@@ -1872,7 +1867,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             </select>
                           );
                         })() : (
-                          <select style={gridInputStyle} disabled><option>--</option></select>
+                          <select style={{ ...gridInputStyle, fontSize: '11px' }} disabled><option>--</option></select>
                         )}
                         <input 
                           type="number" 
@@ -1880,71 +1875,107 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="패킹수량"
                           value={it.palletQty || ''} 
                           onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                          style={{ ...gridInputStyle, textAlign: 'right' }} 
+                          style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px' }} 
                         />
                       </div>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input 
-                        type="number" 
-                        value={it.quantity || ''} 
-                        onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
-                        style={{ ...gridInputStyle, textAlign: 'right' }} 
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}><input type="text" value={it.unit} onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} style={gridInputStyle} /></td>
-                    <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, width: '12px', textAlign: 'center' }}>₩</span>
-                          <input 
-                            type="text" 
-                            placeholder="매입(₩)"
-                            value={formatNumberWithCommas(it.purchasePriceKrw)} 
-                            onChange={(e) => updateItem(idx, 'purchasePriceKrw', parseCommas(e.target.value))} 
-                            style={{ ...gridInputStyle, textAlign: 'right' }} 
-                          />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, width: '12px', textAlign: 'center' }}>$</span>
-                          <input 
-                            type="text" 
-                            placeholder="매입($)"
-                            value={formatNumberWithCommas(it.purchasePriceUsd, 2)} 
-                            onChange={(e) => updateItem(idx, 'purchasePriceUsd', parseCommas(e.target.value))} 
-                            style={{ ...gridInputStyle, textAlign: 'right' }} 
-                          />
-                        </div>
+                        <input 
+                          type="number" 
+                          placeholder="수량"
+                          value={it.quantity || ''} 
+                          onChange={(e) => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
+                          style={{ ...gridInputStyle, textAlign: 'right' }} 
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="단위"
+                          value={it.unit} 
+                          onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} 
+                          style={gridInputStyle} 
+                        />
                       </div>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.exchangeRate)} 
-                        onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                        style={{ ...gridInputStyle, textAlign: 'right' }} 
-                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                          {(() => {
+                            const curCurrency = it.purchasePriceUsd > 0 ? 'USD' : 'KRW';
+                            const amountVal = curCurrency === 'USD' ? it.purchasePriceUsd : it.purchasePriceKrw;
+                            return (
+                              <>
+                                <select
+                                  value={curCurrency}
+                                  onChange={(e) => {
+                                    const nextCur = e.target.value;
+                                    if (nextCur === 'USD') {
+                                      updateItem(idx, 'purchasePriceUsd', amountVal || 0);
+                                      updateItem(idx, 'purchasePriceKrw', 0);
+                                    } else {
+                                      updateItem(idx, 'purchasePriceKrw', amountVal || 0);
+                                      updateItem(idx, 'purchasePriceUsd', 0);
+                                    }
+                                  }}
+                                  style={{ ...gridInputStyle, width: '55px', padding: '2px' }}
+                                >
+                                  <option value="KRW">₩</option>
+                                  <option value="USD">$</option>
+                                </select>
+                                <input 
+                                  type="text" 
+                                  placeholder="금액"
+                                  value={curCurrency === 'USD' ? formatNumberWithCommas(it.purchasePriceUsd, 2) : formatNumberWithCommas(it.purchasePriceKrw)} 
+                                  onChange={(e) => {
+                                    const parsed = parseCommas(e.target.value);
+                                    if (curCurrency === 'USD') {
+                                      updateItem(idx, 'purchasePriceUsd', parsed);
+                                      updateItem(idx, 'purchasePriceKrw', 0);
+                                    } else {
+                                      updateItem(idx, 'purchasePriceKrw', parsed);
+                                      updateItem(idx, 'purchasePriceUsd', 0);
+                                    }
+                                  }} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                                />
+                              </>
+                            );
+                          })()}
+                        </div>
+                        {(it.purchasePriceUsd <= 0) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>환율:</span>
+                            <input 
+                              type="text" 
+                              value={formatNumberWithCommas(it.exchangeRate)} 
+                              onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
+                              style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', flex: 1 }} 
+                            />
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.marginRate)} 
-                        onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
-                        style={{ ...gridInputStyle, textAlign: 'right' }} 
-                      />
-                    </td>
-                    <td style={{ padding: '4px' }}>
-                      <select 
-                        value={it.roundDigits ?? 'none'} 
-                        onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                        style={gridInputStyle}
-                      >
-                        <option value="none">없음</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="-1">10</option>
-                      </select>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="마진%"
+                          value={formatNumberWithCommas(it.marginRate)} 
+                          onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
+                          style={{ ...gridInputStyle, textAlign: 'right' }} 
+                        />
+                        <select 
+                          value={it.roundDigits ?? 'none'} 
+                          onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
+                          style={{ ...gridInputStyle, fontSize: '11px' }}
+                        >
+                          <option value="none">없음</option>
+                          <option value="0">0</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="-1">10</option>
+                        </select>
+                      </div>
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right' }}>
                       <input 
@@ -1954,27 +1985,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         style={{ ...gridInputStyle, textAlign: 'right' }} 
                       />
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
-                        <span style={{ fontWeight: 600, color: '#3b82f6' }} title="이익">
-                          이익: ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <span style={{ fontWeight: 600, color: '#059669' }} title="총액">
-                          총액: ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
+                      ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#3b82f6' }}>
+                      ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
                       <textarea 
                         value={it.remarks || ''} 
                         placeholder="비고"
                         onChange={(e) => updateItem(idx, 'remarks', e.target.value)} 
-                        rows={3}
-                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '50px', fontFamily: 'inherit' }} 
+                        rows={2}
+                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }} 
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </td>
                   </tr>
                 ))}
