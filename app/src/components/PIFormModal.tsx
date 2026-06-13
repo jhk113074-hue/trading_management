@@ -1648,7 +1648,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '10px 4px', width: '380px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '304px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
                   <th style={{ padding: '10px 4px', width: '100px', textAlign: 'center' }}>패킹방식/수량</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'center' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '120px', textAlign: 'center' }}>매입가</th>
@@ -1741,7 +1741,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                             if (p && p.supplierName) {
                               return (
-                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '130px' }} title={p.supplierName}>
+                                <span style={{ fontSize: '12.5px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px' }} title={p.supplierName}>
                                   {p.supplierName}
                                 </span>
                               );
