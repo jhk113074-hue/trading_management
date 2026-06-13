@@ -1453,7 +1453,7 @@ export const OrderDetail: React.FC = () => {
                     ) : (
                       Object.keys(groupedSupplierItems).map(supplier => {
                         const list = basicForm.supplierPaymentInstallments[supplier] || [];
-                        const installments = Array.from({ length: 4 }).map((_, idx) => list[idx] || { date: '', amount: 0 });
+                        const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
 
                         // Calculate grand total from tax invoice items for this supplier
                         const items = groupedSupplierItems[supplier] || [];
@@ -1477,14 +1477,12 @@ export const OrderDetail: React.FC = () => {
                         const currencyText = isKrw ? 'KRW' : 'USD';
 
                         const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                        // Round to avoid precision issues
                         const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
                         const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
 
                         const handleInstallmentChange = (idx: number, field: 'date' | 'amount', value: any) => {
                           const newList = [...installments];
                           newList[idx] = { ...newList[idx], [field]: value };
-                          const activeList = newList.filter(item => item.date || item.amount > 0);
                           
                           const newTotalPaid = newList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
@@ -1504,7 +1502,45 @@ export const OrderDetail: React.FC = () => {
                               ...prev,
                               supplierPaymentInstallments: {
                                 ...prev.supplierPaymentInstallments,
-                                [supplier]: activeList
+                                [supplier]: newList
+                              },
+                              supplierPayments: updatedPayments
+                            };
+                          });
+                        };
+
+                        const addInstallment = () => {
+                          const newList = [...installments, { date: '', amount: 0 }];
+                          setBasicForm(prev => ({
+                            ...prev,
+                            supplierPaymentInstallments: {
+                              ...prev.supplierPaymentInstallments,
+                              [supplier]: newList
+                            }
+                          }));
+                        };
+
+                        const removeInstallment = (idx: number) => {
+                          const newList = installments.filter((_, i) => i !== idx);
+                          const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
+                          
+                          const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                          const dates = finalList.map(inst => inst.date).filter(d => d);
+                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+
+                          setBasicForm(prev => {
+                            const updatedPayments = { ...prev.supplierPayments };
+                            if (newIsCompleted) {
+                              updatedPayments[supplier] = { status: '입금완료', date: lastDate };
+                            } else {
+                              updatedPayments[supplier] = { status: '미수금 발생', date: '' };
+                            }
+                            return {
+                              ...prev,
+                              supplierPaymentInstallments: {
+                                ...prev.supplierPaymentInstallments,
+                                [supplier]: finalList
                               },
                               supplierPayments: updatedPayments
                             };
@@ -1514,7 +1550,28 @@ export const OrderDetail: React.FC = () => {
                         return (
                           <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
-                              <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e3a8a' }}>{supplier}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e3a8a' }}>{supplier}</span>
+                                <button
+                                  type="button"
+                                  onClick={addInstallment}
+                                  style={{
+                                    background: '#fff',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '6px',
+                                    padding: '3px 8px',
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    color: '#0d9488',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '2px'
+                                  }}
+                                >
+                                  ＋ 입금 추가
+                                </button>
+                              </div>
                               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '12.5px', color: '#475569' }}>
                                   지급 총액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
@@ -1540,10 +1597,30 @@ export const OrderDetail: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
                               {installments.map((inst, idx) => (
-                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>{idx + 1}차 입금</span>
+                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>{idx + 1}차 입금</span>
+                                    {installments.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeInstallment(idx)}
+                                        style={{
+                                          background: 'transparent',
+                                          border: 'none',
+                                          color: '#ef4444',
+                                          cursor: 'pointer',
+                                          fontSize: '11px',
+                                          padding: '0 4px',
+                                          fontWeight: 700
+                                        }}
+                                        title="삭제"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
+                                  </div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <span style={{ fontSize: '10px', color: '#94a3b8' }}>입금일자</span>
                                     <input
