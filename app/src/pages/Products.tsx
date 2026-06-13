@@ -70,7 +70,7 @@ export const Products: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   // Column resize: [코드, 상품명, 분류, 단가, 공급업체, 제조사, 규격, 원산지, 관리]
-  const { thStyle, resizerProps } = useColumnResize([100, 200, 150, 120, 140, 140, 160, 80, 90]);
+  const { thStyle, resizerProps } = useColumnResize([80, 180, 120, 100, 120, 120, 140, 70, 160]);
   
   // Filtering
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,23 +234,23 @@ export const Products: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{ padding: '24px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+    <div className="page-container" style={{ padding: '12px 16px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>상품 마스터 관리</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>회사 내 모든 무역 상품 스펙, 단가, 물류 정보를 중앙 관리합니다.</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', margin: 0 }}>상품 마스터 관리</h1>
+          <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px' }}>회사 내 모든 무역 상품 스펙, 단가, 물류 정보를 중앙 관리합니다.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -263,7 +263,7 @@ export const Products: React.FC = () => {
           />
           <button 
             onClick={() => { setEditingProdId(null); setIsCopyMode(false); setIsModalOpen(true); }}
-            style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#2563eb', color: 'white', padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
             ➕ 신규 상품 등록
           </button>
@@ -271,29 +271,29 @@ export const Products: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
         <input 
           type="text" 
           placeholder="상품명, 코드, 카테고리 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '200px' }}
+          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '200px', fontSize: '13px' }}
         />
-        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
           <option value="">전체 대분류</option>
           {categories.large.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
           <option value="">전체 중분류</option>
           {categories.medium.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
           <option value="">통화(전체)</option>
           <option value="USD">USD</option>
           <option value="KRW">KRW</option>
           <option value="EUR">EUR</option>
         </select>
-        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
           <option value="">공급업체(전체)</option>
           {uniqueSuppliers.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -306,17 +306,17 @@ export const Products: React.FC = () => {
       {/* Table */}
       <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0', fontSize: '13px' }}>
             <tr>
-              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '12px', cursor: 'pointer' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '12px', cursor: 'pointer' })}>상품명 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '12px', cursor: 'pointer' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
-              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '12px', cursor: 'pointer', textAlign: 'right' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '12px', cursor: 'pointer' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('manufacturerName')} style={thStyle(5, { padding: '12px', cursor: 'pointer' })}>제조사 {getSortIcon('manufacturerName' as keyof Product)}<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '12px' })}>규격(Unit/Plt)<span {...resizerProps(6)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(7, { padding: '12px', cursor: 'pointer' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(7)} /></th>
-              <th style={thStyle(8, { padding: '12px', textAlign: 'right' })}>관리<span {...resizerProps(8)} /></th>
+              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '6px 8px', cursor: 'pointer' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '6px 8px', cursor: 'pointer' })}>상품명 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '6px 8px', cursor: 'pointer' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
+              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '6px 8px', cursor: 'pointer', textAlign: 'right' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '6px 8px', cursor: 'pointer' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('manufacturerName')} style={thStyle(5, { padding: '6px 8px', cursor: 'pointer' })}>제조사 {getSortIcon('manufacturerName' as keyof Product)}<span {...resizerProps(5)} /></th>
+              <th style={thStyle(6, { padding: '6px 8px' })}>규격(Unit/Plt)<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(7, { padding: '6px 8px', cursor: 'pointer' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(7)} /></th>
+              <th style={thStyle(8, { padding: '6px 8px', textAlign: 'right' })}>관리<span {...resizerProps(8)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -344,30 +344,30 @@ export const Products: React.FC = () => {
                 const palletWt = p.palletWeight ?? (p.packageType === 'Pallet' ? p.weight : 0);
 
                 return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '14px' }}>
-                    <td style={{ padding: '12px' }}><strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong></td>
-                    <td style={{ padding: '12px' }}>
+                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
+                    <td style={{ padding: '6px 8px' }}><strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong></td>
+                    <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{p.nameKo || '-'}</div>
                       <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{p.nameEn || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ padding: '6px 8px' }}>
                       <span style={{ fontSize: '11px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', color: '#6b7280' }}>
                         {p.categoryLarge || '-'} &gt; {p.categoryMedium || '-'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>{p.currency || 'USD'} {priceFormatted}</div>
                       <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>Min Qty: {p.minOrderQty || 0}</div>
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontSize: '12px', fontWeight: 600 }}>{(p as any).supplierName || '-'}</div>
                       <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>코드: {(p as any).supplierCode || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px' }}>
+                    <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed' }}>{(p as any).manufacturerName || '-'}</div>
                       <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>코드: {(p as any).manufacturerCode || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '6px 8px', fontSize: '11px', whiteSpace: 'nowrap' }}>
                       <div style={{ marginBottom: '2px' }}>
                         <span style={{ background: 'rgba(37,99,235,0.08)', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>UNIT</span>
                         {unitW}x{unitL}x{unitH} ({unitWt}kg)
@@ -385,19 +385,19 @@ export const Products: React.FC = () => {
                         </div>
                       ) : null}
                     </td>
-                    <td style={{ padding: '12px' }}><span style={{ fontSize: '11px', color: '#6b7280' }}>{p.origin || '-'}</span></td>
-                    <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '6px 8px' }}><span style={{ fontSize: '11px', color: '#6b7280' }}>{p.origin || '-'}</span></td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button 
                         onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                        style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', marginRight: '4px' }}
+                        style={{ background: 'none', border: '1px solid #cbd5e1', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', marginRight: '4px' }}
                       >✏ 수정</button>
                       <button 
                         onClick={() => { setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
-                        style={{ background: 'none', border: '1px solid #3b82f6', color: '#3b82f6', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', marginRight: '4px' }}
+                        style={{ background: 'none', border: '1px solid #3b82f6', color: '#3b82f6', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', marginRight: '4px' }}
                       >📋 복사</button>
                       <button 
                         onClick={() => handleDelete(p.id, p.nameKo)}
-                        style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+                        style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                       >✕ 삭제</button>
                     </td>
                   </tr>
