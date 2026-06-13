@@ -86,6 +86,7 @@ export const Products: React.FC = () => {
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
+  const [isCopyMode, setIsCopyMode] = useState(false);
 
   const exportExcel = () => {
     const data = products.map(p => {
@@ -261,7 +262,7 @@ export const Products: React.FC = () => {
             onChange={importExcel} 
           />
           <button 
-            onClick={() => { setEditingProdId(null); setIsModalOpen(true); }}
+            onClick={() => { setEditingProdId(null); setIsCopyMode(false); setIsModalOpen(true); }}
             style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
           >
             ➕ 신규 상품 등록
@@ -387,9 +388,13 @@ export const Products: React.FC = () => {
                     <td style={{ padding: '12px' }}><span style={{ fontSize: '11px', color: '#6b7280' }}>{p.origin || '-'}</span></td>
                     <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button 
-                        onClick={() => { setEditingProdId(p.id); setIsModalOpen(true); }}
+                        onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
                         style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', marginRight: '4px' }}
                       >✏ 수정</button>
+                      <button 
+                        onClick={() => { setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
+                        style={{ background: 'none', border: '1px solid #3b82f6', color: '#3b82f6', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', marginRight: '4px' }}
+                      >📋 복사</button>
                       <button 
                         onClick={() => handleDelete(p.id, p.nameKo)}
                         style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
@@ -408,6 +413,7 @@ export const Products: React.FC = () => {
           initialProduct={editingProdId ? products.find(p => p.id === editingProdId) : undefined}
           onClose={() => setIsModalOpen(false)}
           products={products}
+          isCopy={isCopyMode}
         />
       )}
     </div>

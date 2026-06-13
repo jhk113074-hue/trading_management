@@ -8,9 +8,10 @@ interface Props {
   initialProduct?: Product;
   onClose: () => void;
   products?: Product[];
+  isCopy?: boolean;
 }
 
-export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
+export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, products, isCopy }) => {
   const [activeTab, setActiveTab] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -54,8 +55,22 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         updatedMethods = [defaultMethod, ...existing];
       }
       
+      let nextCode = initialProduct.productCode;
+      if (isCopy && products) {
+        let maxNum = 0;
+        products.forEach(p => {
+          const code = p.productCode || p.id;
+          if (code && typeof code === 'string' && /^P\d+$/i.test(code)) {
+            const num = parseInt(code.substring(1), 10);
+            if (num > maxNum) maxNum = num;
+          }
+        });
+        nextCode = `P${String(maxNum + 1).padStart(4, '0')}`;
+      }
+
       setFormData({
         ...initialProduct,
+        productCode: nextCode,
         packingMethods: updatedMethods
       });
     } else {
@@ -76,7 +91,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         packingMethods: [defaultMethod]
       }));
     }
-  }, [initialProduct]);
+  }, [initialProduct, isCopy, products]);
 
   useEffect(() => {
     // Only run for new product creation (not editing)
@@ -427,7 +442,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
 
     setIsSaving(true);
     try {
-      const docId = initialProduct?.id || formData.productCode;
+      const docId = (initialProduct && !isCopy) ? initialProduct.id : formData.productCode;
       
       const isPallet = formData.packageType === 'Pallet' || formData.packageType === 'Pallet(Pail)' || formData.packageType === 'Pallet(Drum)';
       const finalData: Partial<Product> = {
@@ -451,7 +466,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
           .sort((a, b) => b.validFrom.localeCompare(a.validFrom));
       }
 
-      if (!initialProduct) {
+      if (!initialProduct || isCopy) {
         finalData.createdAt = serverTimestamp();
       }
 
@@ -473,10 +488,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose }) => {
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
           <div>
             <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
-              {initialProduct ? 'Edit Product Master' : 'Add New Product Master'}
+              {initialProduct ? (isCopy ? 'Copy & Add Product Master' : 'Edit Product Master') : 'Add New Product Master'}
             </div>
             <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-              {initialProduct ? `상품 마스터 상세 규격 수정 (${formData.nameKo})` : '글로벌 상품 정보 및 무역원가 스펙 연동'}
+              {initialProduct ? (isCopy ? `기존 상품 정보를 복사하여 신규 상품을 등록합니다.` : `상품 마스터 상세 규격 수정 (${formData.nameKo})`) : '글로벌 상품 정보 및 무역원가 스펙 연동'}
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '22px', cursor: 'pointer' }}>✕</button>
