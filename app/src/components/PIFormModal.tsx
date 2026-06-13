@@ -1645,7 +1645,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table style={{ width: '100%', minWidth: '1050px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
                   <th style={{ padding: '10px 4px', width: '304px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
