@@ -1637,27 +1637,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Line Items */}
-          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px', overflowX: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h4 style={{ fontSize: '12px', fontWeight: 700, color: '#475569', margin: 0 }}>④ 상품 라인 (Line Items)</h4>
+          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px', overflowX: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📦</span> 상품 라인 (Line Items)
+              </h4>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>🚢 적재 시뮬레이션</button>
-                <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
+                <button onClick={handleSimulation} style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>🚢 적재 시뮬레이션</button>
+                <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid #cbd5e1', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#475569' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '10px 4px', width: '380px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center' }}>패킹방식/수량</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center' }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '170px', textAlign: 'center' }}>매입가</th>
-                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center' }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'right' }}>단가(USD)</th>
-                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right' }}>총액($)</th>
-                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right' }}>이익($)</th>
-                  <th style={{ padding: '10px 4px', width: '150px', textAlign: 'center' }}>비고</th>
-                  <th style={{ padding: '10px 4px', width: '35px' }}></th>
+                <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
+                  <th style={{ padding: '10px 4px', width: '380px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600 }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center', fontWeight: 600 }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 600 }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '170px', textAlign: 'center', fontWeight: 600 }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center', fontWeight: 600 }}>마진/올림</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'right', fontWeight: 600 }}>단가(USD)</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right', fontWeight: 600 }}>총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right', fontWeight: 600 }}>이익($)</th>
+                  <th style={{ padding: '10px 4px', width: '150px', textAlign: 'center', fontWeight: 600 }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '35px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
                 </tr>
               </thead>
               <tbody>
