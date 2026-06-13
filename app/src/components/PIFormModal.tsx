@@ -1780,14 +1780,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         })() : (
                           <select style={{ ...gridInputStyle }} disabled><option>--</option></select>
                         )}
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          placeholder="패킹수량"
-                          value={it.palletQty || ''} 
-                          onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                          style={{ ...gridInputStyle, textAlign: 'right', width: '50%', marginLeft: 'auto' }} 
-                        />
+                        {(() => {
+                          const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                          const methods = getProductPackingMethods(prod);
+                          const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
+                          const packUnit = selectedMethod?.packageType || 'PLT';
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '65%', marginLeft: 'auto' }}>
+                              <input 
+                                type="number" 
+                                step="0.1"
+                                placeholder="패킹수량"
+                                value={it.palletQty || ''} 
+                                onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
+                                style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                              />
+                              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </td>
                     <td style={{ padding: '4px' }}>
