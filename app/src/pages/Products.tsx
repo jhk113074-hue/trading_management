@@ -69,8 +69,8 @@ export const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Column resize: [코드, 상품명, 분류, 단가, 공급업체, 제조사, 규격, 원산지, 관리]
-  const { thStyle, resizerProps } = useColumnResize([80, 180, 120, 100, 120, 120, 140, 70, 160]);
+  // Column resize: [코드, 상품명/규격, 분류, 단가, 공급업체/제조사, 원산지, 관리]
+  const { thStyle, resizerProps } = useColumnResize([85, 320, 120, 110, 180, 70, 160]);
   
   // Filtering
   const [searchQuery, setSearchQuery] = useState('');
@@ -309,21 +309,19 @@ export const Products: React.FC = () => {
           <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0', fontSize: '13px' }}>
             <tr>
               <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '6px 8px', cursor: 'pointer' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '6px 8px', cursor: 'pointer' })}>상품명 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '6px 8px', cursor: 'pointer' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
               <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '6px 8px', cursor: 'pointer' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
               <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '6px 8px', cursor: 'pointer', textAlign: 'right' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '6px 8px', cursor: 'pointer' })}>공급업체 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('manufacturerName')} style={thStyle(5, { padding: '6px 8px', cursor: 'pointer' })}>제조사 {getSortIcon('manufacturerName' as keyof Product)}<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '6px 8px' })}>규격(Unit/Plt)<span {...resizerProps(6)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(7, { padding: '6px 8px', cursor: 'pointer' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(7)} /></th>
-              <th style={thStyle(8, { padding: '6px 8px', textAlign: 'right' })}>관리<span {...resizerProps(8)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '6px 8px', cursor: 'pointer' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '6px 8px', cursor: 'pointer' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
+              <th style={thStyle(6, { padding: '6px 8px', textAlign: 'right' })}>관리<span {...resizerProps(6)} /></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 상품이 없습니다.</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 상품이 없습니다.</td></tr>
             ) : (
               filteredAndSorted.map(p => {
                 const priceFormatted = p.purchasePrice 
@@ -332,7 +330,6 @@ export const Products: React.FC = () => {
                       : Number(p.purchasePrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
                   : (p.currency === 'KRW' ? "0" : "0.00");
                 
-                // Spec display logic (simplified from html)
                 const unitW = p.unitWidth ?? p.specWidth ?? 0;
                 const unitL = p.unitLength ?? p.specLength ?? 0;
                 const unitH = p.unitHeight ?? p.specHeight ?? 0;
@@ -349,6 +346,29 @@ export const Products: React.FC = () => {
                     <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{p.nameKo || '-'}</div>
                       <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{p.nameEn || '-'}</div>
+                      
+                      {/* Spec and Packings */}
+                      <div style={{ marginTop: '4px', fontSize: '11px', color: '#475569' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Spec:</span> {p.spec || '-'}
+                      </div>
+                      <div style={{ marginTop: '3px', fontSize: '11px', color: '#475569', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <span>
+                          <span style={{ background: 'rgba(37,99,235,0.08)', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>UNIT</span>
+                          {unitW}x{unitL}x{unitH} ({unitWt}kg)
+                        </span>
+                        {(palletW || palletL || palletH || palletWt || p.qtyPerPallet) ? (
+                          <span>
+                            <span style={{ background: 'rgba(8,145,178,0.08)', color: '#0891b2', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>PLT</span>
+                            {palletW}x{palletL}x{palletH} ({palletWt}kg)
+                          </span>
+                        ) : null}
+                        {p.qtyPerPallet ? (
+                          <span>
+                             <span style={{ background: 'rgba(217,119,6,0.08)', color: '#d97706', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>적재</span>
+                             <strong style={{ color: '#111827' }}>{p.qtyPerPallet}</strong> EA
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td style={{ padding: '6px 8px' }}>
                       <span style={{ fontSize: '11px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', color: '#6b7280' }}>
@@ -356,34 +376,18 @@ export const Products: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>{p.currency || 'USD'} {priceFormatted}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>
+                        {p.currency || 'USD'} {priceFormatted} / <span style={{ color: '#2563eb', fontWeight: 700 }}>{p.unit || 'KG'}</span>
+                      </div>
                       <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>Min Qty: {p.minOrderQty || 0}</div>
                     </td>
                     <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600 }}>{(p as any).supplierName || '-'}</div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>코드: {(p as any).supplierCode || '-'}</div>
-                    </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#7c3aed' }}>{(p as any).manufacturerName || '-'}</div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>코드: {(p as any).manufacturerCode || '-'}</div>
-                    </td>
-                    <td style={{ padding: '6px 8px', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                      <div style={{ marginBottom: '2px' }}>
-                        <span style={{ background: 'rgba(37,99,235,0.08)', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>UNIT</span>
-                        {unitW}x{unitL}x{unitH} ({unitWt}kg)
+                      <div style={{ fontWeight: 600, color: '#334155' }}>
+                        {p.supplierName || '-'}
                       </div>
-                      {(palletW || palletL || palletH || palletWt || p.qtyPerPallet) ? (
-                        <div style={{ marginTop: '2px' }}>
-                          <span style={{ background: 'rgba(8,145,178,0.08)', color: '#0891b2', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>PLT</span>
-                          {palletW}x{palletL}x{palletH} ({palletWt}kg)
-                        </div>
-                      ) : null}
-                      {p.qtyPerPallet ? (
-                        <div style={{ marginTop: '2px' }}>
-                           <span style={{ background: 'rgba(217,119,6,0.08)', color: '#d97706', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>적재</span>
-                           <strong style={{ color: '#111827' }}>{p.qtyPerPallet}</strong> EA
-                        </div>
-                      ) : null}
+                      <div style={{ fontSize: '11px', color: '#7c3aed', marginTop: '2px' }}>
+                        <span style={{ color: '#6b7280', fontSize: '10px', marginRight: '4px' }}>제조:</span> {p.manufacturerName || '-'}
+                      </div>
                     </td>
                     <td style={{ padding: '6px 8px' }}><span style={{ fontSize: '11px', color: '#6b7280' }}>{p.origin || '-'}</span></td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
