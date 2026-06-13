@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { Product } from '../types/product';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db, COMPANY_ID } from '../firebase';
+import { ProductModal } from './ProductModal';
 
 interface Props {
   onClose: () => void;
@@ -11,6 +14,8 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSupplier, setSelectedSupplier] = useState('All');
+  const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
 
   // Extract unique categories & suppliers for filtering
   const categories = useMemo(() => {
@@ -186,6 +191,22 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
               초기화
             </button>
           )}
+          <button
+            onClick={() => {
+              setEditingProd(undefined);
+              setIsProdModalOpen(true);
+            }}
+            style={{
+              background: '#2563eb', border: 'none', padding: '9px 16px',
+              borderRadius: '8px', fontSize: '12px', fontWeight: 600,
+              color: '#fff', cursor: 'pointer', marginLeft: 'auto',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+          >
+            ➕ 상품 등록
+          </button>
         </div>
 
         {/* Results Info */}
@@ -209,7 +230,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
                 <th style={{ padding: '12px 8px' }}>규격 / 스펙</th>
                 <th style={{ padding: '12px 8px' }}>공급사</th>
                 <th style={{ padding: '12px 8px', textAlign: 'right' }}>기준 단가</th>
-                <th style={{ padding: '12px 8px', width: '80px', textAlign: 'center' }}>선택</th>
+                <th style={{ padding: '12px 8px', width: '160px', textAlign: 'center' }}>선택 / 관리</th>
               </tr>
             </thead>
             <tbody>
@@ -276,22 +297,74 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
                       <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '4px' }}>/ {p.unit || 'KG'}</span>
                     </td>
                     <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelect(p);
-                        }}
-                        style={{
-                          background: '#2563eb', color: '#fff', border: 'none',
-                          padding: '6px 12px', borderRadius: '6px', fontSize: '12px',
-                          fontWeight: 600, cursor: 'pointer',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                      >
-                        선택
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(p);
+                          }}
+                          style={{
+                            background: '#2563eb', color: '#fff', border: 'none',
+                            padding: '6px 10px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                        >
+                          선택
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProd(p);
+                            setIsProdModalOpen(true);
+                          }}
+                          style={{
+                            background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1',
+                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                          title="수정"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`정말 "${p.nameKo || p.productCode}" 상품을 삭제하시겠습니까?`)) {
+                              try {
+                                const pRef = doc(db, 'companies', COMPANY_ID, 'products', p.id);
+                                await deleteDoc(pRef);
+                                alert('상품이 삭제되었습니다.');
+                              } catch (err) {
+                                console.error('Failed to delete product:', err);
+                                alert('상품 삭제에 실패했습니다.');
+                              }
+                            }
+                          }}
+                          style={{
+                            background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2',
+                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fee2e2';
+                            e.currentTarget.style.borderColor = '#fca5a5';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fef2f2';
+                            e.currentTarget.style.borderColor = '#fee2e2';
+                          }}
+                          title="삭제"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -300,6 +373,13 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
           </table>
         </div>
       </div>
+      {isProdModalOpen && (
+        <ProductModal
+          initialProduct={editingProd}
+          onClose={() => setIsProdModalOpen(false)}
+          products={products}
+        />
+      )}
     </div>
   );
 };
