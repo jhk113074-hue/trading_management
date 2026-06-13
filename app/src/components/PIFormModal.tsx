@@ -1878,7 +1878,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '55%', marginLeft: 'auto' }}>
                           <input 
                             type="text" 
                             placeholder="마진"
@@ -1891,7 +1891,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center' }}
+                          style={{ ...gridInputStyle, fontSize: '11px', textAlign: 'center', textAlignLast: 'center', width: '50%', marginLeft: 'auto' }}
                         >
                           <option value="none">없음</option>
                           <option value="0">0</option>
