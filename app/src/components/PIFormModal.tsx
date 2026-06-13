@@ -1653,7 +1653,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '10px 4px', width: '60px', textAlign: 'center' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '84px', textAlign: 'center' }}>매입가</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '10px 4px', width: '45px', textAlign: 'right' }}>단가($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '10px 4px', width: '130px', textAlign: 'center' }}>비고</th>
@@ -1923,7 +1923,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         type="text" 
                         value={formatNumberWithCommas(it.salePriceUsd, 2, 2)} 
                         onChange={(e) => updateItem(idx, 'salePriceUsd', parseCommas(e.target.value))} 
-                        style={{ ...gridInputStyle, textAlign: 'right' }} 
+                        style={{ ...gridInputStyle, textAlign: 'right', width: '60%', marginLeft: 'auto' }} 
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
