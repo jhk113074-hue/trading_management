@@ -465,19 +465,42 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }]);
   };
 
-  const updateItem = (index: number, field: keyof PIItem, value: any) => {
+  const updateItem = (index: number, fieldOrUpdates: keyof PIItem | Partial<PIItem>, value?: any) => {
     const newItems = [...items];
-    const it = { ...newItems[index], [field]: value };
+    let it = { ...newItems[index] };
+    
+    let isSingleField = false;
+    let singleField: keyof PIItem | undefined;
+    let singleValue: any;
+
+    if (typeof fieldOrUpdates === 'string') {
+      isSingleField = true;
+      singleField = fieldOrUpdates as keyof PIItem;
+      singleValue = value;
+      (it as any)[singleField] = value;
+    } else {
+      Object.assign(it, fieldOrUpdates);
+    }
+
+    const hasField = (f: keyof PIItem) => {
+      if (isSingleField) return singleField === f;
+      return f in (fieldOrUpdates as object);
+    };
+
+    const getFieldValue = (f: keyof PIItem) => {
+      if (isSingleField && singleField === f) return singleValue;
+      return (it as any)[f];
+    };
 
     // Zero out other purchase price when one is entered
-    if (field === 'purchasePriceKrw' && parseFloat(value) > 0) {
+    if (hasField('purchasePriceKrw') && parseFloat(getFieldValue('purchasePriceKrw')) > 0) {
       it.purchasePriceUsd = 0;
-    } else if (field === 'purchasePriceUsd' && parseFloat(value) > 0) {
+    } else if (hasField('purchasePriceUsd') && parseFloat(getFieldValue('purchasePriceUsd')) > 0) {
       it.purchasePriceKrw = 0;
     }
 
     // Auto calculate from palletQty
-    if (field === 'palletQty') {
+    if (hasField('palletQty')) {
       const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
       let qpp = 0;
       if (it.packingSpecOverride) {
@@ -485,7 +508,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       } else if (p) {
         qpp = p.qtyPerPallet || p.weight || 0;
       }
-      const numVal = parseFloat(value) || 0;
+      const numVal = parseFloat(getFieldValue('palletQty')) || 0;
       if (qpp > 0) {
         it.quantity = numVal * qpp;
       } else {
@@ -494,8 +517,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }
 
     // Auto calculate
-    if (field === 'productCode') {
-      const parsedCode = getRawProductCode(value);
+    if (hasField('productCode')) {
+      const productCodeVal = getFieldValue('productCode');
+      const parsedCode = getRawProductCode(productCodeVal);
       const p = products.find(prod => prod.productCode === parsedCode);
       if (p) {
         const isLevelIndicator = p.nameKo?.includes('수위계');
@@ -508,10 +532,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         // Assuming purchase price is in KRW or USD
         if (p.currency === 'KRW') {
           it.purchasePriceKrw = p.purchasePrice || 0;
-          it.purchasePriceUsd = 0; // Independent: do not pre-fill USD if currency is KRW
+          it.purchasePriceUsd = 0;
         } else {
           it.purchasePriceUsd = p.purchasePrice || 0;
-          it.purchasePriceKrw = 0; // Independent: do not pre-fill KRW if currency is USD
+          it.purchasePriceKrw = 0;
         }
         
         // Auto select default packing method if exists
@@ -520,7 +544,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
         
         if (existingMethod) {
-          // Keep existing loaded packing method and its overrides
           it.selectedPackingMethodId = existingMethod.id;
           if (existingMethod.unit) {
             it.unit = existingMethod.unit;
@@ -543,7 +566,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             it.quantity = it.quantity || 0;
           }
         } else if (defaultMethod) {
-          // If no existing method was loaded, fallback to defaultMethod
           it.selectedPackingMethodId = defaultMethod.id;
           if (defaultMethod.unit) {
             it.unit = defaultMethod.unit;
@@ -566,7 +588,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         } else {
           it.selectedPackingMethodId = undefined;
           it.packingSpecOverride = undefined;
-          // Auto calculate quantity from palletQty
           if (p.qtyPerPallet && p.qtyPerPallet > 0) {
             it.quantity = (it.palletQty || 1) * p.qtyPerPallet;
           } else if (p.weight && p.weight > 0) {
@@ -578,11 +599,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'selectedPackingMethodId') {
+    if (hasField('selectedPackingMethodId')) {
+      const packingMethodIdVal = getFieldValue('selectedPackingMethodId');
       const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
       const methods = getProductPackingMethods(p);
       if (p && methods.length > 0) {
-        const method = methods.find((m: any) => m.id === value);
+        const method = methods.find((m: any) => m.id === packingMethodIdVal);
         if (method) {
           if (method.unit) {
             it.unit = method.unit;
@@ -610,7 +632,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'productCode' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits') {
+    if (hasField('productCode') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits')) {
       let rawSalePrice = 0;
       if (it.purchasePriceKrw > 0) {
         rawSalePrice = (it.purchasePriceKrw || 0) / (it.exchangeRate || 1) / (1 - (it.marginRate || 0) / 100);
@@ -625,29 +647,30 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
     }
 
-    if (field === 'productCode' || field === 'salePriceUsd' || field === 'quantity' || field === 'marginRate' || field === 'purchasePriceKrw' || field === 'purchasePriceUsd' || field === 'exchangeRate' || field === 'roundDigits' || field === 'palletQty') {
+    if (hasField('productCode') || hasField('salePriceUsd') || hasField('quantity') || hasField('marginRate') || hasField('purchasePriceKrw') || hasField('purchasePriceUsd') || hasField('exchangeRate') || hasField('roundDigits') || hasField('palletQty')) {
       it.lineTotalUsd = (it.salePriceUsd || 0) * (it.quantity || 0);
       
       // Auto calculate palletQty when quantity changes
-      if (field === 'quantity') {
+      if (hasField('quantity')) {
+        const qtyVal = getFieldValue('quantity');
         const p = products.find(prod => prod.productCode === getRawProductCode(it.productCode));
         if (it.packingSpecOverride) {
           const qpp = it.packingSpecOverride.qtyPerPallet;
           if (qpp && qpp > 0) {
-            it.palletQty = parseFloat((value / qpp).toFixed(2));
+            it.palletQty = parseFloat((qtyVal / qpp).toFixed(2));
           } else {
-            it.palletQty = value;
+            it.palletQty = qtyVal;
           }
         } else if (p) {
           if (p.qtyPerPallet && p.qtyPerPallet > 0) {
-            it.palletQty = parseFloat((value / p.qtyPerPallet).toFixed(2));
+            it.palletQty = parseFloat((qtyVal / p.qtyPerPallet).toFixed(2));
           } else if (p.weight && p.weight > 0) {
-            it.palletQty = parseFloat((value / p.weight).toFixed(2));
+            it.palletQty = parseFloat((qtyVal / p.weight).toFixed(2));
           } else {
-            it.palletQty = value;
+            it.palletQty = qtyVal;
           }
         } else {
-          it.palletQty = value;
+          it.palletQty = qtyVal;
         }
       }
     }
@@ -1901,7 +1924,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                           {(() => {
-                            const curCurrency = it.purchasePriceUsd > 0 ? 'USD' : 'KRW';
+                            const curCurrency = (it as any).purchasePriceCurrency || (it.purchasePriceUsd > 0 ? 'USD' : 'KRW');
                             const amountVal = curCurrency === 'USD' ? it.purchasePriceUsd : it.purchasePriceKrw;
                             return (
                               <>
@@ -1909,13 +1932,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   value={curCurrency}
                                   onChange={(e) => {
                                     const nextCur = e.target.value;
-                                    if (nextCur === 'USD') {
-                                      updateItem(idx, 'purchasePriceUsd', amountVal || 0);
-                                      updateItem(idx, 'purchasePriceKrw', 0);
-                                    } else {
-                                      updateItem(idx, 'purchasePriceKrw', amountVal || 0);
-                                      updateItem(idx, 'purchasePriceUsd', 0);
-                                    }
+                                    updateItem(idx, {
+                                      purchasePriceCurrency: nextCur,
+                                      purchasePriceUsd: nextCur === 'USD' ? (amountVal || 0) : 0,
+                                      purchasePriceKrw: nextCur === 'KRW' ? (amountVal || 0) : 0
+                                    });
                                   }}
                                   style={{ ...gridInputStyle, width: '55px', padding: '2px' }}
                                 >
@@ -1929,11 +1950,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   onChange={(e) => {
                                     const parsed = parseCommas(e.target.value);
                                     if (curCurrency === 'USD') {
-                                      updateItem(idx, 'purchasePriceUsd', parsed);
-                                      updateItem(idx, 'purchasePriceKrw', 0);
+                                      updateItem(idx, {
+                                        purchasePriceUsd: parsed,
+                                        purchasePriceKrw: 0,
+                                        purchasePriceCurrency: 'USD'
+                                      });
                                     } else {
-                                      updateItem(idx, 'purchasePriceKrw', parsed);
-                                      updateItem(idx, 'purchasePriceUsd', 0);
+                                      updateItem(idx, {
+                                        purchasePriceKrw: parsed,
+                                        purchasePriceUsd: 0,
+                                        purchasePriceCurrency: 'KRW'
+                                      });
                                     }
                                   }} 
                                   style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
@@ -1942,28 +1969,37 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             );
                           })()}
                         </div>
-                        {(it.purchasePriceUsd <= 0) && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                            <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>환율:</span>
-                            <input 
-                              type="text" 
-                              value={formatNumberWithCommas(it.exchangeRate)} 
-                              onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                              style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', flex: 1 }} 
-                            />
-                          </div>
-                        )}
+                        {(() => {
+                          const curCurrency = (it as any).purchasePriceCurrency || (it.purchasePriceUsd > 0 ? 'USD' : 'KRW');
+                          if (curCurrency === 'KRW') {
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>환율:</span>
+                                <input 
+                                  type="text" 
+                                  value={formatNumberWithCommas(it.exchangeRate)} 
+                                  onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', fontSize: '11px', flex: 1 }} 
+                                />
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="마진%"
-                          value={formatNumberWithCommas(it.marginRate)} 
-                          onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'right' }} 
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <input 
+                            type="text" 
+                            placeholder="마진"
+                            value={formatNumberWithCommas(it.marginRate)} 
+                            onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
+                            style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                          />
+                          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>%</span>
+                        </div>
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
