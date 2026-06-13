@@ -1653,7 +1653,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '10px 4px', width: '60px', textAlign: 'center' }}>수량 / 단위</th>
                   <th style={{ padding: '10px 4px', width: '84px', textAlign: 'center' }}>매입가</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '45px', textAlign: 'right' }}>단가($)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right' }}>단가(USD)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '10px 4px', width: '130px', textAlign: 'center' }}>비고</th>
@@ -1897,12 +1897,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       </div>
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right' }}>
-                      <input 
-                        type="text" 
-                        value={formatNumberWithCommas(it.salePriceUsd, 2, 2)} 
-                        onChange={(e) => updateItem(idx, 'salePriceUsd', parseCommas(e.target.value))} 
-                        style={{ ...gridInputStyle, textAlign: 'right', width: '60%', marginLeft: 'auto' }} 
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>USD</span>
+                        <SalePriceInput
+                          value={it.salePriceUsd}
+                          onChange={(val) => updateItem(idx, 'salePriceUsd', val)}
+                        />
+                      </div>
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
                       ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -2430,4 +2431,43 @@ const PurchasePriceInput: React.FC<{
     />
   );
 };
+
+const SalePriceInput: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+}> = ({ value, onChange }) => {
+  const [localVal, setLocalVal] = useState('');
+
+  useEffect(() => {
+    const parsedLocal = parseFloat(localVal.replace(/,/g, '')) || 0;
+    if (parsedLocal !== value || (value === 0 && localVal !== '')) {
+      setLocalVal(value === 0 ? '' : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const cleanRaw = raw.replace(/,/g, '');
+    if (/^\d*\.?\d{0,2}$/.test(cleanRaw)) {
+      setLocalVal(raw);
+      const parsed = parseFloat(cleanRaw) || 0;
+      onChange(parsed);
+    }
+  };
+
+  const handleBlur = () => {
+    setLocalVal(value === 0 ? '' : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  };
+
+  return (
+    <input
+      type="text"
+      value={localVal}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      style={{ ...gridInputStyle, textAlign: 'right', width: '80px' }}
+    />
+  );
+};
+
 
