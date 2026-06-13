@@ -1786,7 +1786,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
                           const packUnit = selectedMethod?.packageType || 'PLT';
                           return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '65%', marginLeft: 'auto' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
                               <input 
                                 type="number" 
                                 step="0.1"
