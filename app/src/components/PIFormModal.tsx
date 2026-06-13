@@ -1651,7 +1651,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   <th style={{ padding: '10px 4px', width: '304px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
                   <th style={{ padding: '10px 4px', width: '70px', textAlign: 'center' }}>패킹방식/수량</th>
                   <th style={{ padding: '10px 4px', width: '60px', textAlign: 'center' }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '120px', textAlign: 'center' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '84px', textAlign: 'center' }}>매입가</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
                   <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right' }}>단가($)</th>
                   <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
@@ -1837,10 +1837,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                       purchasePriceKrw: nextCur === 'KRW' ? (amountVal || 0) : 0
                                     });
                                   }}
-                                  style={{ ...gridInputStyle, width: '55px', padding: '2px' }}
+                                  style={{ ...gridInputStyle, width: '65px', padding: '2px' }}
                                 >
-                                  <option value="KRW">₩</option>
-                                  <option value="USD">$</option>
+                                  <option value="KRW">KRW</option>
+                                  <option value="USD">USD</option>
                                 </select>
                                 <input 
                                   type="text" 
