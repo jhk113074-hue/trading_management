@@ -1645,17 +1645,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#fff', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#334155' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', minWidth: '1050px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table style={{ width: '100%', minWidth: '1120px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', textAlign: 'left', color: '#6b7280' }}>
-                  <th style={{ padding: '10px 4px', width: '304px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '280px', textAlign: 'center' }}>상품코드 / 스펙 (Spec)</th>
                   <th style={{ padding: '10px 4px', width: '70px', textAlign: 'center' }}>패킹방식/수량</th>
                   <th style={{ padding: '10px 4px', width: '60px', textAlign: 'center' }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '84px', textAlign: 'center' }}>매입가</th>
-                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right' }}>단가(USD)</th>
-                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>총액($)</th>
-                  <th style={{ padding: '10px 4px', width: '85px', textAlign: 'right' }}>이익($)</th>
+                  <th style={{ padding: '10px 4px', width: '160px', textAlign: 'center' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'center' }}>마진/올림</th>
+                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right' }}>단가(USD)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right' }}>총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right' }}>이익($)</th>
                   <th style={{ padding: '10px 4px', width: '130px', textAlign: 'center' }}>비고</th>
                   <th style={{ padding: '10px 4px', width: '35px' }}></th>
                 </tr>
@@ -1862,7 +1862,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
                                   onChange={(e) => updateItem(idx, 'exchangeRate', parseCommas(e.target.value))} 
-                                  style={{ ...gridInputStyle, textAlign: 'right', width: '50%', marginLeft: 'auto' }} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                                 />
                               </div>
                             );
@@ -1873,7 +1873,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '55%', marginLeft: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
                           <input 
                             type="text" 
                             placeholder="마진"
@@ -1886,7 +1886,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
-                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '50%', marginLeft: 'auto' }}
+                          style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%' }}
                         >
                           <option value="none">없음</option>
                           <option value="0">0</option>
