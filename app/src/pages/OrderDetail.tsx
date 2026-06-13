@@ -1447,17 +1447,99 @@ export const OrderDetail: React.FC = () => {
                 {/* Sub Tab 3: 결제 관리 */}
                 {supplierSubTab === 'pay' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 공급업체별 1차~4차 결제일 및 결제금액(입금액)을 분할하여 지정할 수 있습니다.</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 공급업체별 1차~4차 결제일 및 결제금액(입금액)을 분할하여 지정할 수 있으며, 지급액 대비 미수금이 자동 계산됩니다.</div>
                     {Object.keys(groupedSupplierItems).length === 0 ? (
-                      <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
+                       <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
                     ) : (
                       Object.keys(groupedSupplierItems).map(supplier => {
                         const list = basicForm.supplierPaymentInstallments[supplier] || [];
                         const installments = Array.from({ length: 4 }).map((_, idx) => list[idx] || { date: '', amount: 0 });
 
+                        // Calculate grand total from tax invoice items for this supplier
+                        const items = groupedSupplierItems[supplier] || [];
+                        const taxType = basicForm.supplierTaxTypes[supplier] || '일반';
+                        const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
+                          const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                          return sum + price * (it.qty || 0);
+                        }, 0);
+                        const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
+                          const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                          return sum + price * (it.qty || 0);
+                        }, 0);
+                        const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                        const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                        const usdGrand = usdTotal + usdVat;
+                        const krwGrand = krwTotal + krwVat;
+
+                        const isKrw = krwGrand > 0 || (usdGrand === 0 && krwGrand === 0);
+                        const grandTotal = isKrw ? krwGrand : usdGrand;
+                        const currencySymbol = isKrw ? '₩' : '$';
+                        const currencyText = isKrw ? 'KRW' : 'USD';
+
+                        const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                        // Round to avoid precision issues
+                        const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
+                        const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+
+                        const handleInstallmentChange = (idx: number, field: 'date' | 'amount', value: any) => {
+                          const newList = [...installments];
+                          newList[idx] = { ...newList[idx], [field]: value };
+                          const activeList = newList.filter(item => item.date || item.amount > 0);
+                          
+                          const newTotalPaid = newList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                          
+                          const dates = newList.map(inst => inst.date).filter(d => d);
+                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                          
+                          setBasicForm(prev => {
+                            const updatedPayments = { ...prev.supplierPayments };
+                            if (newIsCompleted) {
+                              updatedPayments[supplier] = { status: '입금완료', date: lastDate };
+                            } else {
+                              updatedPayments[supplier] = { status: '미수금 발생', date: '' };
+                            }
+                            
+                            return {
+                              ...prev,
+                              supplierPaymentInstallments: {
+                                ...prev.supplierPaymentInstallments,
+                                [supplier]: activeList
+                              },
+                              supplierPayments: updatedPayments
+                            };
+                          });
+                        };
+
                         return (
                           <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a', borderBottom: '1px dashed #cbd5e1', paddingBottom: '6px', marginBottom: '4px' }}>{supplier}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                              <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e3a8a' }}>{supplier}</span>
+                              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
+                                  지급 총액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
+                                </span>
+                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
+                                  입금 합계: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
+                                </span>
+                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
+                                  미수금: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
+                                </span>
+                                <span style={{
+                                  fontSize: '11.5px',
+                                  fontWeight: 700,
+                                  padding: '4px 10px',
+                                  borderRadius: '12px',
+                                  background: isCompleted ? '#dcfce7' : '#fee2e2',
+                                  color: isCompleted ? '#15803d' : '#b91c1c',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  {isCompleted ? '✓ 입금완료' : '입금대기'}
+                                </span>
+                              </div>
+                            </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                               {installments.map((inst, idx) => (
                                 <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -1467,18 +1549,7 @@ export const OrderDetail: React.FC = () => {
                                     <input
                                       type="date"
                                       value={inst.date}
-                                      onChange={e => {
-                                        const newDate = e.target.value;
-                                        const newList = [...installments];
-                                        newList[idx] = { ...newList[idx], date: newDate };
-                                        setBasicForm(prev => ({
-                                          ...prev,
-                                          supplierPaymentInstallments: {
-                                            ...prev.supplierPaymentInstallments,
-                                            [supplier]: newList.filter(item => item.date || item.amount > 0)
-                                          }
-                                        }));
-                                      }}
+                                      onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
                                       style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
                                     />
                                   </div>
@@ -1488,18 +1559,7 @@ export const OrderDetail: React.FC = () => {
                                       type="number"
                                       placeholder="0"
                                       value={inst.amount || ''}
-                                      onChange={e => {
-                                        const newAmt = parseFloat(e.target.value) || 0;
-                                        const newList = [...installments];
-                                        newList[idx] = { ...newList[idx], amount: newAmt };
-                                        setBasicForm(prev => ({
-                                          ...prev,
-                                          supplierPaymentInstallments: {
-                                            ...prev.supplierPaymentInstallments,
-                                            [supplier]: newList.filter(item => item.date || item.amount > 0)
-                                          }
-                                        }));
-                                      }}
+                                      onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
                                       style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
                                     />
                                   </div>
