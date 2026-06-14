@@ -92,14 +92,14 @@ export const Layout: React.FC = () => {
       </aside>
 
       <div className="main-wrapper">
-        <header className="header" style={{ height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-          <div style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+        <header className="header" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
             YSACC TASK MANAGEMENT PORTAL 업무포탈
           </div>
           <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
-              <span style={{ marginRight: '12px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+              <span style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
@@ -107,26 +107,26 @@ export const Layout: React.FC = () => {
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
+              gap: '8px',
+              padding: '10px 18px',
               borderRadius: '6px',
               border: '1px solid #e8ecf0',
               backgroundColor: '#ffffff',
-              fontSize: '13px',
+              fontSize: '15px',
               fontWeight: 600,
               color: '#4f46e5',
               cursor: 'pointer'
             }}>
-              <span style={{ color: '#4f46e5', fontSize: '14px', lineHeight: '1' }}>⚙</span> 내 정보 수정
+              <span style={{ color: '#4f46e5', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
             </Link>
             <button className="btn" onClick={logout} style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '8px 16px',
+              padding: '10px 18px',
               borderRadius: '6px',
               border: '1px solid #e8ecf0',
               backgroundColor: '#ffffff',
-              fontSize: '13px',
+              fontSize: '15px',
               fontWeight: 600,
               color: '#1e293b',
               cursor: 'pointer'

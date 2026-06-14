@@ -175,20 +175,20 @@ export const Layout: React.FC = () => {
       )}
 
       <div className="main-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        <header className="header" style={{ height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <header className="header" style={{ height: '72px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-header)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               style={{
                 background: 'transparent',
                 border: 'none',
-                fontSize: '18px',
+                fontSize: '24px',
                 cursor: 'pointer',
                 color: '#475569',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '6px',
+                padding: '8px',
                 borderRadius: '6px',
                 transition: 'background 0.1s'
               }}
@@ -198,15 +198,15 @@ export const Layout: React.FC = () => {
             >
               ☰
             </button>
-            <div style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+            <div style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
               <span style={{ color: '#dc2626', marginRight: '6px' }}>YSACC</span>
               <span style={{ color: '#334155' }}>업무포탈</span>
             </div>
           </div>
           <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
-              <span style={{ marginRight: '12px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+              <span style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
@@ -214,26 +214,26 @@ export const Layout: React.FC = () => {
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
+              gap: '8px',
+              padding: '10px 18px',
               borderRadius: '6px',
               border: '1px solid #e8ecf0',
               backgroundColor: '#ffffff',
-              fontSize: '13px',
+              fontSize: '15px',
               fontWeight: 600,
               color: '#4f46e5',
               cursor: 'pointer'
             }}>
-              <span style={{ color: '#4f46e5', fontSize: '14px', lineHeight: '1' }}>⚙</span> 내 정보 수정
+              <span style={{ color: '#4f46e5', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
             </Link>
             <button className="btn" onClick={logout} style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '8px 16px',
+              padding: '10px 18px',
               borderRadius: '6px',
               border: '1px solid #e8ecf0',
               backgroundColor: '#ffffff',
-              fontSize: '13px',
+              fontSize: '15px',
               fontWeight: 600,
               color: '#1e293b',
               cursor: 'pointer'
