@@ -712,7 +712,7 @@ export const Orders: React.FC = () => {
         </table>
         ) : (
           /* Detailed Trade Management Ledger */
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', textAlign: 'left', minWidth: '100%' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14.5px', textAlign: 'left', minWidth: '100%' }}>
             <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
               <tr style={{ borderBottom: '1px solid #cbd5e1' }}>
                 <th style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.no, minWidth: colWidths.no, maxWidth: colWidths.no, boxSizing: 'border-box', overflow: 'hidden' }}>
@@ -1028,10 +1028,10 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'cargoReady', title: '화물준비 / CFS입고 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.cargoReadyDate || '-'}
                           </div>
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.cfsEntryDate || '-'}
                           </div>
                         </td>
@@ -1042,10 +1042,10 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volumeVessel', title: 'VOLUME / 선명·항차 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.vesselBooking || '-'}
                           </div>
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.containerVolumeQuantities || '-'}
                           </div>
                         </td>
@@ -1056,10 +1056,10 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 / 면장환율 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.exportDeclarationNo || '-'}
                           </div>
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.customsExchangeRate ? `₩${Number(o.customsExchangeRate).toLocaleString()}` : '-'}
                           </div>
                         </td>
@@ -1070,13 +1070,13 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'shipmentSchedule', title: '서류마감 / ETD / ETA 수정' }); }}
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.docsDeadlineDate || '-'}
                           </div>
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.etd || '-'}
                           </div>
-                          <div style={{ padding: '8px', fontSize: '12.5px', fontWeight: 600, color: '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ padding: '8px', fontSize: '13.5px', fontWeight: 600, color: '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.eta || '-'}
                           </div>
                         </td>
