@@ -1117,14 +1117,32 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'items', title: '품목 수정' }); }}
                           style={{ padding: '0', verticalAlign: 'top', width: colWidths.items, minWidth: colWidths.items, maxWidth: colWidths.items, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
-                          {o.items && o.items.length > 0 ? (
-                            o.items.map((it, iIdx) => (
-                              <div key={iIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {it.name}
-                              </div>
-                            ))
+                          {suppliers.length > 0 ? (
+                            suppliers.map((sup, sIdx) => {
+                              const sItems = (o.items || []).filter(it => it.supplier === sup);
+                              if (sItems.length === 0) return <div key={sIdx} style={{ padding: '8px', fontSize: '11px', color: '#94a3b8' }}>-</div>;
+                              const firstName = sItems[0].name;
+                              const displayName = sItems.length > 1 ? `${firstName} 외 ${sItems.length - 1}종` : firstName;
+                              return (
+                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sItems.map(x => x.name).join(', ')}>
+                                  {displayName}
+                                </div>
+                              );
+                            })
                           ) : (
-                            <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                            o.items && o.items.length > 0 ? (
+                              (() => {
+                                const firstName = o.items[0].name;
+                                const displayName = o.items.length > 1 ? `${firstName} 외 ${o.items.length - 1}종` : firstName;
+                                return (
+                                  <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {displayName}
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                            )
                           )}
                           {orderForwarders.map((_fw, fwIdx) => (
                             <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
