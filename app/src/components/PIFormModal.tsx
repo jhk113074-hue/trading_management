@@ -1727,42 +1727,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             >
                               🔍
                             </button>
-                            {(() => {
-                              const rawCode = getRawProductCode(it.productCode);
-                              const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (p) {
-                                      setEditingProd(p);
-                                      setIsProdModalOpen(true);
-                                    } else {
-                                      alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                    }
-                                  }}
-                                  disabled={!p}
-                                  title="선택된 상품 수정"
-                                  style={{
-                                    background: p ? '#fef08a' : '#f1f5f9',
-                                    border: p ? '1px solid #fef08a' : '1px solid #e2e8f0',
-                                    color: p ? '#a16207' : '#94a3b8',
-                                    borderRadius: '4px',
-                                    padding: '4px 6px',
-                                    cursor: p ? 'pointer' : 'not-allowed',
-                                    fontSize: '11px',
-                                    fontWeight: 600,
-                                    whiteSpace: 'nowrap',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginLeft: '2px'
-                                  }}
-                                >
-                                  ✏️
-                                </button>
-                              );
-                            })()}
                             <datalist id={`products_datalist_${idx}`}>
                               {products.map(p => {
                                 const displayName = p.nameEn || p.nameKo || '';
@@ -1774,6 +1738,42 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               })}
                             </datalist>
                           </div>
+                          {(() => {
+                            const rawCode = getRawProductCode(it.productCode);
+                            const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (p) {
+                                    setEditingProd(p);
+                                    setIsProdModalOpen(true);
+                                  } else {
+                                    alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                  }
+                                }}
+                                disabled={!p}
+                                title="선택된 상품 수정"
+                                style={{
+                                  background: p ? '#fef08a' : '#f1f5f9',
+                                  border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                  color: p ? '#a16207' : '#94a3b8',
+                                  borderRadius: '4px',
+                                  padding: '4px 6px',
+                                  cursor: p ? 'pointer' : 'not-allowed',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  whiteSpace: 'nowrap',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  height: '29px'
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            );
+                          })()}
                           {(() => {
                             const rawCode = getRawProductCode(it.productCode);
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
