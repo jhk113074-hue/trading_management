@@ -1006,134 +1006,62 @@ export const OrderDetail: React.FC = () => {
 
         {/* Right: 수주품목 명세요약 또는 운송비/컨테이너 정보 및 비용 */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeStep === '선적관리' ? (
-            <>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>🚚 운송비 & 컨테이너 정보 요약</div>
-              <div style={{ overflowY: 'auto', maxHeight: '220px', flex: 1 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>구분</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>상세 정보</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '130px' }}>비용 (KRW)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#4b5563' }}>지정 포워더</td>
-                      <td style={{ padding: '6px 8px', color: '#0f172a' }}>{basicForm.forwarderConfirmed || '-'}</td>
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>
-                        ₩{(basicForm.forwarderQuotationAmount || 0).toLocaleString()}
-                      </td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#4b5563' }}>Vessel 선박/항차</td>
-                      <td style={{ padding: '6px 8px', color: '#0f172a' }} colSpan={2}>{basicForm.vesselBooking || '-'}</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#4b5563' }}>컨테이너 볼륨/수량</td>
-                      <td style={{ padding: '6px 8px', color: '#0f172a' }} colSpan={2}>{basicForm.containerVolumeQuantities || '-'}</td>
-                    </tr>
-                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#4b5563' }}>작업 장소</td>
-                      <td style={{ padding: '6px 8px', color: '#0f172a' }} colSpan={2}>
-                        {basicForm.containerWorkspaceType ? `${basicForm.containerWorkspaceType} 작업` : '-'}
-                      </td>
-                    </tr>
-                    {basicForm.containerWorkspaceType === 'CFS' && (
-                      <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 600, color: '#4b5563' }}>CFS 입고일 / 주소</td>
-                        <td style={{ padding: '6px 8px', color: '#0f172a' }} colSpan={2}>
-                          {basicForm.cfsEntryDate ? `${basicForm.cfsEntryDate} / ` : ''}{basicForm.cfsAddress || '-'}
-                        </td>
-                      </tr>
-                    )}
-                    {/* Proforma Invoice 해상운임 (freightCharges) 정보 */}
-                    {piData && piData.freightCharges && piData.freightCharges.length > 0 && (
-                      <>
-                        <tr style={{ background: '#f8fafc', borderTop: '2px solid #e2e8f0', borderBottom: '1px solid #cbd5e1' }}>
-                          <td style={{ padding: '6px 8px', fontWeight: 700, color: '#1e3a8a' }} colSpan={2}>🚢 PI 해상운임 (Freight Charges)</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#1e3a8a' }}>USD</td>
+          <>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📋 수주품목 명세요약</div>
+            <div style={{ overflowY: 'auto', maxHeight: '220px', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>품목명</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '80px' }}>수량</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px' }}>단가</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '110px' }}>금액</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items && order.items.length > 0 ? (
+                    <>
+                      {order.items.map((it, idx) => {
+                        const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                        const totalAmt = price * (it.qty || 0);
+                        return (
+                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 600, color: '#334155' }} title={it.name}>{it.name}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{price?.toLocaleString()}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{it.currency === 'KRW' ? '₩' : '$'}{totalAmt?.toLocaleString()}</td>
+                          </tr>
+                        );
+                      })}
+                      {basicForm.forwarderQuotationAmount > 0 && (
+                        <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                          <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
                         </tr>
-                        {piData.freightCharges.map((fc: any, fcIdx: number) => (
-                          <tr key={fcIdx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '6px 8px', color: '#475569', fontWeight: 500 }}>{fc.type || fc.name}</td>
-                            <td style={{ padding: '6px 8px', color: '#0f172a' }}>{fc.qty} x ${fc.price?.toLocaleString()} {fc.remarks ? `(${fc.remarks})` : ''}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 600, color: '#334155' }}>
-                              ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                            </td>
-                          </tr>
-                        ))}
-                        <tr style={{ background: '#eff6ff', fontWeight: 700, borderTop: '1px solid #cbd5e1' }}>
-                          <td style={{ padding: '6px 8px', color: '#1d4ed8' }} colSpan={2}>PI 해상운임 합계</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1d4ed8' }}>
-                            ${(piData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                          </td>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {basicForm.forwarderQuotationAmount > 0 ? (
+                        <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                          <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
                         </tr>
-                      </>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📋 수주품목 명세요약</div>
-              <div style={{ overflowY: 'auto', maxHeight: '220px', flex: 1 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                      <th style={{ padding: '6px 8px', textAlign: 'left' }}>품목명</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '80px' }}>수량</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px' }}>단가</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '110px' }}>금액</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items && order.items.length > 0 ? (
-                      <>
-                        {order.items.map((it, idx) => {
-                          const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                          const totalAmt = price * (it.qty || 0);
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 8px', fontWeight: 600, color: '#334155' }} title={it.name}>{it.name}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{price?.toLocaleString()}</td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{it.currency === 'KRW' ? '₩' : '$'}{totalAmt?.toLocaleString()}</td>
-                            </tr>
-                          );
-                        })}
-                        {basicForm.forwarderQuotationAmount > 0 && (
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                            <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                          </tr>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {basicForm.forwarderQuotationAmount > 0 ? (
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                            <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                          </tr>
-                        ) : (
-                          <tr>
-                            <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 수주 품목이 없습니다.</td>
-                          </tr>
-                        )}
-                      </>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                      ) : (
+                        <tr>
+                          <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 수주 품목이 없습니다.</td>
+                        </tr>
+                      )}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         </div>
       </div>
 
