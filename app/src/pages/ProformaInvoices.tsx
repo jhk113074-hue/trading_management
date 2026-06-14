@@ -381,14 +381,14 @@ export const ProformaInvoices: React.FC = () => {
           <button
             onClick={() => setDateMode('daily')}
             style={{
-              padding: '6px 16px',
+              padding: '8px 18px',
               border: 'none',
               borderRadius: '6px',
               background: dateMode === 'daily' ? '#ffffff' : 'transparent',
               color: dateMode === 'daily' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '12px',
+              fontSize: '14px',
               boxShadow: dateMode === 'daily' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s'
             }}
@@ -398,14 +398,14 @@ export const ProformaInvoices: React.FC = () => {
           <button
             onClick={() => setDateMode('weekly')}
             style={{
-              padding: '6px 16px',
+              padding: '8px 18px',
               border: 'none',
               borderRadius: '6px',
               background: dateMode === 'weekly' ? '#ffffff' : 'transparent',
               color: dateMode === 'weekly' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '12px',
+              fontSize: '14px',
               boxShadow: dateMode === 'weekly' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s'
             }}
@@ -415,14 +415,14 @@ export const ProformaInvoices: React.FC = () => {
           <button
             onClick={() => setDateMode('range')}
             style={{
-              padding: '6px 16px',
+              padding: '8px 18px',
               border: 'none',
               borderRadius: '6px',
               background: dateMode === 'range' ? '#ffffff' : 'transparent',
               color: dateMode === 'range' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '12px',
+              fontSize: '14px',
               boxShadow: dateMode === 'range' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
               transition: 'all 0.15s'
             }}
@@ -434,33 +434,33 @@ export const ProformaInvoices: React.FC = () => {
         {/* ── 상세 날짜 선택 영역 ── */}
         {dateMode === 'daily' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-            <button onClick={handlePrevDay} style={{ padding: '8px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderRight: '1px solid #cbd5e1' }}>‹</button>
+            <button onClick={handlePrevDay} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569', borderRight: '1px solid #cbd5e1' }}>‹</button>
             <input
               type="date"
               value={selectedDate}
               onChange={e => setSelectedDate(e.target.value)}
               style={{
-                padding: '6px 12px',
+                padding: '8px 14px',
                 border: 'none',
                 outline: 'none',
-                fontSize: '13px',
+                fontSize: '15px',
                 fontWeight: 700,
                 color: '#1e293b',
                 cursor: 'pointer',
                 background: '#fff'
               }}
             />
-            <button onClick={handleNextDay} style={{ padding: '8px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderLeft: '1px solid #cbd5e1' }}>›</button>
+            <button onClick={handleNextDay} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569', borderLeft: '1px solid #cbd5e1' }}>›</button>
             {selectedDate !== new Date().toISOString().split('T')[0] && (
               <button
                 onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   border: 'none',
                   borderLeft: '1px solid #cbd5e1',
                   background: '#f0fdf4',
                   cursor: 'pointer',
-                  fontSize: '12px',
+                  fontSize: '14px',
                   fontWeight: 700,
                   color: '#16a34a'
                 }}
@@ -473,13 +473,13 @@ export const ProformaInvoices: React.FC = () => {
 
         {dateMode === 'weekly' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '8px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569' }}>‹</button>
-            <div style={{ padding: '8px 16px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#1d4ed8' : '#334155', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
+            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569' }}>‹</button>
+            <div style={{ padding: '10px 18px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#1d4ed8' : '#334155', fontWeight: 700, fontSize: '15px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
               📅 {formatWeekLabel(weekOffset)}
             </div>
-            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '8px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569' }}>›</button>
+            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569' }}>›</button>
             {weekOffset !== 0 && (
-              <button onClick={() => setWeekOffset(0)} style={{ padding: '8px 12px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+              <button onClick={() => setWeekOffset(0)} style={{ padding: '10px 14px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
             )}
           </div>
         )}
@@ -492,104 +492,104 @@ export const ProformaInvoices: React.FC = () => {
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: '#1e293b',
                   cursor: 'pointer'
                 }}
               />
-              <span style={{ padding: '0 10px', color: '#94a3b8', fontSize: '13px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '34px', display: 'flex', alignItems: 'center' }}>~</span>
+              <span style={{ padding: '0 12px', color: '#94a3b8', fontSize: '15px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '38px', display: 'flex', alignItems: 'center' }}>~</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   fontWeight: 700,
                   color: '#1e293b',
                   cursor: 'pointer'
                 }}
               />
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={() => setRangePreset('today')} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>오늘</button>
-              <button onClick={() => setRangePreset('week')} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번주</button>
-              <button onClick={() => setRangePreset('month')} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번달</button>
-              <button onClick={() => setRangePreset('all')} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>전체</button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => setRangePreset('today')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>오늘</button>
+              <button onClick={() => setRangePreset('week')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번주</button>
+              <button onClick={() => setRangePreset('month')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번달</button>
+              <button onClick={() => setRangePreset('all')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>전체</button>
             </div>
           </div>
         )}
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', minWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}>
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', minWidth: '190px', fontSize: '15px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}>
           <option value="">👥 전체 고객</option>
           {Object.entries(customers).map(([id, c]) => (
             <option key={id} value={id}>{c.name}</option>
           ))}
         </select>
         
-        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '8px 14px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '200px', fontSize: '13px', outline: 'none' }} />
+        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '220px', fontSize: '15px', outline: 'none' }} />
  
-        <span style={{ marginLeft: 'auto', fontSize: '14px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '6px 12px', borderRadius: '20px' }}>
+        <span style={{ marginLeft: 'auto', fontSize: '16px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '8px 16px', borderRadius: '20px' }}>
           총 {filteredAndSorted.length}건
         </span>
       </div>
 
       {/* Table Card */}
       <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
             <tr>
-              <th onClick={() => handleSort('piDate')} style={{ padding: '14px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('piDate')} style={{ padding: '16px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 DATE {getSortIcon('piDate')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piDate', e)} />
               </th>
-              <th onClick={() => handleSort('piNumber')} style={{ padding: '14px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('piNumber')} style={{ padding: '16px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 PI NUMBER {getSortIcon('piNumber')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piNumber', e)} />
               </th>
-              <th onClick={() => handleSort('currentVersion')} style={{ padding: '14px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #e2e8f0', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('currentVersion')} style={{ padding: '16px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #e2e8f0', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 VER. {getSortIcon('currentVersion')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('currentVersion', e)} />
               </th>
-              <th onClick={() => handleSort('customerName')} style={{ padding: '14px 10px', cursor: 'pointer', borderRight: '1px solid #e2e8f0', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('customerName')} style={{ padding: '16px 10px', cursor: 'pointer', borderRight: '1px solid #e2e8f0', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 CUSTOMER {getSortIcon('customerName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('customerName', e)} />
               </th>
-              <th style={{ padding: '14px 10px', borderRight: '1px solid #e2e8f0', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th style={{ padding: '16px 10px', borderRight: '1px solid #e2e8f0', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 ITEMS
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('itemsSummary', e)} />
               </th>
-              <th onClick={() => handleSort('totalUsd')} style={{ padding: '14px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('totalUsd')} style={{ padding: '16px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 TOTAL (USD) {getSortIcon('totalUsd')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('totalUsd', e)} />
               </th>
-              <th style={{ padding: '14px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th style={{ padding: '16px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 ISSUER
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('issuingCompany', e)} />
               </th>
-              <th onClick={() => handleSort('createdByName')} style={{ padding: '14px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('createdByName')} style={{ padding: '16px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #e2e8f0', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 WRITER {getSortIcon('createdByName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('createdByName', e)} />
               </th>
-              <th style={{ padding: '14px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>작업</th>
+              <th style={{ padding: '16px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>작업</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>데이터 로딩 중...</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>데이터 로딩 중...</td></tr>
             ) : filteredAndSorted.length === 0 ? (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>검색 결과가 없습니다</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280', fontSize: '15px' }}>검색 결과가 없습니다</td></tr>
             ) : (
               filteredAndSorted.map(p => {
                 const issuerBadge = p.issuingCompany === 'YS' 
-                                 ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 10px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
-                                 : <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 10px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+                                 ? <span style={{ fontSize: '13px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
+                                 : <span style={{ fontSize: '13px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
 
                 return (
                   <tr 
@@ -598,34 +598,34 @@ export const ProformaInvoices: React.FC = () => {
                     className="hover-row"
                     onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
                   >
-                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '12px 10px', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', fontSize: '13.5px' }}>{p.piNumber || '-'}</td>
-                    <td style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>
+                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '15px', fontWeight: 500 }}>{p.piDate || '-'}</td>
+                    <td style={{ padding: '12px 10px', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', fontSize: '15.5px' }}>{p.piNumber || '-'}</td>
+                    <td style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', color: '#94a3b8', fontSize: '15px', fontWeight: 600 }}>
                       {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
                     </td>
-                    <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12.5px', color: '#475569', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '15.5px' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', fontSize: '14.5px', color: '#475569', verticalAlign: 'middle' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {p.itemsSummary.slice(0, 3).map((item, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: '#94a3b8', fontSize: '8px' }}>•</span>
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ color: '#94a3b8', fontSize: '10px' }}>•</span>
                               <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.4' }}>{item}</span>
                             </div>
                           ))}
                           {p.itemsSummary.length > 3 && (
-                            <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '11px', marginTop: '2px', paddingLeft: '8px' }}>
+                            <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '13px', marginTop: '2px', paddingLeft: '10px' }}>
                               + 외 {p.itemsSummary.length - 3}건
                             </div>
                           )}
                         </div>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '14.5px' }}>
+                    <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '16.5px' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{issuerBadge}</td>
-                    <td style={{ padding: '12px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
+                    <td style={{ padding: '12px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '15px', fontWeight: 500 }}>
                       {(() => {
                         const name = p.createdByName || '-';
                         if (name === 'jhkim1130' || name === '대표이사 김주한') return '김주한';
@@ -640,12 +640,12 @@ export const ProformaInvoices: React.FC = () => {
                             background: '#eff6ff', 
                             color: '#1d4ed8', 
                             border: '1px solid #bfdbfe', 
-                            padding: '4px 10px', 
+                            padding: '6px 12px', 
                             borderRadius: '6px', 
-                            fontSize: '11.5px', 
+                            fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '52px',
+                            width: '60px',
                             transition: 'background-color 0.2s, border-color 0.2s' 
                           }}
                           onMouseEnter={e => {
@@ -665,12 +665,12 @@ export const ProformaInvoices: React.FC = () => {
                             background: '#ecfdf5', 
                             color: '#047857', 
                             border: '1px solid #a7f3d0', 
-                            padding: '4px 10px', 
+                            padding: '6px 12px', 
                             borderRadius: '6px', 
-                            fontSize: '11.5px', 
+                            fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '52px',
+                            width: '60px',
                             transition: 'background-color 0.2s, border-color 0.2s'
                           }}
                           onMouseEnter={e => {
@@ -690,12 +690,12 @@ export const ProformaInvoices: React.FC = () => {
                             background: '#fef2f2', 
                             color: '#b91c1c', 
                             border: '1px solid #fecaca', 
-                            padding: '4px 10px', 
+                            padding: '6px 12px', 
                             borderRadius: '6px', 
-                            fontSize: '11.5px', 
+                            fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '52px',
+                            width: '60px',
                             transition: 'background-color 0.2s, border-color 0.2s'
                           }}
                           onMouseEnter={e => {
