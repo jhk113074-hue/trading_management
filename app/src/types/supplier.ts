@@ -11,6 +11,7 @@ export interface Supplier {
   managerPhone: string;
   bankKrw?: string;
   bankUsd?: string;
+  category?: '공급사' | '포워딩사' | '';
   createdAt?: any;
   updatedAt?: any;
 }

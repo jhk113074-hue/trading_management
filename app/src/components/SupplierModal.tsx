@@ -13,12 +13,16 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
 
   const [formData, setFormData] = useState<Partial<Supplier>>({
     supplierCode: '', name: '', bizNumber: '', representative: '',
-    phone: '', purchaseEmail: '', address: '', managerName: '', managerPhone: ''
+    phone: '', purchaseEmail: '', address: '', managerName: '', managerPhone: '',
+    category: '공급사'
   });
 
   useEffect(() => {
     if (initialSupplier) {
-      setFormData(initialSupplier);
+      setFormData({
+        category: '공급사',
+        ...initialSupplier
+      });
     }
   }, [initialSupplier]);
 
@@ -108,6 +112,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
               <Input label="공급업체명 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: 국도화학 주식회사" />
               <Input label="사업자등록번호" value={formData.bizNumber} onChange={(v: any) => handleChange('bizNumber', v)} placeholder="000-00-00000" />
               <Input label="대표자명" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="대표이사 성명" />
+              <Select label="업체 구분" value={formData.category || '공급사'} onChange={(v: any) => handleChange('category', v)} options={['공급사', '포워딩사']} />
             </div>
 
             <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#0891b2', marginBottom: '12px', borderLeft: '3px solid #0891b2', paddingLeft: '8px' }}>📞 연락처정보</div>
@@ -153,5 +158,16 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
     <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>{label}</label>
     <input type={type} value={value ?? ''} onChange={e => onChange(e.target.value)} disabled={disabled} placeholder={placeholder} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f9fafb' : '#fff' }} />
+  </div>
+);
+
+const Select = ({ label, value, onChange, options, disabled = false }: any) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+    <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>{label}</label>
+    <select value={value ?? ''} onChange={e => onChange(e.target.value)} disabled={disabled} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f9fafb' : '#fff' }}>
+      {options.map((opt: string) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
   </div>
 );

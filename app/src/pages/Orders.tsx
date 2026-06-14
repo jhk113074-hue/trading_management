@@ -1208,9 +1208,20 @@ export const Orders: React.FC = () => {
                             const parts = [];
                             if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                             if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
+                            
+                            const customsRate = o.customsExchangeRate || o.exchangeRate || 1400;
+                            const consolidatedKrw = Math.round(totalUsd * customsRate) + totalKrw;
+                            
                             return (
-                              <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', boxSizing: 'border-box' }}>
-                                  {parts.join(' / ') || '-'}
+                              <div style={{ height: '38px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '0 8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }} title={`적용 환율: ₩${customsRate}`}>
+                                {totalUsd > 0 ? (
+                                  <>
+                                    <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, lineHeight: '1.1' }}>{parts.join(' / ')}</div>
+                                    <div style={{ color: '#0f766e', fontSize: '12px', fontWeight: 800, lineHeight: '1.2', marginTop: '1px' }}>₩{consolidatedKrw.toLocaleString()}</div>
+                                  </>
+                                ) : (
+                                  <div style={{ fontSize: '12.5px', fontWeight: 800 }}>₩{totalKrw.toLocaleString()}</div>
+                                )}
                               </div>
                             );
                           })()}

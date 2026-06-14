@@ -4,6 +4,7 @@ import { db, COMPANY_ID } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
+import type { Supplier } from '../types/supplier';
 
 interface Props {
   order: Order;
@@ -17,6 +18,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
+  const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
 
   // Local state fields
   const [customer, setCustomer] = useState(order.customer || '');
@@ -93,8 +95,11 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
         const quoteSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'proforma_invoices'));
         setQuotations(quoteSnap.docs.map(d => ({ id: d.id, ...d.data() } as ProformaInvoice)));
+
+        const supSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'suppliers'));
+        setSuppliersList(supSnap.docs.map(d => ({ id: d.id, ...d.data() } as Supplier)));
       } catch (err) {
-        console.error("QuickEditModal: Failed to load customers/quotes:", err);
+        console.error("QuickEditModal: Failed to load customers/quotes/suppliers:", err);
       }
     };
     loadData();
@@ -617,13 +622,23 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               ) : (
                 forwarders.map((fw, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                    <input
-                      type="text"
+                    <select
                       value={fw.name}
                       onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
-                      placeholder="예: Pantos Logistics"
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
-                    />
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', width: '100%', color: '#1e293b', fontWeight: 500 }}
+                    >
+                      <option value="">-- 포워딩사 선택 --</option>
+                      {suppliersList
+                        .filter(s => s.category === '포워딩사')
+                        .map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))
+                      }
+                      <option value="포워딩업체-운송비">포워딩업체-운송비</option>
+                      {fw.name && fw.name !== '포워딩업체-운송비' && !suppliersList.some(s => s.name === fw.name && s.category === '포워딩사') && (
+                        <option value={fw.name}>{fw.name} (임시/수동 입력)</option>
+                      )}
+                    </select>
                     <input
                       type="number"
                       step="1"

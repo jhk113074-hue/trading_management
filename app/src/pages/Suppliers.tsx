@@ -227,7 +227,14 @@ export const Suppliers: React.FC = () => {
             ) : (
               filteredAndSorted.map(s => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
-                  <td style={{ padding: '12px' }}><strong style={{ color: '#0891b2' }}>{s.supplierCode || '-'}</strong></td>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <strong style={{ color: '#0891b2' }}>{s.supplierCode || '-'}</strong>
+                      {s.category === '포워딩사' && (
+                        <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700, backgroundColor: '#f5f3ff', color: '#7c3aed', border: '1px solid #ddd6fe', whiteSpace: 'nowrap' }}>포워더</span>
+                      )}
+                    </div>
+                  </td>
                   <td style={{ padding: '12px' }}>
                     <div style={{ fontWeight: 600, color: '#111827' }}>{s.name || '-'}</div>
                     <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>대표: {s.representative || '-'}</div>
