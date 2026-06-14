@@ -589,7 +589,7 @@ export const ProformaInvoices: React.FC = () => {
                 return (
                   <tr 
                     key={p.id} 
-                    style={{ borderBottom: '1px solid #e2e8f0', height: '110px', transition: 'background-color 0.2s' }} 
+                    style={{ borderBottom: '1px solid #e2e8f0', height: '80px', transition: 'background-color 0.2s' }} 
                     className="hover-row"
                     onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
                   >
@@ -603,21 +603,16 @@ export const ProformaInvoices: React.FC = () => {
                       )}
                     </td>
                     <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '15.5px' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', fontSize: '14.5px', color: '#475569', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14.5px', color: '#475569', verticalAlign: 'middle' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {p.itemsSummary.slice(0, 3).map((item, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ color: '#94a3b8', fontSize: '10px' }}>•</span>
-                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '1.4' }}>{item}</span>
-                            </div>
-                          ))}
-                          {p.itemsSummary.length > 3 && (
-                            <div style={{ color: '#2563eb', fontWeight: 700, fontSize: '13px', marginTop: '2px', paddingLeft: '10px' }}>
-                              + 외 {p.itemsSummary.length - 3}건
-                            </div>
+                        <span title={p.itemsSummary.join(', ')}>
+                          {p.itemsSummary[0]}
+                          {p.itemsSummary.length > 1 && (
+                            <span style={{ color: '#2563eb', fontWeight: 700, marginLeft: '6px' }}>
+                              외 {p.itemsSummary.length - 1}종
+                            </span>
                           )}
-                        </div>
+                        </span>
                       ) : '-'}
                     </td>
                     <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '16.5px' }}>
