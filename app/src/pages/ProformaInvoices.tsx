@@ -103,7 +103,7 @@ export const ProformaInvoices: React.FC = () => {
     totalUsd: 120,
     issuingCompany: 85,
     createdByName: 75,
-    action: 150
+    action: 170
   });
 
   // Load saved column widths from localStorage on load
@@ -627,19 +627,19 @@ export const ProformaInvoices: React.FC = () => {
                       })()}
                     </td>
                     <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                         <button 
                           onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
                           style={{ 
                             background: '#eff6ff', 
                             color: '#1d4ed8', 
                             border: '1px solid #bfdbfe', 
-                            padding: '6px 12px', 
+                            padding: '6px 8px', 
                             borderRadius: '6px', 
                             fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '60px',
+                            width: '48px',
                             transition: 'background-color 0.2s, border-color 0.2s' 
                           }}
                           onMouseEnter={e => {
@@ -659,12 +659,12 @@ export const ProformaInvoices: React.FC = () => {
                             background: '#ecfdf5', 
                             color: '#047857', 
                             border: '1px solid #a7f3d0', 
-                            padding: '6px 12px', 
+                            padding: '6px 8px', 
                             borderRadius: '6px', 
                             fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '60px',
+                            width: '48px',
                             transition: 'background-color 0.2s, border-color 0.2s'
                           }}
                           onMouseEnter={e => {
@@ -684,12 +684,12 @@ export const ProformaInvoices: React.FC = () => {
                             background: '#fef2f2', 
                             color: '#b91c1c', 
                             border: '1px solid #fecaca', 
-                            padding: '6px 12px', 
+                            padding: '6px 8px', 
                             borderRadius: '6px', 
                             fontSize: '13.5px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '60px',
+                            width: '48px',
                             transition: 'background-color 0.2s, border-color 0.2s'
                           }}
                           onMouseEnter={e => {
