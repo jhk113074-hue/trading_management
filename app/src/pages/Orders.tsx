@@ -1029,10 +1029,10 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            준비: {o.cargoReadyDate || '-'}
+                            {o.cargoReadyDate || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            입고: {o.cfsEntryDate || '-'}
+                            {o.cfsEntryDate || '-'}
                           </div>
                         </td>
                       )}
@@ -1043,10 +1043,10 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            선명: {o.vesselBooking || '-'}
+                            {o.vesselBooking || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            VOL: {o.containerVolumeQuantities || '-'}
+                            {o.containerVolumeQuantities || '-'}
                           </div>
                         </td>
                       )}
@@ -1057,10 +1057,10 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            번호: {o.exportDeclarationNo || '-'}
+                            {o.exportDeclarationNo || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            환율: {o.customsExchangeRate ? `₩${Number(o.customsExchangeRate).toLocaleString()}` : '-'}
+                            {o.customsExchangeRate ? `₩${Number(o.customsExchangeRate).toLocaleString()}` : '-'}
                           </div>
                         </td>
                       )}
@@ -1071,13 +1071,13 @@ export const Orders: React.FC = () => {
                           style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            서류: {o.docsDeadlineDate || '-'}
+                            {o.docsDeadlineDate || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0284c7', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            ETD: {o.etd || '-'}
+                            {o.etd || '-'}
                           </div>
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0369a1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                            ETA: {o.eta || '-'}
+                            {o.eta || '-'}
                           </div>
                         </td>
                       )}
