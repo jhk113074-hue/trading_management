@@ -758,7 +758,10 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('paymentTerms')}
                     style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.paymentTerms, minWidth: colWidths.paymentTerms, maxWidth: colWidths.paymentTerms, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    LC/TT {sortField === 'paymentTerms' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <span>LC</span>
+                      <span>TT {sortField === 'paymentTerms' && (sortOrder === 'asc' ? '▲' : '▼')}</span>
+                    </div>
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('paymentTerms', e)} />
                   </th>
                 )}
@@ -767,7 +770,10 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('cargoReady')}
                     style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    화물준비 / CFS입고 {sortField === 'cargoReady' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <span>화물준비</span>
+                      <span>CFS입고 {sortField === 'cargoReady' && (sortOrder === 'asc' ? '▲' : '▼')}</span>
+                    </div>
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('cargoReady', e)} />
                   </th>
                 )}
@@ -777,7 +783,10 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('volumeVessel')}
                     style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    선명·항차 / VOLUME
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <span>선명·항차</span>
+                      <span>VOLUME</span>
+                    </div>
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('volumeVessel', e)} />
                   </th>
                 )}
@@ -787,7 +796,10 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('exportNo')}
                     style={{ padding: '10px 8px', fontWeight: 700, textAlign: 'center', borderRight: '1px solid #cbd5e1', position: 'relative', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    수출신고번호/면장환율 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <span>수출신고번호</span>
+                      <span>면장환율 {sortField === 'exportNo' && (sortOrder === 'asc' ? '▲' : '▼')}</span>
+                    </div>
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('exportNo', e)} />
                   </th>
                 )}
@@ -797,7 +809,11 @@ export const Orders: React.FC = () => {
                     onClick={() => handleSort('etd')}
                     style={{ padding: '10px 8px', fontWeight: 700, borderRight: '1px solid #cbd5e1', textAlign: 'center', position: 'relative', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', userSelect: 'none' }}
                   >
-                    서류마감/ETD/ETA {sortField === 'etd' && (sortOrder === 'asc' ? '▲' : '▼')}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+                      <span>서류마감</span>
+                      <span>ETD</span>
+                      <span>ETA {sortField === 'etd' && (sortOrder === 'asc' ? '▲' : '▼')}</span>
+                    </div>
                     <ResizeHandle onMouseDown={(e) => handleResizeStart('shipmentSchedule', e)} />
                   </th>
                 )}
