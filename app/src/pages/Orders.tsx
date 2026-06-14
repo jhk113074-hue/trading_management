@@ -1175,54 +1175,63 @@ export const Orders: React.FC = () => {
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierAmount', title: '발주금액 수정' }); }}
                           style={{ padding: '0', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', borderRight: '1px solid #cbd5e1' }}
                         >
-                          {suppliers.length > 0 ? (
-                            suppliers.map((sup, sIdx) => {
-                              const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
-                              const parts = [];
-                              if (amt.usd > 0) parts.push(`$${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                              if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
-                              const amtStr = parts.join(' / ') || '-';
-                              return (
-                                <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
-                                  {amtStr}
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
-                          )}
-                          {orderForwarders.map((fw, fwIdx) => (
-                            <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
-                              {fw.freightCurrency === 'USD'
-                                ? `$${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                                : `₩${(fw.freightAmount || 0).toLocaleString()}`
-                              }
-                            </div>
-                          ))}
-                          {/* 합계 행 (Subtotal 레이블에 대응) */}
                           {(() => {
-                            const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0)
-                              + orderForwarders.filter(fw => fw.freightCurrency === 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
-                            const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0)
-                              + orderForwarders.filter(fw => fw.freightCurrency !== 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
-                            const parts = [];
-                            if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                            if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
-                            
                             const customsRate = o.customsExchangeRate || o.exchangeRate || 1400;
-                            const consolidatedKrw = Math.round(totalUsd * customsRate) + totalKrw;
-                            
                             return (
-                              <div style={{ height: '38px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '0 8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }} title={`적용 환율: ₩${customsRate}`}>
-                                {totalUsd > 0 ? (
-                                  <>
-                                    <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, lineHeight: '1.1' }}>{parts.join(' / ')}</div>
-                                    <div style={{ color: '#0f766e', fontSize: '12px', fontWeight: 800, lineHeight: '1.2', marginTop: '1px' }}>₩{consolidatedKrw.toLocaleString()}</div>
-                                  </>
+                              <>
+                                {suppliers.length > 0 ? (
+                                  suppliers.map((sup, sIdx) => {
+                                    const amt = supplierAmounts[sup] || { usd: 0, krw: 0 };
+                                    let displayStr = '-';
+                                    if (amt.usd > 0 && amt.krw > 0) {
+                                      const converted = Math.round(amt.usd * customsRate) + amt.krw;
+                                      displayStr = `₩${converted.toLocaleString()} ($${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
+                                    } else if (amt.usd > 0) {
+                                      const converted = Math.round(amt.usd * customsRate);
+                                      displayStr = `₩${converted.toLocaleString()} ($${amt.usd.toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
+                                    } else if (amt.krw > 0) {
+                                      displayStr = `₩${amt.krw.toLocaleString()}`;
+                                    }
+                                    return (
+                                      <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }} title={`수출신고환율: ₩${customsRate}`}>
+                                        {displayStr}
+                                      </div>
+                                    );
+                                  })
                                 ) : (
-                                  <div style={{ fontSize: '12.5px', fontWeight: 800 }}>₩{totalKrw.toLocaleString()}</div>
+                                  <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                                 )}
-                              </div>
+                                
+                                {orderForwarders.map((fw, fwIdx) => {
+                                  let displayStr = '-';
+                                  if (fw.freightCurrency === 'USD') {
+                                    const converted = Math.round((fw.freightAmount || 0) * customsRate);
+                                    displayStr = `₩${converted.toLocaleString()} ($${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
+                                  } else {
+                                    displayStr = `₩${(fw.freightAmount || 0).toLocaleString()}`;
+                                  }
+                                  return (
+                                    <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }} title={`수출신고환율: ₩${customsRate}`}>
+                                      {displayStr}
+                                    </div>
+                                  );
+                                })}
+
+                                {/* 합계 행 (Subtotal 레이블에 대응) - 최종합계는 원화(KRW)로만 표시 */}
+                                {(() => {
+                                  const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0)
+                                    + orderForwarders.filter(fw => fw.freightCurrency === 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
+                                  const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0)
+                                    + orderForwarders.filter(fw => fw.freightCurrency !== 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
+                                  const consolidatedKrw = Math.round(totalUsd * customsRate) + totalKrw;
+                                  
+                                  return (
+                                    <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 800, color: '#0f766e', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', boxSizing: 'border-box' }} title={`적용 환율: ₩${customsRate}`}>
+                                      ₩{consolidatedKrw.toLocaleString()}
+                                    </div>
+                                  );
+                                })()}
+                              </>
                             );
                           })()}
                         </td>
