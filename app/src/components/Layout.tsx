@@ -110,7 +110,7 @@ export const Layout: React.FC = () => {
           borderRight: sidebarCollapsed ? 'none' : '1px solid var(--border-color)'
         }}
       >
-        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', height: '64px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '0 16px' }}>
+        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', height: '72px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '0 16px' }}>
           <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '44px', objectFit: 'contain' }} />
         </Link>
 
@@ -182,7 +182,7 @@ export const Layout: React.FC = () => {
               style={{
                 background: 'transparent',
                 border: 'none',
-                fontSize: '24px',
+                fontSize: '28px',
                 cursor: 'pointer',
                 color: '#475569',
                 display: 'flex',
@@ -190,7 +190,8 @@ export const Layout: React.FC = () => {
                 justifyContent: 'center',
                 padding: '8px',
                 borderRadius: '6px',
-                transition: 'background 0.1s'
+                transition: 'background 0.1s',
+                lineHeight: 1
               }}
               onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -199,7 +200,7 @@ export const Layout: React.FC = () => {
               ☰
             </button>
             <div style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
-              <span style={{ color: '#dc2626', marginRight: '6px' }}>YSACC</span>
+              <span style={{ color: '#be123c', marginRight: '6px' }}>YSACC</span>
               <span style={{ color: '#334155' }}>업무포탈</span>
             </div>
           </div>
