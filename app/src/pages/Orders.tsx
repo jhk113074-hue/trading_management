@@ -1026,7 +1026,7 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('cargoReady') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'cargoReady', title: '화물준비 / CFS입고 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.cargoReady, minWidth: colWidths.cargoReady, maxWidth: colWidths.cargoReady, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.cargoReadyDate || '-'}
@@ -1040,7 +1040,7 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('volumeVessel') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'volumeVessel', title: 'VOLUME / 선명·항차 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.volumeVessel, minWidth: colWidths.volumeVessel, maxWidth: colWidths.volumeVessel, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.vesselBooking || '-'}
@@ -1054,7 +1054,7 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('exportNo') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'exportNo', title: '수출신고번호 / 면장환율 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.exportNo, minWidth: colWidths.exportNo, maxWidth: colWidths.exportNo, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.exportDeclarationNo || '-'}
@@ -1068,7 +1068,7 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('shipmentSchedule') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'shipmentSchedule', title: '서류마감 / ETD / ETA 수정' }); }}
-                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'top', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', borderRight: '1px solid #cbd5e1', verticalAlign: 'middle', width: colWidths.shipmentSchedule, minWidth: colWidths.shipmentSchedule, maxWidth: colWidths.shipmentSchedule, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
                         >
                           <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                             {o.docsDeadlineDate || '-'}
