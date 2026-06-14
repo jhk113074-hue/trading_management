@@ -1780,7 +1780,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             if (p && p.supplierName) {
                               return (
                                 <span style={{ fontSize: '12.5px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px' }} title={p.supplierName}>
-                                  {p.supplierName}
+                                  {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
                                 </span>
                               );
                             }

@@ -150,6 +150,10 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           payload.quotationId = quotationId;
           payload.totalAmount = totalAmount;
           payload.exchangeRate = exchangeRate;
+          payload.forwarders = forwarders;
+          payload.forwarderConfirmed = forwarders[0]?.name || '';
+          payload.forwarderFreightAmount = forwarders[0]?.freightAmount || 0;
+          payload.forwarderFreightCurrency = forwarders[0]?.freightCurrency || 'KRW';
           break;
         case 'supplier':
         case 'items':
@@ -415,6 +419,20 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                   setQuotationId(val);
                   if (val && piMap[val] !== undefined) {
                     setTotalAmount(piMap[val]);
+                  }
+                  if (val) {
+                    const selectedQuote = quotations.find(q => q.id === val);
+                    if (selectedQuote && selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
+                      setForwarders([{
+                        name: '포워딩업체-운송비',
+                        freightAmount: selectedQuote.freightTotal,
+                        freightCurrency: 'USD'
+                      }]);
+                    } else {
+                      setForwarders([]);
+                    }
+                  } else {
+                    setForwarders([]);
                   }
                 }}
                 style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}

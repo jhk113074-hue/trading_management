@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, doc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
-import type { Order, OrderItem } from '../types/order';
+import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 import type { Product } from '../types/product';
@@ -39,6 +39,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [items, setItems] = useState<Partial<OrderItem>[]>([
     { itemId: '1', name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' }
   ]);
+
+  const [forwarders, setForwarders] = useState<ForwarderEntry[]>([]);
 
   // Load Customers, Quotations & Products
   useEffect(() => {
@@ -118,6 +120,19 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
     if (field === 'quotationId' && value) {
       fetchQuoteItems(value);
+
+      const selectedQuote = quotations.find(q => q.id === value);
+      if (selectedQuote && selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
+        setForwarders([{
+          name: '포워딩업체-운송비',
+          freightAmount: selectedQuote.freightTotal,
+          freightCurrency: 'USD'
+        }]);
+      } else {
+        setForwarders([]);
+      }
+    } else if (field === 'quotationId' && !value) {
+      setForwarders([]);
     }
   };
 
@@ -277,7 +292,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         poIssuedAt: null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        issuingCompany: formData.issuingCompany
+        issuingCompany: formData.issuingCompany,
+        forwarders: forwarders,
+        forwarderConfirmed: forwarders[0]?.name || '',
+        forwarderFreightAmount: forwarders[0]?.freightAmount || 0,
+        forwarderFreightCurrency: (forwarders[0]?.freightCurrency || 'KRW') as any
       };
 
       // 1. Save to orders collection

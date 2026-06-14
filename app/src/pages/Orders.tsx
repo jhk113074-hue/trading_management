@@ -1105,24 +1105,24 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('supplier') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplier', title: '구입사 / 포워딩사 수정' }); }}
-                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplier, minWidth: colWidths.supplier, maxWidth: colWidths.supplier, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplier, minWidth: colWidths.supplier, maxWidth: colWidths.supplier, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', borderRight: '1px solid #cbd5e1' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => (
-                              <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                                 {sup}
                               </div>
                             ))
                           ) : (
-                            <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                            <div style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                           )}
                           {orderForwarders.map((fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                               🚢 {fw.name}
                             </div>
                           ))}
                           {/* 오더 Subtotal 레이블 행 */}
-                          <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                          <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
                             Sub total
                           </div>
                         </td>
@@ -1131,16 +1131,16 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('items') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'items', title: '품목 수정' }); }}
-                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.items, minWidth: colWidths.items, maxWidth: colWidths.items, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.items, minWidth: colWidths.items, maxWidth: colWidths.items, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', borderRight: '1px solid #cbd5e1' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => {
                               const sItems = (o.items || []).filter(it => it.supplier === sup);
-                              if (sItems.length === 0) return <div key={sIdx} style={{ padding: '8px', fontSize: '11px', color: '#94a3b8' }}>-</div>;
+                              if (sItems.length === 0) return <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>;
                               const firstName = sItems[0].name;
                               const displayName = sItems.length > 1 ? `${firstName} 외 ${sItems.length - 1}종` : firstName;
                               return (
-                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sItems.map(x => x.name).join(', ')}>
+                                <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }} title={sItems.map(x => x.name).join(', ')}>
                                   {displayName}
                                 </div>
                               );
@@ -1151,29 +1151,29 @@ export const Orders: React.FC = () => {
                                 const firstName = o.items[0].name;
                                 const displayName = o.items.length > 1 ? `${firstName} 외 ${o.items.length - 1}종` : firstName;
                                 return (
-                                  <div style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  <div style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                                     {displayName}
                                   </div>
                                 );
                               })()
                             ) : (
-                              <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                              <div style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                             )
                           )}
                           {orderForwarders.map((_fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                               운송비
                             </div>
                           ))}
                           {/* Subtotal 지시자 행 */}
-                          <div style={{ padding: '8px', backgroundColor: '#f1f5f9', color: 'transparent' }}>-</div>
+                          <div style={{ height: '38px', display: 'flex', alignItems: 'center', backgroundColor: '#f1f5f9', color: 'transparent', boxSizing: 'border-box' }}>-</div>
                         </td>
                       )}
                       
                       {visibleCols.includes('supplierAmount') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierAmount', title: '발주금액 수정' }); }}
-                          style={{ padding: '0', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', textAlign: 'right', verticalAlign: 'top', width: colWidths.supplierAmount, minWidth: colWidths.supplierAmount, maxWidth: colWidths.supplierAmount, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', borderRight: '1px solid #cbd5e1' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => {
@@ -1183,16 +1183,16 @@ export const Orders: React.FC = () => {
                               if (amt.krw > 0) parts.push(`₩${amt.krw.toLocaleString()}`);
                               const amtStr = parts.join(' / ') || '-';
                               return (
-                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                                   {amtStr}
                                 </div>
                               );
                             })
                           ) : (
-                            <div style={{ padding: '8px', color: '#94a3b8' }}>-</div>
+                            <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                           )}
                           {orderForwarders.map((fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
+                            <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                               {fw.freightCurrency === 'USD'
                                 ? `$${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                 : `₩${(fw.freightAmount || 0).toLocaleString()}`
@@ -1209,8 +1209,8 @@ export const Orders: React.FC = () => {
                             if (totalUsd > 0) parts.push(`$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                             if (totalKrw > 0) parts.push(`₩${totalKrw.toLocaleString()}`);
                             return (
-                              <div style={{ padding: '8px', fontSize: '11px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'right' }}>
-                                {parts.join(' / ') || '-'}
+                              <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13.5px', fontWeight: 800, color: '#1e293b', backgroundColor: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', boxSizing: 'border-box' }}>
+                                  {parts.join(' / ') || '-'}
                               </div>
                             );
                           })()}
@@ -1221,27 +1221,27 @@ export const Orders: React.FC = () => {
                       {visibleCols.includes('supplierRemitted') && (
                         <td 
                           onClick={(e) => { e.stopPropagation(); setEditingCell({ order: o, colKey: 'supplierRemitted', title: '결제일 및 상태 수정' }); }}
-                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplierRemitted, minWidth: colWidths.supplierRemitted, maxWidth: colWidths.supplierRemitted, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer' }}
+                          style={{ padding: '0', verticalAlign: 'top', width: colWidths.supplierRemitted, minWidth: colWidths.supplierRemitted, maxWidth: colWidths.supplierRemitted, boxSizing: 'border-box', overflow: 'hidden', cursor: 'pointer', borderRight: '1px solid #cbd5e1' }}
                         >
                           {suppliers.length > 0 ? (
                             suppliers.map((sup, sIdx) => {
                               const pay = o.supplierPayments?.[sup];
                               const dateStr = pay?.date || '-';
                               return (
-                                <div key={sIdx} style={{ padding: '8px', fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
+                                <div key={sIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', fontSize: '13.5px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>
                                   {dateStr}
                                 </div>
                               );
                             })
                           ) : (
-                            <div style={{ padding: '8px', color: '#94a3b8', textAlign: 'center' }}>-</div>
+                            <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', color: '#94a3b8', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                           )}
                           {/* 포워더 행 - 포워더마다 1행 */}
                           {orderForwarders.map((_fw, fwIdx) => (
-                            <div key={fwIdx} style={{ padding: '8px', color: 'transparent' }}>-</div>
+                            <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', color: 'transparent', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }}>-</div>
                           ))}
                           {/* Subtotal 행 - 항상 */}
-                          <div style={{ padding: '8px', backgroundColor: '#f1f5f9', color: 'transparent' }}>-</div>
+                          <div style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 8px', backgroundColor: '#f1f5f9', color: 'transparent', boxSizing: 'border-box' }}>-</div>
                         </td>
                       )}
                       
@@ -1318,47 +1318,47 @@ export const Orders: React.FC = () => {
               )}
             </tbody>
             <tfoot style={{ backgroundColor: '#f8fafc', borderTop: '2px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', fontWeight: 800 }}>
-              <tr>
-                {(() => {
-                  const colsBeforeInvoice = ['customer', 'issuingCompany', 'cargoReady', 'volumeVessel', 'shipmentSchedule'];
-                  const span = 2 + colsBeforeInvoice.filter(key => visibleCols.includes(key)).length;
-                  return (
-                    <td colSpan={span} style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#1e293b', fontSize: '12.5px' }}>
-                      합계 (Total)
-                    </td>
-                  );
-                })()}
-                
-                {/* 인보이스 금액 합계 */}
-                {visibleCols.includes('invoiceAmount') && (
-                  <td style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#dc2626', fontSize: '12.5px', fontWeight: 800 }}>
-                    {(() => {
-                      const sum = filteredOrders.reduce((acc, o) => {
-                        const piAmount = o.quotationId ? piMap[o.quotationId] : undefined;
-                        if (piAmount !== undefined) return acc + piAmount;
-                        const usdTotal = o.items?.filter(it => it.currency !== 'KRW').reduce((s, it) => s + (it.amount || 0), 0) || 0;
-                        const krwTotal = o.items?.filter(it => it.currency === 'KRW').reduce((s, it) => s + (it.amount || 0), 0) || 0;
-                        const exRate = o.exchangeRate || 1400;
-                        return acc + usdTotal + (krwTotal / exRate);
-                      }, 0);
-                      return `$${sum.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-                    })()}
-                  </td>
-                )}
-                
-                {/* 구입사 (공급업체) */}
-                {visibleCols.includes('supplier') && (
-                  <td style={{ padding: '10px 8px', borderRight: '1px solid #cbd5e1' }}></td>
-                )}
-                
-                {/* 품목 */}
-                {visibleCols.includes('items') && (
-                  <td style={{ padding: '10px 8px', borderRight: '1px solid #cbd5e1' }}></td>
-                )}
-                
-                {/* 발주금액 (공급사별) 합계 */}
-                {visibleCols.includes('supplierAmount') && (
-                  <td style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#dc2626', fontSize: '12.5px', fontWeight: 800, whiteSpace: 'nowrap' }}>
+               <tr>
+                 {(() => {
+                   const colsBeforeInvoice = ['customer', 'issuingCompany', 'cargoReady', 'volumeVessel', 'shipmentSchedule'];
+                   const span = 2 + colsBeforeInvoice.filter(key => visibleCols.includes(key)).length;
+                   return (
+                     <td colSpan={span} style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#1e293b', fontSize: '15px' }}>
+                       합계 (Total)
+                     </td>
+                   );
+                 })()}
+                 
+                 {/* 인보이스 금액 합계 */}
+                 {visibleCols.includes('invoiceAmount') && (
+                   <td style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#dc2626', fontSize: '15px', fontWeight: 800 }}>
+                     {(() => {
+                       const sum = filteredOrders.reduce((acc, o) => {
+                         const piAmount = o.quotationId ? piMap[o.quotationId] : undefined;
+                         if (piAmount !== undefined) return acc + piAmount;
+                         const usdTotal = o.items?.filter(it => it.currency !== 'KRW').reduce((s, it) => s + (it.amount || 0), 0) || 0;
+                         const krwTotal = o.items?.filter(it => it.currency === 'KRW').reduce((s, it) => s + (it.amount || 0), 0) || 0;
+                         const exRate = o.exchangeRate || 1400;
+                         return acc + usdTotal + (krwTotal / exRate);
+                       }, 0);
+                       return `$${sum.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+                     })()}
+                   </td>
+                 )}
+                 
+                 {/* 구입사 (공급업체) */}
+                 {visibleCols.includes('supplier') && (
+                   <td style={{ padding: '10px 8px', borderRight: '1px solid #cbd5e1' }}></td>
+                 )}
+                 
+                 {/* 품목 */}
+                 {visibleCols.includes('items') && (
+                   <td style={{ padding: '10px 8px', borderRight: '1px solid #cbd5e1' }}></td>
+                 )}
+                 
+                 {/* 발주금액 (공급사별) 합계 */}
+                 {visibleCols.includes('supplierAmount') && (
+                   <td style={{ padding: '10px 8px', textAlign: 'right', borderRight: '1px solid #cbd5e1', color: '#dc2626', fontSize: '15px', fontWeight: 800, whiteSpace: 'nowrap' }}>
                     {(() => {
                       let totalUsd = 0;
                       let totalKrw = 0;
