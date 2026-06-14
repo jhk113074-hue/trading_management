@@ -122,7 +122,7 @@ export const OrderDetail: React.FC = () => {
           cargoReadyDate: data.cargoReadyDate || '',
           cfsEntryDate: data.cfsEntryDate || '',
           cfsContactInfo: data.cfsContactInfo || '',
-          docCutoffDate: data.docCutoffDate || '',
+          docCutoffDate: data.docsDeadlineDate || data.docCutoffDate || '',
           etd: data.etd || '',
           eta: data.eta || '',
           containerVolumeQuantities: data.containerVolumeQuantities || '',
@@ -239,6 +239,7 @@ export const OrderDetail: React.FC = () => {
         cfsEntryDate: basicForm.cfsEntryDate,
         cfsContactInfo: basicForm.cfsContactInfo,
         docCutoffDate: basicForm.docCutoffDate,
+        docsDeadlineDate: basicForm.docCutoffDate,
         etd: basicForm.etd,
         eta: basicForm.eta,
         containerVolumeQuantities: basicForm.containerVolumeQuantities,
@@ -1801,6 +1802,22 @@ export const OrderDetail: React.FC = () => {
                   <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
                 </div>
                 <div />
+              </div>
+
+              {/* 서류마감, ETD, ETA 날짜 */}
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감일</span>
+                  <input type="date" value={basicForm.docCutoffDate} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
+                  <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
+                  <input type="date" value={basicForm.eta} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                </div>
               </div>
 
               {/* 5개의 유첨 파일 - 1줄에 5개 박스 */}
