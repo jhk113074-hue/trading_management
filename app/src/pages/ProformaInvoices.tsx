@@ -97,8 +97,7 @@ export const ProformaInvoices: React.FC = () => {
   // Resizable column widths state
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     piDate: 95,
-    piNumber: 150,
-    currentVersion: 55,
+    piNumber: 200,
     customerName: 180,
     itemsSummary: 240,
     totalUsd: 120,
@@ -553,10 +552,6 @@ export const ProformaInvoices: React.FC = () => {
                 PI NUMBER {getSortIcon('piNumber')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piNumber', e)} />
               </th>
-              <th onClick={() => handleSort('currentVersion')} style={{ padding: '16px 10px', cursor: 'pointer', textAlign: 'center', borderRight: '1px solid #e2e8f0', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
-                VER. {getSortIcon('currentVersion')}
-                <ResizeHandle onMouseDown={(e) => handleResizeStart('currentVersion', e)} />
-              </th>
               <th onClick={() => handleSort('customerName')} style={{ padding: '16px 10px', cursor: 'pointer', borderRight: '1px solid #e2e8f0', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '13px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>
                 CUSTOMER {getSortIcon('customerName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('customerName', e)} />
@@ -599,9 +594,13 @@ export const ProformaInvoices: React.FC = () => {
                     onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
                   >
                     <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '15px', fontWeight: 500 }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '12px 10px', color: '#2563eb', fontWeight: 700, whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', fontSize: '15.5px' }}>{p.piNumber || '-'}</td>
-                    <td style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.currentVersion, minWidth: colWidths.currentVersion, maxWidth: colWidths.currentVersion, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', color: '#94a3b8', fontSize: '15px', fontWeight: 600 }}>
-                      {p.currentVersion && p.currentVersion > 1 ? `R${p.currentVersion - 1}` : '-'}
+                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center' }}>
+                      <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '15.5px' }}>{p.piNumber || '-'}</span>
+                      {p.currentVersion && p.currentVersion > 1 && (
+                        <span style={{ color: '#94a3b8', fontSize: '13.5px', fontWeight: 600, marginLeft: '6px' }}>
+                          R{p.currentVersion - 1}
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '15.5px' }}>{customers[p.customerId]?.name || '-'}</td>
                     <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', fontSize: '14.5px', color: '#475569', verticalAlign: 'middle' }}>
