@@ -8,10 +8,11 @@ interface Props {
   onClose: () => void;
   onSelect: (product: Product) => void;
   products: Product[];
+  initialSearchTerm?: string;
 }
 
-export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, products }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, products, initialSearchTerm = '' }) => {
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSupplier, setSelectedSupplier] = useState('All');
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);

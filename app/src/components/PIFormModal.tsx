@@ -2247,6 +2247,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       {isProductSearchOpen && searchItemIndex !== null && (
         <ProductSearchModal
           products={products}
+          initialSearchTerm={(() => {
+            const item = items[searchItemIndex];
+            if (!item || !item.productCode) return '';
+            const rawCode = getRawProductCode(item.productCode);
+            const found = products.find(p => p.productCode === rawCode || p.id === rawCode);
+            if (found) {
+              return found.nameEn || found.nameKo || found.productCode;
+            }
+            return item.productCode.replace(/\[.*?\]\s*/, '').trim();
+          })()}
           onClose={() => {
             setIsProductSearchOpen(false);
             setSearchItemIndex(null);
