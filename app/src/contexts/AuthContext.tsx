@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword, 
   signOut,
   setPersistence,
-  browserSessionPersistence
+  browserLocalPersistence
 } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -88,8 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [resetInactivityTimer]);
 
   const login = async (email: string, pass: string) => {
-    // 세션 지속성을 브라우저 세션 단위로 설정 (탭 닫으면 로그아웃)
-    await setPersistence(auth, browserSessionPersistence);
+    // 로컬 지속성: 새로고침·재방문 시에도 로그인 유지
+    // 비활성 60분 자동 로그아웃으로 보안 유지
+    await setPersistence(auth, browserLocalPersistence);
     await signInWithEmailAndPassword(auth, email, pass);
   };
 
