@@ -245,16 +245,16 @@ export const Dashboard: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-          <span style={{ fontSize: '1rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
+          <span style={{ fontSize: '0.82rem', fontWeight: 600, flex: 1, lineHeight: 1.4 }}>{task.title}</span>
           <span style={{
-            fontSize: '0.75rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px',
+            fontSize: '0.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px',
             color: badgeStyle.color, background: badgeStyle.bg, border: badgeStyle.border, flexShrink: 0,
           }}>{quad}</span>
         </div>
-        <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-          {task.projectName && <span style={{ fontSize: '0.78rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
-          {task.dueDate && <span style={{ fontSize: '0.78rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
-          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
+        <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap' }}>
+          {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
+          {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
+          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.68rem', background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
         </div>
       </div>
     );
@@ -266,11 +266,11 @@ export const Dashboard: React.FC = () => {
     <div style={{ flex: '0 0 220px', minWidth: '200px', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: color, border: '1px solid var(--border-color)', borderRadius: '8px 8px 0 0', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          {badge && <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginBottom: '2px' }}>{badge}</div>}
-          <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{label}</div>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>총 {zoneTasks.length}건</div>
+          {badge && <div style={{ fontSize: '0.6rem', color: '#94a3b8', marginBottom: '2px' }}>{badge}</div>}
+          <div style={{ fontWeight: 700, fontSize: '0.8rem' }}>{label}</div>
+          <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '2px' }}>총 {zoneTasks.length}건</div>
         </div>
-        {zoneTasks.length > 0 && <div style={{ background: memberId ? '#3b82f6' : '#94a3b8', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700 }}>{zoneTasks.length}</div>}
+        {zoneTasks.length > 0 && <div style={{ background: memberId ? '#3b82f6' : '#94a3b8', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700 }}>{zoneTasks.length}</div>}
       </div>
       <div
         onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={e => handleDrop(e, memberId)}
@@ -770,7 +770,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
         <span style={{ fontWeight: '800' }}>📊 담당자 업무부하도</span>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {users.map(u => {
@@ -788,15 +788,15 @@ export const Dashboard: React.FC = () => {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div className="filter-pills" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <button onClick={() => setFilter('내 업무')} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === '내 업무' ? '#3b82f6' : 'white', color: filter === '내 업무' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>내 업무</button>
+          <button onClick={() => setFilter('내 업무')} style={{ padding: '4px 12px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.75rem', background: filter === '내 업무' ? '#3b82f6' : 'white', color: filter === '내 업무' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>내 업무</button>
           {users.filter(u => u.id !== userProfile?.id).map(u => (
-            <button key={u.id} onClick={() => setFilter(u.id)} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === u.id ? '#3b82f6' : 'white', color: filter === u.id ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>
+            <button key={u.id} onClick={() => setFilter(u.id)} style={{ padding: '4px 12px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.75rem', background: filter === u.id ? '#3b82f6' : 'white', color: filter === u.id ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>
               {u.department ? `${u.department} ${u.name}` : u.name}
             </button>
           ))}
-          <button onClick={() => setFilter('전체')} style={{ padding: '6px 16px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.85rem', background: filter === '전체' ? '#3b82f6' : 'white', color: filter === '전체' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>전체</button>
+          <button onClick={() => setFilter('전체')} style={{ padding: '4px 12px', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '0.75rem', background: filter === '전체' ? '#3b82f6' : 'white', color: filter === '전체' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 600 }}>전체</button>
         </div>
-        <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>현재 {filteredTasks.length}개 업무가 표시됩니다. (Q1+Q2+Q3+Q4 순 정렬)</div>
+        <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>현재 {filteredTasks.length}개 업무가 표시됩니다. (Q1+Q2+Q3+Q4 순 정렬)</div>
       </div>
 
       {stats.todayDue > 0 && (
@@ -840,19 +840,19 @@ export const Dashboard: React.FC = () => {
               background: basket.headerBg,
               border: `1px solid ${basket.headerBorder}`
             }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: basket.headerText }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: basket.headerText }}>
                 {basket.title}
               </div>
               <div style={{
                 background: basket.countBg,
                 color: basket.countText,
                 borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+                width: '24px',
+                height: '24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.9rem',
+                fontSize: '0.78rem',
                 fontWeight: 800,
                 boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
               }}>
@@ -896,7 +896,13 @@ export const Dashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b', flex: 1, lineHeight: '1.3' }}>{task.title}</div>
+                      <div style={{
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            color: '#1e293b',
+                            flex: 1,
+                            lineHeight: '1.3'
+                          }}>{task.title}</div>
                       {(() => {
                         const quad = (task.quadrant || 'Q2').toUpperCase();
                         const badgeStyles: Record<string, { color: string; bg: string; border: string }> = {
@@ -908,9 +914,9 @@ export const Dashboard: React.FC = () => {
                         const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
                         return (
                           <div style={{
-                            fontSize: '0.75rem',
+                            fontSize: '0.65rem',
                             fontWeight: 800,
-                            padding: '3px 8px',
+                            padding: '2px 5px',
                             borderRadius: '3px',
                             color: badgeStyle.color,
                             background: badgeStyle.bg,
@@ -923,24 +929,24 @@ export const Dashboard: React.FC = () => {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#2563eb', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
                         {task.type === 'PROJECT' ? '프로젝트' : '일반'}
                       </span>
-                      <span style={{ fontSize: '0.75rem', background: '#f0fdf4', color: '#16a34a', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
+                      <span style={{ fontSize: '0.68rem', background: '#f0fdf4', color: '#16a34a', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
                         {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
                       </span>
                       {filter === '전체' && (
-                        <span style={{ fontSize: '0.75rem', background: '#f3e8ff', color: '#7c3aed', padding: '2px 6px', borderRadius: '3px', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.68rem', background: '#f3e8ff', color: '#7c3aed', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
                           👤 {task.assigneeName || '미배정'}
                         </span>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>마감 {task.dueDate || '-'}</span>
                         {(task.commentCount ?? 0) > 0 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 6px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 5px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
                         )}
                       </div>
                       <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
@@ -955,7 +961,7 @@ export const Dashboard: React.FC = () => {
                   value={quickTaskTitle}
                   onChange={(e) => setQuickTaskTitle(e.target.value)}
                   onKeyDown={handleQuickAdd}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px dashed #cbd5e1', background: 'transparent', fontSize: '0.85rem', outline: 'none' }} 
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px dashed #cbd5e1', background: 'transparent', fontSize: '0.75rem', outline: 'none' }} 
                 />
               )}
             </div>
@@ -966,8 +972,8 @@ export const Dashboard: React.FC = () => {
       <div style={{ marginTop: '20px', background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', marginBottom: '2px' }}>🤝 위임업무 배정</h3>
-            <p style={{ fontSize: '0.75rem', color: '#64748b' }}>미배정 업무를 담당자에게 드래그하여 배정하세요.</p>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', marginBottom: '2px' }}>🤝 위임업무 배정</h3>
+            <p style={{ fontSize: '0.7rem', color: '#64748b' }}>미배정 업무를 담당자에게 드래그하여 배정하세요.</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '8px', alignItems: 'flex-start' }}>
