@@ -1,7 +1,9 @@
 export interface ForwarderEntry {
   name: string;
-  freightAmount: number;
-  freightCurrency: 'USD' | 'KRW';
+  freightAmount?: number;
+  freightCurrency?: 'USD' | 'KRW';
+  amountUsd?: number;
+  amountKrw?: number;
 }
 
 export interface OrderItem {

@@ -45,18 +45,21 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
 
   // 포워더 배열 상태 (기존 단일 필드에서 마이그레이션)
   const initForwarders = (): ForwarderEntry[] => {
+    let list: ForwarderEntry[] = [];
     if (order.forwarders && order.forwarders.length > 0) {
-      return JSON.parse(JSON.stringify(order.forwarders));
+      list = JSON.parse(JSON.stringify(order.forwarders));
+    } else if (order.forwarderConfirmed) {
+      list = [{ name: order.forwarderConfirmed, freightAmount: order.forwarderFreightAmount || 0, freightCurrency: order.forwarderFreightCurrency || 'KRW' }];
     }
-    // legacy single forwarder migration
-    if (order.forwarderConfirmed) {
-      return [{ name: order.forwarderConfirmed, freightAmount: order.forwarderFreightAmount || 0, freightCurrency: order.forwarderFreightCurrency || 'KRW' }];
-    }
-    return [];
+    return list.map(f => ({
+      name: f.name,
+      amountUsd: f.amountUsd !== undefined ? f.amountUsd : (f.freightCurrency === 'USD' ? f.freightAmount : 0),
+      amountKrw: f.amountKrw !== undefined ? f.amountKrw : (f.freightCurrency === 'KRW' ? f.freightAmount : 0)
+    }));
   };
   const [forwarders, setForwarders] = useState<ForwarderEntry[]>(initForwarders);
 
-  const addForwarder = () => setForwarders(prev => [...prev, { name: '', freightAmount: 0, freightCurrency: 'KRW' }]);
+  const addForwarder = () => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }]);
   const removeForwarder = (idx: number) => setForwarders(prev => prev.filter((_, i) => i !== idx));
   const updateForwarder = (idx: number, field: keyof ForwarderEntry, value: string | number) =>
     setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, [field]: value } : f));
@@ -157,8 +160,8 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           payload.exchangeRate = exchangeRate;
           payload.forwarders = forwarders;
           payload.forwarderConfirmed = forwarders[0]?.name || '';
-          payload.forwarderFreightAmount = forwarders[0]?.freightAmount || 0;
-          payload.forwarderFreightCurrency = forwarders[0]?.freightCurrency || 'KRW';
+          payload.forwarderFreightAmount = forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0;
+          payload.forwarderFreightCurrency = forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW';
           break;
         case 'supplier':
         case 'items':
@@ -167,8 +170,8 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           payload.forwarders = forwarders;
           // 기존 레거시 필드 동기화 (1번째 포워더로)
           payload.forwarderConfirmed = forwarders[0]?.name || '';
-          payload.forwarderFreightAmount = forwarders[0]?.freightAmount || 0;
-          payload.forwarderFreightCurrency = forwarders[0]?.freightCurrency || 'KRW';
+          payload.forwarderFreightAmount = forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0;
+          payload.forwarderFreightCurrency = forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW';
           break;
         case 'supplierRemitted':
           payload.supplierPayments = supplierPayments;
@@ -430,8 +433,8 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                     if (selectedQuote && selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
                       setForwarders([{
                         name: '포워딩업체-운송비',
-                        freightAmount: selectedQuote.freightTotal,
-                        freightCurrency: 'USD'
+                        amountUsd: selectedQuote.freightTotal,
+                        amountKrw: 0
                       }]);
                     } else {
                       setForwarders([]);
@@ -610,10 +613,10 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 </button>
               </div>
               {/* 헤더 라벨 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px 32px', gap: '6px', marginBottom: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비</span>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>통화</span>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
+                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
                 <span></span>
               </div>
               {/* 포워더 행 목록 */}
@@ -621,7 +624,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
               ) : (
                 forwarders.map((fw, idx) => (
-                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 80px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                     <select
                       value={fw.name}
                       onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
@@ -641,20 +644,20 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                     </select>
                     <input
                       type="number"
+                      step="0.01"
+                      value={fw.amountUsd ?? 0}
+                      onChange={(e) => updateForwarder(idx, 'amountUsd', parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    />
+                    <input
+                      type="number"
                       step="1"
-                      value={fw.freightAmount}
-                      onChange={(e) => updateForwarder(idx, 'freightAmount', parseFloat(e.target.value) || 0)}
+                      value={fw.amountKrw ?? 0}
+                      onChange={(e) => updateForwarder(idx, 'amountKrw', parseFloat(e.target.value) || 0)}
                       placeholder="0"
                       style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
                     />
-                    <select
-                      value={fw.freightCurrency}
-                      onChange={(e) => updateForwarder(idx, 'freightCurrency', e.target.value)}
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
-                    >
-                      <option value="KRW">KRW (₩)</option>
-                      <option value="USD">USD ($)</option>
-                    </select>
                     <button
                       onClick={() => removeForwarder(idx)}
                       style={{ padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}

@@ -944,10 +944,15 @@ export const Orders: React.FC = () => {
                 filteredOrders.map((o, idx) => {
                   const sBadge = statusColors[o.status] || { bg: '#f1f5f9', text: '#475569' };
                   const suppliers = Array.from(new Set(o.items?.map(it => it.supplier).filter(Boolean)));
-                  // forwarders 배열 (legacy 단일 필드 fallback)
-                  const orderForwarders = (o.forwarders && o.forwarders.length > 0)
+                  // forwarders 배열 (legacy 단일 필드 fallback 및 dual currency 정규화)
+                  const orderForwarders = ((o.forwarders && o.forwarders.length > 0)
                     ? o.forwarders
-                    : (o.forwarderConfirmed ? [{ name: o.forwarderConfirmed, freightAmount: o.forwarderFreightAmount || 0, freightCurrency: (o.forwarderFreightCurrency || 'KRW') as 'USD' | 'KRW' }] : []);
+                    : (o.forwarderConfirmed ? [{ name: o.forwarderConfirmed, freightAmount: o.forwarderFreightAmount || 0, freightCurrency: (o.forwarderFreightCurrency || 'KRW') as 'USD' | 'KRW' }] : [])
+                  ).map(f => ({
+                    name: f.name,
+                    amountUsd: f.amountUsd !== undefined ? f.amountUsd : (f.freightCurrency === 'USD' ? f.freightAmount : 0),
+                    amountKrw: f.amountKrw !== undefined ? f.amountKrw : (f.freightCurrency === 'KRW' ? f.freightAmount : 0)
+                  }));
 
                   // Calculate amounts per supplier
                   const supplierAmounts: Record<string, { usd: number; krw: number }> = {};
@@ -1203,15 +1208,20 @@ export const Orders: React.FC = () => {
                                 )}
                                 
                                 {orderForwarders.map((fw, fwIdx) => {
+                                  const usdAmt = fw.amountUsd || 0;
+                                  const krwAmt = fw.amountKrw || 0;
                                   let displayStr = '-';
-                                  if (fw.freightCurrency === 'USD') {
-                                    const converted = Math.round((fw.freightAmount || 0) * customsRate);
-                                    displayStr = `₩${converted.toLocaleString()} ($${(fw.freightAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
-                                  } else {
-                                    displayStr = `₩${(fw.freightAmount || 0).toLocaleString()}`;
+                                  if (usdAmt > 0 && krwAmt > 0) {
+                                    const converted = Math.round(usdAmt * customsRate) + krwAmt;
+                                    displayStr = `₩${converted.toLocaleString()} ($${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2 })} + ₩${krwAmt.toLocaleString()})`;
+                                  } else if (usdAmt > 0) {
+                                    const converted = Math.round(usdAmt * customsRate);
+                                    displayStr = `₩${converted.toLocaleString()} ($${usdAmt.toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
+                                  } else if (krwAmt > 0) {
+                                    displayStr = `₩${krwAmt.toLocaleString()}`;
                                   }
                                   return (
-                                    <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13px', fontWeight: 500, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }} title={`수출신고환율: ₩${customsRate}`}>
+                                    <div key={fwIdx} style={{ height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 8px', fontSize: '13px', fontWeight: 500, color: '#6d28d9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderBottom: '1px solid #e2e8f0', boxSizing: 'border-box' }} title={`수출신고환율: ₩${customsRate} | USD: $${usdAmt} / KRW: ₩${krwAmt.toLocaleString()}`}>
                                       {displayStr}
                                     </div>
                                   );
@@ -1220,9 +1230,9 @@ export const Orders: React.FC = () => {
                                 {/* 합계 행 (Subtotal 레이블에 대응) - 최종합계는 원화(KRW)로만 표시 */}
                                 {(() => {
                                   const totalUsd = Object.values(supplierAmounts).reduce((s, a) => s + (a.usd || 0), 0)
-                                    + orderForwarders.filter(fw => fw.freightCurrency === 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
+                                    + orderForwarders.reduce((s, fw) => s + (fw.amountUsd || 0), 0);
                                   const totalKrw = Object.values(supplierAmounts).reduce((s, a) => s + (a.krw || 0), 0)
-                                    + orderForwarders.filter(fw => fw.freightCurrency !== 'USD').reduce((s, fw) => s + (fw.freightAmount || 0), 0);
+                                    + orderForwarders.reduce((s, fw) => s + (fw.amountKrw || 0), 0);
                                   const consolidatedKrw = Math.round(totalUsd * customsRate) + totalKrw;
                                   
                                   return (

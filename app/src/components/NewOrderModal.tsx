@@ -125,8 +125,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       if (selectedQuote && selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
         setForwarders([{
           name: '포워딩업체-운송비',
-          freightAmount: selectedQuote.freightTotal,
-          freightCurrency: 'USD'
+          amountUsd: selectedQuote.freightTotal,
+          amountKrw: 0
         }]);
       } else {
         setForwarders([]);
@@ -295,8 +295,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         issuingCompany: formData.issuingCompany,
         forwarders: forwarders,
         forwarderConfirmed: forwarders[0]?.name || '',
-        forwarderFreightAmount: forwarders[0]?.freightAmount || 0,
-        forwarderFreightCurrency: (forwarders[0]?.freightCurrency || 'KRW') as any
+        forwarderFreightAmount: forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0,
+        forwarderFreightCurrency: (forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any
       };
 
       // 1. Save to orders collection
@@ -482,6 +482,62 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             </table>
           </div>
  
+          {/* Forwarder/Transport Section */}
+          <div style={{ marginTop: '4px', padding: '14px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
+              <button
+                type="button"
+                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }])}
+                style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                + 운송사 추가
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
+              <span></span>
+            </div>
+            {forwarders.length === 0 ? (
+              <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
+            ) : (
+              forwarders.map((fw, idx) => (
+                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={fw.name || ''}
+                    onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, name: e.target.value } : f))}
+                    placeholder="포워딩사명 입력"
+                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={fw.amountUsd ?? 0}
+                    onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: parseFloat(e.target.value) || 0 } : f))}
+                    placeholder="0.00"
+                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                  />
+                  <input
+                    type="number"
+                    step="1"
+                    value={fw.amountKrw ?? 0}
+                    onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: parseFloat(e.target.value) || 0 } : f))}
+                    placeholder="0"
+                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForwarders(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                  >✕</button>
+                </div>
+              ))
+            )}
+          </div>
+
           {/* Real-time Total sum */}
           <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
             <span>총 발주 금액 (Grand Total):</span>
