@@ -106,70 +106,79 @@ export const Layout: React.FC = () => {
           flexShrink: 0, 
           overflowY: 'auto',
           overflowX: 'hidden',
-          transition: 'width 0.2s ease-in-out',
-          borderRight: sidebarCollapsed ? 'none' : '1px solid var(--border-color)'
+          transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
-        <Link to="/" className="sidebar-header" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', height: '72px', borderBottom: '1px solid var(--border-color)', background: '#fff', padding: '0 16px' }}>
-          <img src="/logo.png" alt="YSACC Logo" style={{ maxWidth: '100%', maxHeight: '44px', objectFit: 'contain' }} />
+        {/* 로고 */}
+        <Link to="/" style={{ textDecoration: 'none', display: 'block' }}>
+          <div className="sidebar-header">
+            <img src="/logo.png" alt="YSACC Logo" style={{ maxHeight: '48px', maxWidth: '140px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          </div>
         </Link>
 
-        {menuItems.map((group, gIdx) => (
-          <div key={gIdx} className="sidebar-section">
-            {group.section && <div className="sidebar-section-title">{group.section}</div>}
-            {group.items.map((item: any) => (
-              (item as any).external ? (
-                <a 
-                  key={item.path} 
-                  href={item.path} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nav-item"
-                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}
-                >
-                  <div>
-                    <span>{item.label}</span>
-                  </div>
-                </a>
-              ) : (
-                <Link 
-                  key={item.path} 
-                  to={item.path} 
-                  className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-                >
-                  <div>
-                    <span>{item.label}</span>
-                    {(item as any).subLabel && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: '5px' }}>{(item as any).subLabel}</span>}
-                  </div>
-                  {item.count ? <span className="count">{item.count}</span> : null}
-                </Link>
-              )
-            ))}
+        {/* 메뉴 */}
+        <nav style={{ padding: '8px 0', flex: 1 }}>
+          {menuItems.map((group, gIdx) => (
+            <div key={gIdx} className="sidebar-section">
+              {group.section && <div className="sidebar-section-title">{group.section}</div>}
+              {group.items.map((item: any) => (
+                (item as any).external ? (
+                  <a 
+                    key={item.path} 
+                    href={item.path} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="nav-item"
+                  >
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                  </a>
+                ) : (
+                  <Link 
+                    key={item.path} 
+                    to={item.path} 
+                    className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                  >
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                    {item.count ? <span style={{ background: 'rgba(13,148,136,0.3)', color: '#2dd4bf', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', flexShrink: 0 }}>{item.count}</span> : null}
+                  </Link>
+                )
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        {/* 하단 사용자 영역 */}
+        {userProfile && (
+          <div style={{ padding: '12px 16px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg,#0d9488,#0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                {userProfile.name?.charAt(0)}
+              </div>
+              <div style={{ overflow: 'hidden' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.name}</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.department || userProfile.role || ''}</div>
+              </div>
+            </div>
           </div>
-        ))}
-
-
+        )}
       </aside>
 
-      {/* Resizable Divider Handle with premium micro-interactions */}
+      {/* Resizable Divider Handle */}
       {!sidebarCollapsed && (
         <div 
           onMouseDown={startResizing}
           style={{
-            width: '6px',
+            width: '5px',
             cursor: 'col-resize',
-            background: isDragging ? '#3b82f6' : 'transparent',
-            borderLeft: '1px solid var(--border-color)',
-            transition: 'background 0.1s',
+            background: isDragging ? '#0d9488' : 'transparent',
+            transition: 'background 0.15s',
             zIndex: 10,
             position: 'relative',
-            marginLeft: '-3px',
-            marginRight: '-3px',
             height: '100%',
             alignSelf: 'stretch',
             userSelect: 'none'
           }}
-          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = '#e2e8f0'; }}
+          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = 'rgba(13,148,136,0.3)'; }}
           onMouseLeave={(e) => { if (!isDragging) e.currentTarget.style.background = 'transparent'; }}
         />
       )}

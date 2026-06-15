@@ -2,7 +2,12 @@
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
   --bg-header: #ffffff;
-  --bg-sidebar: #ffffff;
+  --bg-sidebar: #0f172a;
+  --sidebar-text: #94a3b8;
+  --sidebar-text-hover: #f1f5f9;
+  --sidebar-active-bg: rgba(13, 148, 136, 0.18);
+  --sidebar-active-text: #2dd4bf;
+  --sidebar-section-title: #475569;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
@@ -31,20 +36,23 @@ body {
 }
 
 .sidebar {
-  width: 240px;
   background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
+  border-right: none;
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow-y: auto;
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
 }
 
 .sidebar-header {
-  padding: 24px 20px;
+  padding: 28px 20px 20px 20px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 8px;
 }
 
 .logo-icon {
@@ -72,37 +80,47 @@ body {
 }
 
 .sidebar-section {
-  margin-bottom: 24px;
+  margin-bottom: 4px;
+  padding: 0 10px;
 }
 
 .sidebar-section-title {
-  padding: 0 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #94a3b8;
+  padding: 14px 12px 6px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--sidebar-section-title);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
 }
 
 .nav-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
-  color: var(--text-secondary);
+  padding: 11px 14px;
+  color: var(--sidebar-text);
   text-decoration: none;
-  font-size: 0.9rem;
-  transition: all 0.2s;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+  margin-bottom: 2px;
+  gap: 10px;
+  line-height: 1.3;
 }
 
 .nav-item:hover {
-  background-color: #f1f5f9;
+  background-color: rgba(255,255,255,0.07);
+  color: var(--sidebar-text-hover);
+  transform: translateX(2px);
 }
 
 .nav-item.active {
-  background-color: #e2e8f0;
-  color: var(--primary-color);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
   font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--sidebar-active-text);
 }
 
 .header {
