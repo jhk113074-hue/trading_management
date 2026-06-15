@@ -1,13 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
-  signOut
+  signOut,
+  setPersistence,
+  browserSessionPersistence
 } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import type { User } from '../types';
+
+// ── 비활성 자동 로그아웃 시간 (분 단위) ──────────────────────────
+const INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000; // 60분 비활성 시 자동 로그아웃
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -23,6 +28,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const logout = useCallback(async () => {
+    await signOut(auth);
+  }, []);
+
+  // ── 비활성 타이머 리셋 ──────────────────────────────────────────
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(() => {
+      logout();
+      alert('장시간 비활성으로 인해 자동 로그아웃되었습니다.');
+    }, INACTIVITY_TIMEOUT_MS);
+  }, [logout]);
+
+  // ── 사용자 활동 이벤트 감지 ─────────────────────────────────────
+  useEffect(() => {
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    const handleActivity = () => {
+      if (currentUser) resetInactivityTimer();
+    };
+    events.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
+    return () => events.forEach(e => window.removeEventListener(e, handleActivity));
+  }, [currentUser, resetInactivityTimer]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -44,21 +73,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (err) {
           console.error("Error fetching user profile:", err);
         }
+        resetInactivityTimer();
       } else {
         setUserProfile(null);
+        if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
       }
       setLoading(false);
     });
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      unsubscribe();
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    };
+  }, [resetInactivityTimer]);
 
   const login = async (email: string, pass: string) => {
+    // 세션 지속성을 브라우저 세션 단위로 설정 (탭 닫으면 로그아웃)
+    await setPersistence(auth, browserSessionPersistence);
     await signInWithEmailAndPassword(auth, email, pass);
-  };
-
-  const logout = async () => {
-    await signOut(auth);
   };
 
   return (

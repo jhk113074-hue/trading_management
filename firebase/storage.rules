@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── 인증된 사용자만 파일 업로드/다운로드 허용 ──────────────────────
+    // 로그인하지 않은 외부인은 파일에 접근할 수 없습니다.
+
+    // 태스크 첨부파일: 로그인한 사용자만 읽기/쓰기
+    match /tasks/{taskId}/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+
+    // PI 첨부파일
+    match /pi/{piId}/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 주문 첨부파일
+    match /orders/{orderId}/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+
+    // 나머지 모든 경로: 로그인한 사용자만
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
