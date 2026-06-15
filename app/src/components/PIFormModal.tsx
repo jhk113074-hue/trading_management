@@ -1987,18 +1987,57 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 </div>
                 {(formData.freightCharges || []).map((fc, fcIdx) => (
                   <div key={fcIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <select 
-                      value={fc.type || 'LCL'} 
-                      onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)} 
-                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
-                    >
-                      <option value="LCL">LCL</option>
-                      <option value="20GP">20GP</option>
-                      <option value="20RF">20RF</option>
-                      <option value="20DG">20DG</option>
-                      <option value="40FT">40FT</option>
-                      <option value="40HQ">40HQ</option>
-                    </select>
+                    {/* Container Type: 프리셋 선택 or 직접입력 */}
+                    <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <select
+                        value={
+                          ['LCL','20GP','20RF','20DG','40FT','40HQ','FOB CHARGES','DAP CHARGES','DDP CHARGES','CIF CHARGES','CFR CHARGES','TRUCKING','INLAND FREIGHT','CUSTOMS FEE','직접입력'].includes(fc.type || '')
+                            ? (fc.type || 'LCL')
+                            : '직접입력'
+                        }
+                        onChange={e => {
+                          if (e.target.value === '직접입력') {
+                            updateFreightCharge(fcIdx, 'type', '');
+                          } else {
+                            updateFreightCharge(fcIdx, 'type', e.target.value);
+                          }
+                        }}
+                        style={{ width: '100%', padding: '5px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', background: '#fff' }}
+                      >
+                        <optgroup label="컨테이너">
+                          <option value="LCL">LCL</option>
+                          <option value="20GP">20GP</option>
+                          <option value="20RF">20RF</option>
+                          <option value="20DG">20DG</option>
+                          <option value="40FT">40FT</option>
+                          <option value="40HQ">40HQ</option>
+                        </optgroup>
+                        <optgroup label="운임 조건">
+                          <option value="FOB CHARGES">FOB CHARGES</option>
+                          <option value="DAP CHARGES">DAP CHARGES</option>
+                          <option value="DDP CHARGES">DDP CHARGES</option>
+                          <option value="CIF CHARGES">CIF CHARGES</option>
+                          <option value="CFR CHARGES">CFR CHARGES</option>
+                        </optgroup>
+                        <optgroup label="기타 비용">
+                          <option value="TRUCKING">TRUCKING</option>
+                          <option value="INLAND FREIGHT">INLAND FREIGHT</option>
+                          <option value="CUSTOMS FEE">CUSTOMS FEE</option>
+                        </optgroup>
+                        <option value="직접입력">✏️ 직접입력...</option>
+                      </select>
+                      {/* 직접입력 모드일 때 텍스트 필드 표시 */}
+                      {!['LCL','20GP','20RF','20DG','40FT','40HQ','FOB CHARGES','DAP CHARGES','DDP CHARGES','CIF CHARGES','CFR CHARGES','TRUCKING','INLAND FREIGHT','CUSTOMS FEE'].includes(fc.type || '') && (
+                        <input
+                          type="text"
+                          placeholder="항목명 직접 입력"
+                          value={fc.type || ''}
+                          onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)}
+                          style={{ width: '100%', padding: '5px 6px', border: '1px solid #0d9488', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                          autoFocus
+                        />
+                      )}
+                    </div>
                     <input 
                       type="number" 
                       placeholder="수량" 
