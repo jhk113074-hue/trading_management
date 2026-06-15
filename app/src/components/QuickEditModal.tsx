@@ -624,7 +624,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
               ) : (
                 forwarders.map((fw, idx) => (
-                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                     <select
                       value={fw.name}
                       onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
@@ -643,20 +643,28 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                       )}
                     </select>
                     <input
-                      type="number"
-                      step="0.01"
-                      value={fw.amountUsd ?? 0}
-                      onChange={(e) => updateForwarder(idx, 'amountUsd', parseFloat(e.target.value) || 0)}
+                      type="text"
+                      inputMode="decimal"
+                      value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/,/g, '');
+                        const num = parseFloat(raw) || 0;
+                        updateForwarder(idx, 'amountUsd', num);
+                      }}
                       placeholder="0.00"
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                     />
                     <input
-                      type="number"
-                      step="1"
-                      value={fw.amountKrw ?? 0}
-                      onChange={(e) => updateForwarder(idx, 'amountKrw', parseFloat(e.target.value) || 0)}
+                      type="text"
+                      inputMode="numeric"
+                      value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/,/g, '');
+                        const num = parseInt(raw, 10) || 0;
+                        updateForwarder(idx, 'amountKrw', num);
+                      }}
                       placeholder="0"
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                     />
                     <button
                       onClick={() => removeForwarder(idx)}

@@ -513,20 +513,28 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    value={fw.amountUsd ?? 0}
-                    onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: parseFloat(e.target.value) || 0 } : f))}
+                    type="text"
+                    inputMode="decimal"
+                    value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/,/g, '');
+                      const num = parseFloat(raw) || 0;
+                      setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: num } : f));
+                    }}
                     placeholder="0.00"
-                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                   />
                   <input
-                    type="number"
-                    step="1"
-                    value={fw.amountKrw ?? 0}
-                    onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: parseFloat(e.target.value) || 0 } : f))}
+                    type="text"
+                    inputMode="numeric"
+                    value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                    onChange={e => {
+                      const raw = e.target.value.replace(/,/g, '');
+                      const num = parseInt(raw, 10) || 0;
+                      setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: num } : f));
+                    }}
                     placeholder="0"
-                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                   />
                   <button
                     type="button"
