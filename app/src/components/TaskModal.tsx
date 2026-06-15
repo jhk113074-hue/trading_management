@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, orderBy, doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Task, Visibility, Quadrant, TaskType, ScheduleType, TaskStatus, User } from '../types';
 import { validateTask } from '../utils/businessRules';
@@ -42,7 +43,14 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [newComment, setNewComment] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { userProfile } = useAuth();
-  // const { attachments, uploadProgress, uploadFile, deleteAttachment, getFileUrl } = useAttachments(initialTask?.id);
+
+  // 파일 첨부
+  const [attachments, setAttachments] = useState<Array<{ name: string; url: string; size: number; path: string }>>(
+    (initialTask as any)?.attachments || []
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState('');
 
   useEffect(() => {
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -111,6 +119,50 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     }
   };
 
+  // ─── 파일 업로드 ───
+  const handleFileUpload = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    const taskId = initialTask?.id || `task_temp_${Date.now()}`;
+    const newAtts = [...attachments];
+    let hasError = false;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uniqueFileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `tasks/${taskId}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise<void>((resolve) => {
+        uploadTask.on('state_changed', () => {}, (error) => {
+          console.error('Upload failed:', file.name, error);
+          hasError = true;
+          resolve();
+        }, async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            newAtts.push({ name: file.name, url, size: file.size, path: uploadTask.snapshot.ref.fullPath });
+          } catch(e) { hasError = true; }
+          resolve();
+        });
+      });
+    }
+    setAttachments(newAtts);
+    setIsUploading(false);
+    if (hasError) alert('일부 파일 업로드에 실패했습니다.');
+  };
+
+  const handleDeleteAttachment = async (index: number) => {
+    const att = attachments[index];
+    if (!att || !window.confirm(`'${att.name}' 파일을 삭제하시겠습니까?`)) return;
+    try {
+      if (att.path) await deleteObject(ref(storage, att.path)).catch(console.warn);
+      setAttachments(prev => prev.filter((_, i) => i !== index));
+    } catch(err) {
+      alert('파일 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   // Auto-calculate Quadrant: importance A=high, B=mid, C=low; urgency >=6 = high
   const calculateQuadrant = (imp: string, urg: number): Quadrant => {
     const impHigh = imp === 'A';
@@ -153,7 +205,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       recurrenceEndDate,
       externalFileLink,
       recurrence: type === 'PERIODIC' ? repeatCycle : null,
-      allowedUserIds: relatedUsers.split(',').map(u => u.trim()).filter(Boolean)
+      allowedUserIds: relatedUsers.split(',').map(u => u.trim()).filter(Boolean),
+      attachments
     };
 
     const validationError = validateTask(taskData);
@@ -412,6 +465,54 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             </div>
           </div>
 
+          {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
+          <div
+            style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
+            onPaste={e => { const files = e.clipboardData?.files; if (files && files.length > 0) { e.preventDefault(); handleFileUpload(files); } }}
+            tabIndex={0}
+          >
+            <div style={{ color: '#64748b', fontSize: '13px', marginBottom: '10px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+            <input type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="task-file-upload" />
+            <label htmlFor="task-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '7px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+              {isUploading ? '업로드 중...' : '파일 선택하기'}
+            </label>
+
+            {attachments.length > 0 && (
+              <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                {attachments.map((att, idx) => {
+                  const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name);
+                  const isPdf = /\.pdf$/i.test(att.name);
+                  const isExcel = /\.(xls|xlsx)$/i.test(att.name);
+                  return (
+                    <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                      <div onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ cursor: 'pointer' }} title="클릭하여 미리보기">
+                        {isImg ? (
+                          <img src={att.url} alt={att.name} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                        ) : (
+                          <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                            {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                        <span onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ color: '#1e293b', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} title="클릭하여 미리보기">{att.name}</span>
+                        <span style={{ color: '#64748b', fontSize: '10px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                        <button type="button" onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px' }} title="미리보기">🔍</button>
+                        <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', textDecoration: 'none' }} title="다운로드">⬇</a>
+                        <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px' }} title="삭제">✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Comments (Only for existing tasks) */}
           {initialTask && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
@@ -436,6 +537,37 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             </div>
           )}
         </div>
+
+        {/* 파일 미리보기 오버레이 */}
+        {previewUrl && (
+          <div
+            onClick={() => setPreviewUrl(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          >
+            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{previewName}</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <a href={previewUrl} download={previewName} target="_blank" rel="noreferrer" style={{ padding: '5px 12px', background: '#3b82f6', color: '#fff', borderRadius: '6px', fontSize: '12px', textDecoration: 'none', fontWeight: 600 }}>⬇ 다운로드</a>
+                  <button onClick={() => setPreviewUrl(null)} style={{ padding: '5px 10px', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>✕ 닫기</button>
+                </div>
+              </div>
+              <div style={{ overflow: 'auto', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/\.(jpg|jpeg|png|gif|webp)$/i.test(previewName) ? (
+                  <img src={previewUrl} alt={previewName} style={{ maxWidth: '80vw', maxHeight: '70vh', objectFit: 'contain', borderRadius: '6px' }} />
+                ) : /\.pdf$/i.test(previewName) ? (
+                  <iframe src={previewUrl} title={previewName} style={{ width: '75vw', height: '70vh', border: 'none', borderRadius: '6px' }} />
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📎</div>
+                    <div style={{ marginBottom: '16px', fontWeight: 600 }}>{previewName}</div>
+                    <a href={previewUrl} download={previewName} target="_blank" rel="noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>⬇ 다운로드하여 열기</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{
