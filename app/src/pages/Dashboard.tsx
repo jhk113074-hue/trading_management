@@ -185,15 +185,22 @@ export const Dashboard: React.FC = () => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
     try {
-      const { id, ...rest } = task;
-      await updateDoc(doc(db, 'tasks', id), {
-        ...rest,
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-      });
+      await updateTask({ ...tasks.find(t => t.id === taskId)!, status: newStatus as any });
+      // 자동 날짜 기록 (IN_PROGRESS → startDate, DONE → dueDate/completedAt)
+      const today = new Date().toISOString().split('T')[0];
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const extraUpdates: Record<string, any> = { status: newStatus, updatedAt: new Date().toISOString() };
+      if (newStatus === 'IN_PROGRESS' && !task.startDate) {
+        extraUpdates.startDate = today;
+        extraUpdates.completedAt = null;
+      }
+      if (newStatus === 'DONE') {
+        extraUpdates.dueDate = today;
+        extraUpdates.completedAt = new Date().toISOString();
+      }
+      await updateDoc(doc(db, 'tasks', taskId), extraUpdates);
     } catch (err) {
       console.error(err);
     }
@@ -305,74 +312,42 @@ export const Dashboard: React.FC = () => {
     if (dateMode === 'daily') {
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-
-        // 완료된 업무: 완료일에만 표시
-        if (isDone && completedAt) {
-          const compStr = completedAt.toISOString().split('T')[0];
-          return compStr === selectedDate;
+        // 완료된 업무: 완료일 기준
+        if (isDone && task.completedAt) {
+          return task.completedAt.split('T')[0] === selectedDate;
         }
-
-        // 미완료 업무: 과거에 등록된 모든 미완료 업무는 계속 표시 (누락 방지)
-        if (!isDone) {
-          const createdStr = task.createdAt?.split('T')[0];
-          if (createdStr && createdStr <= selectedDate) return true;
-        }
-
-        // 기본 날짜 매칭
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; 
-        
-        return dates.some(d => d === selectedDate) || 
-               (task.startDate && task.dueDate && task.startDate <= selectedDate && task.dueDate >= selectedDate);
+        // 미완료: 시작일 기준. 시작일 없으면 항상 표시
+        if (!task.startDate) return true;
+        return task.startDate === selectedDate;
       });
     } else if (dateMode === 'weekly') {
       const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
-      const thisWeekStart = getWeekRange(0).start;
+      const wStartStr = wStart.toISOString().split('T')[0];
+      const wEndStr = wEnd.toISOString().split('T')[0];
 
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-
-        // 완료된 업무는 완료된 주에만 보임. 다음 주부터는 숨김
-        if (isDone && completedAt) {
-          const completedWeek = Math.floor((completedAt.getTime() - thisWeekStart.getTime()) / (7 * 24 * 3600 * 1000));
-          if (completedWeek !== weekOffset) return false;
-          return true;
+        // 완료된 업무: 완료일이 해당 주에 있는지
+        if (isDone && task.completedAt) {
+          const compStr = task.completedAt.split('T')[0];
+          return compStr >= wStartStr && compStr <= wEndStr;
         }
-
-        // 미완료 업무: 이번 주 종료일 이전에 생성된 모든 미완료 업무는 누락 방지를 위해 항상 표시
-        if (!isDone) {
-          const createdDate = new Date(task.createdAt);
-          if (createdDate <= wEnd) return true;
-        }
-
-        // 기본 날짜 매칭
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true; 
-        return dates.some(d => {
-          const dt = new Date(d);
-          return dt >= wStart && dt <= wEnd;
-        }) || (task.startDate && task.dueDate && new Date(task.startDate) <= wEnd && new Date(task.dueDate) >= wStart);
+        // 미완료: 시작일이 해당 주에 속하는지. 시작일 없으면 항상 표시
+        if (!task.startDate) return true;
+        return task.startDate >= wStartStr && task.startDate <= wEndStr;
       });
     } else {
-      // 기간 검색
+      // 기간 검색: 시작일이 검색 기간 내에 있는지
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-
-        // 완료된 업무: 완료일이 검색 기간 내에 있는지 확인
-        if (isDone && completedAt) {
-          const compStr = completedAt.toISOString().split('T')[0];
+        // 완료된 업무: 완료일 기준
+        if (isDone && task.completedAt) {
+          const compStr = task.completedAt.split('T')[0];
           return compStr >= startDate && compStr <= endDate;
         }
-
-        // 미완료 업무: 검색 기간과 겹치거나 범위에 속하는지 확인
-        const dates = [task.startDate, task.dueDate, task.createdAt?.split('T')[0]].filter(Boolean) as string[];
-        if (dates.length === 0) return true;
-
-        return dates.some(d => d >= startDate && d <= endDate) ||
-               (task.startDate && task.dueDate && task.startDate <= endDate && task.dueDate >= startDate);
+        // 미완료: 시작일 기준. 시작일 없으면 항상 표시
+        if (!task.startDate) return true;
+        return task.startDate >= startDate && task.startDate <= endDate;
       });
     }
 

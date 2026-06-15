@@ -77,11 +77,29 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
     try {
-      await updateDoc(doc(db, 'tasks', taskId), {
+      const today = new Date().toISOString().split('T')[0];
+      const existingTask = tasks.find(t => t.id === taskId);
+
+      const updates: Record<string, any> = {
         status,
         updatedAt: new Date().toISOString(),
-        completedAt: status === 'DONE' ? new Date().toISOString() : null
-      });
+      };
+
+      // 업무중으로 이동: 시작일이 없을 때만 오늘 날짜 자동 기록
+      if (status === 'IN_PROGRESS') {
+        if (!existingTask?.startDate) {
+          updates.startDate = today;
+        }
+        updates.completedAt = null; // 완료 취소 시 초기화
+      }
+
+      // 완료로 이동: 마감일(종료일)에 오늘 날짜 자동 기록, completedAt도 기록
+      if (status === 'DONE') {
+        updates.dueDate = today;
+        updates.completedAt = new Date().toISOString();
+      }
+
+      await updateDoc(doc(db, 'tasks', taskId), updates);
     } catch (err) {
       console.error("Update status error:", err);
     }

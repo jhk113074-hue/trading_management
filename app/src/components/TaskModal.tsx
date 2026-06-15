@@ -183,6 +183,28 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     const assUser = users.find(u => u.id === assigneeId);
     const assName = assUser ? assUser.name : (assigneeId ? assigneeName : '');
 
+    const today = new Date().toISOString().split('T')[0];
+    const prevStatus = initialTask?.status;
+
+    // 상태 변경에 따른 날짜 자동 기록
+    let autoStartDate = startDate;
+    let autoDueDate = dueDate;
+    let autoCompletedAt = initialTask?.completedAt ?? null;
+
+    // 업무중으로 처음 변경될 때 시작일 자동 기록 (기존 시작일 없을 때만)
+    if (status === 'IN_PROGRESS' && prevStatus !== 'IN_PROGRESS' && !startDate) {
+      autoStartDate = today;
+    }
+    // 완료로 변경될 때 마감일(종료일) 자동 기록
+    if (status === 'DONE' && prevStatus !== 'DONE') {
+      autoDueDate = today;
+      autoCompletedAt = new Date().toISOString();
+    }
+    // 완료에서 다른 상태로 되돌릴 때 completedAt 초기화
+    if (status !== 'DONE' && prevStatus === 'DONE') {
+      autoCompletedAt = null;
+    }
+
     const taskData: any = {
       id: initialTask?.id,
       title, 
@@ -194,19 +216,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       importance,
       urgency,
       quadrant: currentQuadrant,
-      dueDate,
+      dueDate: autoDueDate,
       projectName,
       customerName,
       requesterId,
       requesterName: reqName,
       assigneeId,
       assigneeName: assName,
-      startDate,
+      startDate: autoStartDate,
       recurrenceEndDate,
       externalFileLink,
       recurrence: type === 'PERIODIC' ? repeatCycle : null,
       allowedUserIds: relatedUsers.split(',').map(u => u.trim()).filter(Boolean),
-      attachments
+      attachments,
+      completedAt: autoCompletedAt,
     };
 
     const validationError = validateTask(taskData);
@@ -375,6 +398,15 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* Details Row 2 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>등록일</label>
+              <input
+                type="text"
+                readOnly
+                value={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }) : '저장 시 자동 기입'}
+                style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.82rem', background: '#f8fafc', color: '#94a3b8', cursor: 'default' }}
+              />
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>시작일</label>
               <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
