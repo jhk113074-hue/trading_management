@@ -71,7 +71,8 @@ export const Layout: React.FC = () => {
         { path: '/', label: '⊞ Dashboard' }
       ] as any },
       { section: '업무관리', items: [
-        { path: '/list', label: '📋 전체 업무 리스트' }
+        { path: '/list', label: '📋 전체 업무 리스트' },
+        { path: '/issues', label: '📌 이슈 게시판' }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },

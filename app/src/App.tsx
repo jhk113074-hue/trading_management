@@ -17,6 +17,7 @@ import { ContainerPacker } from './pages/ContainerPacker';
 import { AuthCallback } from './pages/AuthCallback';
 import { Orders } from './pages/Orders';
 import { OrderDetail } from './pages/OrderDetail';
+import { IssueBoard } from './pages/IssueBoard';
 
 const App: React.FC = () => {
   return (
@@ -38,6 +39,7 @@ const App: React.FC = () => {
               <Route path="container-packer" element={<ContainerPacker />} />
               <Route path="team-management" element={<TeamManagement />} />
               <Route path="profile" element={<ProfileSettings />} />
+              <Route path="issues" element={<IssueBoard />} />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
