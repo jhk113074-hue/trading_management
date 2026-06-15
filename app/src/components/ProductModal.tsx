@@ -673,13 +673,15 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
               <>
                 {/* ─── 공급사 섹션 ─── */}
                 <div style={{ background: '#f0f7ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15px' }}>🏪</span>
                     <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#1d4ed8', margin: 0 }}>공급사 (Supplier)</h4>
                     <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>구매처 · 납품처</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+
+                  {/* 업체 선택 + 신규등록 버튼 */}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '12px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>공급업체 선택 (DB 연동)</label>
                       <input
                         type="text"
@@ -709,9 +711,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                 manufacturerAddress: found.address || '',
                               } : {})
                             }));
-                            if (sameAsSupplier) {
-                              setManufacturerInput(val);
-                            }
+                            if (sameAsSupplier) setManufacturerInput(val);
                           } else {
                             setFormData(prev => ({
                               ...prev,
@@ -730,40 +730,71 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                 manufacturerAddress: '',
                               } : {})
                             }));
-                            if (sameAsSupplier) {
-                              setManufacturerInput(val);
-                            }
+                            if (sameAsSupplier) setManufacturerInput(val);
                           }
                         }}
                         style={{ padding: '9px 11px', border: '1px solid #bfdbfe', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
                       />
                       <datalist id="suppliers_datalist">
                         {suppliers.map(s => (
-                           <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
+                          <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
                             {s.name} ({s.supplierCode})
                           </option>
                         ))}
                       </datalist>
                     </div>
-                    <Input label="공급업체명" value={formData.supplierName} onChange={(v: any) => handleChange('supplierName', v)} disabled={true} />
-                    <Input label="공급업체코드" value={formData.supplierCode} onChange={(v: any) => handleChange('supplierCode', v)} disabled={true} />
-                    <Input label="공급처 주 담당자명" value={formData.supplierContact} onChange={(v: any) => handleChange('supplierContact', v)} disabled={true} />
-                    <Input label="공급처 연락처" value={formData.supplierPhone} onChange={(v: any) => handleChange('supplierPhone', v)} disabled={true} />
-                    <Input label="공급처 이메일" value={formData.supplierEmail} onChange={(v: any) => handleChange('supplierEmail', v)} type="email" disabled={true} />
-                    <Input label="최소주문수량 (MOQ)" value={formData.minOrderQty} onChange={(v: any) => handleChange('minOrderQty', parseFloat(v) || 0)} type="number" />
+                    <button
+                      type="button"
+                      onClick={() => window.open('/suppliers?action=new', '_blank')}
+                      style={{ padding: '9px 14px', fontSize: '12px', fontWeight: 700, background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', whiteSpace: 'nowrap', height: '38px' }}
+                    >
+                      + 신규 공급사 등록
+                    </button>
                   </div>
-                  <div style={{ marginTop: '14px' }}>
-                    <Input label="공급업체 주소" value={formData.supplierAddress} onChange={(v: any) => handleChange('supplierAddress', v)} disabled={true} />
-                  </div>
+
+                  {/* 선택된 공급사 정보 요약 (선택 시에만 표시) */}
+                  {formData.supplierName && (
+                    <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>업체코드</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#1d4ed8' }}>{formData.supplierCode}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>담당자</div>
+                        <div style={{ fontSize: '12px', color: '#1e293b' }}>{formData.supplierContact || '-'}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>이메일</div>
+                        <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.supplierEmail || '-'}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>주소</div>
+                        <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.supplierAddress || '-'}</div>
+                      </div>
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>최소주문수량 (MOQ)</label>
+                        <input
+                          type="number"
+                          value={formData.minOrderQty ?? 0}
+                          onChange={e => handleChange('minOrderQty', parseFloat(e.target.value) || 0)}
+                          style={{ display: 'block', width: '100%', padding: '6px 8px', border: '1px solid #bfdbfe', borderRadius: '5px', fontSize: '12px', marginTop: '3px', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {!formData.supplierName && (
+                    <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8fafc', borderRadius: '6px' }}>
+                      위에서 공급업체를 선택하면 상세 정보가 표시됩니다
+                    </div>
+                  )}
                 </div>
 
                 {/* ─── 제조사 섹션 ─── */}
                 <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15px' }}>🏭</span>
                     <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#15803d', margin: 0 }}>제조사 (Manufacturer)</h4>
-                    {/* ✅ 공급업체와 동일 체크박스 */}
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#15803d', background: '#dcfce7', padding: '3px 10px', borderRadius: '20px', border: '1px solid #86efac' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#15803d', background: sameAsSupplier ? '#dcfce7' : '#fff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #86efac' }}>
                       <input
                         type="checkbox"
                         checked={sameAsSupplier}
@@ -789,61 +820,91 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     </label>
                     <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>생산 공장 · 원산지 제조처</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>제조사 선택 (DB 연동)</label>
-                      <input
-                        type="text"
-                        list="manufacturers_datalist"
-                        value={manufacturerInput}
-                        placeholder="제조사 검색 또는 직접 입력"
-                        disabled={sameAsSupplier}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setManufacturerInput(val);
-                          const code = getRawSupplierCode(val);
-                          const found = suppliers.find(s => s.supplierCode === code || s.name === val || `[${s.supplierCode}] ${s.name}` === val);
-                          if (found) {
-                            setFormData(prev => ({
-                              ...prev,
-                              manufacturerName: found.name || '',
-                              manufacturerCode: found.supplierCode || '',
-                              manufacturerContact: found.managerName || '',
-                              manufacturerPhone: found.managerPhone || found.phone || '',
-                              manufacturerEmail: found.purchaseEmail || '',
-                              manufacturerAddress: found.address || '',
-                            }));
-                          } else {
-                            setFormData(prev => ({
-                              ...prev,
-                              manufacturerName: '',
-                              manufacturerCode: val,
-                              manufacturerContact: '',
-                              manufacturerPhone: '',
-                              manufacturerEmail: '',
-                              manufacturerAddress: '',
-                            }));
-                          }
-                        }}
-                        style={{ padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: sameAsSupplier ? '#f0fdf4' : '#fff', color: sameAsSupplier ? '#6b7280' : undefined, cursor: sameAsSupplier ? 'not-allowed' : undefined }}
-                      />
-                      <datalist id="manufacturers_datalist">
-                        {suppliers.map(s => (
-                          <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
-                            {s.name} ({s.supplierCode})
-                          </option>
-                        ))}
-                      </datalist>
+
+                  {sameAsSupplier ? (
+                    /* 동일 체크 시: 간단 배지로 표시 */
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px' }}>
+                      <span style={{ fontSize: '16px' }}>✅</span>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>{formData.manufacturerName || '(공급사 선택 후 자동 반영)'}</div>
+                        <div style={{ fontSize: '11px', color: '#4ade80' }}>공급사와 동일한 업체로 설정됨 · 코드: {formData.manufacturerCode || '-'}</div>
+                      </div>
                     </div>
-                    <Input label="제조사명" value={formData.manufacturerName} onChange={(v: any) => handleChange('manufacturerName', v)} disabled={true} />
-                    <Input label="제조사코드" value={formData.manufacturerCode} onChange={(v: any) => handleChange('manufacturerCode', v)} disabled={true} />
-                    <Input label="제조사 담당자명" value={formData.manufacturerContact} onChange={(v: any) => handleChange('manufacturerContact', v)} disabled={true} />
-                    <Input label="제조사 연락처" value={formData.manufacturerPhone} onChange={(v: any) => handleChange('manufacturerPhone', v)} disabled={true} />
-                    <Input label="제조사 이메일" value={formData.manufacturerEmail} onChange={(v: any) => handleChange('manufacturerEmail', v)} disabled={true} type="email" />
-                  </div>
-                  <div style={{ marginTop: '14px' }}>
-                    <Input label="제조사 주소" value={formData.manufacturerAddress} onChange={(v: any) => handleChange('manufacturerAddress', v)} disabled={true} />
-                  </div>
+                  ) : (
+                    <>
+                      {/* 제조사 선택 */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '5px' }}>제조사 선택 (DB 연동)</label>
+                        <input
+                          type="text"
+                          list="manufacturers_datalist"
+                          value={manufacturerInput}
+                          placeholder="제조사 검색 또는 직접 입력"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setManufacturerInput(val);
+                            const code = getRawSupplierCode(val);
+                            const found = suppliers.find(s => s.supplierCode === code || s.name === val || `[${s.supplierCode}] ${s.name}` === val);
+                            if (found) {
+                              setFormData(prev => ({
+                                ...prev,
+                                manufacturerName: found.name || '',
+                                manufacturerCode: found.supplierCode || '',
+                                manufacturerContact: found.managerName || '',
+                                manufacturerPhone: found.managerPhone || found.phone || '',
+                                manufacturerEmail: found.purchaseEmail || '',
+                                manufacturerAddress: found.address || '',
+                              }));
+                            } else {
+                              setFormData(prev => ({
+                                ...prev,
+                                manufacturerName: '',
+                                manufacturerCode: val,
+                                manufacturerContact: '',
+                                manufacturerPhone: '',
+                                manufacturerEmail: '',
+                                manufacturerAddress: '',
+                              }));
+                            }
+                          }}
+                          style={{ width: '100%', padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: '#fff', boxSizing: 'border-box' }}
+                        />
+                        <datalist id="manufacturers_datalist">
+                          {suppliers.map(s => (
+                            <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
+                              {s.name} ({s.supplierCode})
+                            </option>
+                          ))}
+                        </datalist>
+                      </div>
+
+                      {/* 선택된 제조사 정보 요약 */}
+                      {formData.manufacturerName ? (
+                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>업체코드</div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#15803d' }}>{formData.manufacturerCode}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>담당자</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b' }}>{formData.manufacturerContact || '-'}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>이메일</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerEmail || '-'}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>주소</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerAddress || '-'}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8fafc', borderRadius: '6px' }}>
+                          제조사를 선택하면 상세 정보가 표시됩니다
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </>
             )}
