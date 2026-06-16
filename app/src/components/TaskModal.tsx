@@ -36,6 +36,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(initialTask?.recurrenceEndDate || '');
 
   const [externalFileLink, setExternalFileLink] = useState(initialTask?.externalFileLink || '');
+
+  // ── Dropbox 링크 자동 변환 ─────────────────────────────────────────
+  const convertDropboxLink = (url: string): string => {
+    if (!url.includes('dropbox.com')) return url;
+    let converted = url.trim();
+    // dl=0 → dl=1 (미리보기 → 직접 다운로드)
+    if (converted.includes('dl=0')) {
+      converted = converted.replace('dl=0', 'dl=1');
+    } else if (!converted.includes('dl=')) {
+      // dl 파라미터 없으면 추가
+      converted += (converted.includes('?') ? '&' : '?') + 'dl=1';
+    }
+    return converted;
+  };
   const [relatedUsers, setRelatedUsers] = useState(initialTask?.allowedUserIds?.join(', ') || '');
   
   const [users, setUsers] = useState<User[]>([]);
@@ -490,11 +504,23 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>외부 파일 링크</label>
             <div style={{ display: 'flex', gap: '6px' }}>
               <input
-                type="text" value={externalFileLink} onChange={e => setExternalFileLink(e.target.value)}
-                placeholder='Dropbox 웹에서 우클릭 → "링크 복사" 후 https://... 형태로 붙여넣기'
+                type="text"
+                value={externalFileLink}
+                onChange={e => setExternalFileLink(convertDropboxLink(e.target.value))}
+                onBlur={e => setExternalFileLink(convertDropboxLink(e.target.value))}
+                placeholder='Dropbox 웹에서 우클릭 → "링크 복사" 후 붙여넣으면 자동 변환됩니다'
                 style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }}
               />
+              {externalFileLink && (
+                <a href={externalFileLink} target="_blank" rel="noopener noreferrer"
+                  style={{ padding: '6px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                  🔗 열기
+                </a>
+              )}
             </div>
+            {externalFileLink && externalFileLink.includes('dropbox.com') && externalFileLink.includes('dl=1') && (
+              <div style={{ fontSize: '0.7rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>✅ Dropbox 링크가 직접 접근 형식으로 자동 변환되었습니다</div>
+            )}
           </div>
 
           {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
