@@ -17,7 +17,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
-  const [, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
@@ -230,6 +231,32 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     });
   };
 
+  const handleSelectProduct = (idx: number, prod: Product) => {
+    setItems(prev => {
+      const updated = [...prev];
+      const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+      
+      let buyPrice = prod.purchasePrice || 0;
+      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      const qty = updated[idx].qty || 0;
+      const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+      updated[idx] = {
+        ...updated[idx],
+        name: prod.nameEn || prod.nameKo || prod.productCode || '',
+        supplier: prod.supplierName || '',
+        supplierContact: contactInfo || '',
+        grade: prod.spec || '',
+        unit: (prod.unit || 'kg') as any,
+        unitPrice: buyPrice,
+        currency: itemCurrency,
+        amount: amt
+      };
+      return updated;
+    });
+    setFocusedIndex(null);
+  };
+
   const addItemRow = () => {
     setItems(prev => [
       ...prev,
@@ -321,35 +348,35 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '95%', maxWidth: '1100px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: '#fff', borderRadius: '12px', width: '95%', maxWidth: '1150px', maxHeight: '96vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
         
         {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '12px 12px 0 0' }}>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>신규 PO(발주서) 등록</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>신규 PO(발주서) 등록</div>
+            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '1px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
           {/* Form Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>PO 번호 (자동 생성) ★</label>
-              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PO 번호 (자동 생성) ★</label>
+              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>고객사 PO 번호</label>
-              <input type="text" value={formData.custPo} onChange={e => handleFormDataChange('custPo', e.target.value)} placeholder="예: PO-12345" style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 PO 번호</label>
+              <input type="text" value={formData.custPo} onChange={e => handleFormDataChange('custPo', e.target.value)} placeholder="예: PO-12345" style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>연결할 견적서(PI)</label>
-              <select value={formData.quotationId} onChange={e => handleFormDataChange('quotationId', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>연결할 견적서(PI)</label>
+              <select value={formData.quotationId} onChange={e => handleFormDataChange('quotationId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
                 <option value="">선택 안 함</option>
                 {quotations.map(q => (
                   <option key={q.id} value={q.id}>{q.piNumber} ({q.customerName})</option>
@@ -357,9 +384,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>고객사 선택 ★</label>
-              <select value={formData.customerId} onChange={e => handleFormDataChange('customerId', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 선택 ★</label>
+              <select value={formData.customerId} onChange={e => handleFormDataChange('customerId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
                 <option value="">고객사 선택</option>
                 {customers.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -367,9 +394,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>인코텀즈 ★</label>
-              <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>인코텀즈 ★</label>
+              <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
                 <option value="FOB">FOB</option>
                 <option value="CIF HCM">CIF HCM</option>
                 <option value="EXW">EXW</option>
@@ -379,81 +406,144 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>결제 조건 (Payment Terms)</label>
-              <input type="text" value={formData.paymentTerms} onChange={e => handleFormDataChange('paymentTerms', e.target.value)} placeholder="예: 30 days after BL" style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>결제 조건 (Payment Terms)</label>
+              <input type="text" value={formData.paymentTerms} onChange={e => handleFormDataChange('paymentTerms', e.target.value)} placeholder="예: 30 days after BL" style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>PO 접수일 ★</label>
-              <input type="date" value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PO 접수일 ★</label>
+              <input type="date" value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>요청 납기일</label>
-              <input type="date" value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>요청 납기일</label>
+              <input type="date" value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', gridColumn: 'span 2' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>비고 (Remarks)</label>
-              <input type="text" value={formData.remark} onChange={e => handleFormDataChange('remark', e.target.value)} placeholder="특이사항 입력" style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>비고 (Remarks)</label>
+              <input type="text" value={formData.remark} onChange={e => handleFormDataChange('remark', e.target.value)} placeholder="특이사항 입력" style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>담당 영업 사원</label>
-              <input type="text" value={formData.manager} onChange={e => handleFormDataChange('manager', e.target.value)} style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>담당 영업 사원</label>
+              <input type="text" value={formData.manager} onChange={e => handleFormDataChange('manager', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>상태</label>
-              <input type="text" value={formData.status} disabled style={{ padding: '9px 11px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '13px', background: '#f3f4f6' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>상태</label>
+              <input type="text" value={formData.status} disabled style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px', background: '#f3f4f6' }} />
             </div>
           </div>
 
           {/* Items Section */}
-          <div style={{ marginTop: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>📦 발주 품목 목록</span>
-              <button type="button" onClick={addItemRow} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
+          <div style={{ marginTop: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 발주 품목 목록</span>
+              <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
             </div>
             
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '40px' }}>No</th>
-                  <th style={{ padding: '8px', textAlign: 'left' }}>품목명 ★</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '150px' }}>공급사</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '120px' }}>공급사 연락처</th>
-                  <th style={{ padding: '8px', textAlign: 'left', width: '80px' }}>Grade</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '90px' }}>수량</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>단위</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>통화</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '100px' }}>단가</th>
-                  <th style={{ padding: '8px', textAlign: 'right', width: '110px' }}>금액</th>
-                  <th style={{ padding: '8px', textAlign: 'center', width: '50px' }}>삭제</th>
+                  <th style={{ padding: '6px', textAlign: 'center', width: '35px' }}>No</th>
+                  <th style={{ padding: '6px', textAlign: 'left' }}>품목명 ★</th>
+                  <th style={{ padding: '6px', textAlign: 'left', width: '140px' }}>공급사</th>
+                  <th style={{ padding: '6px', textAlign: 'left', width: '120px' }}>공급사 연락처</th>
+                  <th style={{ padding: '6px', textAlign: 'left', width: '80px' }}>Grade</th>
+                  <th style={{ padding: '6px', textAlign: 'right', width: '80px' }}>수량</th>
+                  <th style={{ padding: '6px', textAlign: 'center', width: '65px' }}>단위</th>
+                  <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>통화</th>
+                  <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>단가</th>
+                  <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>금액</th>
+                  <th style={{ padding: '6px', textAlign: 'center', width: '45px' }}>삭제</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="text" value={item.name || ''} onChange={e => handleItemChange(idx, 'name', e.target.value)} placeholder="품명 입력" style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }} />
+                    <td style={{ padding: '4px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
+                    <td style={{ padding: '2px', position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={item.name || ''}
+                        onChange={e => {
+                          handleItemChange(idx, 'name', e.target.value);
+                          setFocusedIndex(idx);
+                        }}
+                        onFocus={() => setFocusedIndex(idx)}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setFocusedIndex(prev => prev === idx ? null : prev);
+                          }, 200);
+                        }}
+                        placeholder="품명 입력"
+                        style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}
+                      />
+                      {focusedIndex === idx && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '2px',
+                          right: '2px',
+                          background: '#fff',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                          zIndex: 50,
+                          maxHeight: '150px',
+                          overflowY: 'auto'
+                        }}>
+                          {(() => {
+                            const query = (item.name || '').toLowerCase().trim();
+                            const filtered = products.filter(p => 
+                              (p.nameEn || '').toLowerCase().includes(query) ||
+                              (p.nameKo || '').toLowerCase().includes(query) ||
+                              (p.productCode || '').toLowerCase().includes(query)
+                            );
+                            if (filtered.length === 0) {
+                              return <div style={{ padding: '6px', color: '#94a3b8', fontSize: '11px', textAlign: 'center' }}>검색 결과 없음</div>;
+                            }
+                            return filtered.map(p => (
+                              <div
+                                key={p.id}
+                                onMouseDown={() => handleSelectProduct(idx, p)}
+                                style={{
+                                  padding: '5px 8px',
+                                  cursor: 'pointer',
+                                  fontSize: '11px',
+                                  borderBottom: '1px solid #f1f5f9',
+                                  transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ fontWeight: 600, color: '#1e293b' }}>{p.nameEn || p.nameKo}</div>
+                                <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>{p.productCode}</span>
+                                  <span>{p.supplierName}</span>
+                                </div>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      )}
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="text" value={item.supplier || ''} onChange={e => handleItemChange(idx, 'supplier', e.target.value)} placeholder="공급사명" style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }} />
+                    <td style={{ padding: '2px' }}>
+                      <input type="text" value={item.supplier || ''} onChange={e => handleItemChange(idx, 'supplier', e.target.value)} placeholder="공급사명" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="text" value={item.supplierContact || ''} onChange={e => handleItemChange(idx, 'supplierContact', e.target.value)} placeholder="이메일 등" style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }} />
+                    <td style={{ padding: '2px' }}>
+                      <input type="text" value={item.supplierContact || ''} onChange={e => handleItemChange(idx, 'supplierContact', e.target.value)} placeholder="이메일 등" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="text" value={item.grade || ''} onChange={e => handleItemChange(idx, 'grade', e.target.value)} placeholder="Grade" style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }} />
+                    <td style={{ padding: '2px' }}>
+                      <input type="text" value={item.grade || ''} onChange={e => handleItemChange(idx, 'grade', e.target.value)} placeholder="Grade" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="number" value={item.qty || ''} onChange={e => handleItemChange(idx, 'qty', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} />
+                    <td style={{ padding: '2px' }}>
+                      <input type="number" value={item.qty || ''} onChange={e => handleItemChange(idx, 'qty', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box' }} />
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <select value={item.unit || 'kg'} onChange={e => handleItemChange(idx, 'unit', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }}>
+                    <td style={{ padding: '2px' }}>
+                      <select value={item.unit || 'kg'} onChange={e => handleItemChange(idx, 'unit', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}>
                         <option value="kg">kg</option>
                         <option value="MT">MT</option>
                         <option value="L">L</option>
@@ -461,20 +551,20 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                         <option value="set">set</option>
                       </select>
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <select value={item.currency || 'USD'} onChange={e => handleItemChange(idx, 'currency', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px' }}>
+                    <td style={{ padding: '2px' }}>
+                      <select value={item.currency || 'USD'} onChange={e => handleItemChange(idx, 'currency', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}>
                         <option value="USD">USD ($)</option>
                         <option value="KRW">KRW (₩)</option>
                       </select>
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <input type="number" step={item.currency === 'KRW' ? '1' : '0.01'} value={item.unitPrice || ''} onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)} style={{ width: '100%', padding: '6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} />
+                    <td style={{ padding: '2px' }}>
+                      <input type="number" step={item.currency === 'KRW' ? '1' : '0.01'} value={item.unitPrice || ''} onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box' }} />
                     </td>
-                    <td style={{ padding: '6px', textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>
                       {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button type="button" onClick={() => removeItemRow(idx)} disabled={items.length === 1} style={{ background: 'transparent', border: 'none', color: items.length === 1 ? '#cbd5e1' : '#ef4444', fontSize: '16px', cursor: items.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
+                    <td style={{ padding: '2px', textAlign: 'center' }}>
+                      <button type="button" onClick={() => removeItemRow(idx)} disabled={items.length === 1} style={{ background: 'transparent', border: 'none', color: items.length === 1 ? '#cbd5e1' : '#ef4444', fontSize: '14px', cursor: items.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
                     </td>
                   </tr>
                 ))}
@@ -565,9 +655,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px' }}>
-          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+        <div style={{ padding: '8px 16px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 12px 12px' }}>
+          <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontSize: '12px' }}>취소</button>
+          <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }}>
             {isSaving ? '등록 중...' : '✔ 등록 완료'}
           </button>
         </div>
