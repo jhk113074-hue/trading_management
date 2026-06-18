@@ -5,6 +5,17 @@ import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
 import type { Product } from '../types/product';
+import { ProductModal } from './ProductModal';
+import { ProductSearchModal } from './ProductSearchModal';
+
+const getRawProductCode = (code: string | undefined): string => {
+  if (!code) return '';
+  const val = code.trim();
+  if (val.startsWith('[') && val.includes(']')) {
+    return val.substring(1, val.indexOf(']')).trim();
+  }
+  return val;
+};
 
 interface Props {
   onClose: () => void;
@@ -18,7 +29,10 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+  const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
@@ -213,8 +227,34 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
     setItems(prev => {
       const updated = [...prev];
-      const it = { ...updated[index], [field]: value };
+      let it = { ...updated[index], [field]: value };
       
+      if (field === 'name') {
+        const parsedCode = getRawProductCode(value);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        if (prod) {
+          const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+          const displayName = prod.nameEn || prod.nameKo || '';
+          
+          let buyPrice = prod.purchasePrice || 0;
+          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          const qty = it.qty || 0;
+          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+          it = {
+            ...it,
+            name: `[${prod.productCode}] ${displayName}`,
+            supplier: prod.supplierName || '',
+            supplierContact: contactInfo || '',
+            grade: prod.spec || '',
+            unit: (prod.unit || 'kg') as any,
+            unitPrice: buyPrice,
+            currency: itemCurrency,
+            amount: amt
+          };
+        }
+      }
+
       if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
         const qty = field === 'qty' ? parseFloat(value) || 0 : parseFloat(it.qty as any) || 0;
         const price = field === 'unitPrice' ? parseFloat(value) || 0 : parseFloat(it.unitPrice as any) || 0;
@@ -241,9 +281,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
+      const displayName = prod.nameEn || prod.nameKo || '';
+
       updated[idx] = {
         ...updated[idx],
-        name: prod.nameEn || prod.nameKo || prod.productCode || '',
+        name: `[${prod.productCode}] ${displayName}`,
         supplier: prod.supplierName || '',
         supplierContact: contactInfo || '',
         grade: prod.spec || '',
@@ -254,7 +296,6 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       };
       return updated;
     });
-    setFocusedIndex(null);
   };
 
   const addItemRow = () => {
@@ -465,70 +506,124 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '4px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
                     <td style={{ padding: '2px', position: 'relative' }}>
-                      <input
-                        type="text"
-                        value={item.name || ''}
-                        onChange={e => {
-                          handleItemChange(idx, 'name', e.target.value);
-                          setFocusedIndex(idx);
-                        }}
-                        onFocus={() => setFocusedIndex(idx)}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            setFocusedIndex(prev => prev === idx ? null : prev);
-                          }, 200);
-                        }}
-                        placeholder="품명 입력"
-                        style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}
-                      />
-                      {focusedIndex === idx && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: '2px',
-                          right: '2px',
-                          background: '#fff',
-                          border: '1px solid #cbd5e1',
-                          borderRadius: '6px',
-                          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                          zIndex: 50,
-                          maxHeight: '150px',
-                          overflowY: 'auto'
-                        }}>
-                          {(() => {
-                            const query = (item.name || '').toLowerCase().trim();
-                            const filtered = products.filter(p => 
-                              (p.nameEn || '').toLowerCase().includes(query) ||
-                              (p.nameKo || '').toLowerCase().includes(query) ||
-                              (p.productCode || '').toLowerCase().includes(query)
-                            );
-                            if (filtered.length === 0) {
-                              return <div style={{ padding: '6px', color: '#94a3b8', fontSize: '11px', textAlign: 'center' }}>검색 결과 없음</div>;
-                            }
-                            return filtered.map(p => (
-                              <div
-                                key={p.id}
-                                onMouseDown={() => handleSelectProduct(idx, p)}
-                                style={{
-                                  padding: '5px 8px',
-                                  cursor: 'pointer',
-                                  fontSize: '11px',
-                                  borderBottom: '1px solid #f1f5f9',
-                                  transition: 'background 0.2s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                              >
-                                <div style={{ fontWeight: 600, color: '#1e293b' }}>{p.nameEn || p.nameKo}</div>
-                                <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>{p.productCode}</span>
-                                  <span>{p.supplierName}</span>
-                                </div>
-                              </div>
-                            ));
-                          })()}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            list={`po_products_datalist_${idx}`}
+                            value={item.name || ''}
+                            onChange={e => handleItemChange(idx, 'name', e.target.value)}
+                            placeholder="상품코드 검색/입력"
+                            style={{ width: '100%', padding: '4px 40px 4px 6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '28px' }}
+                          />
+                          {item.name && (
+                            <button
+                              type="button"
+                              onClick={() => handleItemChange(idx, 'name', '')}
+                              style={{
+                                position: 'absolute',
+                                right: '22px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#94a3b8',
+                                cursor: 'pointer',
+                                fontSize: '10px',
+                                padding: '2px',
+                                zIndex: 5,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="비우기"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSearchItemIndex(idx);
+                              setIsProductSearchOpen(true);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              right: '4px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#3b82f6',
+                              cursor: 'pointer',
+                              fontSize: '11px',
+                              padding: '2px',
+                              zIndex: 5,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                            title="상품 검색 (Subwindow)"
+                          >
+                            🔍
+                          </button>
+                          <datalist id={`po_products_datalist_${idx}`}>
+                            {products.map(p => {
+                              const displayName = p.nameEn || p.nameKo || '';
+                              return (
+                                <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                  [{p.productCode}] {displayName}
+                                </option>
+                              );
+                            })}
+                          </datalist>
                         </div>
-                      )}
+                        {(() => {
+                          const rawCode = getRawProductCode(item.name);
+                          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (p) {
+                                  setEditingProd(p);
+                                  setIsProdModalOpen(true);
+                                } else {
+                                  alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                }
+                              }}
+                              disabled={!p}
+                              title="선택된 상품 수정"
+                              style={{
+                                background: p ? '#fef08a' : '#f1f5f9',
+                                border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                color: p ? '#a16207' : '#94a3b8',
+                                borderRadius: '4px',
+                                padding: '2px 4px',
+                                cursor: p ? 'pointer' : 'not-allowed',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '28px',
+                                width: '28px',
+                                boxSizing: 'border-box'
+                              }}
+                            >
+                              ✏️
+                            </button>
+                          );
+                        })()}
+                        {(() => {
+                          const rawCode = getRawProductCode(item.name);
+                          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                          if (p && p.supplierName) {
+                            return (
+                              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '120px', marginLeft: '2px' }} title={p.supplierName}>
+                                {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </td>
                     <td style={{ padding: '2px' }}>
                       <input type="text" value={item.supplier || ''} onChange={e => handleItemChange(idx, 'supplier', e.target.value)} placeholder="공급사명" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
@@ -663,6 +758,34 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         </div>
 
       </div>
+
+      {isProductSearchOpen && searchItemIndex !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => setIsProductSearchOpen(false)}
+          onSelect={(prod) => {
+            handleSelectProduct(searchItemIndex, prod);
+            setIsProductSearchOpen(false);
+          }}
+        />
+      )}
+
+      {isProdModalOpen && (
+        <ProductModal
+          initialProduct={editingProd}
+          products={products}
+          onClose={() => {
+            setIsProdModalOpen(false);
+            setEditingProd(undefined);
+            // Refresh products list
+            const refreshProducts = async () => {
+              const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+              setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+            };
+            refreshProducts();
+          }}
+        />
+      )}
     </div>
   );
 };
