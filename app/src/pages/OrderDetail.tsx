@@ -15,11 +15,12 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("발주");
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | null>(null);
   const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
+  const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
@@ -211,6 +212,13 @@ export const OrderDetail: React.FC = () => {
     return groups;
   }, [order]);
 
+  const allOrderSuppliers = useMemo(() => {
+    if (!order) return [];
+    const itemSuppliers = Object.keys(groupedSupplierItems).filter(s => s !== 'General Supplier');
+    const additional = order.additionalSuppliers || [];
+    return Array.from(new Set([...itemSuppliers, ...additional]));
+  }, [groupedSupplierItems, order]);
+
   // Save details changes
   const handleSaveBasic = async () => {
     if (!order) return;
@@ -291,8 +299,40 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const handleAddSupplier = async () => {
+    if (!selectedAddSupplier || !order) return;
+    const currentAdd = order.additionalSuppliers || [];
+    if (currentAdd.includes(selectedAddSupplier) || Object.keys(groupedSupplierItems).includes(selectedAddSupplier)) {
+      alert("이미 추가된 공급업체입니다.");
+      return;
+    }
+    const updated = [...currentAdd, selectedAddSupplier];
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { additionalSuppliers: updated, updatedAt: serverTimestamp() }, { merge: true });
+      alert("공급업체가 추가되었습니다.");
+      setSelectedAddSupplier('');
+    } catch (err: any) {
+      alert("공급업체 추가 실패: " + err.message);
+    }
+  };
+
+  const handleRemoveSupplier = async (supplierName: string) => {
+    if (!order) return;
+    if (!window.confirm(`'${supplierName}' 공급업체를 이 주문에서 제외하시겠습니까?`)) return;
+    const currentAdd = order.additionalSuppliers || [];
+    const updated = currentAdd.filter(s => s !== supplierName);
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { additionalSuppliers: updated, updatedAt: serverTimestamp() }, { merge: true });
+      alert("공급업체가 제외되었습니다.");
+    } catch (err: any) {
+      alert("공급업체 제외 실패: " + err.message);
+    }
+  };
+
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -388,7 +428,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -412,7 +452,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'otherFiles',
+    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -1083,11 +1123,44 @@ export const OrderDetail: React.FC = () => {
           {/* 2. 발주 */}
           {activeStep === '발주' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* 추가 발주사(원자재/OEM) 관리 UI */}
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select 
+                    value={selectedAddSupplier} 
+                    onChange={e => setSelectedAddSupplier(e.target.value)}
+                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', minWidth: '220px' }}
+                  >
+                    <option value="">-- 추가할 공급사 선택 --</option>
+                    {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                  </select>
+                  <button 
+                    onClick={handleAddSupplier}
+                    style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
+                  >
+                    + 발주사 추가
+                  </button>
+                </div>
+                {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                    {order.additionalSuppliers.map(s => (
+                      <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600 }}>
+                        {s}
+                        <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}>✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {Object.keys(groupedSupplierItems).length === 0 ? (
+                {allOrderSuppliers.length === 0 ? (
                   <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>발주할 공급업체가 없습니다.</div>
                 ) : (
-                  Object.entries(groupedSupplierItems).map(([supplierName, items]) => {
+                  allOrderSuppliers.map(supplierName => {
+                    const items = groupedSupplierItems[supplierName] || [];
                     const cleanSupplierName = supplierName.replace(/\s+/g, '');
                     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
                     const poNum = `${order.id}-${supplierCode}`;
@@ -1150,7 +1223,14 @@ export const OrderDetail: React.FC = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {items.map((it, idx) => {
+                              {items.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                                    연결된 품목이 없습니다. (원자재/OEM 등의 목적으로 추가됨)
+                                  </td>
+                                </tr>
+                              ) : (
+                                items.map((it, idx) => {
                                 const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
                                 const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                 return (
@@ -1196,7 +1276,7 @@ export const OrderDetail: React.FC = () => {
                                     </td>
                                   </tr>
                                 );
-                              })}
+                              }))}
                             </tbody>
                           </table>
                         </div>
@@ -1309,10 +1389,10 @@ export const OrderDetail: React.FC = () => {
                 {supplierSubTab === 'tax' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 업체별 세금계산서 발행일과 국세청 승인(발급)번호를 입력합니다.</div>
-                    {Object.keys(groupedSupplierItems).length === 0 ? (
+                    {allOrderSuppliers.length === 0 ? (
                       <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
                     ) : (
-                      Object.keys(groupedSupplierItems).map(supplier => {
+                      allOrderSuppliers.map(supplier => {
                         const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
                         return (
                           <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -1368,7 +1448,7 @@ export const OrderDetail: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>영세율 세금계산서 발행업체만 표시됩니다. 마우스 드래그로 구매확인서 PDF 등을 첨부할 수 있습니다.</div>
                     {(() => {
-                      const zeroTaxSuppliers = Object.keys(groupedSupplierItems).filter(supplier => basicForm.supplierTaxTypes[supplier] === '영세');
+                      const zeroTaxSuppliers = allOrderSuppliers.filter(supplier => basicForm.supplierTaxTypes[supplier] === '영세');
                       if (zeroTaxSuppliers.length === 0) {
                         return (
                           <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '13px' }}>
@@ -1461,10 +1541,10 @@ export const OrderDetail: React.FC = () => {
                 {supplierSubTab === 'pay' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 공급업체별 1차~4차 결제일 및 결제금액(입금액)을 분할하여 지정할 수 있으며, 지급액 대비 미수금이 자동 계산됩니다.</div>
-                    {Object.keys(groupedSupplierItems).length === 0 ? (
+                    {allOrderSuppliers.length === 0 ? (
                        <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
                     ) : (
-                      Object.keys(groupedSupplierItems).map(supplier => {
+                      allOrderSuppliers.map(supplier => {
                         const list = basicForm.supplierPaymentInstallments[supplier] || [];
                         const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
                         const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
@@ -1748,12 +1828,16 @@ export const OrderDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* 5개의 유첨 파일 - 1줄에 5개 박스 */}
-              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+              {/* 7개의 유첨 파일 - 4개 / 3개 분할 배치 */}
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
                 {renderFileField('CI 유첨', 'ciFiles', 'ci-file-input')}
                 {renderFileField('PL 유첨', 'plFiles', 'pl-file-input')}
                 {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
                 {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+              </div>
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+                {renderFileField('COA 유첨', 'coaFiles', 'coa-file-input')}
+                {renderFileField('시험성적서 유첨', 'testReportFiles', 'test-report-file-input')}
                 {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
               </div>
 

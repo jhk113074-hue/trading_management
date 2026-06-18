@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, orderBy, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +16,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [title, setTitle] = useState(initialTask?.title || '');
   const [description, setDescription] = useState(initialTask?.description || '');
   const [visibility, setVisibility] = useState<Visibility>(initialTask?.visibility || 'PUBLIC');
-  const [type, setType] = useState<TaskType>(initialTask?.type || 'PROJECT');
+  const [type, setType] = useState<TaskType>(initialTask?.type || 'DAILY');
   const [scheduleType, setScheduleType] = useState<ScheduleType>(initialTask?.scheduleType || 'SELF');
   const [status, setStatus] = useState<TaskStatus>(initialTask?.status || 'TODO');
   const [importance, setImportance] = useState<string>(initialTask?.importance ? String(initialTask.importance) : 'B');
@@ -77,10 +77,18 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
     if (!initialTask?.id) return unsubscribeUsers;
     
-    const q = query(collection(db, 'taskComments'), where('taskId', '==', initialTask.id), orderBy('createdAt', 'asc'));
+    const q = query(collection(db, 'taskComments'), where('taskId', '==', initialTask.id));
     const unsubscribeComments = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      // Sort in memory to avoid Firestore composite index
+      fetched.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateA - dateB;
+      });
       setComments(fetched);
+    }, (error) => {
+      console.error("Comments fetch error:", error);
     });
     
     return () => {

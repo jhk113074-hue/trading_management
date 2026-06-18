@@ -128,8 +128,19 @@ export const TaskList: React.FC = () => {
     result = result.filter(task => {
       const isDone = task.status === 'DONE';
       
-      // 완료되지 않은 일(미완료 업무)은 날짜 필터를 우회하여 화면에 항상 계속 표시합니다.
-      if (!isDone) return true;
+      // 미완료 업무(TODO, IN_PROGRESS, HOLDING 등)는 시작일(startDate) 기준 필터링 적용. 시작일 없으면 항상 표시
+      if (!isDone) {
+        if (!task.startDate) return true;
+        if (dateMode === 'daily') {
+          return task.startDate <= selectedDate;
+        } else if (dateMode === 'weekly') {
+          const { end: wEnd } = getWeekRange(weekOffset);
+          const wEndStr = wEnd.toISOString().split('T')[0];
+          return task.startDate <= wEndStr;
+        } else {
+          return task.startDate <= endDate;
+        }
+      }
 
       // 완료된(DONE) 업무에 대한 날짜별 필터링 처리
       const completedAt = task.completedAt ? new Date(task.completedAt) : null;
@@ -173,13 +184,8 @@ export const TaskList: React.FC = () => {
         return 0;
       });
     } else {
-      // Default sorting: importance 'A' first, then 'B', 'C', 'D'. If importance is equal, newest first.
+      // Default sorting: newest first (so new tasks appear at the top immediately)
       result.sort((a, b) => {
-        const impA = a.importance || 'Z';
-        const impB = b.importance || 'Z';
-        if (impA !== impB) {
-          return impA.localeCompare(impB);
-        }
         const dateA = a.createdAt || '';
         const dateB = b.createdAt || '';
         return dateB.localeCompare(dateA);
@@ -235,10 +241,20 @@ export const TaskList: React.FC = () => {
   const handleQuickAdd = async () => {
     if (!quickTitle.trim()) return;
     try {
+      // Get default startDate matching the current date filter
+      let defaultStartDate = selectedDate;
+      if (dateMode === 'weekly') {
+        const { start } = getWeekRange(weekOffset);
+        defaultStartDate = start.toISOString().split('T')[0];
+      } else if (dateMode === 'range') {
+        defaultStartDate = startDate;
+      }
+
       await addTask({
-        title: quickTitle, status: 'TODO', type: 'PROJECT', scheduleType: 'SELF',
+        title: quickTitle, status: 'TODO', type: 'DAILY', scheduleType: 'SELF',
         importance: 'B', urgency: 5, quadrant: 'Q2',
         assigneeId: userProfile?.id || '', assigneeName: userProfile?.name || '관리자',
+        startDate: defaultStartDate || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString()
       } as any);
       setQuickTitle('');

@@ -312,42 +312,39 @@ export const Dashboard: React.FC = () => {
     if (dateMode === 'daily') {
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 완료일 기준
+        // 완료된 업무: 완료일 기준 당일 완료건만 노출
         if (isDone && task.completedAt) {
           return task.completedAt.split('T')[0] === selectedDate;
         }
-        // 미완료: 시작일 기준. 시작일 없으면 항상 표시
+        // 미완료: 시작일 기준 (오늘 포함 이전 시작일인 경우 노출). 시작일 없으면 항상 표시
         if (!task.startDate) return true;
-        return task.startDate === selectedDate;
+        return task.startDate <= selectedDate;
       });
     } else if (dateMode === 'weekly') {
-      const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
-      const wStartStr = wStart.toISOString().split('T')[0];
+      const { end: wEnd } = getWeekRange(weekOffset);
       const wEndStr = wEnd.toISOString().split('T')[0];
 
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 완료일이 해당 주에 있는지
+        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출
         if (isDone && task.completedAt) {
-          const compStr = task.completedAt.split('T')[0];
-          return compStr >= wStartStr && compStr <= wEndStr;
+          return task.completedAt.split('T')[0] === selectedDate;
         }
-        // 미완료: 시작일이 해당 주에 속하는지. 시작일 없으면 항상 표시
+        // 미완료: 시작일이 이번주 마감일 이하인 경우 노출. 시작일 없으면 항상 표시
         if (!task.startDate) return true;
-        return task.startDate >= wStartStr && task.startDate <= wEndStr;
+        return task.startDate <= wEndStr;
       });
     } else {
       // 기간 검색: 시작일이 검색 기간 내에 있는지
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 완료일 기준
+        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출
         if (isDone && task.completedAt) {
-          const compStr = task.completedAt.split('T')[0];
-          return compStr >= startDate && compStr <= endDate;
+          return task.completedAt.split('T')[0] === selectedDate;
         }
-        // 미완료: 시작일 기준. 시작일 없으면 항상 표시
+        // 미완료: 시작일이 검색 종료일 이하인 경우 노출. 시작일 없으면 항상 표시
         if (!task.startDate) return true;
-        return task.startDate >= startDate && task.startDate <= endDate;
+        return task.startDate <= endDate;
       });
     }
 
@@ -430,13 +427,14 @@ export const Dashboard: React.FC = () => {
       await addTask({
         title: quickTaskTitle,
         status: 'TODO',
-        type: 'PROJECT',
+        type: 'DAILY',
         scheduleType: 'SELF',
         importance: 'B',
         urgency: 5,
         quadrant: 'Q2',
         assigneeId: userProfile?.id || '',
         assigneeName: userProfile?.name || '관리자',
+        startDate: selectedDate || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString()
       } as any);
       setQuickTaskTitle('');

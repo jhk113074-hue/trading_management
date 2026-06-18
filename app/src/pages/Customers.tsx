@@ -301,7 +301,7 @@ export const Customers: React.FC = () => {
                     <td style={{ padding: '12px' }}>{c.representative || '-'}</td>
                     <td style={{ padding: '12px' }}>
                       <div style={{ fontSize: '12px' }}>{c.contactPerson || '-'}</div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>{c.email || c.phone || '-'}</div>
+                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>{c.contactEmail || c.email || c.contactPhone || '-'}</div>
                     </td>
                     <td style={{ padding: '12px', fontSize: '12px' }}>{c.paymentTerms || '-'}</td>
                     <td style={{ padding: '12px', textAlign: 'center', fontWeight: 700, color: '#d97706' }}>{c.tradeGrade || 'A'}</td>

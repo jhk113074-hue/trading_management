@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   collection, addDoc, onSnapshot, doc,
-  updateDoc, serverTimestamp, query, orderBy, Timestamp
+  updateDoc, serverTimestamp, query, orderBy, Timestamp, getDocs
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase';
@@ -17,6 +17,7 @@ interface Attachment { name: string; url: string; type: string; }
 
 interface Issue {
   id: string;
+  issueNo?: number;
   title: string;
   content: string;
   category: Category;
@@ -101,15 +102,15 @@ export const IssueBoard: React.FC = () => {
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>📌 이슈 게시판</h1>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>버그·개선 요청을 등록하고 팔로업하세요</p>
+          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>🛠️ 프로그램 오류/수정 게시판</h1>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>프로그램 오류 및 기능 개선 요청을 등록하고 팔로업하세요</p>
         </div>
         <button onClick={() => setShowCreateModal(true)} style={{
           background: 'linear-gradient(135deg,#0d9488,#0891b2)',
           color: '#fff', border: 'none', borderRadius: 8,
           padding: '9px 20px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
           boxShadow: '0 2px 8px rgba(13,148,136,0.3)'
-        }}>+ 이슈 등록</button>
+        }}>+ 오류/수정 등록</button>
       </div>
 
       {/* 통계 카드 */}
@@ -197,6 +198,7 @@ const IssueRow: React.FC<{ issue: Issue; onClick: () => void }> = ({ issue, onCl
     >
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b' }}>No. {issue.issueNo || '-'}</span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: categoryColor(issue.category), background: `${categoryColor(issue.category)}18`, padding: '2px 8px', borderRadius: 10 }}>{issue.category}</span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: pc.text, background: pc.bg, padding: '2px 8px', borderRadius: 10 }}>{issue.priority}</span>
           {issue.attachments?.length > 0 && <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>📎 {issue.attachments.length}</span>}
@@ -233,6 +235,14 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
     if (!title.trim()) { alert('제목을 입력하세요'); return; }
     setSaving(true);
     try {
+      const snap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'issues'));
+      let maxNo = 0;
+      snap.forEach(d => {
+        const no = d.data().issueNo || 0;
+        if (no > maxNo) maxNo = no;
+      });
+      const nextNo = maxNo + 1;
+
       const attachments: Attachment[] = [];
       for (const file of files) {
         const r = ref(storage, `companies/${COMPANY_ID}/issues/${Date.now()}_${file.name}`);
@@ -241,6 +251,7 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         attachments.push({ name: file.name, url, type: file.type });
       }
       await addDoc(collection(doc(db, 'companies', COMPANY_ID), 'issues'), {
+        issueNo: nextNo,
         title: title.trim(),
         content: content.trim(),
         category, priority,
@@ -259,7 +270,7 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>📌 이슈 등록</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>🛠️ 프로그램 오류/수정 등록</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
         </div>
 
@@ -379,7 +390,8 @@ const IssueDetailModal: React.FC<{
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>No. {issue.issueNo || '-'}</span>
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: categoryColor(issue.category), background: `${categoryColor(issue.category)}18`, padding: '2px 10px', borderRadius: 10 }}>{issue.category}</span>
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: pc.text, background: pc.bg, padding: '2px 10px', borderRadius: 10 }}>{issue.priority}</span>
             </div>

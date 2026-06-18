@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 
@@ -20,6 +20,25 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
   useEffect(() => {
     if (initialCustomer) {
       setFormData(initialCustomer);
+    } else {
+      const fetchNextCode = async () => {
+        try {
+          const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'customers'));
+          let maxNum = 0;
+          snap.forEach(d => {
+            const code = d.data().customerCode || '';
+            if (code.startsWith('CU')) {
+              const num = parseInt(code.substring(2), 10);
+              if (!isNaN(num) && num > maxNum) maxNum = num;
+            }
+          });
+          const nextCode = `CU${String(maxNum + 1).padStart(5, '0')}`;
+          setFormData(prev => ({ ...prev, customerCode: nextCode }));
+        } catch (e) {
+          console.error("Error generating customer code:", e);
+        }
+      };
+      fetchNextCode();
     }
   }, [initialCustomer]);
 
@@ -74,7 +93,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         {/* Body */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            <Input label="고객코드 (필수) ★" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={!!initialCustomer} placeholder="예: CUST-001" />
+            <Input label="고객코드 (자동지정)" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={true} placeholder="자동 생성 중..." />
             <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL SHIRAWAI CO." />
             <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: ABC" />
             <Input label="국가명" value={formData.countryName} onChange={(v: any) => handleChange('countryName', v)} placeholder="예: UAE" />
@@ -84,6 +103,14 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             <Select label="기본 배송방법 (Incoterms)" value={formData.preferredIncoterms} onChange={(v: any) => handleChange('preferredIncoterms', v)} options={['FOB', 'EXW', 'FAS', 'FCA', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP']} />
             <Input label="Destination Port (도착항)" value={formData.shippingPort} onChange={(v: any) => handleChange('shippingPort', v)} placeholder="예: JEBEL ALI PORT" />
             <Input label="Payment Terms (결제조건)" value={formData.paymentTerms} onChange={(v: any) => handleChange('paymentTerms', v)} placeholder="예: 100% LC 90days at sight" />
+
+            {/* ── 담당자 정보 ── */}
+            <Input label="담당자명 (Contact Person)" value={formData.contactPerson} onChange={(v: any) => handleChange('contactPerson', v)} placeholder="예: John Smith" />
+            <Input label="담당자 연락처 (Contact Phone)" value={formData.contactPhone} onChange={(v: any) => handleChange('contactPhone', v)} placeholder="예: +971-50-XXX-XXXX" />
+            <div style={{ gridColumn: 'span 2' }}>
+              <Input label="담당자 이메일 (Contact Email)" value={formData.contactEmail} onChange={(v: any) => handleChange('contactEmail', v)} type="email" placeholder="예: john@buyer.com" />
+            </div>
+
             <div style={{ gridColumn: 'span 2' }}>
               <Input label="주소 (Address)" value={formData.addressEn} onChange={(v: any) => handleChange('addressEn', v)} placeholder="영문 주소" />
             </div>
