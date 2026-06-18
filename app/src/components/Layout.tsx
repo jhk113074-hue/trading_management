@@ -72,7 +72,7 @@ export const Layout: React.FC = () => {
       ] as any },
       { section: '업무관리', items: [
         { path: '/list', label: '📋 전체 업무 리스트' },
-        { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판' }
+        { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판 (새 창)', external: true }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },

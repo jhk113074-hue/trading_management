@@ -3,7 +3,7 @@ import {
   collection, addDoc, onSnapshot, doc,
   updateDoc, serverTimestamp, query, orderBy, Timestamp, getDocs
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -337,10 +337,11 @@ const IssueDetailModal: React.FC<{
 }> = ({ issue, onClose, userName, onUpdate }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
-  const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>(issue.attachments || []);
+  const [isUploading, setIsUploading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [status, setStatus] = useState<Status>(issue.status);
-  const commentFileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const q = query(
@@ -361,23 +362,65 @@ const IssueDetailModal: React.FC<{
     onUpdate({ ...issue, status: s });
   };
 
+  const handleFileUpload = async (files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    const updatedAttachments = [...attachments];
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const uniquePath = `companies/${COMPANY_ID}/issues/attachments/${Date.now()}_${file.name}`;
+        const r = ref(storage, uniquePath);
+        await uploadBytes(r, file);
+        const url = await getDownloadURL(r);
+        updatedAttachments.push({ name: file.name, url, type: file.type });
+      }
+      setAttachments(updatedAttachments);
+      await updateDoc(doc(db, 'companies', COMPANY_ID, 'issues', issue.id), {
+        attachments: updatedAttachments,
+        updatedAt: serverTimestamp()
+      });
+      onUpdate({ ...issue, attachments: updatedAttachments });
+    } catch (e) {
+      console.error(e);
+      alert('파일 업로드 실패');
+    }
+    setIsUploading(false);
+  };
+
+  const handleDeleteAttachment = async (index: number) => {
+    const att = attachments[index];
+    if (!att) return;
+    if (!window.confirm(`'${att.name}' 파일을 삭제하시겠습니까?`)) return;
+    
+    try {
+      const storageRef = ref(storage, att.url);
+      await deleteObject(storageRef).catch(console.warn);
+
+      const updatedAttachments = [...attachments];
+      updatedAttachments.splice(index, 1);
+      setAttachments(updatedAttachments);
+      
+      await updateDoc(doc(db, 'companies', COMPANY_ID, 'issues', issue.id), {
+        attachments: updatedAttachments,
+        updatedAt: serverTimestamp()
+      });
+      onUpdate({ ...issue, attachments: updatedAttachments });
+    } catch (e) {
+      console.error(e);
+      alert('파일 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const postComment = async () => {
-    if (!newComment.trim() && commentFiles.length === 0) return;
+    if (!newComment.trim()) return;
     setPosting(true);
     try {
-      const attachments: Attachment[] = [];
-      for (const f of commentFiles) {
-        const r = ref(storage, `companies/${COMPANY_ID}/issues/comments/${Date.now()}_${f.name}`);
-        await uploadBytes(r, f);
-        const url = await getDownloadURL(r);
-        attachments.push({ name: f.name, url, type: f.type });
-      }
       await addDoc(
         collection(doc(db, 'companies', COMPANY_ID), `issues/${issue.id}/comments`),
-        { content: newComment.trim(), attachments, createdBy: userName, createdAt: serverTimestamp() }
+        { content: newComment.trim(), attachments: [], createdBy: userName, createdAt: serverTimestamp() }
       );
       setNewComment('');
-      setCommentFiles([]);
     } catch (e) { console.error(e); alert('댓글 저장 실패'); }
     setPosting(false);
   };
@@ -425,67 +468,71 @@ const IssueDetailModal: React.FC<{
           </div>
         )}
 
-        {/* 첨부파일 */}
-        {issue.attachments?.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: 8 }}>📎 첨부파일</div>
-            <AttachmentList attachments={issue.attachments} />
-          </div>
-        )}
+        {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: 6 }}>📎 파일 첨부 (드래그&드롭 / Ctrl+V)</div>
+        <div
+          style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '14px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '16px' }}
+          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
+          onPaste={e => { const pasteFiles = e.clipboardData?.files; if (pasteFiles && pasteFiles.length > 0) { e.preventDefault(); handleFileUpload(pasteFiles); } }}
+          onClick={() => fileRef.current?.click()}
+          tabIndex={0}
+        >
+          <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+          <input ref={fileRef} type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="issue-detail-file-upload" />
+          <label htmlFor="issue-detail-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+            {isUploading ? '업로드 중...' : '파일 선택하기'}
+          </label>
+
+          {attachments.length > 0 && (
+            <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }} onClick={e => e.stopPropagation()}>
+              {attachments.map((att, idx) => {
+                const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name) || att.type?.startsWith('image/');
+                const isPdf = /\.pdf$/i.test(att.name) || att.type === 'application/pdf';
+                const isExcel = /\.(xls|xlsx)$/i.test(att.name);
+                return (
+                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {isImg ? (
+                        <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                      ) : (
+                        <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                          {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                      <span style={{ color: '#1e293b', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>{att.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }}>
+                      <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '3px 5px', fontSize: '10px', textDecoration: 'none' }} title="다운로드">⬇</a>
+                      <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '3px 5px', fontSize: '10px' }} title="삭제">✕</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <hr style={{ border: 'none', borderTop: '1px solid #e8ecf0', margin: '16px 0' }} />
 
         {/* 댓글 목록 */}
-        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#64748b', marginBottom: 10 }}>
-          💬 댓글 ({comments.length})
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16, maxHeight: 240, overflowY: 'auto' }}>
-          {comments.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: '#cbd5e1', fontSize: '0.82rem' }}>첫 댓글을 작성해보세요</div>
-          ) : comments.map(c => (
-            <div key={c.id} style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px', border: '1px solid #e8ecf0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a' }}>{c.createdBy}</span>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{fmtDate(c.createdAt)}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h4 style={{ margin: 0, fontSize: '0.85rem', color: '#0f172a' }}>댓글</h4>
+          <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
+            {comments.map(c => (
+              <div key={c.id}>
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>{c.createdBy} • {fmtDate(c.createdAt)}</div>
+                <div style={{ fontSize: '0.8rem', color: '#0f172a', background: '#fff', padding: '6px 8px', borderRadius: '0 6px 6px 6px', border: '1px solid #e2e8f0', display: 'inline-block' }}>{c.content}</div>
               </div>
-              {c.content && <div style={{ fontSize: '0.85rem', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{c.content}</div>}
-              {c.attachments?.length > 0 && <div style={{ marginTop: 8 }}><AttachmentList attachments={c.attachments} /></div>}
-            </div>
-          ))}
-        </div>
-
-        {/* 댓글 입력 */}
-        <div style={{ border: '1.5px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-          <textarea
-            value={newComment}
-            onChange={e => setNewComment(e.target.value)}
-            placeholder="댓글을 입력하세요..."
-            rows={3}
-            style={{ width: '100%', border: 'none', padding: '10px 14px', fontSize: '0.85rem', resize: 'none', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-            onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter') postComment(); }}
-          />
-          {commentFiles.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '6px 12px', background: '#f8fafc' }}>
-              {commentFiles.map((f, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#e2e8f0', borderRadius: 6, padding: '3px 8px', fontSize: '0.72rem' }}>
-                  {f.type.startsWith('image/') ? '🖼️' : '📄'} {f.name}
-                  <button onClick={() => setCommentFiles(prev => prev.filter((_,idx)=>idx!==i))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0, fontSize: '0.78rem' }}>✕</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', borderTop: '1px solid #e8ecf0' }}>
-            <button
-              onClick={() => commentFileRef.current?.click()}
-              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}
-            >📎 파일 첨부</button>
-            <input ref={commentFileRef} type="file" multiple accept="image/*,.pdf,.xlsx,.docx" onChange={e => { if (e.target.files) setCommentFiles(prev => [...prev, ...Array.from(e.target.files!)]); }} style={{ display: 'none' }} />
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: '0.68rem', color: '#cbd5e1' }}>Ctrl+Enter</span>
-              <button onClick={postComment} disabled={posting} style={{ ...btnStyle, background: 'linear-gradient(135deg,#0d9488,#0891b2)', color: '#fff', padding: '6px 16px', opacity: posting ? 0.7 : 1 }}>
-                {posting ? '...' : '댓글 등록'}
-              </button>
-            </div>
+            ))}
+            {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') postComment(); }} />
+            <button onClick={postComment} disabled={posting} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
           </div>
         </div>
       </div>
@@ -493,23 +540,6 @@ const IssueDetailModal: React.FC<{
   );
 };
 
-// ── 첨부파일 미리보기 컴포넌트 ────────────────────────────────────────
-const AttachmentList: React.FC<{ attachments: Attachment[] }> = ({ attachments }) => (
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-    {attachments.map((a, i) => (
-      a.type?.startsWith('image/') ? (
-        <a key={i} href={a.url} target="_blank" rel="noopener noreferrer">
-          <img src={a.url} alt={a.name} style={{ height: 80, borderRadius: 6, border: '1px solid #e2e8f0', objectFit: 'cover', cursor: 'pointer' }} />
-        </a>
-      ) : (
-        <a key={i} href={a.url} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', borderRadius: 6, padding: '5px 10px', textDecoration: 'none', color: '#334155', fontSize: '0.75rem', border: '1px solid #e2e8f0' }}>
-          📄 {a.name}
-        </a>
-      )
-    ))}
-  </div>
-);
 
 // ── 공통 스타일 ────────────────────────────────────────────────────────
 const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
