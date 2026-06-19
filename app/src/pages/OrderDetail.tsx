@@ -2058,8 +2058,9 @@ export const OrderDetail: React.FC = () => {
                                 <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
                                 <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>판매가 (통화/단가)</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>매입가 (통화/단가)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>견적가 (통화/단가)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
                               </tr>
                             </thead>
@@ -2099,6 +2100,11 @@ export const OrderDetail: React.FC = () => {
                                       <td style={{ padding: '6px', textAlign: 'center' }}>{it.grade || '-'}</td>
                                       <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
                                       <td style={{ padding: '6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{it.unitPrice?.toLocaleString()}</td>
+                                      {/* 매입가 (통화/단가) */}
+                                      <td style={{ padding: '6px', textAlign: 'right' }}>
+                                        {purchaseCurrency === 'KRW' ? '₩' : '$'}{defaultPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                      </td>
+                                      {/* 실매입가 (통화/단가) */}
                                       <td style={{ padding: '6px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
                                           <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
