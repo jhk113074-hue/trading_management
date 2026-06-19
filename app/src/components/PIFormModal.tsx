@@ -40,7 +40,7 @@ interface Props {
 export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }) => {
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [showAdvancedHeader, setShowAdvancedHeader] = useState(false);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
@@ -753,15 +753,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     if (isNewMode) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
-          <div style={{ display: 'flex', gap: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
+          <div style={{ display: 'flex', gap: '4px', height: '26px' }}>
             <input 
               type="text" 
               value={newVal} 
               onChange={e => setNewVal(e.target.value)} 
               placeholder="직접 입력..." 
-              style={{ flex: 1, padding: '8px 10px', border: '1px solid #3b82f6', borderRadius: '6px', fontSize: '13px' }}
+              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12px', height: '26px', boxSizing: 'border-box' }}
               autoFocus
             />
             <button 
@@ -770,14 +770,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
                 setIsNewMode(false);
               }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✓
             </button>
             <button 
               type="button"
               onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✕
             </button>
@@ -787,15 +787,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label} {required && '★'}</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
         <select 
           value={value} 
           onChange={e => {
             if (e.target.value === '__NEW__') setIsNewMode(true);
             else setFormData(prev => ({...prev, [field]: e.target.value}));
           }}
-          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+          style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '26px', boxSizing: 'border-box', background: '#fff' }}
         >
           <option value="">{placeholder || '-- 선택 --'}</option>
           {options.map((opt: string) => (
@@ -804,7 +804,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           {value && !options.includes(value) && (
             <option value={value}>{value}</option>
           )}
-          <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록 (직접 입력)</option>
+          <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록</option>
         </select>
       </div>
     );
@@ -1462,24 +1462,24 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
+        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
           {/* 발행사 및 핵심 기본정보 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
-              <div style={{ display: 'flex', gap: '4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
+              <div style={{ display: 'flex', gap: '4px', height: '26px' }}>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))}
                   style={{
                     flex: 1,
-                    padding: '6px 10px',
-                    fontSize: '11px',
+                    padding: '4px 6px',
+                    fontSize: '10.5px',
                     fontWeight: 700,
                     background: formData.issuingCompany === 'YSACC' ? '#1d4ed8' : '#fff',
                     color: formData.issuingCompany === 'YSACC' ? '#fff' : '#64748b',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     cursor: 'pointer'
                   }}
                 >
@@ -1490,13 +1490,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))}
                   style={{
                     flex: 1,
-                    padding: '6px 10px',
-                    fontSize: '11px',
+                    padding: '4px 6px',
+                    fontSize: '10.5px',
                     fontWeight: 700,
                     background: formData.issuingCompany === 'YS' ? '#059669' : '#fff',
                     color: formData.issuingCompany === 'YS' ? '#fff' : '#64748b',
                     border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     cursor: 'pointer'
                   }}
                 >
@@ -1506,9 +1506,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
             <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
             <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '26px' }}>
                 <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <input 
                     type="text" 
@@ -1518,14 +1518,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
                       width: '100%',
-                      padding: '6px 42px 6px 10px',
+                      padding: '4px 36px 4px 8px',
                       border: '1px solid #cbd5e1',
-                      borderRadius: '6px',
-                      fontSize: '13px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
                       outline: 'none',
                       cursor: 'pointer',
                       background: '#fff',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      height: '26px'
                     }} 
                   />
                   {formData.customerId && (
@@ -1570,7 +1571,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       border: 'none',
                       color: '#3b82f6',
                       cursor: 'pointer',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       padding: '2px',
                       zIndex: 5,
                       display: 'flex',
@@ -1587,23 +1588,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* 주요 거래 조건 (상단 노출) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px' }}>
             <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
             <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
             <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
                 <button
                   type="button"
                   onClick={fetchExchangeRate}
                   style={{
-                    fontSize: '10px',
+                    fontSize: '9.5px',
                     fontWeight: 700,
                     background: '#3b82f6',
                     border: 'none',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
+                    padding: '1px 4px',
+                    borderRadius: '3px',
                     color: '#ffffff',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1623,68 +1624,43 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 step="0.01"
                 value={formData.exchangeRate ?? ''}
                 onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+                style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '26px', boxSizing: 'border-box' }}
               />
             </div>
           </div>
 
-          {/* Collapsible toggle button */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-            <button
-              type="button"
-              onClick={() => setShowAdvancedHeader(!showAdvancedHeader)}
-              style={{
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                padding: '6px 16px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#475569',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              {showAdvancedHeader ? '🔼 상세 설정 접기' : '🔽 상세 설정/추가 조건 표시'}
-            </button>
-          </div>
-
-          {/* Collapsible advanced section */}
-          {showAdvancedHeader && (
-            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
-                <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
-                <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
-                <Input label="작성자 (Author)" value={formData.createdByName} disabled />
-              </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                <Input label="Customer Address" value={formData.customerAddress || ''} disabled />
-                <Input label="Customer Contact" value={formData.contactPerson} disabled />
-                <Input label="Customer Email" value={formData.email} disabled />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-                <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
-                <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
-                <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
-                <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
-                <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-                <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', boxSizing: 'border-box' }}></textarea>
-              </div>
+          {/* Collapsible advanced section -> Always visible and compressed */}
+          <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+              <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
+              <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
+              <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
+              <Input label="작성자 (Author)" value={formData.createdByName} disabled />
             </div>
-          )}
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <Input label="Customer Address" value={formData.customerAddress || ''} disabled />
+              <Input label="Customer Contact" value={formData.contactPerson} disabled />
+              <Input label="Customer Email" value={formData.email} disabled />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+              <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
+              <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
+              <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
+              <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
+              <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+              <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>Remarks</label>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={1.5} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}></textarea>
+            </div>
+          </div>
 
           {/* Line Items */}
           <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px', overflowX: 'auto' }}>
@@ -2440,9 +2416,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 };
 
 const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: disabled ? '#f1f5f9' : '#fff' }} />
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+    <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
+    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: disabled ? '#f1f5f9' : '#fff', height: '26px', boxSizing: 'border-box' }} />
   </div>
 );
 
