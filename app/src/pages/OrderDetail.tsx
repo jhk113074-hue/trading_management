@@ -2058,7 +2058,6 @@ export const OrderDetail: React.FC = () => {
                                 <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
                                 <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>견적가 (통화/단가)</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
@@ -2099,7 +2098,6 @@ export const OrderDetail: React.FC = () => {
                                       <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
                                       <td style={{ padding: '6px', textAlign: 'center' }}>{it.grade || '-'}</td>
                                       <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                                      <td style={{ padding: '6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{it.unitPrice?.toLocaleString()}</td>
                                       {/* 매입가 (통화/단가) */}
                                       <td style={{ padding: '6px', textAlign: 'right' }}>
                                         {purchaseCurrency === 'KRW' ? '₩' : '$'}{defaultPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
@@ -2109,12 +2107,17 @@ export const OrderDetail: React.FC = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
                                           <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
                                           <input
-                                            type="number"
-                                            step="any"
-                                            value={it.purchaseUnitPrice ?? defaultPurchasePrice}
+                                            type="text"
+                                            value={(() => {
+                                              const val = it.purchaseUnitPrice ?? defaultPurchasePrice;
+                                              return purchaseCurrency === 'KRW' 
+                                                ? Math.round(val).toLocaleString('ko-KR')
+                                                : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                                            })()}
                                             disabled={!isEditing}
                                             onChange={(e) => {
-                                              const val = parseFloat(e.target.value) || 0;
+                                              const raw = e.target.value.replace(/,/g, '');
+                                              const val = parseFloat(raw) || 0;
                                               setOrder(prev => {
                                                 if (!prev) return prev;
                                                 const updatedItems = prev.items.map(item => {
