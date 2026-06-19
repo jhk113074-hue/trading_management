@@ -1235,39 +1235,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     );
   };
 
-  const fetchExchangeRate = async () => {
-    if (!formData.piDate) {
-      alert("❌ PI Date를 먼저 선택해주세요.");
-      return;
-    }
-    
-    try {
-      // Frankfurter API handles historical dates (e.g. 2026-06-05) and fallback for weekends
-      const response = await fetch(`https://api.frankfurter.app/${formData.piDate}?from=USD&to=KRW`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data && data.rates && data.rates.KRW) {
-        const baseRate = data.rates.KRW;
-        
-        // Hana Bank TT Buying Rate spread is typically ~1.0% less than base rate (or base rate - 9.8 KRW)
-        // Let's use Base Rate * 0.99 (99% of base rate) to get a very close estimation of Hana Bank TT Buying Rate
-        // Round to 2 decimal places
-        const calculatedRate = Math.round(baseRate * 0.99 * 100) / 100;
-        
-        setFormData(prev => ({ ...prev, exchangeRate: calculatedRate }));
-        
-        // Show info toast/alert
-        alert(`💵 환율 조회 성공!\n\n* 고시일자: ${data.date}\n* 매매기준율: ${baseRate.toLocaleString('ko-KR')}원\n* 송금받을때 환율(우대스프레드 약 1% 반영): ${calculatedRate.toLocaleString('ko-KR')}원`);
-      } else {
-        alert("❌ 해당 날짜의 환율 데이터를 찾을 수 없습니다.");
-      }
-    } catch (error) {
-      console.error("Error fetching exchange rate:", error);
-      alert("❌ 환율 정보를 불러오는 데 실패했습니다. 네트워크 연결을 확인하거나 수동으로 입력해주세요.");
-    }
-  };
 
   const handleDeleteRevision = async () => {
     if (!selectedRevId || !initialPI) return;
@@ -1495,8 +1462,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactInput label="작성자" value={formData.createdByName || ''} onChange={(v: any) => setFormData(prev => ({...prev, createdByName: v}))} />
             </div>
 
-            {/* ── Row 2: Customer | 주소 | 담당 | Email | Incoterms | Dest.Port | Payment | 환율 ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.6fr 0.8fr 1.1fr 62px 1.4fr 1.6fr 84px', gap: '5px', alignItems: 'end' }}>
+            {/* ── Row 2: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '5px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
@@ -1524,26 +1491,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 </div>
               </div>
               <CompactInput label="주소" value={formData.customerAddress || ''} disabled />
-              <CompactInput label="담당" value={formData.contactPerson} disabled />
-              <CompactInput label="Email" value={formData.email} disabled />
+              <CompactInput label="담당" value={formData.contactPerson || ''} onChange={(v: any) => setFormData(prev => ({...prev, contactPerson: v}))} />
               <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
               <CompactComboSelect label="Dest. Port ★" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
               <CompactComboSelect label="Payment ★" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
-              {/* 환율 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
-                  <button type="button" onClick={fetchExchangeRate}
-                    style={{ fontSize: '8px', fontWeight: 700, background: '#3b82f6', border: 'none', padding: '1px 3px', borderRadius: '2px', color: '#fff', cursor: 'pointer' }}
-                    onMouseOver={e => { (e.currentTarget as HTMLButtonElement).style.background = '#2563eb'; }}
-                    onMouseOut={e => { (e.currentTarget as HTMLButtonElement).style.background = '#3b82f6'; }}
-                  >⚡환율</button>
-                </div>
-                <input type="number" step="0.01" value={formData.exchangeRate ?? ''}
-                  onChange={e => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                  style={{ height: '22px', padding: '1px 5px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', boxSizing: 'border-box', width: '100%' }}
-                />
-              </div>
             </div>
 
             {/* 3) Row 3: Departure | Packing | Shipping | Delivery | Origin */}
@@ -1558,7 +1509,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             {/* 4) Row 4: Remarks */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
               <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={1} style={{ padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', width: '100%', boxSizing: 'border-box', resize: 'none', lineHeight: '1.4' }}></textarea>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
             </div>
           </div>
 
