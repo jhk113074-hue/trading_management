@@ -15,7 +15,7 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("발주");
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
   const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
@@ -332,7 +332,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -428,7 +428,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -452,7 +452,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles',
+    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -840,6 +840,235 @@ export const OrderDetail: React.FC = () => {
     );
 
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
+  // CI automated print handler
+  const handlePrintCI = () => {
+    if (!order) return;
+    const isYS = order.issuingCompany === 'YS';
+    const ciNum = basicForm.ciNumber || `CI-${order.id}`;
+
+    const totalQty = order.items?.reduce((sum, it) => sum + (it.qty || 0), 0) || 0;
+    const totalAmt = order.items?.reduce((sum, it) => sum + (it.amount || 0), 0) || 0;
+
+    const printHtml = `
+      <html>
+        <head>
+          <title>COMMERCIAL INVOICE - ${ciNum}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11px; line-height: 1.4; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+            .header-title { text-align: center; font-size: 32px; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
+            
+            .info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .info-box { border: 1px solid #000; padding: 10px; min-height: 100px; }
+            .info-title { font-weight: bold; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; }
+
+            .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+            .desc-table th, .desc-table td { border: 1px solid #000; padding: 8px 6px; }
+            .desc-table th { background: #f3f4f6; font-weight: bold; text-align: center; }
+            .desc-table td.right { text-align: right; }
+            .desc-table td.center { text-align: center; }
+            
+            .total-row { font-weight: bold; background: #fafafa; }
+            .signature-area { margin-top: 50px; text-align: right; font-size: 12px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+          <div class="header-title">COMMERCIAL INVOICE</div>
+          
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-title">Shipper / Exporter</div>
+              <strong>${isYS ? 'YS ACC' : '(주)와이에스에이씨씨'}</strong><br/>
+              ${isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층'}<br/>
+              TEL: 010-4494-1028
+            </div>
+            <div class="info-box">
+              <div class="info-title">Invoice Information</div>
+              <strong>Invoice No:</strong> ${ciNum}<br/>
+              <strong>Date:</strong> ${basicForm.poDate || new Date().toISOString().split('T')[0]}<br/>
+              <strong>L/C No:</strong> ${basicForm.lcNo || 'T/T Payment'}<br/>
+              <strong>Incoterms:</strong> ${basicForm.incoterms || 'FOB'}
+            </div>
+          </div>
+
+          <div class="info-grid" style="margin-bottom: 15px;">
+            <div class="info-box">
+              <div class="info-title">For Account & Risk of Messrs (Buyer)</div>
+              <strong>${order.customer}</strong><br/>
+              ${order.paymentTerms || 'As per contract Terms'}
+            </div>
+            <div class="info-box">
+              <div class="info-title">Shipping Information</div>
+              <strong>Vessel / Voyage:</strong> ${basicForm.vesselBooking || 'TBD'}<br/>
+              <strong>ETD:</strong> ${basicForm.etd || 'TBD'}<br/>
+              <strong>ETA:</strong> ${basicForm.eta || 'TBD'}<br/>
+              <strong>POL / POD:</strong> BUSAN, KOREA / JEBEL ALI, UAE
+            </div>
+          </div>
+
+          <table class="desc-table">
+            <thead>
+              <tr>
+                <th style="width: 8%">No</th>
+                <th>Description of Goods</th>
+                <th style="width: 12%">Quantity</th>
+                <th style="width: 12%">Unit Price</th>
+                <th style="width: 18%">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map((it, idx) => `
+                <tr>
+                  <td class="center">${idx + 1}</td>
+                  <td><strong>${it.name}</strong><br/><small>Spec: ${it.grade || '-'}</small></td>
+                  <td class="center">${it.qty?.toLocaleString()} ${it.unit}</td>
+                  <td class="right">${it.currency === 'KRW' ? '₩' : '$'}${it.unitPrice?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  <td class="right" style="font-weight: bold;">${it.currency === 'KRW' ? '₩' : '$'}${it.amount?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="2" class="center">TOTAL</td>
+                <td class="center">${totalQty.toLocaleString()}</td>
+                <td></td>
+                <td class="right">${order.currency === 'KRW' ? '₩' : '$'}${totalAmt.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="signature-area">
+            For and on behalf of<br/>
+            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
+            _______________________________<br/>
+            Authorized Signature(s)
+          </div>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printHtml);
+      win.document.close();
+    }
+  };
+
+  // PL automated print handler
+  const handlePrintPL = () => {
+    if (!order) return;
+    const isYS = order.issuingCompany === 'YS';
+    const ciNum = basicForm.ciNumber || `CI-${order.id}`;
+
+    const totalQty = order.items?.reduce((sum, it) => sum + (it.qty || 0), 0) || 0;
+
+    const printHtml = `
+      <html>
+        <head>
+          <title>PACKING LIST - ${ciNum}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11px; line-height: 1.4; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+            .header-title { text-align: center; font-size: 32px; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
+            
+            .info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .info-box { border: 1px solid #000; padding: 10px; min-height: 100px; }
+            .info-title { font-weight: bold; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; }
+
+            .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+            .desc-table th, .desc-table td { border: 1px solid #000; padding: 8px 6px; }
+            .desc-table th { background: #f3f4f6; font-weight: bold; text-align: center; }
+            .desc-table td.right { text-align: right; }
+            .desc-table td.center { text-align: center; }
+            
+            .total-row { font-weight: bold; background: #fafafa; }
+            .signature-area { margin-top: 50px; text-align: right; font-size: 12px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+          <div class="header-title">PACKING LIST</div>
+          
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-title">Shipper / Exporter</div>
+              <strong>${isYS ? 'YS ACC' : '(주)와이에스에이씨씨'}</strong><br/>
+              ${isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층'}<br/>
+              TEL: 010-4494-1028
+            </div>
+            <div class="info-box">
+              <div class="info-title">Invoice Information</div>
+              <strong>Invoice No:</strong> ${ciNum}<br/>
+              <strong>Date:</strong> ${basicForm.poDate || new Date().toISOString().split('T')[0]}<br/>
+              <strong>L/C No:</strong> ${basicForm.lcNo || 'T/T Payment'}<br/>
+              <strong>Incoterms:</strong> ${basicForm.incoterms || 'FOB'}
+            </div>
+          </div>
+
+          <div class="info-grid" style="margin-bottom: 15px;">
+            <div class="info-box">
+              <div class="info-title">For Account & Risk of Messrs (Buyer)</div>
+              <strong>${order.customer}</strong><br/>
+              ${order.paymentTerms || 'As per contract Terms'}
+            </div>
+            <div class="info-box">
+              <div class="info-title">Shipping Information</div>
+              <strong>Vessel / Voyage:</strong> ${basicForm.vesselBooking || 'TBD'}<br/>
+              <strong>ETD:</strong> ${basicForm.etd || 'TBD'}<br/>
+              <strong>ETA:</strong> ${basicForm.eta || 'TBD'}<br/>
+              <strong>POL / POD:</strong> BUSAN, KOREA / JEBEL ALI, UAE
+            </div>
+          </div>
+
+          <table class="desc-table">
+            <thead>
+              <tr>
+                <th style="width: 8%">No</th>
+                <th>Description of Goods</th>
+                <th style="width: 12%">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map((it, idx) => `
+                <tr>
+                  <td class="center">${idx + 1}</td>
+                  <td><strong>${it.name}</strong><br/><small>Spec: ${it.grade || '-'}</small></td>
+                  <td class="center">${it.qty?.toLocaleString()} ${it.unit}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="2" class="center">TOTAL</td>
+                <td class="center">${totalQty.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="signature-area">
+            For and on behalf of<br/>
+            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
+            _______________________________<br/>
+            Authorized Signature(s)
+          </div>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printHtml);
+      win.document.close();
+    }
   };
 
   const handleDeleteOrder = async () => {
@@ -1828,17 +2057,43 @@ export const OrderDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* 7개의 유첨 파일 - 4개 / 3개 분할 배치 */}
-              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
-                {renderFileField('CI 유첨', 'ciFiles', 'ci-file-input')}
-                {renderFileField('PL 유첨', 'plFiles', 'pl-file-input')}
-                {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
-                {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+              {/* 7개의 유첨 파일 + CI/PL 자동 생성 단추 및 신규 사진 유첨 추가 */}
+              <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+                  <button 
+                    type="button" 
+                    onClick={handlePrintCI}
+                    style={{ padding: '8px 16px', fontSize: '12.5px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    CI 자동인쇄/생성
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handlePrintPL}
+                    style={{ padding: '8px 16px', fontSize: '12.5px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    PL 자동인쇄/생성
+                  </button>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                  {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
+                  {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
+                  {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
+                  {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+                </div>
               </div>
+
               <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
                 {renderFileField('COA 유첨', 'coaFiles', 'coa-file-input')}
                 {renderFileField('시험성적서 유첨', 'testReportFiles', 'test-report-file-input')}
                 {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
+              </div>
+
+              {/* 컨테이너 작업 및 운송 사진 */}
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
+                {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
+                {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
               </div>
 
               {/* 선적서류 발송 및 은행제출 */}
