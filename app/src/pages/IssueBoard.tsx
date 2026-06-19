@@ -223,6 +223,7 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
   const [priority, setPriority] = useState<Priority>('보통');
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -328,12 +329,25 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         </div>
         {files.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {files.map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem' }}>
-                {f.type.startsWith('image/') ? '🖼️' : '📄'} {f.name}
-                <button onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}>✕</button>
-              </div>
-            ))}
+            {files.map((f, i) => {
+              const isImg = f.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name);
+              const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', borderRadius: 6, padding: '4px 10px', fontSize: '0.75rem' }}>
+                  <span 
+                    onClick={() => {
+                      const url = URL.createObjectURL(f);
+                      setPreviewFile({ name: f.name, url, type: f.type });
+                    }} 
+                    style={{ cursor: (isImg || isPdf) ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 4 }}
+                    title={(isImg || isPdf) ? "클릭하여 미리보기" : ""}
+                  >
+                    {f.type.startsWith('image/') ? '🖼️' : '📄'} {f.name}
+                  </span>
+                  <button onClick={() => removeFile(i)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}>✕</button>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -343,6 +357,17 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
             {saving ? '저장 중...' : '등록'}
           </button>
         </div>
+        {previewFile && (
+          <FilePreviewModal 
+            file={previewFile} 
+            onClose={() => { 
+              if (previewFile.url.startsWith('blob:')) {
+                URL.revokeObjectURL(previewFile.url);
+              }
+              setPreviewFile(null); 
+            }} 
+          />
+        )}
       </div>
     </div>
   );
@@ -356,6 +381,7 @@ const IssueDetailModal: React.FC<{
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>(issue.attachments || []);
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [posting, setPosting] = useState(false);
   const [status, setStatus] = useState<Status>(issue.status);
@@ -571,9 +597,12 @@ const IssueDetailModal: React.FC<{
                 const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name) || att.type?.startsWith('image/');
                 const isPdf = /\.pdf$/i.test(att.name) || att.type === 'application/pdf';
                 const isExcel = /\.(xls|xlsx)$/i.test(att.name);
+                const handlePreview = () => {
+                  setPreviewFile({ name: att.name, url: att.url, type: att.type });
+                };
                 return (
                   <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: (isImg || isPdf) ? 'pointer' : 'default' }} onClick={handlePreview} title={(isImg || isPdf) ? "클릭하여 미리보기" : ""}>
                       {isImg ? (
                         <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                       ) : (
@@ -582,7 +611,7 @@ const IssueDetailModal: React.FC<{
                         </span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', cursor: (isImg || isPdf) ? 'pointer' : 'default' }} onClick={handlePreview}>
                       <span style={{ color: '#1e293b', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>{att.name}</span>
                     </div>
                     <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }}>
@@ -624,11 +653,91 @@ const IssueDetailModal: React.FC<{
             {savingChanges ? '수정 중...' : '저장'}
           </button>
         </div>
+        {previewFile && (
+          <FilePreviewModal 
+            file={previewFile} 
+            onClose={() => setPreviewFile(null)} 
+          />
+        )}
       </div>
     </div>
   );
 };
 
+
+// ── 파일 미리보기 모달 ──────────────────────────────────────────────────
+const FilePreviewModal: React.FC<{
+  file: { name: string; url: string; type: string };
+  onClose: () => void;
+}> = ({ file, onClose }) => {
+  const isImg = file.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+  const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)',
+      display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+      zIndex: 9999, padding: '20px', boxSizing: 'border-box'
+    }} onClick={onClose}>
+      <div style={{
+        position: 'absolute', top: 20, right: 20, display: 'flex', gap: 12, zIndex: 10000
+      }} onClick={e => e.stopPropagation()}>
+        <a href={file.url} download={file.name} target="_blank" rel="noreferrer" style={{
+          background: '#0d9488', color: '#fff', border: 'none', borderRadius: '8px',
+          padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
+          boxShadow: '0 2px 8px rgba(13,148,136,0.3)', display: 'inline-block', cursor: 'pointer'
+        }}>다운로드</a>
+        <button onClick={onClose} style={{
+          background: '#ef4444', color: '#fff', border: 'none', borderRadius: '8px',
+          padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+        }}>닫기</button>
+      </div>
+
+      <div style={{
+        color: '#fff', fontSize: '1rem', fontWeight: 700, marginBottom: 16,
+        textAlign: 'center', maxWidth: '80%', overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      }} onClick={e => e.stopPropagation()}>
+        {file.name}
+      </div>
+
+      <div style={{
+        flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center',
+        width: '100%', maxWidth: '1000px', height: '100%', position: 'relative'
+      }} onClick={e => e.stopPropagation()}>
+        {isImg ? (
+          <img src={file.url} alt={file.name} style={{
+            maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain',
+            borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }} />
+        ) : isPdf ? (
+          <iframe src={file.url} title={file.name} style={{
+            width: '100%', height: '80vh', border: 'none', borderRadius: '8px',
+            background: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+          }} />
+        ) : (
+          <div style={{
+            background: '#fff', padding: '30px 40px', borderRadius: '12px',
+            textAlign: 'center', maxWidth: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>미리보기 미지원 파일</div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
+              이 파일 형식은 브라우저에서 직접 미리보기를 할 수 없습니다. 다운로드하여 확인해주세요.
+            </div>
+            <a href={file.url} download={file.name} target="_blank" rel="noreferrer" style={{
+              background: '#0d9488', color: '#fff', border: 'none', borderRadius: '8px',
+              padding: '8px 20px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
+              display: 'inline-block'
+            }}>파일 다운로드</a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ── 공통 스타일 ────────────────────────────────────────────────────────
 const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
