@@ -2078,6 +2078,19 @@ export const OrderDetail: React.FC = () => {
                                   const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
                                   const defaultPurchasePrice = matchedProd ? (matchedProd.purchasePrice || 0) : 0;
                                   const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+                                  
+                                  // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.
+                                  let purchaseCurrency = it.purchaseUnitCurrency;
+                                  if (!purchaseCurrency) {
+                                    if (purchasePrice > 1000) {
+                                      purchaseCurrency = 'KRW';
+                                    } else if (matchedProd) {
+                                      purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
+                                    } else {
+                                      purchaseCurrency = 'USD';
+                                    }
+                                  }
+
                                   const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                   return (
                                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -2088,7 +2101,7 @@ export const OrderDetail: React.FC = () => {
                                       <td style={{ padding: '6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{it.unitPrice?.toLocaleString()}</td>
                                       <td style={{ padding: '6px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                                          <span>{it.currency === 'KRW' ? '₩' : '$'}</span>
+                                          <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
                                           <input
                                             type="number"
                                             step="any"
@@ -2119,7 +2132,7 @@ export const OrderDetail: React.FC = () => {
                                         </div>
                                       </td>
                                       <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
-                                        {it.currency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                        {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                                       </td>
                                     </tr>
                                   );

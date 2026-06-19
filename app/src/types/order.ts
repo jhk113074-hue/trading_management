@@ -16,6 +16,7 @@ export interface OrderItem {
   unit: "kg" | "MT" | "L" | "drum" | "set";
   unitPrice: number;
   purchaseUnitPrice?: number;
+  purchaseUnitCurrency?: "USD" | "KRW";
   amount: number;
   currency: "USD" | "KRW";
 }

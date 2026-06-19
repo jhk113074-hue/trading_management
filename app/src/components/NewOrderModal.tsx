@@ -200,12 +200,16 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
               // Load purchase price from the PI item or fallback to Product master
               let purchasePrice = 0;
+              let purchaseCurrency: 'USD' | 'KRW' = 'USD';
               if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
                 purchasePrice = qi.purchasePriceKrw;
+                purchaseCurrency = 'KRW';
               } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
                 purchasePrice = qi.purchasePriceUsd;
+                purchaseCurrency = 'USD';
               } else if (matchedProd) {
                 purchasePrice = matchedProd.purchasePrice || 0;
+                purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
               }
 
               return {
@@ -218,6 +222,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 unit: (qi.unit || 'kg') as any,
                 unitPrice: orderPrice,
                 purchaseUnitPrice: purchasePrice,
+                purchaseUnitCurrency: purchaseCurrency,
                 amount: amt,
                 currency: itemCurrency
               };
@@ -360,6 +365,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
           purchaseUnitPrice: parseFloat(it.purchaseUnitPrice as any) || 0,
+          purchaseUnitCurrency: (it.purchaseUnitCurrency || 'USD') as any,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),
