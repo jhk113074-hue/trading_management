@@ -277,6 +277,13 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           it.amount = parseFloat((qty * price).toFixed(2));
         }
       }
+
+      if (field === 'purchaseUnitPrice' || field === 'purchaseUnitCurrency') {
+        const pPrice = field === 'purchaseUnitPrice' ? parseFloat(value) || 0 : parseFloat(it.purchaseUnitPrice as any) || 0;
+        const pCurr = field === 'purchaseUnitCurrency' ? value : it.purchaseUnitCurrency;
+        it.purchaseUnitPrice = pPrice;
+        it.purchaseUnitCurrency = pCurr;
+      }
       
       updated[index] = it;
       return updated;
@@ -812,7 +819,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       </div>
                     </td>
 
-                    {/* 통화 / 단가 */}
+                    {/* 매출 통화 / 단가 */}
                     <td style={{ padding: '4px 4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <select
@@ -828,7 +835,29 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           step={item.currency === 'KRW' ? '1' : '0.01'}
                           value={item.unitPrice || ''}
                           onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
-                          placeholder="단가"
+                          placeholder="매출 단가"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        />
+                      </div>
+                    </td>
+
+                    {/* 매입 통화 / 단가 */}
+                    <td style={{ padding: '4px 4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <select
+                          value={item.purchaseUnitCurrency || 'USD'}
+                          onChange={e => handleItemChange(idx, 'purchaseUnitCurrency', e.target.value)}
+                          style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        >
+                          <option value="USD">USD ($)</option>
+                          <option value="KRW">KRW (₩)</option>
+                        </select>
+                        <input
+                          type="number"
+                          step={item.purchaseUnitCurrency === 'KRW' ? '1' : '0.01'}
+                          value={item.purchaseUnitPrice || ''}
+                          onChange={e => handleItemChange(idx, 'purchaseUnitPrice', e.target.value)}
+                          placeholder="매입 단가"
                           style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                         />
                       </div>
