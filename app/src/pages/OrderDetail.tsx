@@ -2058,8 +2058,8 @@ export const OrderDetail: React.FC = () => {
                                 <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
                                 <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>단가(견적시)</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>단가(실구매가-수정가능)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>판매가 (통화/단가)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>매입가 (통화/단가)</th>
                                 <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
                               </tr>
                             </thead>

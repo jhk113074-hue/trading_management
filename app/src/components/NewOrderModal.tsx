@@ -638,10 +638,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
                   <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '250px' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '150px' }}>공급사</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '100px' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>매출 통화 / 단가</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>매입 통화 / 단가</th>
                   <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
                   <th style={{ padding: '8px 4px', textAlign: 'center', width: '45px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>삭제</th>
                 </tr>
