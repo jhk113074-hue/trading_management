@@ -2077,7 +2077,7 @@ export const OrderDetail: React.FC = () => {
                                   const itemCode = match ? match[1] : '-';
                                   const itemName = match ? match[2] : it.name;
                                   const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                  const defaultPurchasePrice = matchedProd ? (matchedProd.purchasePrice || 0) : 0;
+                                  const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
                                   const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
                                   
                                   // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.

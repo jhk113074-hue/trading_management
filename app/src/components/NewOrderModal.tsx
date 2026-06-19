@@ -214,7 +214,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
               return {
                 itemId: (idx + 1).toString(),
-                name: qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '',
+                name: qi.productCode ? `[${qi.productCode}] ${qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''}` : (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''),
                 supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
                 supplierContact: contactInfo || '',
                 grade: qi.grade || '',
