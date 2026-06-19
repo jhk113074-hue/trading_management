@@ -361,6 +361,13 @@ const IssueDetailModal: React.FC<{
   const [status, setStatus] = useState<Status>(issue.status);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Edit fields states
+  const [editTitle, setEditTitle] = useState(issue.title);
+  const [editContent, setEditContent] = useState(issue.content || '');
+  const [editCategory, setEditCategory] = useState<Category>(issue.category);
+  const [editPriority, setEditPriority] = useState<Priority>(issue.priority);
+  const [savingChanges, setSavingChanges] = useState(false);
+
   useEffect(() => {
     const q = query(
       collection(doc(db, 'companies', COMPANY_ID), `issues/${issue.id}/comments`),
@@ -458,48 +465,88 @@ const IssueDetailModal: React.FC<{
     setPosting(false);
   };
 
-  const pc = priorityColor(issue.priority);
+  const handleSaveChanges = async () => {
+    if (!editTitle.trim()) { alert('제목을 입력하세요'); return; }
+    setSavingChanges(true);
+    try {
+      const docRef = doc(db, 'companies', COMPANY_ID, 'issues', issue.id);
+      await updateDoc(docRef, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        category: editCategory,
+        priority: editPriority,
+        updatedAt: serverTimestamp()
+      });
+      onUpdate({
+        ...issue,
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        category: editCategory,
+        priority: editPriority,
+        status
+      });
+      alert('이슈 정보가 수정되었습니다.');
+    } catch (e) {
+      console.error(e);
+      alert('저장 실패');
+    }
+    setSavingChanges(false);
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 700, maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+      <div className="modal-content" style={{ maxWidth: 700, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
         {/* 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>No. {issue.issueNo || '-'}</span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: categoryColor(issue.category), background: `${categoryColor(issue.category)}18`, padding: '2px 10px', borderRadius: 10 }}>{issue.category}</span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, color: pc.text, background: pc.bg, padding: '2px 10px', borderRadius: 10 }}>{issue.priority}</span>
-            </div>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{issue.title}</h2>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 5 }}>
-              {issue.createdBy} · {fmtDate(issue.createdAt)}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #e8ecf0', paddingBottom: 10 }}>
+          <div>
+            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>No. {issue.issueNo || '-'} 상세 정보</span>
+            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>
+              작성자: {issue.createdBy} · {fmtDate(issue.createdAt)}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8', marginLeft: 12 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
         </div>
 
-        {/* 상태 변경 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {(['미해결','진행중','해결됨'] as Status[]).map(s => {
-            const sc = statusColor(s);
-            const active = status === s;
-            return (
-              <button key={s} onClick={() => handleStatusChange(s)} style={{
-                padding: '5px 16px', borderRadius: 20, border: `2px solid ${active ? sc.text : '#e2e8f0'}`,
-                background: active ? sc.bg : '#fff', color: active ? sc.text : '#94a3b8',
-                fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s'
-              }}>{s}</button>
-            );
-          })}
-        </div>
-
-        {/* 내용 */}
-        {issue.content && (
-          <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: '0.88rem', color: '#334155', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-            {issue.content}
+        {/* Scrollable Contents Area */}
+        <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* 상태 변경 */}
+          <div>
+            <FieldLabel>완료 처리 및 상태</FieldLabel>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['미해결','진행중','해결됨'] as Status[]).map(s => {
+                const sc = statusColor(s);
+                const active = status === s;
+                return (
+                  <button key={s} onClick={() => handleStatusChange(s)} style={{
+                    padding: '5px 16px', borderRadius: 20, border: `2px solid ${active ? sc.text : '#e2e8f0'}`,
+                    background: active ? sc.bg : '#fff', color: active ? sc.text : '#94a3b8',
+                    fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s'
+                  }}>{s}</button>
+                );
+              })}
+            </div>
           </div>
-        )}
+
+          <FieldLabel>제목 *</FieldLabel>
+          <input value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="이슈 제목을 입력하세요" style={inputStyle} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '4px 0' }}>
+            <div>
+              <FieldLabel>카테고리</FieldLabel>
+              <select value={editCategory} onChange={e => setEditCategory(e.target.value as Category)} style={inputStyle}>
+                {(['기능오류','UI/UX','데이터','개선요청','기타'] as Category[]).map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>우선순위</FieldLabel>
+              <select value={editPriority} onChange={e => setEditPriority(e.target.value as Priority)} style={inputStyle}>
+                {(['높음','보통','낮음'] as Priority[]).map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <FieldLabel>내용</FieldLabel>
+          <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
 
         {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: 6 }}>📎 파일 첨부 (드래그&드롭 / Ctrl+V)</div>
@@ -566,7 +613,16 @@ const IssueDetailModal: React.FC<{
           <div style={{ display: 'flex', gap: '6px' }}>
             <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') postComment(); }} />
             <button onClick={postComment} disabled={posting} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
-          </div>
+        </div>
+        </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12, borderTop: '1px solid #e8ecf0', paddingTop: 10 }}>
+          <button onClick={onClose} style={{ ...btnStyle, background: '#f1f5f9', color: '#475569' }}>닫기</button>
+          <button onClick={handleSaveChanges} disabled={savingChanges} style={{ ...btnStyle, background: 'linear-gradient(135deg,#0d9488,#0891b2)', color: '#fff', opacity: savingChanges ? 0.7 : 1 }}>
+            {savingChanges ? '수정 중...' : '저장'}
+          </button>
         </div>
       </div>
     </div>
