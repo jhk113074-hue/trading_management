@@ -1945,6 +1945,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <Input label="원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
           </div>
 
+          {/* Remarks */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Remarks</label>
+            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
+          </div>
+
           {initialPI && (
             <div style={{ background: 'rgba(37,99,235,0.05)', border: '2px solid #2563eb', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
               <Input label="Revision Reason (변경 사유) ★" value={revisionReason} onChange={(v: any) => setRevisionReason(v)} placeholder="예: 고객 단가 인하 요청 수용" />
@@ -2085,13 +2091,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             )}
           </div>
-
-          {/* Remarks */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
-          </div>
-
         </div>
 
         {/* Footer */}
