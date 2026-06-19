@@ -755,14 +755,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     if (isNewMode) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
-          <div style={{ display: 'flex', gap: '3px', height: '22px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
+          <div style={{ display: 'flex', gap: '3px', height: '23px' }}>
             <input 
               type="text" 
               value={newVal} 
               onChange={e => setNewVal(e.target.value)} 
               placeholder="직접 입력..." 
-              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '11px', height: '22px', boxSizing: 'border-box' }}
+              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '12px', height: '23px', boxSizing: 'border-box' }}
               autoFocus
             />
             <button 
@@ -771,14 +771,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
                 setIsNewMode(false);
               }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✓
             </button>
             <button 
               type="button"
               onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✕
             </button>
@@ -789,14 +789,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-        <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
+        <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
         <select 
           value={value} 
           onChange={e => {
             if (e.target.value === '__NEW__') setIsNewMode(true);
             else setFormData(prev => ({...prev, [field]: e.target.value}));
           }}
-          style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', height: '22px', boxSizing: 'border-box', background: '#fff' }}
+          style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', height: '23px', boxSizing: 'border-box', background: '#fff' }}
         >
           <option value="">{placeholder || '-- 선택 --'}</option>
           {options.map((opt: string) => (
@@ -1432,20 +1432,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
           
-          {/* ── PI Document-style compact form (4 rows) ── */}
+          {/* ── PI Document-style compact form (3 rows) ── */}
           <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
             {/* ── Row 1: 발행사 | PI Number | Your Ref | PI Date | Validity | Valid Until | 작성자 ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '90px 1.6fr 1.2fr 112px 54px 112px 1fr', gap: '5px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '95px 1.6fr 1.2fr 116px 54px 116px 1fr', gap: '5px', alignItems: 'end' }}>
               {/* 발행사 toggle */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
-                <div style={{ display: 'flex', gap: '2px', height: '22px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
+                <div style={{ display: 'flex', gap: '2px', height: '23px' }}>
                   {(['YSACC', 'YS'] as const).map(co => (
                     <button key={co} type="button"
                       onClick={() => setFormData(prev => ({...prev, issuingCompany: co}))}
                       style={{
-                        flex: 1, fontSize: '10px', fontWeight: 700,
+                        flex: 1, fontSize: '11px', fontWeight: 700,
                         background: formData.issuingCompany === co ? (co === 'YSACC' ? '#1d4ed8' : '#059669') : '#fff',
                         color: formData.issuingCompany === co ? '#fff' : '#64748b',
                         border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', padding: 0
@@ -1466,8 +1466,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '5px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-                <div style={{ position: 'relative', height: '22px', display: 'flex', alignItems: 'center' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+                <div style={{ position: 'relative', height: '23px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={formData.customerName || ''}
@@ -1475,18 +1475,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     readOnly
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
-                      width: '100%', height: '22px', padding: '1px 32px 1px 6px',
-                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px',
+                      width: '100%', height: '23px', padding: '1px 32px 1px 6px',
+                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
                   {formData.customerId && (
                     <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
-                      style={{ position: 'absolute', right: '18px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '10px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                      style={{ position: 'absolute', right: '18px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
                       title="비우기">✕</button>
                   )}
                   <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
-                    style={{ position: 'absolute', right: '3px', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                    style={{ position: 'absolute', right: '3px', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', padding: '1px', display: 'flex', alignItems: 'center' }}
                     title="고객 검색">🔍</button>
                 </div>
               </div>
@@ -1504,12 +1504,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactComboSelect label="Shipping" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
               <CompactComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
               <CompactComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
-            </div>
-
-            {/* 4) Row 4: Remarks */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
             </div>
           </div>
 
@@ -1948,7 +1942,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
 
-            <Input label="Insurance (USD)" type="number" step="0.01" value={formData.insurance} onChange={(v: any) => setFormData(prev => ({...prev, insurance: parseFloat(v)||0}))} />
             <Input label="원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
           </div>
 
@@ -1958,7 +1951,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           )}
 
-          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center' }}>
+          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
               <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
@@ -2091,6 +2084,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 })}
               </div>
             )}
+          </div>
+
+          {/* Remarks */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Remarks</label>
+            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
           </div>
 
         </div>
@@ -2275,8 +2274,8 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
 
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-    <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', background: disabled ? '#f1f5f9' : '#fff', height: '22px', boxSizing: 'border-box', width: '100%' }} />
+    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
+    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', background: disabled ? '#f1f5f9' : '#fff', height: '23px', boxSizing: 'border-box', width: '100%' }} />
   </div>
 );
 
