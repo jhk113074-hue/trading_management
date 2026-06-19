@@ -37,6 +37,8 @@ export const Orders: React.FC = () => {
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All'); // 'All' / 'Urgent'
 
+  const [selectedQuotationId, setSelectedQuotationId] = useState<string | undefined>(undefined);
+
   // Load orders
   useEffect(() => {
     const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
@@ -60,6 +62,18 @@ export const Orders: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Check URL parameters for createFromPi on mount / URL change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const piId = params.get('createFromPi');
+    if (piId) {
+      setSelectedQuotationId(piId);
+      setIsModalOpen(true);
+      // Clean up the URL query parameter without reloading
+      navigate('/orders', { replace: true });
+    }
+  }, [navigate]);
 
   // Rules Engine: Compute Next Action for an Order
   const getNextAction = (order: Order): NextAction => {
@@ -428,11 +442,16 @@ export const Orders: React.FC = () => {
 
       {isModalOpen && (
         <NewOrderModal 
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedQuotationId(undefined);
+          }}
           onSaveSuccess={() => {
             setIsModalOpen(false);
+            setSelectedQuotationId(undefined);
           }}
           currentUser={currentUser}
+          initialQuotationId={selectedQuotationId}
         />
       )}
     </div>
