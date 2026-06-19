@@ -225,6 +225,21 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const clipboardFiles = e.clipboardData?.files;
+      if (clipboardFiles && clipboardFiles.length > 0) {
+        const hasFile = Array.from(clipboardFiles).some(f => f.size > 0);
+        if (hasFile) {
+          e.preventDefault();
+          setFiles(prev => [...prev, ...Array.from(clipboardFiles)]);
+        }
+      }
+    };
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, []);
+
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFiles(prev => [...prev, ...Array.from(e.target.files!)]);
   };
@@ -298,16 +313,19 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         {/* 파일 첨부 */}
         <FieldLabel>파일 첨부 (캡처 이미지 포함)</FieldLabel>
         <div
+          style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '8px' }}
+          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
           onClick={() => fileRef.current?.click()}
-          onDrop={e => { e.preventDefault(); setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
-          onDragOver={e => e.preventDefault()}
-          style={{ border: '2px dashed #cbd5e1', borderRadius: 8, padding: '18px', textAlign: 'center', cursor: 'pointer', background: '#f8fafc', marginBottom: 8 }}
+          tabIndex={0}
         >
-          <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>📎</div>
-          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>클릭하거나 파일을 드래그하여 첨부</div>
-          <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>이미지·PDF·Excel 등 지원</div>
+          <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+          <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.xlsx,.xls,.docx,.doc" onChange={handleFiles} style={{ display: 'none' }} id="issue-create-file-upload" />
+          <label htmlFor="issue-create-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '7px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+            파일 선택하기
+          </label>
         </div>
-        <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.xlsx,.xls,.docx,.doc" onChange={handleFiles} style={{ display: 'none' }} />
         {files.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
             {files.map((f, i) => (
@@ -353,6 +371,21 @@ const IssueDetailModal: React.FC<{
     });
     return unsub;
   }, [issue.id]);
+
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const clipboardFiles = e.clipboardData?.files;
+      if (clipboardFiles && clipboardFiles.length > 0) {
+        const hasFile = Array.from(clipboardFiles).some(f => f.size > 0);
+        if (hasFile) {
+          e.preventDefault();
+          handleFileUpload(clipboardFiles);
+        }
+      }
+    };
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [attachments]);
 
   const handleStatusChange = async (s: Status) => {
     setStatus(s);
