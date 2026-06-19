@@ -4,6 +4,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
+import { getFormattedPoId } from '../types/order';
 import type { Supplier } from '../types/supplier';
 import type { Product } from '../types/product';
 import { ProductModal } from '../components/ProductModal';
@@ -723,7 +724,7 @@ export const OrderDetail: React.FC = () => {
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.id}-${supplierCode}`;
+    const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
@@ -1016,7 +1017,7 @@ export const OrderDetail: React.FC = () => {
     if (!order) return;
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.id}-${supplierCode}`;
+    const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
     const email = prompt("발송할 공급업체 이메일 주소를 입력해주세요:", "");
     if (email === null) return; // User cancelled
@@ -1096,7 +1097,7 @@ export const OrderDetail: React.FC = () => {
 
             <div class="info-block" style="margin-top: 10px;">
               <span class="info-label">Package Tracking</span>
-              PO NO: ${order.id}<br/>
+              PO NO: ${getFormattedPoId(order.id, order.issuingCompany)}<br/>
               SUPPLIER: ${supplierName}
             </div>
           </div>
@@ -1387,7 +1388,7 @@ export const OrderDetail: React.FC = () => {
           >
             이전으로
           </button>
-          <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>PO 상세 정보 - {order.id}</span>
+          <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>PO 상세 정보 - {getFormattedPoId(order.id, order.issuingCompany)}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
@@ -1990,7 +1991,7 @@ export const OrderDetail: React.FC = () => {
                     const items = groupedSupplierItems[supplierName] || [];
                     const cleanSupplierName = supplierName.replace(/\s+/g, '');
                     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                    const poNum = `${order.id}-${supplierCode}`;
+                    const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
                     return (
                       <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '8px' }}>
@@ -2804,7 +2805,7 @@ export const OrderDetail: React.FC = () => {
               const rep = reportData;
               const cleanSupplierName = activeArrivalReport.supplierName.replace(/\s+/g, '');
               const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-              const poNum = `${order.id}-${supplierCode}`;
+              const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
               const packingItemsList = rep.packingItems || [];
               const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);

@@ -87,15 +87,16 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     }
   }, [initialQuotationId, quotations]);
 
-  // Auto-generate PO Number: PO-YYYY-NNNN
+  // Auto-generate PO Number: PO-YS-26-xxxx or PO-YSACC-26-xxxx
   useEffect(() => {
     const generatePoNumber = async () => {
       try {
-        const currentYear = new Date().getFullYear().toString();
+        const currentYear2d = new Date().getFullYear().toString().substring(2); // '26'
+        const companyPrefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+        const prefix = `PO-${companyPrefix}-${currentYear2d}-`;
         const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
         const snap = await getDocs(ordersRef);
         
-        const prefix = `PO-${currentYear}-`;
         const seqNums = snap.docs
           .map(d => d.id)
           .filter(id => id.startsWith(prefix))
@@ -111,7 +112,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       }
     };
     generatePoNumber();
-  }, []);
+  }, [formData.issuingCompany]);
 
   const handleFormDataChange = (field: string, value: any) => {
     setFormData(prev => {
@@ -412,6 +413,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PO 번호 (자동 생성) ★</label>
               <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>발행사 ★</label>
+              <select value={formData.issuingCompany} onChange={e => handleFormDataChange('issuingCompany', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
+                <option value="YSACC">YSACC</option>
+                <option value="YS">영성ACC</option>
+              </select>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>

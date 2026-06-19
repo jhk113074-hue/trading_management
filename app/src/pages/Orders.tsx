@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Order } from '../types/order';
+import { getFormattedPoId } from '../types/order';
 import type { ProformaInvoice } from '../types/pi';
 import { NewOrderModal } from '../components/NewOrderModal';
 
@@ -364,7 +365,7 @@ export const Orders: React.FC = () => {
                   {/* Left: ID & Customer & Amount */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '220px', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{order.id}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{getFormattedPoId(order.id, order.issuingCompany)}</span>
                       <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
                         {order.issuingCompany || 'YSACC'}
                       </span>
