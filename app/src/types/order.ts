@@ -82,6 +82,7 @@ export interface Order {
   supplierPoSent?: Record<string, boolean>; // 업체별 발주서 발송완료 여부
   supplierProductionDates?: Record<string, string>; // 업체별 생산완료일
   forwarderQuotationAmount?: number; // 포워더 견적금액
+  finalFreight?: number; // 최종 운임
   cfsAddress?: string; // CFS 주소
   cfsContact?: string; // CFS 담당자 정보
   ciPlStatus?: 'Y' | 'N' | ''; // CI, PL 작성여부

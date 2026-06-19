@@ -105,6 +105,7 @@ export const OrderDetail: React.FC = () => {
     supplierPoSent: {} as Record<string, boolean>,
     supplierProductionDates: {} as Record<string, string>,
     forwarderQuotationAmount: 0,
+    finalFreight: 0,
     cfsAddress: '',
     cfsContact: '',
     ciPlStatus: '' as 'Y' | 'N' | '',
@@ -183,6 +184,7 @@ export const OrderDetail: React.FC = () => {
           supplierPoSent: data.supplierPoSent || {},
           supplierProductionDates: data.supplierProductionDates || {},
           forwarderQuotationAmount: data.forwarderQuotationAmount || 0,
+          finalFreight: data.finalFreight || 0,
           cfsAddress: data.cfsAddress || '',
           cfsContact: data.cfsContact || '',
           ciPlStatus: data.ciPlStatus || '',
@@ -302,7 +304,7 @@ export const OrderDetail: React.FC = () => {
         forwarderConfirmed: basicForm.forwarderConfirmed,
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate,
-        cfsContactInfo: basicForm.cfsContactInfo,
+        cfsContactInfo: basicForm.cfsAddress || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
         etd: basicForm.etd,
@@ -326,7 +328,8 @@ export const OrderDetail: React.FC = () => {
         supplierPoSent: basicForm.supplierPoSent,
         supplierProductionDates: dataSupplierProdDates(basicForm.supplierProductionDates),
         forwarderQuotationAmount: Number(basicForm.forwarderQuotationAmount) || 0,
-        cfsAddress: basicForm.cfsAddress,
+        finalFreight: Number(basicForm.finalFreight) || 0,
+        cfsAddress: basicForm.cfsAddress || '',
         cfsContact: basicForm.cfsContact,
         ciPlStatus: basicForm.ciPlStatus,
         containerWorkStatus: basicForm.containerWorkStatus,
@@ -2259,8 +2262,12 @@ export const OrderDetail: React.FC = () => {
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 견적금액 (KRW)</span>
-                      <input type="number" value={basicForm.forwarderQuotationAmount || ''} onChange={e => setBasicForm(p => ({ ...p, forwarderQuotationAmount: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 견적 금액" />
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 견적운임 (KRW)</span>
+                      <input type="number" value={basicForm.forwarderQuotationAmount || ''} onChange={e => setBasicForm(p => ({ ...p, forwarderQuotationAmount: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 견적 운임" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 최종운임 (KRW)</span>
+                      <input type="number" value={basicForm.finalFreight || ''} onChange={e => setBasicForm(p => ({ ...p, finalFreight: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 최종 운임" />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
