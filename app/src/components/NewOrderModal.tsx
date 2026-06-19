@@ -7,6 +7,8 @@ import type { ProformaInvoice } from '../types/pi';
 import type { Product } from '../types/product';
 import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
+import { CustomerSearchModal } from './CustomerSearchModal';
+import { PISearchModal } from './PISearchModal';
 
 const getRawProductCode = (code: string | undefined): string => {
   if (!code) return '';
@@ -33,6 +35,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [isPISearchOpen, setIsPISearchOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
@@ -415,24 +419,143 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <input type="text" value={formData.custPo} onChange={e => handleFormDataChange('custPo', e.target.value)} placeholder="예: PO-12345" style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
+            {/* 연결할 견적서 (PI) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>연결할 견적서(PI)</label>
-              <select value={formData.quotationId} onChange={e => handleFormDataChange('quotationId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
-                <option value="">선택 안 함</option>
-                {quotations.map(q => (
-                  <option key={q.id} value={q.id}>{q.piNumber} ({q.customerName})</option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  value={(() => {
+                    const q = quotations.find(item => item.id === formData.quotationId);
+                    return q ? `${q.piNumber} (${q.customerName})` : '';
+                  })()}
+                  placeholder="견적서 검색/선택"
+                  readOnly
+                  onClick={() => setIsPISearchOpen(true)}
+                  style={{
+                    width: '100%',
+                    padding: '5px 42px 5px 8px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    background: '#fff',
+                    boxSizing: 'border-box'
+                  }} 
+                />
+                {formData.quotationId && (
+                  <button
+                    type="button"
+                    onClick={() => handleFormDataChange('quotationId', '')}
+                    style={{
+                      position: 'absolute',
+                      right: '24px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px',
+                      zIndex: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="비우기"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsPISearchOpen(true)}
+                  style={{
+                    position: 'absolute',
+                    right: '6px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#3b82f6',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    zIndex: 5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="검색"
+                >
+                  🔍
+                </button>
+              </div>
             </div>
 
+            {/* 고객사 선택 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 선택 ★</label>
-              <select value={formData.customerId} onChange={e => handleFormDataChange('customerId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }}>
-                <option value="">고객사 선택</option>
-                {customers.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  value={formData.customerName || ''} 
+                  placeholder="고객사 검색/선택"
+                  readOnly
+                  onClick={() => setIsCustomerSearchOpen(true)}
+                  style={{
+                    width: '100%',
+                    padding: '5px 42px 5px 8px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    background: '#fff',
+                    boxSizing: 'border-box'
+                  }} 
+                />
+                {formData.customerId && (
+                  <button
+                    type="button"
+                    onClick={() => handleFormDataChange('customerId', '')}
+                    style={{
+                      position: 'absolute',
+                      right: '24px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      padding: '2px',
+                      zIndex: 5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="비우기"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsCustomerSearchOpen(true)}
+                  style={{
+                    position: 'absolute',
+                    right: '6px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#3b82f6',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    zIndex: 5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="검색"
+                >
+                  🔍
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -485,138 +608,158 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
             </div>
             
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '11px' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <th style={{ padding: '6px', textAlign: 'center', width: '35px' }}>No</th>
-                  <th style={{ padding: '6px', textAlign: 'left' }}>품목명 ★</th>
-                  <th style={{ padding: '6px', textAlign: 'left', width: '140px' }}>공급사</th>
-                  <th style={{ padding: '6px', textAlign: 'left', width: '120px' }}>공급사 연락처</th>
-                  <th style={{ padding: '6px', textAlign: 'left', width: '80px' }}>Grade</th>
-                  <th style={{ padding: '6px', textAlign: 'right', width: '80px' }}>수량</th>
-                  <th style={{ padding: '6px', textAlign: 'center', width: '65px' }}>단위</th>
-                  <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>통화</th>
-                  <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>단가</th>
-                  <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>금액</th>
-                  <th style={{ padding: '6px', textAlign: 'center', width: '45px' }}>삭제</th>
+                <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '45px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>삭제</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '4px', textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
-                    <td style={{ padding: '2px', position: 'relative' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <input
-                            type="text"
-                            list={`po_products_datalist_${idx}`}
-                            value={item.name || ''}
-                            onChange={e => handleItemChange(idx, 'name', e.target.value)}
-                            placeholder="상품코드 검색/입력"
-                            style={{ width: '100%', padding: '4px 40px 4px 6px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '28px' }}
-                          />
-                          {item.name && (
+                    <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
+                    
+                    {/* 상품코드 / 스펙 (Spec) */}
+                    <td style={{ padding: '4px 4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              list={`po_products_datalist_${idx}`}
+                              value={item.name || ''}
+                              onChange={e => handleItemChange(idx, 'name', e.target.value)}
+                              placeholder="상품코드 검색/입력"
+                              style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            />
+                            {item.name && (
+                              <button
+                                type="button"
+                                onClick={() => handleItemChange(idx, 'name', '')}
+                                style={{
+                                  position: 'absolute',
+                                  right: '20px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  cursor: 'pointer',
+                                  fontSize: '10px',
+                                  padding: '2px',
+                                  zIndex: 5,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                                title="비우기"
+                              >
+                                ✕
+                              </button>
+                            )}
                             <button
                               type="button"
-                              onClick={() => handleItemChange(idx, 'name', '')}
+                              onClick={() => {
+                                setSearchItemIndex(idx);
+                                setIsProductSearchOpen(true);
+                              }}
                               style={{
                                 position: 'absolute',
-                                right: '22px',
+                                right: '4px',
                                 background: 'transparent',
                                 border: 'none',
-                                color: '#94a3b8',
+                                color: '#3b82f6',
                                 cursor: 'pointer',
-                                fontSize: '10px',
+                                fontSize: '11px',
                                 padding: '2px',
                                 zIndex: 5,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                               }}
-                              title="비우기"
+                              title="상품 검색 (Subwindow)"
                             >
-                              ✕
+                              🔍
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSearchItemIndex(idx);
-                              setIsProductSearchOpen(true);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              right: '4px',
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#3b82f6',
-                              cursor: 'pointer',
-                              fontSize: '11px',
-                              padding: '2px',
-                              zIndex: 5,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
-                            }}
-                            title="상품 검색 (Subwindow)"
-                          >
-                            🔍
-                          </button>
-                          <datalist id={`po_products_datalist_${idx}`}>
-                            {products.map(p => {
-                              const displayName = p.nameEn || p.nameKo || '';
-                              return (
-                                <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
-                                  [{p.productCode}] {displayName}
-                                </option>
-                              );
-                            })}
-                          </datalist>
+                            <datalist id={`po_products_datalist_${idx}`}>
+                              {products.map(p => {
+                                const displayName = p.nameEn || p.nameKo || '';
+                                return (
+                                  <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                    [{p.productCode}] {displayName}
+                                  </option>
+                                );
+                              })}
+                            </datalist>
+                          </div>
+                          {(() => {
+                            const rawCode = getRawProductCode(item.name);
+                            const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (p) {
+                                    setEditingProd(p);
+                                    setIsProdModalOpen(true);
+                                  } else {
+                                    alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                  }
+                                }}
+                                disabled={!p}
+                                title="선택된 상품 수정"
+                                style={{
+                                  background: p ? '#fef08a' : '#f1f5f9',
+                                  border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                  color: p ? '#a16207' : '#94a3b8',
+                                  borderRadius: '4px',
+                                  padding: '2px 4px',
+                                  cursor: p ? 'pointer' : 'not-allowed',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  height: '26px',
+                                  width: '26px',
+                                  boxSizing: 'border-box'
+                                }}
+                              >
+                                ✏️
+                              </button>
+                            );
+                          })()}
                         </div>
-                        {(() => {
-                          const rawCode = getRawProductCode(item.name);
-                          const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (p) {
-                                  setEditingProd(p);
-                                  setIsProdModalOpen(true);
-                                } else {
-                                  alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                }
-                              }}
-                              disabled={!p}
-                              title="선택된 상품 수정"
-                              style={{
-                                background: p ? '#fef08a' : '#f1f5f9',
-                                border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                                color: p ? '#a16207' : '#94a3b8',
-                                borderRadius: '4px',
-                                padding: '2px 4px',
-                                cursor: p ? 'pointer' : 'not-allowed',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '28px',
-                                width: '28px',
-                                boxSizing: 'border-box'
-                              }}
-                            >
-                              ✏️
-                            </button>
-                          );
-                        })()}
+                        <input
+                          type="text"
+                          value={item.grade || ''}
+                          onChange={e => handleItemChange(idx, 'grade', e.target.value)}
+                          placeholder="스펙 (Spec)"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        />
+                      </div>
+                    </td>
+
+                    {/* 공급사 */}
+                    <td style={{ padding: '4px 4px', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <input
+                          type="text"
+                          value={item.supplier || ''}
+                          onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
+                          placeholder="공급사명"
+                          style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        />
                         {(() => {
                           const rawCode = getRawProductCode(item.name);
                           const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                           if (p && p.supplierName) {
                             return (
-                              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '120px', marginLeft: '2px' }} title={p.supplierName}>
+                              <span style={{ fontSize: '10px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
                                 {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
                               </span>
                             );
@@ -625,41 +768,74 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                         })()}
                       </div>
                     </td>
-                    <td style={{ padding: '2px' }}>
-                      <input type="text" value={item.supplier || ''} onChange={e => handleItemChange(idx, 'supplier', e.target.value)} placeholder="공급사명" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
+
+                    {/* 수량 / 단위 */}
+                    <td style={{ padding: '4px 4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <input
+                          type="number"
+                          value={item.qty || ''}
+                          onChange={e => handleItemChange(idx, 'qty', e.target.value)}
+                          placeholder="수량"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        />
+                        <select
+                          value={item.unit || 'kg'}
+                          onChange={e => handleItemChange(idx, 'unit', e.target.value)}
+                          style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        >
+                          <option value="kg">kg</option>
+                          <option value="MT">MT</option>
+                          <option value="L">L</option>
+                          <option value="drum">drum</option>
+                          <option value="set">set</option>
+                        </select>
+                      </div>
                     </td>
-                    <td style={{ padding: '2px' }}>
-                      <input type="text" value={item.supplierContact || ''} onChange={e => handleItemChange(idx, 'supplierContact', e.target.value)} placeholder="이메일 등" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
+
+                    {/* 통화 / 단가 */}
+                    <td style={{ padding: '4px 4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <select
+                          value={item.currency || 'USD'}
+                          onChange={e => handleItemChange(idx, 'currency', e.target.value)}
+                          style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        >
+                          <option value="USD">USD ($)</option>
+                          <option value="KRW">KRW (₩)</option>
+                        </select>
+                        <input
+                          type="number"
+                          step={item.currency === 'KRW' ? '1' : '0.01'}
+                          value={item.unitPrice || ''}
+                          onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
+                          placeholder="단가"
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        />
+                      </div>
                     </td>
-                    <td style={{ padding: '2px' }}>
-                      <input type="text" value={item.grade || ''} onChange={e => handleItemChange(idx, 'grade', e.target.value)} placeholder="Grade" style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '2px' }}>
-                      <input type="number" value={item.qty || ''} onChange={e => handleItemChange(idx, 'qty', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '2px' }}>
-                      <select value={item.unit || 'kg'} onChange={e => handleItemChange(idx, 'unit', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}>
-                        <option value="kg">kg</option>
-                        <option value="MT">MT</option>
-                        <option value="L">L</option>
-                        <option value="drum">drum</option>
-                        <option value="set">set</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '2px' }}>
-                      <select value={item.currency || 'USD'} onChange={e => handleItemChange(idx, 'currency', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box' }}>
-                        <option value="USD">USD ($)</option>
-                        <option value="KRW">KRW (₩)</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '2px' }}>
-                      <input type="number" step={item.currency === 'KRW' ? '1' : '0.01'} value={item.unitPrice || ''} onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #e8ecf0', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>
+
+                    {/* 금액 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600, color: '#1e293b', verticalAlign: 'middle', fontSize: '11.5px' }}>
                       {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '2px', textAlign: 'center' }}>
-                      <button type="button" onClick={() => removeItemRow(idx)} disabled={items.length === 1} style={{ background: 'transparent', border: 'none', color: items.length === 1 ? '#cbd5e1' : '#ef4444', fontSize: '14px', cursor: items.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
+
+                    {/* 삭제 */}
+                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                      <button
+                        type="button"
+                        onClick={() => removeItemRow(idx)}
+                        disabled={items.length === 1}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: items.length === 1 ? '#cbd5e1' : '#ef4444',
+                          fontSize: '14px',
+                          cursor: items.length === 1 ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        ✕
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -783,6 +959,27 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
             };
             refreshProducts();
+          }}
+        />
+      )}
+      {isCustomerSearchOpen && (
+        <CustomerSearchModal
+          customers={customers}
+          onClose={() => setIsCustomerSearchOpen(false)}
+          onSelect={(cust) => {
+            handleFormDataChange('customerId', cust.id);
+            setIsCustomerSearchOpen(false);
+          }}
+        />
+      )}
+
+      {isPISearchOpen && (
+        <PISearchModal
+          pis={quotations}
+          onClose={() => setIsPISearchOpen(false)}
+          onSelect={(pi) => {
+            handleFormDataChange('quotationId', pi.id);
+            setIsPISearchOpen(false);
           }}
         />
       )}

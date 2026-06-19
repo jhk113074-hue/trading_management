@@ -132,7 +132,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       
       const taskRef = doc(db, 'tasks', initialTask.id);
       await updateDoc(taskRef, {
-        commentCount: increment(1)
+        commentCount: increment(1),
+        lastCommentAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
       
     } catch (e) {

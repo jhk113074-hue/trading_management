@@ -22,6 +22,17 @@ const statusLabels: Record<string, string> = {
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
+  
+  const isCommentNew = (lastCommentAt?: string): boolean => {
+    if (!lastCommentAt) return false;
+    try {
+      const diff = Date.now() - new Date(lastCommentAt).getTime();
+      return diff > 0 && diff < 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  };
+
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -520,7 +531,12 @@ export const TaskList: React.FC = () => {
                       }}>
                         {task.title}
                         {(task.commentCount ?? 0) > 0 && (
-                          <span style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>
+                          <span 
+                            className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
+                            style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
+                          >
+                            💬 {task.commentCount}
+                          </span>
                         )}
                       </div>
                     </td>

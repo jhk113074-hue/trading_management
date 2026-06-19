@@ -52,6 +52,7 @@ export interface Task {
   updatedAt?: string;
   completedAt?: string;
   commentCount?: number;
+  lastCommentAt?: string;
   // relations
   taskAssignees?: string[];
 }

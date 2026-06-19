@@ -20,6 +20,89 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   const [manufacturerInput, setManufacturerInput] = useState('');
   const [sameAsSupplier, setSameAsSupplier] = useState(false);
 
+  // Category states
+  const [largeCategories, setLargeCategories] = useState<string[]>([]);
+  const [mediumCategories, setMediumCategories] = useState<string[]>([]);
+  const [smallCategories, setSmallCategories] = useState<string[]>([]);
+
+  const [isAddingLarge, setIsAddingLarge] = useState(false);
+  const [isAddingMedium, setIsAddingMedium] = useState(false);
+  const [isAddingSmall, setIsAddingSmall] = useState(false);
+
+  const [newLargeVal, setNewLargeVal] = useState('');
+  const [newMediumVal, setNewMediumVal] = useState('');
+  const [newSmallVal, setNewSmallVal] = useState('');
+
+  // Fetch categories from DB or Bootstrap
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'productCategories'));
+        const cats = snap.docs.map(doc => doc.data() as { name: string; type: 'large' | 'medium' | 'small' });
+        
+        const large = cats.filter(c => c.type === 'large').map(c => c.name);
+        const medium = cats.filter(c => c.type === 'medium').map(c => c.name);
+        const small = cats.filter(c => c.type === 'small').map(c => c.name);
+
+        if (cats.length === 0 && products && products.length > 0) {
+          const initLarge = [...new Set(products.map(p => p.categoryLarge).filter(Boolean))] as string[];
+          const initMedium = [...new Set(products.map(p => p.categoryMedium).filter(Boolean))] as string[];
+          const initSmall = [...new Set(products.map(p => p.categorySmall).filter(Boolean))] as string[];
+
+          const batchPromises = [
+            ...initLarge.map(name => setDoc(doc(db, 'companies', COMPANY_ID, 'productCategories', `large_${name}`), { name, type: 'large', createdAt: serverTimestamp() })),
+            ...initMedium.map(name => setDoc(doc(db, 'companies', COMPANY_ID, 'productCategories', `medium_${name}`), { name, type: 'medium', createdAt: serverTimestamp() })),
+            ...initSmall.map(name => setDoc(doc(db, 'companies', COMPANY_ID, 'productCategories', `small_${name}`), { name, type: 'small', createdAt: serverTimestamp() }))
+          ];
+          await Promise.all(batchPromises);
+
+          setLargeCategories(initLarge.sort());
+          setMediumCategories(initMedium.sort());
+          setSmallCategories(initSmall.sort());
+        } else {
+          setLargeCategories([...new Set(large)].sort());
+          setMediumCategories([...new Set(medium)].sort());
+          setSmallCategories([...new Set(small)].sort());
+        }
+      } catch (e) {
+        console.error("Failed to load categories:", e);
+      }
+    };
+    fetchCategories();
+  }, [products]);
+
+  const registerNewCategory = async (name: string, type: 'large' | 'medium' | 'small') => {
+    if (!name.trim()) return;
+    const trimmed = name.trim();
+    try {
+      const docId = `${type}_${trimmed}`;
+      await setDoc(doc(db, 'companies', COMPANY_ID, 'productCategories', docId), {
+        name: trimmed,
+        type,
+        createdAt: serverTimestamp()
+      });
+      if (type === 'large') {
+        setLargeCategories(prev => [...new Set([...prev, trimmed])].sort());
+        handleChange('categoryLarge', trimmed);
+        setIsAddingLarge(false);
+        setNewLargeVal('');
+      } else if (type === 'medium') {
+        setMediumCategories(prev => [...new Set([...prev, trimmed])].sort());
+        handleChange('categoryMedium', trimmed);
+        setIsAddingMedium(false);
+        setNewMediumVal('');
+      } else if (type === 'small') {
+        setSmallCategories(prev => [...new Set([...prev, trimmed])].sort());
+        handleChange('categorySmall', trimmed);
+        setIsAddingSmall(false);
+        setNewSmallVal('');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('카테고리 등록에 실패했습니다.');
+    }
+  };
+
   const [formData, setFormData] = useState<Partial<Product>>({
     productCode: undefined, nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', spec: '', imageUrl: '',
     supplierName: '', supplierCode: '', supplierContact: '', supplierPhone: '', supplierEmail: '', supplierAddress: '', minOrderQty: 0,
@@ -529,9 +612,158 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   <Input label="상품코드 (필수) ★" value={formData.productCode} onChange={(v: any) => handleChange('productCode', v)} disabled={!!initialProduct} placeholder="예: PROD-CF-001" />
                   <Input label="상품명_한글 (필수) ★" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} />
                   <Input label="상품명_영문" value={formData.nameEn} onChange={(v: any) => handleChange('nameEn', v)} />
-                  <Input label="대분류" value={formData.categoryLarge} onChange={(v: any) => handleChange('categoryLarge', v)} />
-                  <Input label="중분류" value={formData.categoryMedium} onChange={(v: any) => handleChange('categoryMedium', v)} />
-                  <Input label="소분류" value={formData.categorySmall} onChange={(v: any) => handleChange('categorySmall', v)} />
+                  {/* 대분류 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>대분류</label>
+                    {isAddingLarge ? (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="새 대분류명" 
+                          value={newLargeVal}
+                          onChange={e => setNewLargeVal(e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => registerNewCategory(newLargeVal, 'large')}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          등록
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => { setIsAddingLarge(false); setNewLargeVal(''); }}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <select 
+                          value={formData.categoryLarge || ''} 
+                          onChange={e => handleChange('categoryLarge', e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
+                        >
+                          <option value="">-- 선택안함 --</option>
+                          {largeCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button"
+                          onClick={() => setIsAddingLarge(true)}
+                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
+                          title="신규 대분류 추가"
+                        >
+                          ➕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 중분류 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>중분류</label>
+                    {isAddingMedium ? (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="새 중분류명" 
+                          value={newMediumVal}
+                          onChange={e => setNewMediumVal(e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => registerNewCategory(newMediumVal, 'medium')}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          등록
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => { setIsAddingMedium(false); setNewMediumVal(''); }}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <select 
+                          value={formData.categoryMedium || ''} 
+                          onChange={e => handleChange('categoryMedium', e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
+                        >
+                          <option value="">-- 선택안함 --</option>
+                          {mediumCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button"
+                          onClick={() => setIsAddingMedium(true)}
+                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
+                          title="신규 중분류 추가"
+                        >
+                          ➕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 소분류 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>소분류</label>
+                    {isAddingSmall ? (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="새 소분류명" 
+                          value={newSmallVal}
+                          onChange={e => setNewSmallVal(e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => registerNewCategory(newSmallVal, 'small')}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          등록
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => { setIsAddingSmall(false); setNewSmallVal(''); }}
+                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <select 
+                          value={formData.categorySmall || ''} 
+                          onChange={e => handleChange('categorySmall', e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
+                        >
+                          <option value="">-- 선택안함 --</option>
+                          {smallCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <button 
+                          type="button"
+                          onClick={() => setIsAddingSmall(true)}
+                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
+                          title="신규 소분류 추가"
+                        >
+                          ➕
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

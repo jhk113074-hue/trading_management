@@ -7,6 +7,18 @@ interface Props {
 }
 
 export const TaskCard: React.FC<Props> = ({ task, onClick }) => {
+  const isCommentNew = (lastCommentAt?: string): boolean => {
+    if (!lastCommentAt) return false;
+    try {
+      const diff = Date.now() - new Date(lastCommentAt).getTime();
+      return diff > 0 && diff < 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  };
+
+  const hasNewComment = isCommentNew(task.lastCommentAt);
+
   return (
     <div className="task-card" onClick={onClick}>
       <div className="task-card-title">
@@ -22,7 +34,10 @@ export const TaskCard: React.FC<Props> = ({ task, onClick }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>마감 {task.dueDate}</span>
           {(task.commentCount ?? 0) > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: 600, fontSize: '0.75rem', background: '#fef3c7', padding: '2px 6px', borderRadius: '12px' }}>
+            <div 
+              className={hasNewComment ? 'blink-badge' : ''}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontWeight: 600, fontSize: '0.75rem', background: '#fef3c7', padding: '2px 6px', borderRadius: '12px' }}
+            >
               💬 <span>{(task.commentCount ?? 0)}</span>
             </div>
           )}

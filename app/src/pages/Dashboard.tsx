@@ -13,6 +13,16 @@ export const Dashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile } = useAuth();
 
+  const isCommentNew = (lastCommentAt?: string): boolean => {
+    if (!lastCommentAt) return false;
+    try {
+      const diff = Date.now() - new Date(lastCommentAt).getTime();
+      return diff > 0 && diff < 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  };
+
   // ── Trading Data States ──
   const [pis, setPis] = useState<any[]>([]);
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
@@ -261,7 +271,14 @@ export const Dashboard: React.FC = () => {
         <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap' }}>
           {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
           {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
-          {(task.commentCount ?? 0) > 0 && <span style={{ fontSize: '0.68rem', background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}>💬 {task.commentCount}</span>}
+          {(task.commentCount ?? 0) > 0 && (
+            <span 
+              className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
+              style={{ fontSize: '0.68rem', background: '#fef3c7', color: '#d97706', padding: '1px 6px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
+            >
+              💬 {task.commentCount}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -922,7 +939,12 @@ export const Dashboard: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>마감 {task.dueDate || '-'}</span>
                         {(task.commentCount ?? 0) > 0 && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 5px', borderRadius: '8px', fontWeight: 700 }}>💬 {task.commentCount}</span>
+                          <span 
+                            className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: '#d97706', background: '#fef3c7', padding: '1px 5px', borderRadius: '8px', fontWeight: 700 }}
+                          >
+                            💬 {task.commentCount}
+                          </span>
                         )}
                       </div>
                       <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
