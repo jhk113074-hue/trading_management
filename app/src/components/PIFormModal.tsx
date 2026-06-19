@@ -1435,31 +1435,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           {/* ── PI Document-style compact form (3 rows) ── */}
           <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
-            {/* ── Row 1: 발행사 | PI Number | Your Ref | PI Date | Validity | Valid Until | 작성자 ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '95px 1.6fr 1.2fr 116px 54px 116px 1fr', gap: '5px', alignItems: 'end' }}>
-              {/* 발행사 toggle */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
-                <div style={{ display: 'flex', gap: '2px', height: '23px' }}>
-                  {(['YSACC', 'YS'] as const).map(co => (
-                    <button key={co} type="button"
-                      onClick={() => setFormData(prev => ({...prev, issuingCompany: co}))}
-                      style={{
-                        flex: 1, fontSize: '11px', fontWeight: 700,
-                        background: formData.issuingCompany === co ? (co === 'YSACC' ? '#1d4ed8' : '#059669') : '#fff',
-                        color: formData.issuingCompany === co ? '#fff' : '#64748b',
-                        border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', padding: 0
-                      }}
-                    >{co === 'YSACC' ? 'YSACC' : '영성'}</button>
-                  ))}
-                </div>
-              </div>
+            {/* ── Row 1: 발행사 | 작성자 | PI Number | Your Ref | PI Date | Validity | Valid Until ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.6fr 1.2fr 116px 54px 116px', gap: '5px', alignItems: 'end' }}>
+              <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
+              <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리']} />
               <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
               <CompactInput label="Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
               <CompactInput label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
               <CompactInput label="Validity(d)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
               <CompactInput label="Valid Until" value={formData.validUntilDate} disabled />
-              <CompactInput label="작성자" value={formData.createdByName || ''} onChange={(v: any) => setFormData(prev => ({...prev, createdByName: v}))} />
             </div>
 
             {/* ── Row 2: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
@@ -1942,7 +1926,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
 
-            <Input label="원화 환산 총액 (참고)" value={`₩ ${(formData.totalKrw || 0).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`} disabled />
           </div>
 
           {/* Remarks */}
