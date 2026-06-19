@@ -1432,21 +1432,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
           
-          {/* ── PI Document-style compact form (3 rows) ── */}
+          {/* ── PI Document-style compact form (4 rows) ── */}
           <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
 
-            {/* ── Row 1: 발행사 | 작성자 | PI Number | Your Ref | PI Date | Validity | Valid Until ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.6fr 1.2fr 116px 54px 116px', gap: '5px', alignItems: 'end' }}>
+            {/* ── Row 1: 발행사 | 작성자 | 작성일 (PI Date) ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px', alignItems: 'end' }}>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리']} />
+              <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
+            </div>
+
+            {/* ── Row 2: PI Number | Your Ref | Validity | Valid Until ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr', gap: '5px', alignItems: 'end' }}>
               <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
               <CompactInput label="Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
-              <CompactInput label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
               <CompactInput label="Validity(d)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
               <CompactInput label="Valid Until" value={formData.validUntilDate} disabled />
             </div>
 
-            {/* ── Row 2: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
+            {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '5px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -1481,7 +1485,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactComboSelect label="Payment ★" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
             </div>
 
-            {/* 3) Row 3: Departure | Packing | Shipping | Delivery | Origin */}
+            {/* ── Row 4: Departure | Packing | Shipping | Delivery | Origin ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1.5fr 1fr', gap: '5px', alignItems: 'end' }}>
               <CompactComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
               <CompactComboSelect label="Packing Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
