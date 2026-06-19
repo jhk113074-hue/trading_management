@@ -359,6 +359,7 @@ export const Orders: React.FC = () => {
                 <tr>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>날짜</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>주문번호</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>수주사</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주사</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주액</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textAlign: 'center' }}>단계</th>
@@ -391,13 +392,15 @@ export const Orders: React.FC = () => {
                       <td style={{ padding: '14px 16px', color: '#64748b', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
                       
                       {/* 주문번호 */}
+                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap', fontWeight: 700, color: '#1e293b' }}>
+                        {getFormattedPoId(order.id, order.issuingCompany)}
+                      </td>
+
+                      {/* 수주사 */}
                       <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontWeight: 700, color: '#1e293b' }}>{getFormattedPoId(order.id, order.issuingCompany)}</span>
-                          <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
-                            {order.issuingCompany || 'YSACC'}
-                          </span>
-                        </div>
+                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
+                          {order.issuingCompany || 'YSACC'}
+                        </span>
                       </td>
 
                       {/* 발주사 */}
