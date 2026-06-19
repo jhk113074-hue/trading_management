@@ -198,6 +198,16 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               const qty = qi.quantity || 0;
               const amt = parseFloat((qty * orderPrice).toFixed(2));
 
+              // Load purchase price from the PI item or fallback to Product master
+              let purchasePrice = 0;
+              if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                purchasePrice = qi.purchasePriceKrw;
+              } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                purchasePrice = qi.purchasePriceUsd;
+              } else if (matchedProd) {
+                purchasePrice = matchedProd.purchasePrice || 0;
+              }
+
               return {
                 itemId: (idx + 1).toString(),
                 name: qi.description || matchedProd?.nameEn || matchedProd?.nameKo || '',
@@ -207,6 +217,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 qty,
                 unit: (qi.unit || 'kg') as any,
                 unitPrice: orderPrice,
+                purchaseUnitPrice: purchasePrice,
                 amount: amt,
                 currency: itemCurrency
               };
@@ -244,6 +255,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             grade: prod.spec || '',
             unit: (prod.unit || 'kg') as any,
             unitPrice: buyPrice,
+            purchaseUnitPrice: buyPrice,
             currency: itemCurrency,
             amount: amt
           };
@@ -286,6 +298,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         grade: prod.spec || '',
         unit: (prod.unit || 'kg') as any,
         unitPrice: buyPrice,
+        purchaseUnitPrice: buyPrice,
         currency: itemCurrency,
         amount: amt
       };
