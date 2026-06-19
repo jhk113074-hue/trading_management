@@ -353,89 +353,102 @@ export const Orders: React.FC = () => {
         ) : processedOrders.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>등록된 주문 정보가 없습니다.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {processedOrders.map((order, idx) => {
-              const pi = quotations.find(q => q.id === order.quotationId);
-              const orderAmount = pi?.totalUsd || order.totalAmount || 0;
-              const currentStep = mapStatusToStep(order.status || '');
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                <tr>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>날짜</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>주문번호</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주사</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주액</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textAlign: 'center' }}>단계</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>다음단계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processedOrders.map((order) => {
+                  const pi = quotations.find(q => q.id === order.quotationId);
+                  const orderAmount = pi?.totalUsd || order.totalAmount || 0;
+                  const currentStep = mapStatusToStep(order.status || '');
 
-              // Urgent color styling
-              const levelColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
-              const levelBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
-              const levelBorder = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#e2e8f0';
+                  // Urgent color styling
+                  const levelColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
+                  const levelBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
+                  const levelBorder = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#e2e8f0';
 
-              return (
-                <div 
-                  key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}?step=PO접수`)}
-                  style={{
-                    display: 'flex', alignItems: 'center', padding: '18px 24px',
-                    borderBottom: idx === processedOrders.length - 1 ? 'none' : '1px solid #f1f5f9',
-                    cursor: 'pointer', transition: 'background-color 0.15s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  {/* Left: ID & Customer & Amount */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '220px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{getFormattedPoId(order.id, order.issuingCompany)}</span>
-                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
-                        {order.issuingCompany || 'YSACC'}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{order.customer}</span>
-                  </div>
+                  return (
+                    <tr 
+                      key={order.id}
+                      onClick={() => navigate(`/orders/${order.id}?step=PO접수`)}
+                      style={{
+                        borderBottom: '1px solid #f1f5f9',
+                        cursor: 'pointer', transition: 'background-color 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      {/* 날짜 */}
+                      <td style={{ padding: '14px 16px', color: '#64748b', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
+                      
+                      {/* 주문번호 */}
+                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: 700, color: '#1e293b' }}>{getFormattedPoId(order.id, order.issuingCompany)}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
+                            {order.issuingCompany || 'YSACC'}
+                          </span>
+                        </div>
+                      </td>
 
-                  <div style={{ width: '130px', flexShrink: 0, fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>
-                    ${orderAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
+                      {/* 발주사 */}
+                      <td style={{ padding: '14px 16px', color: '#334155', fontWeight: 600 }}>{order.customer}</td>
 
-                  {/* Middle: Progress Circle Indicator */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '240px', flexShrink: 0 }}>
-                    {/* Circle 1 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === 'PO접수' || currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                      <span style={{ fontSize: '11px', fontWeight: currentStep === 'PO접수' ? 700 : 500, color: currentStep === 'PO접수' ? '#1e293b' : '#64748b' }}>PO접수</span>
-                    </div>
-                    <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                    {/* Circle 2 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                      <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
-                    </div>
-                    <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                    {/* Circle 3 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                      <span style={{ fontSize: '11px', fontWeight: currentStep === '수출관리' ? 700 : 500, color: currentStep === '수출관리' ? '#1e293b' : '#64748b' }}>수출관리</span>
-                    </div>
-                    <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                    {/* Circle 4 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                      <span style={{ fontSize: '11px', fontWeight: currentStep === '정산마감' ? 700 : 500, color: currentStep === '정산마감' ? '#1e293b' : '#64748b' }}>정산마감</span>
-                    </div>
-                  </div>
+                      {/* 발주액 */}
+                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                        ${orderAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
 
-                  {/* Right: Next Action Warning Box */}
-                  <div style={{ flex: 1, paddingLeft: '24px' }}>
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      padding: '6px 12px', borderRadius: '20px',
-                      background: levelBg, border: `1px solid ${levelBorder}`,
-                      color: levelColor, fontSize: '12px', fontWeight: 600
-                    }}>
-                      <span>{order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '→'}</span>
-                      <span>{order.nextAction.text}</span>
-                    </div>
-                  </div>
+                      {/* 단계 (Progress circles) */}
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                          {/* Circle 1 */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ color: currentStep === 'PO접수' || currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === 'PO접수' ? 700 : 500, color: currentStep === 'PO접수' ? '#1e293b' : '#64748b' }}>PO접수</span>
+                          </div>
+                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
+                          {/* Circle 2 */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
+                          </div>
+                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
+                          {/* Circle 3 */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ color: currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '수출관리' ? 700 : 500, color: currentStep === '수출관리' ? '#1e293b' : '#64748b' }}>수출관리</span>
+                          </div>
+                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
+                          {/* Circle 4 */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ color: currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '정산마감' ? 700 : 500, color: currentStep === '정산마감' ? '#1e293b' : '#64748b' }}>정산마감</span>
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Arrow Action */}
-                  <div style={{ color: '#94a3b8', fontSize: '16px', fontWeight: 'bold' }}>›</div>
-                </div>
-              );
-            })}
+                      {/* 다음단계 */}
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '20px', background: levelBg, border: `1px solid ${levelBorder}`, color: levelColor, fontSize: '12px', fontWeight: 600 }}>
+                          <span>{order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '→'}</span>
+                          <span>{order.nextAction.text}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
