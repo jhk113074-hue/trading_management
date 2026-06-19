@@ -191,22 +191,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               
               const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
               
-              let buyPrice = 0;
-              let itemCurrency: 'USD' | 'KRW' = 'USD';
-
-              if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
-                buyPrice = qi.purchasePriceKrw;
-                itemCurrency = 'KRW';
-              } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
-                buyPrice = qi.purchasePriceUsd;
-                itemCurrency = 'USD';
-              } else if (matchedProd) {
-                buyPrice = matchedProd.purchasePrice || 0;
-                itemCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
-              }
+              // The user requested that the order (PO) registration screen displays the received order details in USD (i.e. salePriceUsd from PI line items)
+              const orderPrice = qi.salePriceUsd || 0;
+              const itemCurrency: 'USD' | 'KRW' = 'USD';
 
               const qty = qi.quantity || 0;
-              const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+              const amt = parseFloat((qty * orderPrice).toFixed(2));
 
               return {
                 itemId: (idx + 1).toString(),
@@ -216,7 +206,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 grade: qi.grade || '',
                 qty,
                 unit: (qi.unit || 'kg') as any,
-                unitPrice: buyPrice,
+                unitPrice: orderPrice,
                 amount: amt,
                 currency: itemCurrency
               };
