@@ -2027,18 +2027,6 @@ export const OrderDetail: React.FC = () => {
                               🖨️ 인쇄 / PDF
                             </button>
                             <button 
-                              onClick={() => setActiveArrivalReport({ supplierName, items })}
-                              style={{ padding: '5px 10px', background: '#8b5cf6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
-                            >
-                              🚚 도착보고
-                            </button>
-                            <button 
-                              onClick={() => handlePrintShippingMark(supplierName)}
-                              style={{ padding: '5px 10px', background: '#ec4899', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
-                            >
-                              🏷️ 쉬핑마크
-                            </button>
-                            <button 
                               onClick={() => handleEmailSupplierPo(supplierName, items)}
                               style={{ padding: '5px 10px', background: '#10b981', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                             >
@@ -2096,7 +2084,37 @@ export const OrderDetail: React.FC = () => {
                                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                       <td style={{ padding: '6px' }}>{itemCode}</td>
                                       <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
-                                      <td style={{ padding: '6px', textAlign: 'center' }}>{it.grade || '-'}</td>
+                                      <td style={{ padding: '6px', textAlign: 'center' }}>
+                                        {isEditing ? (
+                                          <input
+                                            type="text"
+                                            value={it.grade || ''}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              setOrder(prev => {
+                                                if (!prev) return prev;
+                                                const updatedItems = prev.items.map(item => {
+                                                  if (item.itemId === it.itemId) {
+                                                    return { ...item, grade: val };
+                                                  }
+                                                  return item;
+                                                });
+                                                return { ...prev, items: updatedItems };
+                                              });
+                                            }}
+                                            style={{
+                                              width: '100px',
+                                              padding: '3px 6px',
+                                              border: '1px solid #cbd5e1',
+                                              borderRadius: '4px',
+                                              fontSize: '11px',
+                                              textAlign: 'center'
+                                            }}
+                                          />
+                                        ) : (
+                                          it.grade || '-'
+                                        )}
+                                      </td>
                                       <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
                                       {/* 매입가 (통화/단가) */}
                                       <td style={{ padding: '6px', textAlign: 'right' }}>
