@@ -598,9 +598,6 @@ export const OrderDetail: React.FC = () => {
               <div><strong>발주번호 :</strong> ${poNum}</div>
               <div><strong>발주일자 :</strong> ${new Date().toISOString().split('T')[0].replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일')}</div>
               <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
-              <div><strong>참&nbsp;&nbsp;&nbsp;&nbsp;조 :</strong> ${items[0]?.supplierContact || '-'}</div>
-              <div><strong>전화번호 :</strong> -</div>
-              <div><strong>F A X :</strong> -</div>
             </div>
             <div>
               <table class="business-table">
@@ -647,12 +644,13 @@ export const OrderDetail: React.FC = () => {
           <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 250px;">품 명</th>
-                <th style="width: 120px;">규 격</th>
-                <th style="width: 70px;">수량</th>
-                <th style="width: 90px;">단 가</th>
-                <th style="width: 110px;">금 액</th>
-                <th style="width: 100px;">부가세</th>
+                <th style="width: 100px;">상품코드</th>
+                <th style="width: 200px;">품 명</th>
+                <th style="width: 120px;">스 펙</th>
+                <th style="width: 60px;">수량</th>
+                <th style="width: 80px;">단 가</th>
+                <th style="width: 100px;">금 액</th>
+                <th style="width: 90px;">부가세</th>
                 <th>비 고</th>
               </tr>
             </thead>
@@ -663,9 +661,13 @@ export const OrderDetail: React.FC = () => {
                 const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
                 const rawAmt = price * (it.qty || 0);
                 const vatAmt = taxType === '영세' ? 0 : (isKrw ? Math.round(rawAmt * 0.1) : parseFloat((rawAmt * 0.1).toFixed(2)));
+                const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
+                const itemCode = match ? match[1] : '-';
+                const itemName = match ? match[2] : it.name;
                 return `
                   <tr>
-                    <td><strong>${it.name}</strong></td>
+                    <td class="center">${itemCode}</td>
+                    <td><strong>${itemName}</strong></td>
                     <td class="center">${it.grade || '-'}</td>
                     <td class="right">${(it.qty || 0).toLocaleString()}</td>
                     <td class="right">${currencySymbol}${price.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
@@ -686,11 +688,12 @@ export const OrderDetail: React.FC = () => {
                   <td></td>
                   <td></td>
                   <td></td>
+                  <td></td>
                 </tr>
               `).join('')}
 
               <tr style="font-weight: bold; background-color: #fafafa;">
-                <td colspan="2" class="center">합   계</td>
+                <td colspan="3" class="center">합   계</td>
                 <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
                 <td></td>
                 <td class="right">
@@ -1625,69 +1628,75 @@ export const OrderDetail: React.FC = () => {
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
                             <thead>
                               <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                <th style={{ padding: '6px', textAlign: 'left', width: '90px' }}>상품코드</th>
                                 <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
-                                <th style={{ padding: '6px', textAlign: 'center' }}>규격</th>
-                                <th style={{ padding: '6px', textAlign: 'right' }}>수량</th>
-                                <th style={{ padding: '6px', textAlign: 'right' }}>단가(견적시-가지고옴)</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '160px' }}>단가(실구매가-수정가능)</th>
-                                <th style={{ padding: '6px', textAlign: 'right' }}>총액(실구매가*수량)</th>
+                                <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>단가(견적시)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>단가(실구매가-수정가능)</th>
+                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
                               </tr>
                             </thead>
                             <tbody>
                               {items.length === 0 ? (
                                 <tr>
-                                  <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                                  <td colSpan={7} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
                                     연결된 품목이 없습니다. (원자재/OEM 등의 목적으로 추가됨)
                                   </td>
                                 </tr>
                               ) : (
                                 items.map((it, idx) => {
-                                const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                                const totalPurchaseAmount = purchasePrice * (it.qty || 0);
-                                return (
-                                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    <td style={{ padding: '6px' }}>{it.name}</td>
-                                    <td style={{ padding: '6px', textAlign: 'center' }}>{it.grade || '-'}</td>
-                                    <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                                    <td style={{ padding: '6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{it.unitPrice?.toLocaleString()}</td>
-                                    <td style={{ padding: '6px', textAlign: 'right' }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                                        <span>{it.currency === 'KRW' ? '₩' : '$'}</span>
-                                        <input
-                                          type="number"
-                                          step="any"
-                                          value={it.purchaseUnitPrice ?? it.unitPrice}
-                                          disabled={!isEditing}
-                                          onChange={(e) => {
-                                            const val = parseFloat(e.target.value) || 0;
-                                            setOrder(prev => {
-                                              if (!prev) return prev;
-                                              const updatedItems = prev.items.map(item => {
-                                                if (item.itemId === it.itemId) {
-                                                  return { ...item, purchaseUnitPrice: val };
-                                                }
-                                                return item;
+                                  const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                                  const totalPurchaseAmount = purchasePrice * (it.qty || 0);
+                                  const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
+                                  const itemCode = match ? match[1] : '-';
+                                  const itemName = match ? match[2] : it.name;
+                                  return (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                      <td style={{ padding: '6px' }}>{itemCode}</td>
+                                      <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
+                                      <td style={{ padding: '6px', textAlign: 'center' }}>{it.grade || '-'}</td>
+                                      <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
+                                      <td style={{ padding: '6px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{it.unitPrice?.toLocaleString()}</td>
+                                      <td style={{ padding: '6px', textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
+                                          <span>{it.currency === 'KRW' ? '₩' : '$'}</span>
+                                          <input
+                                            type="number"
+                                            step="any"
+                                            value={it.purchaseUnitPrice ?? it.unitPrice}
+                                            disabled={!isEditing}
+                                            onChange={(e) => {
+                                              const val = parseFloat(e.target.value) || 0;
+                                              setOrder(prev => {
+                                                if (!prev) return prev;
+                                                const updatedItems = prev.items.map(item => {
+                                                  if (item.itemId === it.itemId) {
+                                                    return { ...item, purchaseUnitPrice: val };
+                                                  }
+                                                  return item;
+                                                });
+                                                return { ...prev, items: updatedItems };
                                               });
-                                              return { ...prev, items: updatedItems };
-                                            });
-                                          }}
-                                          style={{
-                                            width: '90px',
-                                            padding: '3px 6px',
-                                            border: '1px solid #cbd5e1',
-                                            borderRadius: '4px',
-                                            fontSize: '11px',
-                                            textAlign: 'right'
-                                          }}
-                                        />
-                                      </div>
-                                    </td>
-                                    <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
-                                      {it.currency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
-                                    </td>
-                                  </tr>
-                                );
-                              }))}
+                                            }}
+                                            style={{
+                                              width: '90px',
+                                              padding: '3px 6px',
+                                              border: '1px solid #cbd5e1',
+                                              borderRadius: '4px',
+                                              fontSize: '11px',
+                                              textAlign: 'right'
+                                            }}
+                                          />
+                                        </div>
+                                      </td>
+                                      <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
+                                        {it.currency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, it.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
                             </tbody>
                           </table>
                         </div>
