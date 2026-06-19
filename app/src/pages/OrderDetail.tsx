@@ -842,6 +842,176 @@ export const OrderDetail: React.FC = () => {
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
+  // Arrival Report Print handler
+  const handlePrintArrivalReport = (supplierName: string, items: OrderItem[]) => {
+    if (!order) return;
+    const isYS = order.issuingCompany === 'YS';
+    const cleanSupplierName = supplierName.replace(/\s+/g, '');
+    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+    const poNum = `${order.id}-${supplierCode}`;
+
+    const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
+
+    const printHtml = `
+      <html>
+        <head>
+          <title>도착보고 - ${poNum}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11px; line-height: 1.4; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+            .header-title { text-align: center; font-size: 32px; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
+            
+            .info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; }
+            .info-box { border: 1px solid #000; padding: 10px; min-height: 100px; }
+            .info-title { font-weight: bold; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; }
+
+            .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+            .desc-table th, .desc-table td { border: 1px solid #000; padding: 8px 6px; }
+            .desc-table th { background: #f3f4f6; font-weight: bold; text-align: center; }
+            .desc-table td.right { text-align: right; }
+            .desc-table td.center { text-align: center; }
+            
+            .total-row { font-weight: bold; background: #fafafa; }
+            .signature-area { margin-top: 50px; text-align: right; font-size: 12px; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+          <div class="header-title">도착 보고서 (Arrival Report)</div>
+          
+          <div class="info-grid">
+            <div class="info-box">
+              <div class="info-title">공급업체 정보 (Supplier)</div>
+              <strong>${supplierName}</strong><br/>
+              ${items[0]?.supplierContact || ''}
+            </div>
+            <div class="info-box">
+              <div class="info-title">발주 및 입고지 정보</div>
+              <strong>발주번호:</strong> ${poNum}<br/>
+              <strong>입고지 (CFS):</strong> ${basicForm.cfsAddress || '지정 CFS 작업장'}<br/>
+              <strong>CFS 입고요청일:</strong> ${basicForm.cfsEntryDate || '협의 필요'}<br/>
+              <strong>최종 선적항/목적지:</strong> BUSAN / JEBEL ALI, UAE
+            </div>
+          </div>
+
+          <table class="desc-table">
+            <thead>
+              <tr>
+                <th style="width: 8%">No</th>
+                <th>품목 및 규격 (Description & Spec)</th>
+                <th style="width: 15%">수량 (Qty)</th>
+                <th style="width: 15%">단위 (Unit)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((it, idx) => `
+                <tr>
+                  <td class="center">${idx + 1}</td>
+                  <td><strong>${it.name}</strong><br/><small>Spec: ${it.grade || '-'}</small></td>
+                  <td class="right">${it.qty?.toLocaleString()}</td>
+                  <td class="center">${it.unit}</td>
+                </tr>
+              `).join('')}
+              <tr class="total-row">
+                <td colspan="2" class="center">TOTAL</td>
+                <td class="right">${totalQty.toLocaleString()}</td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 30px; border: 1px dashed #ef4444; padding: 12px; background: #fef2f2; color: #991b1b; border-radius: 6px;">
+            <strong>※ 기사님 및 공급업체 전달 주의사항:</strong><br/>
+            - 화물 하차 완료 직후 반드시 상기 입고지 담당자에게 도착 보고를 완료하셔야 합니다.<br/>
+            - CFS 입고 시 본 도착보고서를 제시하시고 화물 상태를 검수받으시기 바랍니다.
+          </div>
+
+          <div class="signature-area">
+            For and on behalf of<br/>
+            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
+            _______________________________<br/>
+            Authorized Signature(s)
+          </div>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printHtml);
+      win.document.close();
+    }
+  };
+
+  // Shipping Mark Print handler
+  const handlePrintShippingMark = (supplierName: string) => {
+    if (!order) return;
+    const isYS = order.issuingCompany === 'YS';
+
+    const printHtml = `
+      <html>
+        <head>
+          <title>SHIPPING MARK - ${supplierName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+            body { font-family: 'Outfit', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 95vh; margin: 0; padding: 20px; box-sizing: border-box; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+            @media print {
+              .no-print { display: none !important; }
+            }
+            .mark-container { border: 8px solid #000; padding: 40px 60px; width: 90%; max-width: 700px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 24px; position: relative; }
+            
+            .diamond-wrapper { position: relative; width: 350px; height: 180px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
+            .diamond { position: absolute; top: 0; left: 50%; transform: translateX(-50%) rotate(45deg); width: 180px; height: 180px; border: 4px solid #1e3a8a; }
+            .diamond-text { font-size: 44px; font-weight: 900; color: #1e3a8a; letter-spacing: 2px; z-index: 5; text-transform: uppercase; }
+
+            .info-block { font-size: 26px; font-weight: 700; color: #000; line-height: 1.5; text-transform: uppercase; }
+            .info-label { color: #4b5563; font-size: 20px; font-weight: 500; display: block; margin-bottom: 2px; }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+          
+          <div class="mark-container">
+            <div class="diamond-wrapper">
+              <div class="diamond"></div>
+              <div class="diamond-text">${isYS ? 'YS ACC' : 'YSACC'}</div>
+            </div>
+            
+            <div style="border-top: 3px solid #000; width: 100%; margin: 10px 0;"></div>
+
+            <div class="info-block">
+              <span class="info-label">Destination Port</span>
+              JEBEL ALI, UAE
+            </div>
+
+            <div class="info-block">
+              <span class="info-label">Origin Country</span>
+              MADE IN KOREA
+            </div>
+
+            <div class="info-block" style="margin-top: 10px;">
+              <span class="info-label">Package Tracking</span>
+              PO NO: ${order.id}<br/>
+              SUPPLIER: ${supplierName}
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printHtml);
+      win.document.close();
+    }
+  };
+
   // CI automated print handler
   const handlePrintCI = () => {
     if (!order) return;
@@ -1426,6 +1596,18 @@ export const OrderDetail: React.FC = () => {
                               style={{ padding: '5px 10px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                             >
                               🖨️ 인쇄 / PDF
+                            </button>
+                            <button 
+                              onClick={() => handlePrintArrivalReport(supplierName, items)}
+                              style={{ padding: '5px 10px', background: '#8b5cf6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                            >
+                              🚚 도착보고
+                            </button>
+                            <button 
+                              onClick={() => handlePrintShippingMark(supplierName)}
+                              style={{ padding: '5px 10px', background: '#ec4899', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                            >
+                              🏷️ 쉬핑마크
                             </button>
                             <button 
                               onClick={() => handleEmailSupplierPo(supplierName, items)}
