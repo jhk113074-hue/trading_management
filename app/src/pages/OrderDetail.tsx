@@ -3,8 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
-import type { Order, OrderItem } from '../types/order';
+import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import type { Supplier } from '../types/supplier';
+import type { Product } from '../types/product';
+import { ProductModal } from '../components/ProductModal';
+import { ProductSearchModal } from '../components/ProductSearchModal';
+import { ArrivalReportModal } from '../components/ArrivalReportModal';
 
 const steps = ["PO접수", "소싱발주", "선적관리", "정산마감"] as const;
 
@@ -21,6 +25,30 @@ export const OrderDetail: React.FC = () => {
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
+  
+  // Product & editor state variables
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isProdModalOpen, setIsProdModalOpen] = useState(false);
+  const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+  const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
+  
+  // Editable arrays
+  const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
+  const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
+  const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
+
+  // Fetch products
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'products'), (snapshot) => {
+      const list: Product[] = [];
+      snapshot.forEach(docSnap => {
+        list.push({ id: docSnap.id, ...docSnap.data() } as Product);
+      });
+      setProducts(list);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
@@ -102,7 +130,11 @@ export const OrderDetail: React.FC = () => {
       if (docSnap.exists()) {
         const data = docSnap.data() as Order;
         setOrder(data);
-        if (data.status) {
+        const params = new URLSearchParams(window.location.search);
+        const urlStep = params.get('step');
+        if (urlStep && steps.includes(urlStep as any)) {
+          setActiveStep(urlStep as any);
+        } else if (data.status) {
           const mappedStatus = 
             data.status === '주문' ? 'PO접수' :
             data.status === '발주' ? '소싱발주' :
@@ -167,6 +199,8 @@ export const OrderDetail: React.FC = () => {
           supplierPaymentInstallments: data.supplierPaymentInstallments || {},
           bankSubmissionStatus: data.bankSubmissionStatus || ''
         });
+        setOrderItems(data.items || []);
+        setForwardersList(data.forwarders || []);
       } else {
         setOrder(null);
       }
@@ -233,6 +267,22 @@ export const OrderDetail: React.FC = () => {
         .map(l => l.trim())
         .filter(l => l.length > 0);
 
+      // Validate items names
+      if (orderItems.some(it => !it.name?.trim())) {
+        alert('모든 품목의 품명을 입력해야 합니다.');
+        return;
+      }
+
+      const totalAmount = orderItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const hasUsd = orderItems.some(it => it.currency === 'USD');
+      const hasKrw = orderItems.some(it => it.currency === 'KRW');
+      let orderCurrency: 'USD' | 'KRW' | 'mixed' = 'USD';
+      if (hasUsd && hasKrw) {
+        orderCurrency = 'mixed';
+      } else if (hasKrw) {
+        orderCurrency = 'KRW';
+      }
+
       await setDoc(docRef, {
         custPo: basicForm.custPo,
         incoterms: basicForm.incoterms,
@@ -271,7 +321,7 @@ export const OrderDetail: React.FC = () => {
         // 8-step inputs saving
         isLc: basicForm.isLc,
         supplierPoSent: basicForm.supplierPoSent,
-        supplierProductionDates: basicForm.supplierProductionDates,
+        supplierProductionDates: dataSupplierProdDates(basicForm.supplierProductionDates),
         forwarderQuotationAmount: Number(basicForm.forwarderQuotationAmount) || 0,
         cfsAddress: basicForm.cfsAddress,
         cfsContact: basicForm.cfsContact,
@@ -292,7 +342,23 @@ export const OrderDetail: React.FC = () => {
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
         
-        items: order.items,
+        items: orderItems.map(it => ({
+          itemId: it.itemId || '',
+          name: it.name || '',
+          supplier: it.supplier || '',
+          supplierContact: it.supplierContact || '',
+          grade: it.grade || '',
+          qty: parseFloat(it.qty as any) || 0,
+          unit: (it.unit || 'kg') as any,
+          unitPrice: parseFloat(it.unitPrice as any) || 0,
+          amount: it.amount || 0,
+          currency: (it.currency || 'USD') as any
+        })),
+        totalAmount,
+        currency: orderCurrency,
+        forwarders: forwardersList,
+        forwarderFreightAmount: forwardersList[0] ? (forwardersList[0].amountUsd || forwardersList[0].amountKrw || 0) : 0,
+        forwarderFreightCurrency: (forwardersList[0] ? (forwardersList[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any,
         
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -301,6 +367,117 @@ export const OrderDetail: React.FC = () => {
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
     }
+  };
+
+  const dataSupplierProdDates = (datesObj: any) => {
+    return datesObj || {};
+  };
+
+  const getRawProductCode = (code: string | undefined): string => {
+    if (!code) return '';
+    const val = code.trim();
+    if (val.startsWith('[') && val.includes(']')) {
+      return val.substring(1, val.indexOf(']')).trim();
+    }
+    return val;
+  };
+
+  const handleItemChange = (index: number, field: keyof OrderItem, value: any) => {
+    setOrderItems(prev => {
+      const updated = [...prev];
+      let it = { ...updated[index], [field]: value };
+      
+      if (field === 'name') {
+        const parsedCode = getRawProductCode(value);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        if (prod) {
+          const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+          const displayName = prod.nameEn || prod.nameKo || '';
+          
+          let buyPrice = prod.purchasePrice || 0;
+          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          const qty = it.qty || 0;
+          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+          it = {
+            ...it,
+            name: `[${prod.productCode}] ${displayName}`,
+            supplier: prod.supplierName || '',
+            supplierContact: contactInfo || '',
+            grade: prod.spec || '',
+            unit: (prod.unit || 'kg') as any,
+            unitPrice: buyPrice,
+            currency: itemCurrency,
+            amount: amt
+          };
+        }
+      }
+
+      if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
+        const qty = field === 'qty' ? parseFloat(value) || 0 : parseFloat(it.qty as any) || 0;
+        const price = field === 'unitPrice' ? parseFloat(value) || 0 : parseFloat(it.unitPrice as any) || 0;
+        const curr = field === 'currency' ? value : it.currency;
+        if (curr === 'KRW') {
+          it.amount = Math.round(qty * price);
+        } else {
+          it.amount = parseFloat((qty * price).toFixed(2));
+        }
+      }
+      
+      updated[index] = it;
+      return updated;
+    });
+  };
+
+  const handleSelectProduct = (idx: number, prod: Product) => {
+    setOrderItems(prev => {
+      const updated = [...prev];
+      const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+      
+      let buyPrice = prod.purchasePrice || 0;
+      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      const qty = updated[idx].qty || 0;
+      const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+      const displayName = prod.nameEn || prod.nameKo || '';
+
+      updated[idx] = {
+        ...updated[idx],
+        name: `[${prod.productCode}] ${displayName}`,
+        supplier: prod.supplierName || '',
+        supplierContact: contactInfo || '',
+        grade: prod.spec || '',
+        unit: (prod.unit || 'kg') as any,
+        unitPrice: buyPrice,
+        currency: itemCurrency,
+        amount: amt
+      };
+      return updated;
+    });
+  };
+
+  const addItemRow = () => {
+    setOrderItems(prev => [
+      ...prev,
+      { itemId: (prev.length + 1).toString(), name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' }
+    ]);
+  };
+
+  const removeItemRow = (index: number) => {
+    if (orderItems.length === 1) return;
+    setOrderItems(prev => prev.filter((_, idx) => idx !== index).map((it, idx) => ({ ...it, itemId: (idx + 1).toString() })));
+  };
+
+  const handleForwarderChange = (index: number, field: keyof ForwarderEntry, value: any) => {
+    setForwardersList(prev => prev.map((f, i) => i === index ? { ...f, [field]: value } : f));
+  };
+
+  const addForwarderRow = () => {
+    setForwardersList(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }]);
+  };
+
+  const removeForwarderRow = (index: number) => {
+    setForwardersList(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddSupplier = async () => {
@@ -461,56 +638,78 @@ export const OrderDetail: React.FC = () => {
   ) => {
     const fileList = order?.[fieldName] || [];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>📎 {label}</span>
-          {isEditing && (
-            <div>
-              <input
-                type="file"
-                id={inputDocId}
-                style={{ display: 'none' }}
-                onChange={(e) => handleDocUpload(e, fieldName)}
-                disabled={uploadingField !== null}
-              />
-              <label
-                htmlFor={inputDocId}
-                style={{
-                  padding: '4px 8px',
-                  background: uploadingField === fieldName ? '#94a3b8' : '#3b82f6',
-                  color: '#fff',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
-                  fontWeight: 600
-                }}
-              >
-                {uploadingField === fieldName ? '업로드 중...' : '파일 추가'}
-              </label>
-            </div>
-          )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>{label}</span>
         </div>
+        {isEditing && (
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px dashed #cbd5e1',
+              padding: '10px',
+              borderRadius: '6px',
+              textAlign: 'center',
+              cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
+            onDrop={e => {
+              e.preventDefault();
+              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.background = '#ffffff';
+              if (uploadingField !== null) return;
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
+                handleDocUpload(fakeEvent, fieldName);
+              }
+            }}
+            onClick={() => {
+              if (uploadingField !== fieldName) {
+                document.getElementById(inputDocId)?.click();
+              }
+            }}
+          >
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+              {uploadingField === fieldName ? '⏳ 업로드 중...' : '📥 클릭 혹은 업로드할 파일 드래그'}
+            </span>
+            <input
+              type="file"
+              id={inputDocId}
+              style={{ display: 'none' }}
+              onChange={(e) => handleDocUpload(e, fieldName)}
+              disabled={uploadingField !== null}
+            />
+          </div>
+        )}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
           {fileList.length > 0 ? (
             fileList.map((file, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
-                  📄 {file.name}
-                </a>
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteDoc(fieldName, idx)}
-                    style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ✕
-                  </button>
-                )}
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                <span style={{ fontSize: '12px', color: '#1e293b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={file.name}>
+                  {file.name}
+                </span>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', width: '22px', height: '22px', fontSize: '12px', textDecoration: 'none' }} title="다운로드">
+                    ⬇
+                  </a>
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteDoc(fieldName, idx)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontSize: '11px' }}
+                      title="삭제"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           ) : (
-            <span style={{ fontSize: '11.5px', color: '#94a3b8', fontStyle: 'italic' }}>첨부 파일 없음</span>
+            !isEditing && <span style={{ fontSize: '11.5px', color: '#94a3b8', fontStyle: 'italic' }}>첨부 파일 없음</span>
           )}
         </div>
       </div>
@@ -847,112 +1046,6 @@ export const OrderDetail: React.FC = () => {
     );
 
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  };
-
-  // Arrival Report Print handler
-  const handlePrintArrivalReport = (supplierName: string, items: OrderItem[]) => {
-    if (!order) return;
-    const isYS = order.issuingCompany === 'YS';
-    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-    const poNum = `${order.id}-${supplierCode}`;
-
-    const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
-
-    const printHtml = `
-      <html>
-        <head>
-          <title>도착보고 - ${poNum}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11px; line-height: 1.4; }
-            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
-            @media print {
-              .no-print { display: none !important; }
-              body { padding: 0; }
-            }
-            .header-title { text-align: center; font-size: 32px; font-weight: 800; text-transform: uppercase; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
-            
-            .info-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 20px; }
-            .info-box { border: 1px solid #000; padding: 10px; min-height: 100px; }
-            .info-title { font-weight: bold; font-size: 12px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase; }
-
-            .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
-            .desc-table th, .desc-table td { border: 1px solid #000; padding: 8px 6px; }
-            .desc-table th { background: #f3f4f6; font-weight: bold; text-align: center; }
-            .desc-table td.right { text-align: right; }
-            .desc-table td.center { text-align: center; }
-            
-            .total-row { font-weight: bold; background: #fafafa; }
-            .signature-area { margin-top: 50px; text-align: right; font-size: 12px; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
-          <div class="header-title">도착 보고서 (Arrival Report)</div>
-          
-          <div class="info-grid">
-            <div class="info-box">
-              <div class="info-title">공급업체 정보 (Supplier)</div>
-              <strong>${supplierName}</strong><br/>
-              ${items[0]?.supplierContact || ''}
-            </div>
-            <div class="info-box">
-              <div class="info-title">발주 및 입고지 정보</div>
-              <strong>발주번호:</strong> ${poNum}<br/>
-              <strong>입고지 (CFS):</strong> ${basicForm.cfsAddress || '지정 CFS 작업장'}<br/>
-              <strong>CFS 입고요청일:</strong> ${basicForm.cfsEntryDate || '협의 필요'}<br/>
-              <strong>최종 선적항/목적지:</strong> BUSAN / JEBEL ALI, UAE
-            </div>
-          </div>
-
-          <table class="desc-table">
-            <thead>
-              <tr>
-                <th style="width: 8%">No</th>
-                <th>품목 및 규격 (Description & Spec)</th>
-                <th style="width: 15%">수량 (Qty)</th>
-                <th style="width: 15%">단위 (Unit)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map((it, idx) => `
-                <tr>
-                  <td class="center">${idx + 1}</td>
-                  <td><strong>${it.name}</strong><br/><small>Spec: ${it.grade || '-'}</small></td>
-                  <td class="right">${it.qty?.toLocaleString()}</td>
-                  <td class="center">${it.unit}</td>
-                </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td colspan="2" class="center">TOTAL</td>
-                <td class="right">${totalQty.toLocaleString()}</td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div style="margin-top: 30px; border: 1px dashed #ef4444; padding: 12px; background: #fef2f2; color: #991b1b; border-radius: 6px;">
-            <strong>※ 기사님 및 공급업체 전달 주의사항:</strong><br/>
-            - 화물 하차 완료 직후 반드시 상기 입고지 담당자에게 도착 보고를 완료하셔야 합니다.<br/>
-            - CFS 입고 시 본 도착보고서를 제시하시고 화물 상태를 검수받으시기 바랍니다.
-          </div>
-
-          <div class="signature-area">
-            For and on behalf of<br/>
-            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
-            _______________________________<br/>
-            Authorized Signature(s)
-          </div>
-        </body>
-      </html>
-    `;
-
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(printHtml);
-      win.document.close();
-    }
   };
 
   // Shipping Mark Print handler
@@ -1530,6 +1623,335 @@ export const OrderDetail: React.FC = () => {
           {activeStep === 'PO접수' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
+              {/* Items Section */}
+              <div style={{ marginTop: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 발주 품목 목록</span>
+                  <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
+                </div>
+                
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '11px' }}>
+                  <thead>
+                    <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '45px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>삭제</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderItems.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
+                        
+                        {/* 상품코드 / 스펙 (Spec) */}
+                        <td style={{ padding: '4px 4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <input
+                                  type="text"
+                                  list={`detail_products_datalist_${idx}`}
+                                  value={item.name || ''}
+                                  onChange={e => handleItemChange(idx, 'name', e.target.value)}
+                                  placeholder="상품코드 검색/입력"
+                                  style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                                />
+                                {item.name && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleItemChange(idx, 'name', '')}
+                                    style={{
+                                      position: 'absolute',
+                                      right: '20px',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: '#94a3b8',
+                                      cursor: 'pointer',
+                                      fontSize: '10px',
+                                      padding: '2px',
+                                      zIndex: 5,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                    title="비우기"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSearchItemIndex(idx);
+                                    setIsProductSearchOpen(true);
+                                  }}
+                                  style={{
+                                    position: 'absolute',
+                                    right: '4px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#3b82f6',
+                                    cursor: 'pointer',
+                                    fontSize: '11px',
+                                    padding: '2px',
+                                    zIndex: 5,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title="상품 검색 (Subwindow)"
+                                >
+                                  🔍
+                                </button>
+                                <datalist id={`detail_products_datalist_${idx}`}>
+                                  {products.map(p => {
+                                    const displayName = p.nameEn || p.nameKo || '';
+                                    return (
+                                      <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                        [{p.productCode}] {displayName}
+                                      </option>
+                                    );
+                                  })}
+                                </datalist>
+                              </div>
+                              {(() => {
+                                const rawCode = getRawProductCode(item.name);
+                                const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (p) {
+                                        setEditingProd(p);
+                                        setIsProdModalOpen(true);
+                                      } else {
+                                        alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                      }
+                                    }}
+                                    disabled={!p}
+                                    title="선택된 상품 수정"
+                                    style={{
+                                      background: p ? '#fef08a' : '#f1f5f9',
+                                      border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                      color: p ? '#a16207' : '#94a3b8',
+                                      borderRadius: '4px',
+                                      padding: '2px 4px',
+                                      cursor: p ? 'pointer' : 'not-allowed',
+                                      fontSize: '11px',
+                                      fontWeight: 600,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      height: '26px',
+                                      width: '26px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                            <input
+                              type="text"
+                              value={item.grade || ''}
+                              onChange={e => handleItemChange(idx, 'grade', e.target.value)}
+                              placeholder="스펙 (Spec)"
+                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            />
+                          </div>
+                        </td>
+
+                        {/* 공급사 */}
+                        <td style={{ padding: '4px 4px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <input
+                              type="text"
+                              value={item.supplier || ''}
+                              onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
+                              placeholder="공급사명"
+                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            />
+                            {(() => {
+                              const rawCode = getRawProductCode(item.name);
+                              const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                              if (p && p.supplierName) {
+                                return (
+                                  <span style={{ fontSize: '10px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
+                                    {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
+                                  </span>
+                                );
+                              }
+                              return null;
+                            })()}
+                          </div>
+                        </td>
+
+                        {/* 수량 / 단위 */}
+                        <td style={{ padding: '4px 4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <input
+                              type="number"
+                              value={item.qty || ''}
+                              onChange={e => handleItemChange(idx, 'qty', e.target.value)}
+                              placeholder="수량"
+                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            />
+                            <select
+                              value={item.unit || 'kg'}
+                              onChange={e => handleItemChange(idx, 'unit', e.target.value)}
+                              style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            >
+                              <option value="kg">kg</option>
+                              <option value="MT">MT</option>
+                              <option value="L">L</option>
+                              <option value="drum">drum</option>
+                              <option value="set">set</option>
+                            </select>
+                          </div>
+                        </td>
+
+                        {/* 통화 / 단가 */}
+                        <td style={{ padding: '4px 4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <select
+                              value={item.currency || 'USD'}
+                              onChange={e => handleItemChange(idx, 'currency', e.target.value)}
+                              style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            >
+                              <option value="USD">USD ($)</option>
+                              <option value="KRW">KRW (₩)</option>
+                            </select>
+                            <input
+                              type="number"
+                              step={item.currency === 'KRW' ? '1' : '0.01'}
+                              value={item.unitPrice || ''}
+                              onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
+                              placeholder="단가"
+                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                            />
+                          </div>
+                        </td>
+
+                        {/* 금액 */}
+                        <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600, color: '#1e293b', verticalAlign: 'middle', fontSize: '11.5px' }}>
+                          {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                        </td>
+
+                        {/* 삭제 */}
+                        <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <button
+                            type="button"
+                            onClick={() => removeItemRow(idx)}
+                            disabled={orderItems.length === 1}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: orderItems.length === 1 ? '#cbd5e1' : '#ef4444',
+                              fontSize: '14px',
+                              cursor: orderItems.length === 1 ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Forwarder/Transport Section */}
+              <div style={{ marginTop: '4px', padding: '14px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
+                  <button
+                    type="button"
+                    onClick={addForwarderRow}
+                    style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    + 운송사 추가
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
+                  <span></span>
+                </div>
+                {forwardersList.length === 0 ? (
+                  <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
+                ) : (
+                  forwardersList.map((fw, idx) => (
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        value={fw.name || ''}
+                        onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
+                        placeholder="포워딩사명 입력"
+                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff' }}
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/,/g, '');
+                          const num = parseFloat(raw) || 0;
+                          handleForwarderChange(idx, 'amountUsd', num);
+                        }}
+                        placeholder="0.00"
+                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
+                      />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                        onChange={e => {
+                          const raw = e.target.value.replace(/,/g, '');
+                          const num = parseInt(raw, 10) || 0;
+                          handleForwarderChange(idx, 'amountKrw', num);
+                        }}
+                        placeholder="0"
+                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeForwarderRow(idx)}
+                        style={{ padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                      >✕</button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Real-time Total sum */}
+              <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
+                <span>총 발주 금액 (Grand Total):</span>
+                {(() => {
+                  const usdTotal = orderItems.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                  const krwTotal = orderItems.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                  return (
+                    <span style={{ color: '#dc2626' }}>
+                      {usdTotal > 0 && `$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`}
+                      {usdTotal > 0 && krwTotal > 0 && ' / '}
+                      {krwTotal > 0 && `₩${krwTotal.toLocaleString('en-US')} KRW`}
+                      {usdTotal === 0 && krwTotal === 0 && '$0.00 USD'}
+                    </span>
+                  );
+                })()}
+              </div>
+
+            </div>
+          )}
+
+          {/* 3. 소싱발주 */}
+          {activeStep === '소싱발주' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 추가 발주사(원자재/OEM) 관리 UI */}
               <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
@@ -1605,7 +2027,7 @@ export const OrderDetail: React.FC = () => {
                               🖨️ 인쇄 / PDF
                             </button>
                             <button 
-                              onClick={() => handlePrintArrivalReport(supplierName, items)}
+                              onClick={() => setActiveArrivalReport({ supplierName, items })}
                               style={{ padding: '5px 10px', background: '#8b5cf6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                             >
                               🚚 도착보고
@@ -1739,9 +2161,9 @@ export const OrderDetail: React.FC = () => {
                   })
                 )}
               </div>
-              
+
               {/* 화물준비일 지정 영역 */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '4px', background: '#f0fdf4', padding: '10px 16px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '4px', background: '#f0fdf4', padding: '10px 16px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '16px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>최종 화물준비일 (생산완료일 기준 자동 계산 또는 수동 설정):</span>
                 <input 
                   type="date" 
@@ -1751,12 +2173,6 @@ export const OrderDetail: React.FC = () => {
                   style={{ padding: '5px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', background: isEditing ? '#fff' : '#f8fafc' }} 
                 />
               </div>
-            </div>
-          )}
-
-          {/* 3. 소싱발주 */}
-          {activeStep === '소싱발주' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 6. 공급사 관리 서브메뉴 (세금계산서/구매확인서/결제) */}
               <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '20px', marginTop: '20px' }}>
                 {/* Sub Tab Buttons */}
@@ -2228,6 +2644,26 @@ export const OrderDetail: React.FC = () => {
                 />
               </div>
 
+              {/* 도착보고(Arrival Report) 연동 버튼들을 선적관리 탭에도 노출 (발주서처럼 밖으로 빼기) */}
+              <div style={{ gridColumn: 'span 3', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e3a8a', display: 'block', marginBottom: '8px' }}>🚚 공급업체별 CFS 도착보고서 (Arrival Report) 및 패킹 정보 입력</span>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {allOrderSuppliers.map(supplierName => {
+                    const items = groupedSupplierItems[supplierName] || [];
+                    return (
+                      <button
+                        key={supplierName}
+                        type="button"
+                        onClick={() => setActiveArrivalReport({ supplierName, items })}
+                        style={{ padding: '8px 14px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        🚚 {supplierName} 도착보고서 작성/출력
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* 수출신고번호, 수출면장 기준환율 */}
               <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -2391,6 +2827,246 @@ export const OrderDetail: React.FC = () => {
           )}
 
         </div>
+
+      {isProductSearchOpen && searchItemIndex !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => setIsProductSearchOpen(false)}
+          onSelect={(prod) => {
+            handleSelectProduct(searchItemIndex, prod);
+            setIsProductSearchOpen(false);
+          }}
+        />
+      )}
+
+      {isProdModalOpen && (
+        <ProductModal
+          initialProduct={editingProd}
+          products={products}
+          onClose={() => {
+            setIsProdModalOpen(false);
+            setEditingProd(undefined);
+          }}
+        />
+      )}
+
+      {activeArrivalReport && (
+        <ArrivalReportModal
+          supplierName={activeArrivalReport.supplierName}
+          orderInfo={{
+            id: order.id,
+            custPo: order.custPo,
+            incoterms: order.incoterms,
+            paymentTerms: order.paymentTerms,
+            issuingCompany: order.issuingCompany || 'YSACC',
+            portOfLoading: 'BUSAN PORT, SOUTH KOREA',
+            finalDestination: order.eta || order.cfsAddress || '',
+            carrier: order.vesselBooking || '',
+            sailingOnOrAbout: order.etd || '',
+            cfsAddress: order.cfsAddress || '',
+            cfsEntryDate: order.cfsEntryDate || '',
+            items: activeArrivalReport.items
+          }}
+          initialData={(order.supplierArrivalReports || {})[activeArrivalReport.supplierName]}
+          onClose={() => setActiveArrivalReport(null)}
+          onSave={async (reportData) => {
+            try {
+              const updatedReports = {
+                ...(order.supplierArrivalReports || {}),
+                [activeArrivalReport.supplierName]: reportData
+              };
+              const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+              await setDoc(orderRef, { supplierArrivalReports: updatedReports, updatedAt: serverTimestamp() }, { merge: true });
+              setActiveArrivalReport(null);
+              // Print immediately using the saved updated reports in local memory or data
+              const rep = reportData;
+              const cleanSupplierName = activeArrivalReport.supplierName.replace(/\s+/g, '');
+              const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+              const poNum = `${order.id}-${supplierCode}`;
+
+              const packingItemsList = rep.packingItems || [];
+              const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
+              const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
+              const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+
+              const printHtml = `
+                <html>
+                  <head>
+                    <title>도착보고 - ${poNum}</title>
+                    <style>
+                      @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+                      body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
+                      .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+                      @media print {
+                        .no-print { display: none !important; }
+                        body { padding: 0; }
+                      }
+                      .header-title { text-align: center; font-size: 26px; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; border-bottom: 3px double #000; padding-bottom: 6px; }
+                      
+                      .report-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+                      .report-table td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
+                      .report-table td.title { font-weight: bold; background: #f8fafc; }
+                      .report-table td.header-cell { font-weight: bold; font-size: 12px; }
+
+                      .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+                      .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px 5px; }
+                      .desc-table th { background: #f1f5f9; font-weight: bold; text-align: center; }
+                      .desc-table td.right { text-align: right; }
+                      .desc-table td.center { text-align: center; }
+                      
+                      .total-row { font-weight: bold; background: #fafafa; }
+                      .signature-area { margin-top: 40px; text-align: right; font-size: 11.5px; font-weight: bold; }
+                    </style>
+                  </head>
+                  <body>
+                    <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+                    <div class="header-title">도 착 보 고</div>
+                    
+                    <table class="report-table">
+                      <tr>
+                        <td style="width: 50%;">
+                          <strong>1) Shipper</strong><br/>
+                          ${(rep.shipper || activeArrivalReport.supplierName).replace(/\n/g, '<br/>')}<br/>
+                          ${activeArrivalReport.items[0]?.supplierContact || ''}
+                        </td>
+                        <td style="width: 50%;">
+                          <strong>8) Booking No.</strong><br/>
+                          ${rep.bookingNo || ''}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>2) For Account & Risk Messrs.</strong><br/>
+                          ${(rep.consignee || `(주)와이에스에이씨씨<br/>청주시 서원구 성봉로 180번길, 3층 302호<br/>TEL : 010-6277-7418<br/>담당자 : 이한중 이사`).replace(/\n/g, '<br/>')}
+                        </td>
+                        <td>
+                          <strong>9) Remarks</strong><br/>
+                          <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || `ORIGIN : MADE IN KOREA<br/><span style="color: #ef4444;">입고일: 연도-월-일 오전 10시까지</span>`).replace(/\n/g, '<br/>')}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong>3) Notify Party</strong><br/>
+                          ${rep.notifyParty || 'SAME AS ABOVE'}
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                          <strong>입고지</strong><br/>
+                          <strong>${(rep.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                            <div>
+                              <strong>4) Port of Loading</strong><br/>
+                              ${rep.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
+                            </div>
+                            <div>
+                              <strong>5) Final Destination</strong><br/>
+                              ${rep.finalDestination || 'HAMAD PORT, QATAR'}
+                            </div>
+                          </div>
+                        </td>
+                        <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
+                          위 제품 상차시 내용물 및 포장에<br/>
+                          파손이 없고 적절한 방법으로<br/>
+                          운송하였음을 확인합니다.<br/><br/>
+                          기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
+                          기사님 연락처 : <br/><br/>
+                          차 넘 버 : 
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                            <div>
+                              <strong>6) Carrier</strong><br/>
+                              ${rep.carrier || 'HMM HANUL 022W'}
+                            </div>
+                            <div>
+                              <strong>7) sailing on or about</strong><br/>
+                              ${rep.sailingOnOrAbout || '2025-12-31'}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <table class="desc-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 15%">10) Marks</th>
+                          <th>11) Description of Goods</th>
+                          <th style="width: 10%">12) Qty</th>
+                          <th style="width: 10%">13) Package</th>
+                          <th style="width: 15%" colspan="2">14) Weight (kg)</th>
+                          <th style="width: 15%">16) Measurement</th>
+                        </tr>
+                        <tr>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th></th>
+                          <th style="font-size: 9px; width: 7.5%">Net</th>
+                          <th style="font-size: 9px; width: 7.5%">Gross</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${packingItemsList.map((it: any) => `
+                          <tr>
+                            <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
+                              <div style="border: 1px solid #000; padding: 4px; display: inline-block;">
+                                ${(it.marks || '').replace(/\n/g, '<br/>')}
+                              </div>
+                            </td>
+                            <td style="font-size: 11px; line-height: 1.5;">
+                              ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                            </td>
+                            <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
+                            <td class="center">${it.packageType || 'PL'}</td>
+                            <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                            <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                            <td class="center">${it.measurement || '-'}</td>
+                          </tr>
+                        `).join('')}
+                        {/* Padding rows to maintain spacing */}
+                        <tr>
+                          <td style="border-top: none; border-bottom: none; height: 50px;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                          <td style="border-top: none; border-bottom: none;"></td>
+                        </tr>
+                        <tr class="total-row">
+                          <td class="center">TOTAL</td>
+                          <td></td>
+                          <td class="center">${totalQty.toLocaleString()}</td>
+                          <td class="center"></td>
+                          <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
+                          <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                  </body>
+                </html>
+              `;
+
+              const win = window.open('', '_blank');
+              if (win) {
+                win.document.write(printHtml);
+                win.document.close();
+              }
+            } catch (err: any) {
+              alert("도착보고 저장 실패: " + err.message);
+            }
+          }}
+        />
+      )}
 
     </div>
   );

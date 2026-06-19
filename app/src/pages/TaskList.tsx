@@ -19,9 +19,37 @@ const statusLabels: Record<string, string> = {
   TODO: '시작 안 함', IN_PROGRESS: '진행중', DONE: '완료', HOLDING: '보류'
 };
 
+const columns = [
+  { key: 'select', label: '□' }, { key: 'urgency_icon', label: '!' }, { key: 'urgency', label: '긴급' },
+  { key: 'quadrant', label: 'Q' }, { key: 'title', label: '제목 *' }, { key: 'status', label: '상태' },
+  { key: 'type', label: '유형' }, { key: 'schedule', label: '일정방식' }, { key: 'project', label: '프로젝트명' },
+  { key: 'customer', label: '고객/요청' }, { key: 'delegator', label: '위임자' }, { key: 'assignee', label: '담당자' },
+  { key: 'startDate', label: '시작일' }, { key: 'dueDate', label: '마감일' }, { key: 'recurrence', label: '주기' },
+  { key: 'recurrenceEnd', label: '종료일' }, { key: 'link', label: '링크' }, { key: 'visibility', label: '공개범위' },
+  { key: 'updatedAt', label: '수정일' }, { key: 'doneAt', label: '완료일' }, { key: 'actions', label: '관리' }
+];
+
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('taskList_visibleColumns');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return columns.map(c => c.key);
+  });
+  const [showColMenu, setShowColMenu] = useState(false);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('taskList_visibleColumns', JSON.stringify(visibleColumns));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [visibleColumns]);
   
   const isCommentNew = (lastCommentAt?: string): boolean => {
     if (!lastCommentAt) return false;
@@ -275,15 +303,7 @@ export const TaskList: React.FC = () => {
     }
   };
 
-  const columns = [
-    { key: 'select', label: '□' }, { key: 'urgency_icon', label: '!' }, { key: 'urgency', label: '긴급' },
-    { key: 'quadrant', label: 'Q' }, { key: 'title', label: '제목 *' }, { key: 'status', label: '상태' },
-    { key: 'type', label: '유형' }, { key: 'schedule', label: '일정방식' }, { key: 'project', label: '프로젝트명' },
-    { key: 'customer', label: '고객/요청' }, { key: 'delegator', label: '위임자' }, { key: 'assignee', label: '담당자' },
-    { key: 'startDate', label: '시작일' }, { key: 'dueDate', label: '마감일' }, { key: 'recurrence', label: '주기' },
-    { key: 'recurrenceEnd', label: '종료일' }, { key: 'link', label: '링크' }, { key: 'visibility', label: '공개범위' },
-    { key: 'updatedAt', label: '수정일' }, { key: 'doneAt', label: '완료일' }, { key: 'actions', label: '관리' }
-  ];
+  const renderedColumns = columns.filter(col => visibleColumns.includes(col.key));
 
 
 
@@ -454,6 +474,46 @@ export const TaskList: React.FC = () => {
               <option>모든 상태</option>
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
+            
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowColMenu(!showColMenu)}
+                className="btn"
+                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '100%', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+              >
+                ⚙️ 열 설정
+              </button>
+              {showColMenu && (
+                <div style={{
+                  position: 'absolute', top: '35px', left: 0, background: '#fff', border: '1px solid #cbd5e1',
+                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', padding: '10px', zIndex: 100,
+                  width: '180px', maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px'
+                }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '4px' }}>표시할 열 선택</div>
+                  {columns.map(col => {
+                    if (col.key === 'select' || col.key === 'title' || col.key === 'actions') return null;
+                    const checked = visibleColumns.includes(col.key);
+                    return (
+                      <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer', color: '#334155' }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            if (checked) {
+                              setVisibleColumns(prev => prev.filter(k => k !== col.key));
+                            } else {
+                              setVisibleColumns(prev => [...prev, col.key]);
+                            }
+                          }}
+                        />
+                        {col.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
           <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280' }}>총 {tasks.length}건 / {dateMode === 'daily' ? '지정일' : dateMode === 'weekly' ? '선택주' : '선택 기간'} 결과 {filteredAndSortedTasks.length}건</div>
         </div>
@@ -465,7 +525,7 @@ export const TaskList: React.FC = () => {
           <table style={{ borderCollapse: 'collapse', fontSize: '0.82rem', tableLayout: 'fixed', width: 'max-content', backgroundColor: 'white' }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 20, backgroundColor: '#f9fafb' }}>
               <tr style={{ height: '42px', borderBottom: '1px solid #e5e7eb' }}>
-                {columns.map(col => (
+                {renderedColumns.map(col => (
                   <th key={col.key} onClick={() => handleSort(col.key)} style={{ 
                     width: colWidths[col.key], padding: '0 8px', textAlign: 'left', color: '#374151', fontWeight: '700', borderRight: '1px solid #f3f4f6', position: 'relative', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     cursor: (col.key === 'select' || col.key === 'actions') ? 'default' : 'pointer',
@@ -483,90 +543,154 @@ export const TaskList: React.FC = () => {
               </tr>
               {/* 인라인 추가 행 - 원본 드롭다운 반영 */}
               <tr style={{ backgroundColor: '#f0fdf4', height: '48px', borderBottom: '2px solid #bbf7d0' }}>
-                <td style={{ textAlign: 'center' }}><input type="checkbox" disabled /></td>
-                <td style={{ textAlign: 'center' }}>
-                  <button onClick={handleQuickAdd} style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer' }}>+</button>
-                </td>
-                <td style={{ padding: '0 12px' }}>5</td>
-                <td style={{ padding: '0 12px' }}>Q2</td>
-                <td style={{ padding: '0 8px', position: 'sticky', left: 0, zIndex: 25, backgroundColor: '#f0fdf4', borderRight: '2px solid #bbf7d0' }}>
-                  <input 
-                    placeholder="업무명 입력 후 + 클릭" 
-                    value={quickTitle}
-                    onChange={e => setQuickTitle(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
-                    style={{ width: '100%', padding: '6px 8px', border: '1px solid #86efac', borderRadius: '8px', outline: 'none', fontSize: '0.8rem' }} 
-                  />
-                </td>
-                <td><select style={{ width: '100%', border: 'none', background: 'transparent' }}><option>시작 안 함</option></select></td>
-                <td><select style={{ width: '100%', border: 'none', background: 'transparent' }}><option>프로젝트</option></select></td>
-                <td><select style={{ width: '100%', border: 'none', background: 'transparent' }}><option>일정기반</option></select></td>
-                {Array(13).fill(0).map((_, i) => <td key={i} style={{ borderRight: '1px solid #f3f4f6' }}></td>)}
+                {renderedColumns.map(col => {
+                  if (col.key === 'select') {
+                    return <td key={col.key} style={{ textAlign: 'center' }}><input type="checkbox" disabled /></td>;
+                  }
+                  if (col.key === 'actions') {
+                    return (
+                      <td key={col.key} style={{ textAlign: 'center' }}>
+                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer' }}>+</button>
+                      </td>
+                    );
+                  }
+                  if (col.key === 'urgency_icon') {
+                    return <td key={col.key} style={{ padding: '0 12px' }}>5</td>;
+                  }
+                  if (col.key === 'urgency') {
+                    return <td key={col.key} style={{ padding: '0 12px' }}>Q2</td>;
+                  }
+                  if (col.key === 'title') {
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px', position: 'sticky', left: 0, zIndex: 25, backgroundColor: '#f0fdf4', borderRight: '2px solid #bbf7d0' }}>
+                        <input 
+                          placeholder="업무명 입력 후 + 클릭" 
+                          value={quickTitle}
+                          onChange={e => setQuickTitle(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
+                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #86efac', borderRadius: '8px', outline: 'none', fontSize: '0.8rem' }} 
+                        />
+                      </td>
+                    );
+                  }
+                  if (col.key === 'status') {
+                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>시작 안 함</option></select></td>;
+                  }
+                  if (col.key === 'type') {
+                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>프로젝트</option></select></td>;
+                  }
+                  if (col.key === 'schedule') {
+                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>일정기반</option></select></td>;
+                  }
+                  return <td key={col.key} style={{ borderRight: '1px solid #f3f4f6' }}></td>;
+                })}
               </tr>
             </thead>
             <tbody>
               {filteredAndSortedTasks.map((task, idx) => {
                 const isDone = task.status === 'DONE';
+                
+                const renderCell = (colKey: string) => {
+                  switch (colKey) {
+                    case 'select':
+                      return (
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={isDone}
+                            onClick={e => e.stopPropagation()}
+                            onChange={async (e) => {
+                              e.stopPropagation();
+                              await updateTaskStatus(task.id, isDone ? 'TODO' : 'DONE');
+                            }}
+                            style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#16a34a' }}
+                          />
+                        </td>
+                      );
+                    case 'urgency_icon':
+                      return <td style={{ textAlign: 'center', fontWeight: '800', color: task.importance === 'A' ? '#ef4444' : '#94a3b8' }}>{task.importance}</td>;
+                    case 'urgency':
+                      return <td style={{ padding: '0 12px' }}>{task.urgency}</td>;
+                    case 'quadrant':
+                      return <td style={{ padding: '0 12px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>;
+                    case 'title':
+                      return (
+                        <td style={{ padding: '0 8px', fontWeight: '600', color: isDone ? '#9ca3af' : '#111827', position: 'sticky', left: 0, zIndex: 10, backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white'), borderRight: '2px solid #f1f5f9' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            textDecoration: isDone ? 'line-through' : 'none',
+                            opacity: isDone ? 0.6 : 1
+                          }}>
+                            {task.title}
+                            {(task.commentCount ?? 0) > 0 && (
+                              <span 
+                                className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
+                                style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
+                              >
+                                💬 {task.commentCount}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    case 'status':
+                      return (
+                        <td style={{ padding: '0 12px' }}>
+                          <span style={{ 
+                            color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#3b82f6' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
+                            fontWeight: '700',
+                            textDecoration: isDone ? 'line-through' : 'none'
+                          }}>
+                            {statusLabels[task.status] || task.status}
+                          </span>
+                        </td>
+                      );
+                    case 'type':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{typeLabels[task.type] || task.type}</td>;
+                    case 'schedule':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>;
+                    case 'project':
+                      return <td style={{ padding: '0 12px', color: '#0d9488', fontWeight: '600', opacity: isDone ? 0.5 : 1 }}>{task.projectName}</td>;
+                    case 'customer':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.customerName || '-'}</td>;
+                    case 'delegator':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.requesterName || '-'}</td>;
+                    case 'assignee':
+                      return <td style={{ padding: '0 12px', fontWeight: '700', opacity: isDone ? 0.5 : 1 }}>{task.assigneeName}</td>;
+                    case 'startDate':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.startDate || '-'}</td>;
+                    case 'dueDate':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.dueDate || '-'}</td>;
+                    case 'recurrence':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrence || '-'}</td>;
+                    case 'recurrenceEnd':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrenceEndDate || '-'}</td>;
+                    case 'link':
+                      return <td style={{ padding: '0 12px', textAlign: 'center', opacity: isDone ? 0.5 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>;
+                    case 'visibility':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>;
+                    case 'updatedAt':
+                      return <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.updatedAt?.split('T')[0]}</td>;
+                    case 'doneAt':
+                      return <td style={{ padding: '0 12px', color: isDone ? '#16a34a' : '#9ca3af', fontSize: '0.7rem', fontWeight: isDone ? 700 : 400 }}>{task.completedAt?.split('T')[0]}</td>;
+                    case 'actions':
+                      return (
+                        <td style={{ padding: '0 12px', textAlign: 'center' }}>
+                          <button onClick={(e) => { e.stopPropagation(); if (window.confirm('정말 삭제하시겠습니까?')) deleteTask(task.id); }}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                        </td>
+                      );
+                    default:
+                      return <td></td>;
+                  }
+                };
+
                 return (
                   <tr key={task.id} className="task-row-hover" style={{ height: '40px', borderBottom: '1px solid #f1f5f9', backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white') }} onClick={() => setEditingTask(task)}>
-                    <td style={{ textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={isDone}
-                        onClick={e => e.stopPropagation()}
-                        onChange={async (e) => {
-                          e.stopPropagation();
-                          await updateTaskStatus(task.id, isDone ? 'TODO' : 'DONE');
-                        }}
-                        style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#16a34a' }}
-                      />
-                    </td>
-                    <td style={{ textAlign: 'center', fontWeight: '800', color: task.importance === 'A' ? '#ef4444' : '#94a3b8' }}>{task.importance}</td>
-                    <td style={{ padding: '0 12px' }}>{task.urgency}</td>
-                    <td style={{ padding: '0 12px' }}><span className={`q-badge ${task.quadrant?.toLowerCase() || 'q2'}`}>{task.quadrant || 'Q2'}</span></td>
-                    <td style={{ padding: '0 8px', fontWeight: '600', color: isDone ? '#9ca3af' : '#111827', position: 'sticky', left: 0, zIndex: 10, backgroundColor: isDone ? '#f9fafb' : (idx % 2 === 1 ? '#fcfcfc' : 'white'), borderRight: '2px solid #f1f5f9' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        textDecoration: isDone ? 'line-through' : 'none',
-                        opacity: isDone ? 0.6 : 1
-                      }}>
-                        {task.title}
-                        {(task.commentCount ?? 0) > 0 && (
-                          <span 
-                            className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
-                            style={{ fontSize: '0.65rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
-                          >
-                            💬 {task.commentCount}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: '0 12px' }}>
-                      <span style={{ 
-                        color: isDone ? '#16a34a' : task.status === 'IN_PROGRESS' ? '#3b82f6' : task.status === 'HOLDING' ? '#ca8a04' : '#059669',
-                        fontWeight: '700',
-                        textDecoration: isDone ? 'line-through' : 'none'
-                      }}>
-                        {statusLabels[task.status] || task.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{typeLabels[task.type] || task.type}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{scheduleLabels[task.scheduleType] || task.scheduleType}</td>
-                    <td style={{ padding: '0 12px', color: '#0d9488', fontWeight: '600', opacity: isDone ? 0.5 : 1 }}>{task.projectName}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.customerName || '-'}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.requesterName || '-'}</td>
-                    <td style={{ padding: '0 12px', fontWeight: '700', opacity: isDone ? 0.5 : 1 }}>{task.assigneeName}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.startDate || '-'}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.dueDate || '-'}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrence || '-'}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrenceEndDate || '-'}</td>
-                    <td style={{ padding: '0 12px', textAlign: 'center', opacity: isDone ? 0.5 : 1 }}>{task.externalFileLink ? '🔗' : '-'}</td>
-                    <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{visibilityLabels[task.visibility] || task.visibility}</td>
-                    <td style={{ padding: '0 12px', color: '#9ca3af', fontSize: '0.7rem' }}>{task.updatedAt?.split('T')[0]}</td>
-                    <td style={{ padding: '0 12px', color: isDone ? '#16a34a' : '#9ca3af', fontSize: '0.7rem', fontWeight: isDone ? 700 : 400 }}>{task.completedAt?.split('T')[0]}</td>
-                    <td style={{ padding: '0 12px', textAlign: 'center' }}>
-                      <button onClick={(e) => { e.stopPropagation(); if (window.confirm('정말 삭제하시겠습니까?')) deleteTask(task.id); }}
-                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
-                    </td>
+                    {renderedColumns.map(col => (
+                      <React.Fragment key={col.key}>
+                        {renderCell(col.key)}
+                      </React.Fragment>
+                    ))}
                   </tr>
                 );
               })}

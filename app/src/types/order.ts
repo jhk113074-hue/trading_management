@@ -106,4 +106,26 @@ export interface Order {
   // Container & transportation photos/files
   containerWorkFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   transportationFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  supplierArrivalReports?: Record<string, {
+    shipper?: string;
+    bookingNo?: string;
+    remarks?: string;
+    consignee?: string;
+    notifyParty?: string;
+    portOfLoading?: string;
+    finalDestination?: string;
+    carrier?: string;
+    sailingOnOrAbout?: string;
+    cfsAddress?: string;
+    cfsEta?: string;
+    packingItems?: Array<{
+      marks?: string;
+      descOfGoods?: string;
+      qty?: number;
+      packageType?: string;
+      netWeight?: number;
+      grossWeight?: number;
+      measurement?: string;
+    }>;
+  }>;
 }

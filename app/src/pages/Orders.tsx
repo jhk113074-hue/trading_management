@@ -179,6 +179,16 @@ export const Orders: React.FC = () => {
       return sum + (pi?.totalUsd || o.totalAmount || 0);
     }, 0);
 
+    const totalYsaccUsd = activeOrders.filter(o => o.issuingCompany === 'YSACC' || !o.issuingCompany).reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
+    const totalYsUsd = activeOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
     const urgentCount = orders.filter(o => {
       const action = getNextAction(o);
       return action.level === 'RED';
@@ -187,6 +197,8 @@ export const Orders: React.FC = () => {
     return {
       activeCount: activeOrders.length,
       totalUsd,
+      totalYsaccUsd,
+      totalYsUsd,
       urgentCount
     };
   }, [orders, quotations]);
@@ -262,6 +274,10 @@ export const Orders: React.FC = () => {
           <span style={{ fontSize: '28px', fontWeight: 800, color: '#0f766e' }}>
             ${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '11.5px', color: '#475569', borderTop: '1px solid #f1f5f9', paddingTop: '6px' }}>
+            <span><strong>YSACC:</strong> ${stats.totalYsaccUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <span><strong>영성:</strong> ${stats.totalYsUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+          </div>
         </div>
         <div style={{ 
           background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', 
@@ -336,7 +352,7 @@ export const Orders: React.FC = () => {
               return (
                 <div 
                   key={order.id}
-                  onClick={() => navigate(`/orders/${order.id}`)}
+                  onClick={() => navigate(`/orders/${order.id}?step=PO접수`)}
                   style={{
                     display: 'flex', alignItems: 'center', padding: '18px 24px',
                     borderBottom: idx === processedOrders.length - 1 ? 'none' : '1px solid #f1f5f9',
@@ -347,7 +363,12 @@ export const Orders: React.FC = () => {
                 >
                   {/* Left: ID & Customer & Amount */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '220px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{order.id}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>{order.id}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
+                        {order.issuingCompany || 'YSACC'}
+                      </span>
+                    </div>
                     <span style={{ fontSize: '12px', color: '#64748b' }}>{order.customer}</span>
                   </div>
 
