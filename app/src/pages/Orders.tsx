@@ -11,13 +11,13 @@ import { NewOrderModal } from '../components/NewOrderModal';
 interface NextAction {
   text: string;
   level: 'RED' | 'ORANGE' | 'WHITE';
-  step: 'PO접수' | '소싱발주' | '선적관리' | '정산마감';
+  step: 'PO접수' | '소싱발주' | '수출관리' | '정산마감';
 }
 
-const mapStatusToStep = (st: string): 'PO접수' | '소싱발주' | '선적관리' | '정산마감' => {
+const mapStatusToStep = (st: string): 'PO접수' | '소싱발주' | '수출관리' | '정산마감' => {
   if (st === "주문" || st === "PO접수") return "PO접수";
   if (st === "발주" || st === "소싱발주") return "소싱발주";
-  if (st === "선적관리") return "선적관리";
+  if (st === "선적관리") return "수출관리";
   if (st === "이익관리" || st === "정산마감") return "정산마감";
   return "PO접수";
 };
@@ -124,25 +124,25 @@ export const Orders: React.FC = () => {
         }
       }
 
-      return { text: '선적 관리 단계로 진행 필요', level: 'WHITE', step: '소싱발주' };
+      return { text: '수출 관리 단계로 진행 필요', level: 'WHITE', step: '수출관리' };
     }
 
-    // 3. 선적 관리
-    if (currentStep === '선적관리') {
+    // 3. 수출 관리
+    if (currentStep === '수출관리') {
       // Condition A: ETD within 3 days and documents not complete
       if (order.etd) {
         const diffTime = new Date(order.etd).getTime() - Date.now();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays <= 3 && order.ciPlStatus !== 'Y') {
-          return { text: `서류 마감 D-${diffDays > 0 ? diffDays : 0} · 포워더 확정 필요`, level: 'RED', step: '선적관리' };
+          return { text: `서류 마감 D-${diffDays > 0 ? diffDays : 0} · 포워더 확정 필요`, level: 'RED', step: '수출관리' };
         }
       }
       // Condition B: Forwarder empty
       if (!order.forwarderConfirmed && (!order.forwarders || order.forwarders.length === 0)) {
-        return { text: '지정 포워더 미확정', level: 'WHITE', step: '선적관리' };
+        return { text: '지정 포워더 미확정', level: 'WHITE', step: '수출관리' };
       }
 
-      return { text: '정산 마감 단계로 진행 필요', level: 'WHITE', step: '선적관리' };
+      return { text: '정산 마감 단계로 진행 필요', level: 'WHITE', step: '수출관리' };
     }
 
     // 4. 정산 마감
@@ -332,7 +332,7 @@ export const Orders: React.FC = () => {
             <option value="All">전체</option>
             <option value="PO접수">PO 접수</option>
             <option value="소싱발주">소싱 발주</option>
-            <option value="선적관리">선적 관리</option>
+            <option value="수출관리">수출 관리</option>
             <option value="정산마감">정산 마감</option>
           </select>
         </div>
@@ -395,20 +395,20 @@ export const Orders: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '240px', flexShrink: 0 }}>
                     {/* Circle 1 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === 'PO접수' || currentStep === '소싱발주' || currentStep === '선적관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                      <span style={{ color: currentStep === 'PO접수' || currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
                       <span style={{ fontSize: '11px', fontWeight: currentStep === 'PO접수' ? 700 : 500, color: currentStep === 'PO접수' ? '#1e293b' : '#64748b' }}>PO접수</span>
                     </div>
                     <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                     {/* Circle 2 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === '소싱발주' || currentStep === '선적관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                      <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
                       <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
                     </div>
                     <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                     {/* Circle 3 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: currentStep === '선적관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                      <span style={{ fontSize: '11px', fontWeight: currentStep === '선적관리' ? 700 : 500, color: currentStep === '선적관리' ? '#1e293b' : '#64748b' }}>선적관리</span>
+                      <span style={{ color: currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                      <span style={{ fontSize: '11px', fontWeight: currentStep === '수출관리' ? 700 : 500, color: currentStep === '수출관리' ? '#1e293b' : '#64748b' }}>수출관리</span>
                     </div>
                     <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                     {/* Circle 4 */}
