@@ -359,6 +359,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
+          purchaseUnitPrice: parseFloat(it.purchaseUnitPrice as any) || 0,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),
