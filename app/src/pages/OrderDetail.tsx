@@ -2072,11 +2072,13 @@ export const OrderDetail: React.FC = () => {
                                 </tr>
                               ) : (
                                 items.map((it, idx) => {
-                                  const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                                  const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                   const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
                                   const itemCode = match ? match[1] : '-';
                                   const itemName = match ? match[2] : it.name;
+                                  const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                  const defaultPurchasePrice = matchedProd ? (matchedProd.purchasePrice || 0) : 0;
+                                  const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+                                  const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                   return (
                                     <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                       <td style={{ padding: '6px' }}>{itemCode}</td>
@@ -2090,7 +2092,7 @@ export const OrderDetail: React.FC = () => {
                                           <input
                                             type="number"
                                             step="any"
-                                            value={it.purchaseUnitPrice ?? it.unitPrice}
+                                            value={it.purchaseUnitPrice ?? defaultPurchasePrice}
                                             disabled={!isEditing}
                                             onChange={(e) => {
                                               const val = parseFloat(e.target.value) || 0;
