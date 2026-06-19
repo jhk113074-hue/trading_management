@@ -312,9 +312,10 @@ export const Dashboard: React.FC = () => {
     if (dateMode === 'daily') {
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 완료일 기준 당일 완료건만 노출
-        if (isDone && task.completedAt) {
-          return task.completedAt.split('T')[0] === selectedDate;
+        // 완료된 업무: 완료일 기준 당일 완료건만 노출 (완료일이 없으면 등록일 기준)
+        if (isDone) {
+          const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
+          return compDate === selectedDate;
         }
         // 미완료: 시작일 기준 (오늘 포함 이전 시작일인 경우 노출). 시작일 없으면 항상 표시
         if (!task.startDate) return true;
@@ -326,9 +327,10 @@ export const Dashboard: React.FC = () => {
 
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출
-        if (isDone && task.completedAt) {
-          return task.completedAt.split('T')[0] === selectedDate;
+        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출 (완료일이 없으면 등록일 기준)
+        if (isDone) {
+          const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
+          return compDate === selectedDate;
         }
         // 미완료: 시작일이 이번주 마감일 이하인 경우 노출. 시작일 없으면 항상 표시
         if (!task.startDate) return true;
@@ -338,9 +340,10 @@ export const Dashboard: React.FC = () => {
       // 기간 검색: 시작일이 검색 기간 내에 있는지
       base = base.filter(task => {
         const isDone = task.status === 'DONE';
-        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출
-        if (isDone && task.completedAt) {
-          return task.completedAt.split('T')[0] === selectedDate;
+        // 완료된 업무: 현재 조회 중인 선택 날짜(selectedDate)에 완료된 건만 노출 (완료일이 없으면 등록일 기준)
+        if (isDone) {
+          const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
+          return compDate === selectedDate;
         }
         // 미완료: 시작일이 검색 종료일 이하인 경우 노출. 시작일 없으면 항상 표시
         if (!task.startDate) return true;
