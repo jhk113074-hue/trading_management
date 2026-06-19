@@ -1463,202 +1463,196 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
-          {/* 발행사 및 핵심 기본정보 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
-              <div style={{ display: 'flex', gap: '4px', height: '26px' }}>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))}
-                  style={{
-                    flex: 1,
-                    padding: '4px 6px',
-                    fontSize: '10.5px',
-                    fontWeight: 700,
-                    background: formData.issuingCompany === 'YSACC' ? '#1d4ed8' : '#fff',
-                    color: formData.issuingCompany === 'YSACC' ? '#fff' : '#64748b',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  YSACC
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))}
-                  style={{
-                    flex: 1,
-                    padding: '4px 6px',
-                    fontSize: '10.5px',
-                    fontWeight: 700,
-                    background: formData.issuingCompany === 'YS' ? '#059669' : '#fff',
-                    color: formData.issuingCompany === 'YS' ? '#fff' : '#64748b',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  영성
-                </button>
-              </div>
-            </div>
-            <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
-            <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '26px' }}>
-                <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input 
-                    type="text" 
-                    value={formData.customerName || ''} 
-                    placeholder="고객사 검색/선택"
-                    readOnly
-                    onClick={() => setIsCustomerSearchOpen(true)}
+          
+          <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            
+            {/* 1) Row 1 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '110px 1.5fr 1.2fr 115px 70px 115px 1fr', gap: '6px', alignItems: 'end' }}>
+              {/* 발행사 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
+                <div style={{ display: 'flex', gap: '4px', height: '26px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))}
                     style={{
-                      width: '100%',
-                      padding: '4px 36px 4px 8px',
+                      flex: 1,
+                      padding: '4px 6px',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      background: formData.issuingCompany === 'YSACC' ? '#1d4ed8' : '#fff',
+                      color: formData.issuingCompany === 'YSACC' ? '#fff' : '#64748b',
                       border: '1px solid #cbd5e1',
                       borderRadius: '4px',
-                      fontSize: '12px',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      background: '#fff',
-                      boxSizing: 'border-box',
-                      height: '26px'
-                    }} 
-                  />
-                  {formData.customerId && (
+                      cursor: 'pointer'
+                    }}
+                  >
+                    YSACC
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))}
+                    style={{
+                      flex: 1,
+                      padding: '4px 6px',
+                      fontSize: '10.5px',
+                      fontWeight: 700,
+                      background: formData.issuingCompany === 'YS' ? '#059669' : '#fff',
+                      color: formData.issuingCompany === 'YS' ? '#fff' : '#64748b',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    영성
+                  </button>
+                </div>
+              </div>
+              <Input label="문서 번호 (PI Number) ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
+              <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
+              <Input label="PI Date ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
+              <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
+              <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
+              <Input label="작성자 (Author)" value={formData.createdByName || ''} onChange={(v: any) => setFormData(prev => ({...prev, createdByName: v}))} />
+            </div>
+
+            {/* 2) Row 2 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 2fr 1fr 1.2fr 80px 1.5fr 2fr 100px', gap: '6px', alignItems: 'end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', height: '26px' }}>
+                  <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input 
+                      type="text" 
+                      value={formData.customerName || ''} 
+                      placeholder="고객사 검색/선택"
+                      readOnly
+                      onClick={() => setIsCustomerSearchOpen(true)}
+                      style={{
+                        width: '100%',
+                        padding: '4px 36px 4px 8px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        background: '#fff',
+                        boxSizing: 'border-box',
+                        height: '26px'
+                      }} 
+                    />
+                    {formData.customerId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            customerId: '',
+                            customerName: '',
+                            customerAddress: '',
+                            contactPerson: '',
+                            email: '',
+                          }));
+                        }}
+                        style={{
+                          position: 'absolute',
+                          right: '24px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          fontSize: '11px',
+                          padding: '2px',
+                          zIndex: 5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        title="비우기"
+                      >
+                        ✕
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          customerId: '',
-                          customerName: '',
-                          customerAddress: '',
-                          contactPerson: '',
-                          email: '',
-                        }));
-                      }}
+                      onClick={() => setIsCustomerSearchOpen(true)}
                       style={{
                         position: 'absolute',
-                        right: '24px',
+                        right: '6px',
                         background: 'transparent',
                         border: 'none',
-                        color: '#94a3b8',
+                        color: '#3b82f6',
                         cursor: 'pointer',
-                        fontSize: '11px',
+                        fontSize: '12px',
                         padding: '2px',
                         zIndex: 5,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
-                      title="비우기"
+                      title="고객 검색 (Subwindow)"
                     >
-                      ✕
+                      🔍
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomerSearchOpen(true)}
-                    style={{
-                      position: 'absolute',
-                      right: '6px',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#3b82f6',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      padding: '2px',
-                      zIndex: 5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title="고객 검색 (Subwindow)"
-                  >
-                    🔍
-                  </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* 주요 거래 조건 (상단 노출) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px' }}>
-            <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
-            <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
-            <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
-                <button
-                  type="button"
-                  onClick={fetchExchangeRate}
-                  style={{
-                    fontSize: '9.5px',
-                    fontWeight: 700,
-                    background: '#3b82f6',
-                    border: 'none',
-                    padding: '1px 4px',
-                    borderRadius: '3px',
-                    color: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '2px',
-                    transition: 'all 0.2s',
-                    outline: 'none'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
-                >
-                  ⚡ 불러오기
-                </button>
-              </div>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.exchangeRate ?? ''}
-                onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '26px', boxSizing: 'border-box' }}
-              />
-            </div>
-          </div>
-
-          {/* Collapsible advanced section -> Always visible and compressed */}
-          <div style={{ background: '#f8fafc', padding: '8px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-              <Input label="Your Ref (PO Number)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
-              <Input label="Validity (Days)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
-              <Input label="Valid Until (자동)" value={formData.validUntilDate} disabled />
-              <Input label="작성자 (Author)" value={formData.createdByName} disabled />
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
               <Input label="Customer Address" value={formData.customerAddress || ''} disabled />
               <Input label="Customer Contact" value={formData.contactPerson} disabled />
               <Input label="Customer Email" value={formData.email} disabled />
+              <ComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+              <ComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+              <ComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
+                  <button
+                    type="button"
+                    onClick={fetchExchangeRate}
+                    style={{
+                      fontSize: '9.5px',
+                      fontWeight: 700,
+                      background: '#3b82f6',
+                      border: 'none',
+                      padding: '1px 4px',
+                      borderRadius: '3px',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
+                  >
+                    ⚡ 불러오기
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.exchangeRate ?? ''}
+                  onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
+                  style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', height: '26px', boxSizing: 'border-box' }}
+                />
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+            {/* 3) Row 3 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1.5fr 1fr', gap: '6px', alignItems: 'end' }}>
               <ComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
               <ComboSelect label="Packaging Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
-              <ComboSelect label="Validity Description" field="validityDesc" options={tradeTermsDB.validityDescriptions || []} />
               <ComboSelect label="Shipping Method" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
               <ComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
               <ComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
             </div>
 
+            {/* 4) Row 4 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={1.5} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}></textarea>
+              <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={1} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}></textarea>
             </div>
           </div>
 
