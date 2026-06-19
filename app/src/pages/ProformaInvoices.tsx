@@ -593,17 +593,17 @@ export const ProformaInvoices: React.FC = () => {
                     className="hover-row"
                     onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
                   >
-                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '15px', fontWeight: 500 }}>{p.piDate || '-'}</td>
-                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center' }}>
-                      <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '15.5px' }}>{p.piNumber || '-'}</span>
+                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '14px', fontWeight: 500 }}>{p.piDate || '-'}</td>
+                    <td style={{ padding: '12px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'left' }}>
+                      <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '14.5px' }}>{p.piNumber || '-'}</span>
                       {p.currentVersion && p.currentVersion > 1 && (
-                        <span style={{ color: '#94a3b8', fontSize: '13.5px', fontWeight: 600, marginLeft: '6px' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '12.5px', fontWeight: 600, marginLeft: '6px' }}>
                           R{p.currentVersion - 1}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '15.5px' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14.5px', color: '#475569', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '14.5px' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '12px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13.5px', color: '#475569', verticalAlign: 'middle' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
                         <span title={p.itemsSummary.join(', ')}>
                           {p.itemsSummary[0]}
@@ -615,11 +615,11 @@ export const ProformaInvoices: React.FC = () => {
                         </span>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '16.5px' }}>
+                    <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '15.5px' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{issuerBadge}</td>
-                    <td style={{ padding: '12px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '15px', fontWeight: 500 }}>
+                    <td style={{ padding: '12px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '14px', fontWeight: 500 }}>
                       {(() => {
                         const name = p.createdByName || '-';
                         if (name === 'jhkim1130' || name === '대표이사 김주한') return '김주한';
@@ -627,28 +627,24 @@ export const ProformaInvoices: React.FC = () => {
                       })()}
                     </td>
                     <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
                         <button 
                           onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
                           style={{ 
-                            background: '#eff6ff', 
-                            color: '#1d4ed8', 
-                            border: '1px solid #bfdbfe', 
-                            padding: '6px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '13.5px', 
+                            background: 'none', 
+                            color: '#3b82f6', 
+                            border: 'none', 
+                            padding: '2px 4px', 
+                            fontSize: '12px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '48px',
-                            transition: 'background-color 0.2s, border-color 0.2s' 
+                            transition: 'color 0.2s' 
                           }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = '#dbeafe';
-                            e.currentTarget.style.borderColor = '#93c5fd';
+                            e.currentTarget.style.color = '#1d4ed8';
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = '#eff6ff';
-                            e.currentTarget.style.borderColor = '#bfdbfe';
+                            e.currentTarget.style.color = '#3b82f6';
                           }}
                         >
                           수정
@@ -656,24 +652,20 @@ export const ProformaInvoices: React.FC = () => {
                         <button 
                           onClick={() => handleCopy(p)} 
                           style={{ 
-                            background: '#ecfdf5', 
-                            color: '#047857', 
-                            border: '1px solid #a7f3d0', 
-                            padding: '6px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '13.5px', 
+                            background: 'none', 
+                            color: '#10b981', 
+                            border: 'none', 
+                            padding: '2px 4px', 
+                            fontSize: '12px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '48px',
-                            transition: 'background-color 0.2s, border-color 0.2s'
+                            transition: 'color 0.2s'
                           }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = '#d1fae5';
-                            e.currentTarget.style.borderColor = '#6ee7b7';
+                            e.currentTarget.style.color = '#047857';
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = '#ecfdf5';
-                            e.currentTarget.style.borderColor = '#a7f3d0';
+                            e.currentTarget.style.color = '#10b981';
                           }}
                         >
                           복사
@@ -681,24 +673,20 @@ export const ProformaInvoices: React.FC = () => {
                         <button 
                           onClick={() => handleDelete(p.id, p.piNumber)}
                           style={{ 
-                            background: '#fef2f2', 
-                            color: '#b91c1c', 
-                            border: '1px solid #fecaca', 
-                            padding: '6px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '13.5px', 
+                            background: 'none', 
+                            color: '#ef4444', 
+                            border: 'none', 
+                            padding: '2px 4px', 
+                            fontSize: '12px', 
                             fontWeight: 700, 
                             cursor: 'pointer', 
-                            width: '48px',
-                            transition: 'background-color 0.2s, border-color 0.2s'
+                            transition: 'color 0.2s'
                           }}
                           onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = '#fee2e2';
-                            e.currentTarget.style.borderColor = '#fca5a5';
+                            e.currentTarget.style.color = '#b91c1c';
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = '#fef2f2';
-                            e.currentTarget.style.borderColor = '#fecaca';
+                            e.currentTarget.style.color = '#ef4444';
                           }}
                         >
                           삭제
