@@ -25,6 +25,7 @@ export const OrderDetail: React.FC = () => {
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
+  const [activeSourcingTab, setActiveSourcingTab] = useState<'발주' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제'>('발주');
   
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
@@ -1952,273 +1953,308 @@ export const OrderDetail: React.FC = () => {
           {/* 3. 소싱발주 */}
           {activeStep === '소싱발주' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* 추가 발주사(원자재/OEM) 관리 UI */}
-              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <select 
-                    value={selectedAddSupplier} 
-                    onChange={e => setSelectedAddSupplier(e.target.value)}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', minWidth: '220px' }}
-                  >
-                    <option value="">-- 추가할 공급사 선택 --</option>
-                    {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  </select>
-                  <button 
-                    onClick={handleAddSupplier}
-                    style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
-                  >
-                    + 발주사 추가
-                  </button>
-                </div>
-                {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
-                    {order.additionalSuppliers.map(s => (
-                      <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600 }}>
-                        {s}
-                        <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}>✕</button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+              {/* 소싱발주 하위 탭 메뉴 */}
+              <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '8px', marginBottom: '8px' }}>
+                {[
+                  { id: '발주', label: '1) 소싱 발주 PO' },
+                  { id: '도착보고_쉬핑마크', label: '2) 도착보고/쉬핑마크 작성' },
+                  { id: 'COA_성적서', label: '3) COA/시험성적서/첨부파일관리' },
+                  { id: '세금계산서_결제', label: '4) 세금계산서/구매확인서/대금결제관리' }
+                ].map(tab => {
+                  const isActive = activeSourcingTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveSourcingTab(tab.id as any)}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        color: isActive ? '#2563eb' : '#64748b',
+                        background: isActive ? '#eff6ff' : 'transparent',
+                        border: 'none',
+                        borderBottom: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        borderRadius: '6px 6px 0 0',
+                        marginBottom: '-2px'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
+              {activeSourcingTab === '발주' && (
+                <>
+                  {/* 추가 발주사(원자재/OEM) 관리 UI */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <select 
+                        value={selectedAddSupplier} 
+                        onChange={e => setSelectedAddSupplier(e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', minWidth: '220px' }}
+                      >
+                        <option value="">-- 추가할 공급사 선택 --</option>
+                        {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                      <button 
+                        onClick={handleAddSupplier}
+                        style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
+                      >
+                        + 발주사 추가
+                      </button>
+                    </div>
+                    {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                        {order.additionalSuppliers.map(s => (
+                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600 }}>
+                            {s}
+                            <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}>✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {allOrderSuppliers.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>발주할 공급업체가 없습니다.</div>
-                ) : (
-                  allOrderSuppliers.map(supplierName => {
-                    const items = groupedSupplierItems[supplierName] || [];
-                    const cleanSupplierName = supplierName.replace(/\s+/g, '');
-                    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
-                    const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {allOrderSuppliers.length === 0 ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>발주할 공급업체가 없습니다.</div>
+                    ) : (
+                      allOrderSuppliers.map(supplierName => {
+                        const items = groupedSupplierItems[supplierName] || [];
+                        const cleanSupplierName = supplierName.replace(/\s+/g, '');
+                        const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+                        const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
-                    return (
-                      <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '8px' }}>
-                        <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13px' }}>📄 {supplierName} PO ({poNum})</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px' }}>
-                              <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
-                              <select
-                                value={basicForm.supplierTaxTypes[supplierName] || '과세'}
-                                onChange={(e) => {
-                                  const val = e.target.value as '영세' | '과세';
-                                  setBasicForm(prev => ({
-                                    ...prev,
-                                    supplierTaxTypes: {
-                                      ...prev.supplierTaxTypes,
-                                      [supplierName]: val
-                                    }
-                                  }));
-                                }}
-                                style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '11.5px', fontWeight: 600, outline: 'none' }}
-                              >
-                                <option value="과세">과세 (10%)</option>
-                                <option value="영세">영세 (0%)</option>
-                              </select>
+                        return (
+                          <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '8px' }}>
+                            <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13px' }}>📄 {supplierName} PO ({poNum})</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px' }}>
+                                  <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
+                                  <select
+                                    value={basicForm.supplierTaxTypes[supplierName] || '과세'}
+                                    onChange={(e) => {
+                                      const val = e.target.value as '영세' | '과세';
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierTaxTypes: {
+                                          ...prev.supplierTaxTypes,
+                                          [supplierName]: val
+                                        }
+                                      }));
+                                    }}
+                                    style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '11.5px', fontWeight: 600, outline: 'none' }}
+                                  >
+                                    <option value="과세">과세 (10%)</option>
+                                    <option value="영세">영세 (0%)</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button 
+                                  onClick={() => handlePrintSupplierPo(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                >
+                                  🖨️ 인쇄 / PDF
+                                </button>
+                                <button 
+                                  onClick={() => handleEmailSupplierPo(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#10b981', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                >
+                                  ✉️ 이메일 발송
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button 
-                              onClick={() => handlePrintSupplierPo(supplierName, items)}
-                              style={{ padding: '5px 10px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
-                            >
-                              🖨️ 인쇄 / PDF
-                            </button>
-                            <button 
-                              onClick={() => handleEmailSupplierPo(supplierName, items)}
-                              style={{ padding: '5px 10px', background: '#10b981', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
-                            >
-                              ✉️ 이메일 발송
-                            </button>
-                          </div>
-                        </div>
-                        <div style={{ padding: '12px 16px', background: '#fff', fontSize: '12px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
-                            <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
-                          </div>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
-                            <thead>
-                              <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                <th style={{ padding: '6px', textAlign: 'left', width: '90px' }}>상품코드</th>
-                                <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
-                                <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
-                                <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {items.length === 0 ? (
-                                <tr>
-                                  <td colSpan={7} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
-                                    연결된 품목이 없습니다. (원자재/OEM 등의 목적으로 추가됨)
-                                  </td>
-                                </tr>
-                              ) : (
-                                items.map((it, idx) => {
-                                  const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
-                                  const itemCode = match ? match[1] : '-';
-                                  const itemName = match ? match[2] : it.name;
-                                  const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                  const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
-                                  const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
-                                  
-                                  // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.
-                                  let purchaseCurrency = it.purchaseUnitCurrency;
-                                  if (!purchaseCurrency) {
-                                    if (purchasePrice > 1000) {
-                                      purchaseCurrency = 'KRW';
-                                    } else if (matchedProd) {
-                                      purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
-                                    } else {
-                                      purchaseCurrency = 'USD';
-                                    }
-                                  }
-
-                                  const totalPurchaseAmount = purchasePrice * (it.qty || 0);
-                                  return (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                      <td style={{ padding: '6px' }}>{itemCode}</td>
-                                      <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
-                                      <td style={{ padding: '6px', textAlign: 'center' }}>
-                                        {isEditing ? (
-                                          <input
-                                            type="text"
-                                            value={it.grade || ''}
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              setOrder(prev => {
-                                                if (!prev) return prev;
-                                                const updatedItems = prev.items.map(item => {
-                                                  if (item.itemId === it.itemId) {
-                                                    return { ...item, grade: val };
-                                                  }
-                                                  return item;
-                                                });
-                                                return { ...prev, items: updatedItems };
-                                              });
-                                            }}
-                                            style={{
-                                              width: '100px',
-                                              padding: '3px 6px',
-                                              border: '1px solid #cbd5e1',
-                                              borderRadius: '4px',
-                                              fontSize: '11px',
-                                              textAlign: 'center'
-                                            }}
-                                          />
-                                        ) : (
-                                          it.grade || '-'
-                                        )}
-                                      </td>
-                                      <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                                      {/* 매입가 (통화/단가) */}
-                                      <td style={{ padding: '6px', textAlign: 'right' }}>
-                                        {purchaseCurrency === 'KRW' ? '₩' : '$'}{defaultPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
-                                      </td>
-                                      {/* 실매입가 (통화/단가) */}
-                                      <td style={{ padding: '6px', textAlign: 'right' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                                          <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
-                                          <input
-                                            type="text"
-                                            value={(() => {
-                                              const val = it.purchaseUnitPrice ?? defaultPurchasePrice;
-                                              return purchaseCurrency === 'KRW' 
-                                                ? Math.round(val).toLocaleString('ko-KR')
-                                                : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-                                            })()}
-                                            disabled={!isEditing}
-                                            onChange={(e) => {
-                                              const raw = e.target.value.replace(/,/g, '');
-                                              const val = parseFloat(raw) || 0;
-                                              setOrder(prev => {
-                                                if (!prev) return prev;
-                                                const updatedItems = prev.items.map(item => {
-                                                  if (item.itemId === it.itemId) {
-                                                    return { ...item, purchaseUnitPrice: val };
-                                                  }
-                                                  return item;
-                                                });
-                                                return { ...prev, items: updatedItems };
-                                              });
-                                            }}
-                                            style={{
-                                              width: '90px',
-                                              padding: '3px 6px',
-                                              border: '1px solid #cbd5e1',
-                                              borderRadius: '4px',
-                                              fontSize: '11px',
-                                              textAlign: 'right'
-                                            }}
-                                          />
-                                        </div>
-                                      </td>
-                                      <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
-                                        {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                            <div style={{ padding: '12px 16px', background: '#fff', fontSize: '12px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
+                                <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
+                              </div>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
+                                <thead>
+                                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                    <th style={{ padding: '6px', textAlign: 'left', width: '90px' }}>상품코드</th>
+                                    <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.length === 0 ? (
+                                    <tr>
+                                      <td colSpan={7} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                                        연결된 품목이 없습니다. (원자재/OEM 등의 목적으로 추가됨)
                                       </td>
                                     </tr>
-                                  );
-                                })
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                        {/* 생산완료일 지정 영역을 카드 하단에 병합 */}
-                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#f8fafc', padding: '8px 16px', borderTop: '1px solid #cbd5e1' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontWeight: 600, fontSize: '11.5px', color: '#4b5563' }}>생산완료일(납기일):</span>
-                            <input 
-                              type="date"
-                              value={basicForm.supplierProductionDates[supplierName] || ''}
-                              disabled={!isEditing}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setBasicForm(prev => {
-                                  const newDates = {
-                                    ...prev.supplierProductionDates,
-                                    [supplierName]: val
-                                  };
-                                  const activeDates = Object.values(newDates).filter(d => !!d);
-                                  const maxDate = activeDates.length > 0 
-                                    ? activeDates.reduce((max, cur) => cur > max ? cur : max) 
-                                    : prev.cargoReadyDate;
-                                  return {
-                                    ...prev,
-                                    supplierProductionDates: newDates,
-                                    cargoReadyDate: maxDate
-                                  };
-                                });
-                              }}
-                              style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px' }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                                  ) : (
+                                    items.map((it, idx) => {
+                                      const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
+                                      const itemCode = match ? match[1] : '-';
+                                      const itemName = match ? match[2] : it.name;
+                                      const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
+                                      const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
+                                      const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+                                      
+                                      // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.
+                                      let purchaseCurrency = it.purchaseUnitCurrency;
+                                      if (!purchaseCurrency) {
+                                        if (purchasePrice > 1000) {
+                                          purchaseCurrency = 'KRW';
+                                        } else if (matchedProd) {
+                                          purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
+                                        } else {
+                                          purchaseCurrency = 'USD';
+                                        }
+                                      }
 
-              {/* 화물준비일 지정 영역 */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '4px', background: '#f0fdf4', padding: '10px 16px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '16px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>최종 화물준비일 (생산완료일 기준 자동 계산 또는 수동 설정):</span>
-                <input 
-                  type="date" 
-                  value={basicForm.cargoReadyDate || ''} 
-                  onChange={e => setBasicForm(p => ({ ...p, cargoReadyDate: e.target.value }))} 
-                  disabled={!isEditing} 
-                  style={{ padding: '5px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', background: isEditing ? '#fff' : '#f8fafc' }} 
-                />
-              </div>
-              {/* 공급사 관리 세부 업무 순서대로 나열 */}
-              <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '20px', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                
-                {/* 2) 도착보고 작성 */}
+                                      const totalPurchaseAmount = purchasePrice * (it.qty || 0);
+                                      return (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                          <td style={{ padding: '6px' }}>{itemCode}</td>
+                                          <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
+                                          <td style={{ padding: '6px', textAlign: 'center' }}>
+                                            {isEditing ? (
+                                              <input
+                                                type="text"
+                                                value={it.grade || ''}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setOrder(prev => {
+                                                    if (!prev) return prev;
+                                                    const updatedItems = prev.items.map(item => {
+                                                      if (item.itemId === it.itemId) {
+                                                        return { ...item, grade: val };
+                                                      }
+                                                      return item;
+                                                    });
+                                                    return { ...prev, items: updatedItems };
+                                                  });
+                                                }}
+                                                style={{
+                                                  width: '100px',
+                                                  padding: '3px 6px',
+                                                  border: '1px solid #cbd5e1',
+                                                  borderRadius: '4px',
+                                                  fontSize: '11px',
+                                                  textAlign: 'center'
+                                                }}
+                                              />
+                                            ) : (
+                                              it.grade || '-'
+                                            )}
+                                          </td>
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
+                                          {/* 매입가 (통화/단가) */}
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>
+                                            {purchaseCurrency === 'KRW' ? '₩' : '$'}{defaultPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                          </td>
+                                          {/* 실매입가 (통화/단가) */}
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
+                                              <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
+                                              <input
+                                                type="text"
+                                                value={(() => {
+                                                  const val = it.purchaseUnitPrice ?? defaultPurchasePrice;
+                                                  return purchaseCurrency === 'KRW' 
+                                                    ? Math.round(val).toLocaleString('ko-KR')
+                                                    : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                                                })()}
+                                                disabled={!isEditing}
+                                                onChange={(e) => {
+                                                  const raw = e.target.value.replace(/,/g, '');
+                                                  const val = parseFloat(raw) || 0;
+                                                  setOrder(prev => {
+                                                    if (!prev) return prev;
+                                                    const updatedItems = prev.items.map(item => {
+                                                      if (item.itemId === it.itemId) {
+                                                        return { ...item, purchaseUnitPrice: val };
+                                                      }
+                                                      return item;
+                                                    });
+                                                    return { ...prev, items: updatedItems };
+                                                  });
+                                                }}
+                                                style={{
+                                                  width: '90px',
+                                                  padding: '3px 6px',
+                                                  border: '1px solid #cbd5e1',
+                                                  borderRadius: '4px',
+                                                  fontSize: '11px',
+                                                  textAlign: 'right'
+                                                }}
+                                              />
+                                            </div>
+                                          </td>
+                                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
+                                            {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                            {/* 생산완료일 지정 영역을 카드 하단에 병합 */}
+                            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#f8fafc', padding: '8px 16px', borderTop: '1px solid #cbd5e1' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 600, fontSize: '11.5px', color: '#4b5563' }}>생산완료일(납기일):</span>
+                                <input 
+                                  type="date"
+                                  value={basicForm.supplierProductionDates[supplierName] || ''}
+                                  disabled={!isEditing}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => {
+                                      const newDates = {
+                                        ...prev.supplierProductionDates,
+                                        [supplierName]: val
+                                      };
+                                      const activeDates = Object.values(newDates).filter(d => !!d);
+                                      const maxDate = activeDates.length > 0 
+                                        ? activeDates.reduce((max, cur) => cur > max ? cur : max) 
+                                        : prev.cargoReadyDate;
+                                      return {
+                                        ...prev,
+                                        supplierProductionDates: newDates,
+                                        cargoReadyDate: maxDate
+                                      };
+                                    });
+                                  }}
+                                  style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px' }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* 화물준비일 지정 영역 */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '4px', background: '#f0fdf4', padding: '10px 16px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>최종 화물준비일 (생산완료일 기준 자동 계산 또는 수동 설정):</span>
+                    <input 
+                      type="date" 
+                      value={basicForm.cargoReadyDate || ''} 
+                      onChange={e => setBasicForm(p => ({ ...p, cargoReadyDate: e.target.value }))} 
+                      disabled={!isEditing} 
+                      style={{ padding: '5px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', background: isEditing ? '#fff' : '#f8fafc' }} 
+                    />
+                  </div>
+                </>
+              )}
+              {/* 2) 도착보고 및 쉬핑마크 탭 */}
+              {activeSourcingTab === '도착보고_쉬핑마크' && (
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚚 2) 도착보고 작성 및 쉬핑마크 (기본정보입력 + 쉬핑마크 등록)</h4>
                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
@@ -2249,8 +2285,10 @@ export const OrderDetail: React.FC = () => {
                     })}
                   </div>
                 </div>
+              )}
 
-                {/* 3) COA 및 시험성적서 */}
+              {/* 3) COA 및 시험성적서 탭 */}
+              {activeSourcingTab === 'COA_성적서' && (
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 3) COA 및 시험성적서 첨부 파일 관리</h4>
                   <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
@@ -2262,304 +2300,308 @@ export const OrderDetail: React.FC = () => {
                     {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
                   </div>
                 </div>
+              )}
 
-                {/* 4) 세금계산서 발행 */}
-                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 발행 정보 등록</h4>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다.</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {allOrderSuppliers.length === 0 ? (
-                      <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
-                    ) : (
-                      allOrderSuppliers.map(supplier => {
-                        const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
-                        return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>발행일자</span>
-                                <input
-                                  type="date"
-                                  value={details.date}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setBasicForm(prev => ({
-                                      ...prev,
-                                      supplierTaxInvoiceDetails: {
-                                        ...prev.supplierTaxInvoiceDetails,
-                                        [supplier]: { ...details, date: val }
-                                      }
-                                    }));
-                                  }}
-                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
-                                />
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>세금계산서 승인번호</span>
-                                <input
-                                  type="text"
-                                  placeholder="국세청 승인번호(발급번호) 입력"
-                                  value={details.invoiceNo}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setBasicForm(prev => ({
-                                      ...prev,
-                                      supplierTaxInvoiceDetails: {
-                                        ...prev.supplierTaxInvoiceDetails,
-                                        [supplier]: { ...details, invoiceNo: val }
-                                      }
-                                    }));
-                                  }}
-                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
-                                />
+              {/* 4) 세금계산서, 구매확인서, 대금결제관리 탭 */}
+              {activeSourcingTab === '세금계산서_결제' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* 4) 세금계산서 발행 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 발행 정보 등록</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다.</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {allOrderSuppliers.length === 0 ? (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
+                      ) : (
+                        allOrderSuppliers.map(supplier => {
+                          const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
+                          return (
+                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                              <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>발행일자</span>
+                                  <input
+                                    type="date"
+                                    value={details.date}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierTaxInvoiceDetails: {
+                                          ...prev.supplierTaxInvoiceDetails,
+                                          [supplier]: { ...details, date: val }
+                                        }
+                                      }));
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>세금계산서 승인번호</span>
+                                  <input
+                                    type="text"
+                                    placeholder="국세청 승인번호(발급번호) 입력"
+                                    value={details.invoiceNo}
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierTaxInvoiceDetails: {
+                                          ...prev.supplierTaxInvoiceDetails,
+                                          [supplier]: { ...details, invoiceNo: val }
+                                        }
+                                      }));
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    )}
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* 5) 구매확인서 발행 */}
-                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📑 5) 영세율 공급사 구매확인서 발행/유첨</h4>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>세율이 "영세"로 지정된 공급업체에 대해서 외화 획득을 위한 구매확인서 발급 파일을 업로드하고 관리합니다.</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {(() => {
-                      const zeroTaxSuppliers = allOrderSuppliers.filter(supplier => basicForm.supplierTaxTypes[supplier] === '영세');
-                      if (zeroTaxSuppliers.length === 0) {
-                        return (
-                          <div style={{ padding: '20px', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '12.5px' }}>
-                            영세율로 설정된 공급업체가 없습니다. (공급업체별 세율 구분을 "영세"로 변경하면 활성화됩니다)
-                          </div>
-                        );
-                      }
+                  {/* 5) 구매확인서 발행 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📑 5) 영세율 공급사 구매확인서 발행/유첨</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>세율이 "영세"로 지정된 공급업체에 대해서 외화 획득을 위한 구매확인서 발급 파일을 업로드하고 관리합니다.</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {(() => {
+                        const zeroTaxSuppliers = allOrderSuppliers.filter(supplier => basicForm.supplierTaxTypes[supplier] === '영세');
+                        if (zeroTaxSuppliers.length === 0) {
+                          return (
+                            <div style={{ padding: '20px', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '12.5px' }}>
+                              영세율로 설정된 공급업체가 없습니다. (공급업체별 세율 구분을 "영세"로 변경하면 활성화됩니다)
+                            </div>
+                          );
+                        }
 
-                      return zeroTaxSuppliers.map(supplier => {
-                        const fileList = basicForm.supplierPurchaseCertFiles[supplier] || [];
-                        const isUploadingThis = uploadingCertSupplier === supplier;
+                        return zeroTaxSuppliers.map(supplier => {
+                          const fileList = basicForm.supplierPurchaseCertFiles[supplier] || [];
+                          const isUploadingThis = uploadingCertSupplier === supplier;
 
-                        return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier} (영세율 거래처)</span>
-                            <div 
-                              onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; }}
-                              onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                e.currentTarget.style.borderColor = '#cbd5e1';
-                                const files = e.dataTransfer.files;
-                                if (files && files.length > 0) {
-                                  handleSupplierCertUpload(files[0], supplier);
-                                }
-                              }}
-                              style={{ border: '2px dashed #cbd5e1', borderRadius: '6px', background: '#fff', padding: '12px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
-                              onClick={() => {
-                                const fileInput = document.getElementById(`cert-uploader-direct-${supplier}`);
-                                fileInput?.click();
-                              }}
-                            >
-                              <input 
-                                type="file" 
-                                id={`cert-uploader-direct-${supplier}`}
-                                style={{ display: 'none' }}
-                                onChange={(e) => {
-                                  const files = e.target.files;
+                          return (
+                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                              <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier} (영세율 거래처)</span>
+                              <div 
+                                onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; }}
+                                onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  e.currentTarget.style.borderColor = '#cbd5e1';
+                                  const files = e.dataTransfer.files;
                                   if (files && files.length > 0) {
                                     handleSupplierCertUpload(files[0], supplier);
                                   }
                                 }}
-                              />
-                              <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 600 }}>
-                                {isUploadingThis ? '⏳ 업로드 중...' : '📂 여기에 파일을 드래그하여 놓거나 클릭하여 구매확인서 PDF 첨부'}
-                              </span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
-                              {fileList.length > 0 ? (
-                                fileList.map((file, idx) => (
-                                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                    <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '11.5px', fontWeight: 600 }}>
-                                      📄 {file.name}
-                                    </a>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteSupplierCertFile(supplier, idx)}
-                                      style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '12px' }}
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ))
-                              ) : (
-                                <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>첨부된 구매확인서 파일이 없습니다.</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-
-                {/* 6) 대금결제관리 */}
-                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💳 6) 대금결제관리 (공급업체 외화/원화 대금 지급)</h4>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별 원화/외화 수주 금액 대비 지급(송금) 완료 내역 및 미수금을 분할 입금 형식으로 지정합니다.</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {allOrderSuppliers.length === 0 ? (
-                      <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
-                    ) : (
-                      allOrderSuppliers.map(supplier => {
-                        const list = basicForm.supplierPaymentInstallments[supplier] || [];
-                        const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
-                        const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
-                        const items = groupedSupplierItems[supplier] || [];
-                        const taxType = basicForm.supplierTaxTypes[supplier] || '과세';
-                        const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
-                          const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                          return sum + price * (it.qty || 0);
-                        }, 0);
-                        const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
-                          const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                          return sum + price * (it.qty || 0);
-                        }, 0);
-                        const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                        const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                        const usdGrand = usdTotal + usdVat;
-                        const krwGrand = krwTotal + krwVat;
-                        const isKrw = krwGrand > 0 || (usdGrand === 0 && krwGrand === 0);
-                        const grandTotal = isKrw ? krwGrand : usdGrand;
-                        const currencySymbol = isKrw ? '₩' : '$';
-                        const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                        const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
-                        const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-
-                        const handleInstallmentChange = (idx: number, field: 'date' | 'amount', value: any) => {
-                          const newList = [...installments];
-                          newList[idx] = { ...newList[idx], [field]: value };
-                          
-                          const newTotalPaid = newList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-                          
-                          const dates = newList.map(inst => inst.date).filter(d => d);
-                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
-                          
-                          setBasicForm(prev => {
-                            const updatedPayments = { ...prev.supplierPayments };
-                            if (newIsCompleted) {
-                              updatedPayments[supplier] = { status: '입금완료', date: lastDate };
-                            } else {
-                              updatedPayments[supplier] = { status: '미수금 발생', date: '' };
-                            }
-                            
-                            return {
-                              ...prev,
-                              supplierPaymentInstallments: {
-                                ...prev.supplierPaymentInstallments,
-                                [supplier]: newList
-                              },
-                              supplierPayments: updatedPayments
-                            };
-                          });
-                        };
-
-                        return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a' }}>{supplier}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newList = [...installments, { date: '', amount: 0 }];
-                                    setBasicForm(prev => ({
-                                      ...prev,
-                                      supplierPaymentInstallments: {
-                                        ...prev.supplierPaymentInstallments,
-                                        [supplier]: newList
-                                      }
-                                    }));
+                                style={{ border: '2px dashed #cbd5e1', borderRadius: '6px', background: '#fff', padding: '12px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
+                                onClick={() => {
+                                  const fileInput = document.getElementById(`cert-uploader-direct-${supplier}`);
+                                  fileInput?.click();
+                                }}
+                              >
+                                <input 
+                                  type="file" 
+                                  id={`cert-uploader-direct-${supplier}`}
+                                  style={{ display: 'none' }}
+                                  onChange={(e) => {
+                                    const files = e.target.files;
+                                    if (files && files.length > 0) {
+                                      handleSupplierCertUpload(files[0], supplier);
+                                    }
                                   }}
-                                  style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#0d9488', cursor: 'pointer' }}
-                                >
-                                  ＋ 지급 내역 추가
-                                </button>
-                              </div>
-                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
-                                <span>총 발주액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                <span>송금액: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                <span style={{ padding: '2px 8px', borderRadius: '10px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '11px' }}>
-                                  {isCompleted ? '송금완료' : '지급대기'}
+                                />
+                                <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 600 }}>
+                                  {isUploadingThis ? '⏳ 업로드 중...' : '📂 여기에 파일을 드래그하여 놓거나 클릭하여 구매확인서 PDF 첨부'}
                                 </span>
                               </div>
-                            </div>
-                            {matchingSupplier && (
-                              <div style={{ display: 'flex', gap: '15px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '6px 10px', borderRadius: '4px', fontSize: '11.5px', color: '#1e40af' }}>
-                                <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '-'}</span>
-                                <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '-'}</span>
-                              </div>
-                            )}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                              {installments.map((inst, idx) => (
-                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563' }}>{idx + 1}차 지급</span>
-                                    {installments.length > 1 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                {fileList.length > 0 ? (
+                                  fileList.map((file, idx) => (
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                      <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '11.5px', fontWeight: 600 }}>
+                                        📄 {file.name}
+                                      </a>
                                       <button
                                         type="button"
-                                        onClick={() => {
-                                          const newList = installments.filter((_, i) => i !== idx);
-                                          const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
-                                          const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-                                          const dates = finalList.map(inst => inst.date).filter(d => d);
-                                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
-                                          setBasicForm(prev => {
-                                            const updatedPayments = { ...prev.supplierPayments };
-                                            updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
-                                            return {
-                                              ...prev,
-                                              supplierPaymentInstallments: {
-                                                ...prev.supplierPaymentInstallments,
-                                                [supplier]: finalList
-                                              },
-                                              supplierPayments: updatedPayments
-                                            };
-                                          });
-                                        }}
-                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
+                                        onClick={() => handleDeleteSupplierCertFile(supplier, idx)}
+                                        style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '12px' }}
                                       >
                                         ✕
                                       </button>
-                                    )}
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={inst.date}
-                                    onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
-                                    style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
-                                  />
-                                  <input
-                                    type="number"
-                                    placeholder="지급액"
-                                    value={inst.amount || ''}
-                                    onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
-                                    style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
-                                  />
-                                </div>
-                              ))}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>첨부된 구매확인서 파일이 없습니다.</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })
-                    )}
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* 6) 대금결제관리 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💳 6) 대금결제관리 (공급업체 외화/원화 대금 지급)</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별 원화/외화 수주 금액 대비 지급(송금) 완료 내역 및 미수금을 분할 입금 형식으로 지정합니다.</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {allOrderSuppliers.length === 0 ? (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
+                      ) : (
+                        allOrderSuppliers.map(supplier => {
+                          const list = basicForm.supplierPaymentInstallments[supplier] || [];
+                          const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
+                          const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
+                          const items = groupedSupplierItems[supplier] || [];
+                          const taxType = basicForm.supplierTaxTypes[supplier] || '과세';
+                          const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
+                            const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                            return sum + price * (it.qty || 0);
+                          }, 0);
+                          const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
+                            const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                            return sum + price * (it.qty || 0);
+                          }, 0);
+                          const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                          const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                          const usdGrand = usdTotal + usdVat;
+                          const krwGrand = krwTotal + krwVat;
+                          const isKrw = krwGrand > 0 || (usdGrand === 0 && krwGrand === 0);
+                          const grandTotal = isKrw ? krwGrand : usdGrand;
+                          const currencySymbol = isKrw ? '₩' : '$';
+                          const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
+                          const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+
+                          const handleInstallmentChange = (idx: number, field: 'date' | 'amount', value: any) => {
+                            const newList = [...installments];
+                            newList[idx] = { ...newList[idx], [field]: value };
+                            
+                            const newTotalPaid = newList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                            const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                            
+                            const dates = newList.map(inst => inst.date).filter(d => d);
+                            const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                            
+                            setBasicForm(prev => {
+                              const updatedPayments = { ...prev.supplierPayments };
+                              if (newIsCompleted) {
+                                updatedPayments[supplier] = { status: '입금완료', date: lastDate };
+                              } else {
+                                updatedPayments[supplier] = { status: '미수금 발생', date: '' };
+                              }
+                              
+                              return {
+                                ...prev,
+                                supplierPaymentInstallments: {
+                                  ...prev.supplierPaymentInstallments,
+                                  [supplier]: newList
+                                },
+                                supplierPayments: updatedPayments
+                              };
+                            });
+                          };
+
+                          return (
+                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a' }}>{supplier}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newList = [...installments, { date: '', amount: 0 }];
+                                      setBasicForm(prev => ({
+                                        ...prev,
+                                        supplierPaymentInstallments: {
+                                          ...prev.supplierPaymentInstallments,
+                                          [supplier]: newList
+                                        }
+                                      }));
+                                    }}
+                                    style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#0d9488', cursor: 'pointer' }}
+                                  >
+                                    ＋ 지급 내역 추가
+                                  </button>
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
+                                  <span>총 발주액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                  <span>송금액: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                  <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '11px' }}>
+                                    {isCompleted ? '송금완료' : '지급대기'}
+                                  </span>
+                                </div>
+                              </div>
+                              {matchingSupplier && (
+                                <div style={{ display: 'flex', gap: '15px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '6px 10px', borderRadius: '4px', fontSize: '11.5px', color: '#1e40af' }}>
+                                  <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '-'}</span>
+                                  <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '-'}</span>
+                                </div>
+                              )}
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                                {installments.map((inst, idx) => (
+                                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563' }}>{idx + 1}차 지급</span>
+                                      {installments.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const newList = installments.filter((_, i) => i !== idx);
+                                            const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
+                                            const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                                            const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                                            const dates = finalList.map(inst => inst.date).filter(d => d);
+                                            const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                                            setBasicForm(prev => {
+                                              const updatedPayments = { ...prev.supplierPayments };
+                                              updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
+                                              return {
+                                                ...prev,
+                                                supplierPaymentInstallments: {
+                                                  ...prev.supplierPaymentInstallments,
+                                                  [supplier]: finalList
+                                                },
+                                                supplierPayments: updatedPayments
+                                              };
+                                            });
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
+                                    <input
+                                      type="date"
+                                      value={inst.date}
+                                      onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
+                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="지급액"
+                                      value={inst.amount || ''}
+                                      onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
-
-              </div>
+              )}
             </div>
           )}
 
