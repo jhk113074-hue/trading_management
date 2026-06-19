@@ -1465,49 +1465,26 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
           
-          {/* ── PI Document-style compact form ── */}
+          {/* ── PI Document-style compact form (4 rows) ── */}
           <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            
-            {/* 1) Row 1: 발행사 | PI Number | Your Ref | PI Date | Validity | Valid Until | 작성자 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '96px 1.5fr 1.2fr 110px 56px 110px 1fr', gap: '5px', alignItems: 'end' }}>
-              {/* 발행사 */}
+
+            {/* ── Row 1: 발행사 | PI Number | Your Ref | PI Date | Validity | Valid Until | 작성자 ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '90px 1.6fr 1.2fr 112px 54px 112px 1fr', gap: '5px', alignItems: 'end' }}>
+              {/* 발행사 toggle */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>발행사 ★</label>
-                <div style={{ display: 'flex', gap: '3px', height: '22px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YSACC'}))}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      background: formData.issuingCompany === 'YSACC' ? '#1d4ed8' : '#fff',
-                      color: formData.issuingCompany === 'YSACC' ? '#fff' : '#64748b',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '3px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    YSACC
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({...prev, issuingCompany: 'YS'}))}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      background: formData.issuingCompany === 'YS' ? '#059669' : '#fff',
-                      color: formData.issuingCompany === 'YS' ? '#fff' : '#64748b',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '3px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    영성
-                  </button>
+                <div style={{ display: 'flex', gap: '2px', height: '22px' }}>
+                  {(['YSACC', 'YS'] as const).map(co => (
+                    <button key={co} type="button"
+                      onClick={() => setFormData(prev => ({...prev, issuingCompany: co}))}
+                      style={{
+                        flex: 1, fontSize: '10px', fontWeight: 700,
+                        background: formData.issuingCompany === co ? (co === 'YSACC' ? '#1d4ed8' : '#059669') : '#fff',
+                        color: formData.issuingCompany === co ? '#fff' : '#64748b',
+                        border: '1px solid #cbd5e1', borderRadius: '3px', cursor: 'pointer', padding: 0
+                      }}
+                    >{co === 'YSACC' ? 'YSACC' : '영성'}</button>
+                  ))}
                 </div>
               </div>
               <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
@@ -1518,126 +1495,53 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactInput label="작성자" value={formData.createdByName || ''} onChange={(v: any) => setFormData(prev => ({...prev, createdByName: v}))} />
             </div>
 
-            {/* 2) Row 2: Customer | Address | Contact | Email | Incoterms | Destination | Payment | KRW/USD */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 1.1fr 68px 1.4fr 1.8fr 90px', gap: '5px', alignItems: 'end' }}>
+            {/* ── Row 2: Customer | 주소 | 담당 | Email | Incoterms | Dest.Port | Payment | 환율 ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.6fr 0.8fr 1.1fr 62px 1.4fr 1.6fr 84px', gap: '5px', alignItems: 'end' }}>
+              {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-                <div style={{ display: 'flex', gap: '3px', alignItems: 'center', height: '22px' }}>
-                  <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <input 
-                      type="text" 
-                      value={formData.customerName || ''} 
-                      placeholder="고객사 검색/선택"
-                      readOnly
-                      onClick={() => setIsCustomerSearchOpen(true)}
-                      style={{
-                        width: '100%',
-                        padding: '4px 36px 4px 8px',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        background: '#fff',
-                        boxSizing: 'border-box',
-                        height: '26px'
-                      }} 
-                    />
-                    {formData.customerId && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            customerId: '',
-                            customerName: '',
-                            customerAddress: '',
-                            contactPerson: '',
-                            email: '',
-                          }));
-                        }}
-                        style={{
-                          position: 'absolute',
-                          right: '24px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#94a3b8',
-                          cursor: 'pointer',
-                          fontSize: '11px',
-                          padding: '2px',
-                          zIndex: 5,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                        title="비우기"
-                      >
-                        ✕
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomerSearchOpen(true)}
-                      style={{
-                        position: 'absolute',
-                        right: '6px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#3b82f6',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        padding: '2px',
-                        zIndex: 5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="고객 검색 (Subwindow)"
-                    >
-                      🔍
-                    </button>
-                  </div>
+                <div style={{ position: 'relative', height: '22px', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={formData.customerName || ''}
+                    placeholder="검색/선택"
+                    readOnly
+                    onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{
+                      width: '100%', height: '22px', padding: '1px 32px 1px 6px',
+                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px',
+                      outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
+                    }}
+                  />
+                  {formData.customerId && (
+                    <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
+                      style={{ position: 'absolute', right: '18px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '10px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                      title="비우기">✕</button>
+                  )}
+                  <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{ position: 'absolute', right: '3px', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                    title="고객 검색">🔍</button>
                 </div>
               </div>
               <CompactInput label="주소" value={formData.customerAddress || ''} disabled />
               <CompactInput label="담당" value={formData.contactPerson} disabled />
               <CompactInput label="Email" value={formData.email} disabled />
-              <CompactComboSelect label="Incoterms" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
-              <CompactComboSelect label="Destination Port" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
-              <CompactComboSelect label="Payment Terms" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+              <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+              <CompactComboSelect label="Dest. Port ★" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+              <CompactComboSelect label="Payment ★" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
+              {/* 환율 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label style={{ fontSize: '9px', fontWeight: 600, color: '#475569' }}>KRW/USD</label>
-                  <button
-                    type="button"
-                    onClick={fetchExchangeRate}
-                    style={{
-                      fontSize: '8.5px',
-                      fontWeight: 700,
-                      background: '#3b82f6',
-                      border: 'none',
-                      padding: '1px 3px',
-                      borderRadius: '3px',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '2px',
-                      transition: 'all 0.2s',
-                      outline: 'none'
-                    }}
-                    onMouseOver={(e) => { e.currentTarget.style.background = '#2563eb'; }}
-                    onMouseOut={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
-                  >
-                    ⚡환율
-                  </button>
+                  <button type="button" onClick={fetchExchangeRate}
+                    style={{ fontSize: '8px', fontWeight: 700, background: '#3b82f6', border: 'none', padding: '1px 3px', borderRadius: '2px', color: '#fff', cursor: 'pointer' }}
+                    onMouseOver={e => { (e.currentTarget as HTMLButtonElement).style.background = '#2563eb'; }}
+                    onMouseOut={e => { (e.currentTarget as HTMLButtonElement).style.background = '#3b82f6'; }}
+                  >⚡환율</button>
                 </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.exchangeRate ?? ''}
-                  onChange={(e) => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
-                  style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', height: '22px', boxSizing: 'border-box' }}
+                <input type="number" step="0.01" value={formData.exchangeRate ?? ''}
+                  onChange={e => setFormData(prev => ({...prev, exchangeRate: parseFloat(e.target.value) || 1}))}
+                  style={{ height: '22px', padding: '1px 5px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', boxSizing: 'border-box', width: '100%' }}
                 />
               </div>
             </div>
