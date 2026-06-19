@@ -26,6 +26,8 @@ export const OrderDetail: React.FC = () => {
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
   const [activeSourcingTab, setActiveSourcingTab] = useState<'소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제'>('소싱발주');
+  const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
+  const [forwarderSearchQuery, setForwarderSearchQuery] = useState('');
   
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
@@ -2251,7 +2253,10 @@ export const OrderDetail: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>지정 포워더(Forwarder)</span>
-                      <input type="text" value={basicForm.forwarderConfirmed} onChange={e => setBasicForm(p => ({ ...p, forwarderConfirmed: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="포워딩업체-운송비" />
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input type="text" value={basicForm.forwarderConfirmed} onChange={e => setBasicForm(p => ({ ...p, forwarderConfirmed: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), flex: 1 }} placeholder="포워딩업체-운송비" />
+                        <button type="button" onClick={() => { setForwarderSearchQuery(''); setIsForwarderSearchOpen(true); }} disabled={!isEditing} style={{ padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 'bold' }}>🔍</button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 견적금액 (KRW)</span>
@@ -2282,12 +2287,25 @@ export const OrderDetail: React.FC = () => {
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 정보</span>
                       <input 
                         type="text" 
-                        style={inputStyle(isEditing && basicForm.containerWorkspaceType === 'CFS')} 
+                        style={inputStyle(isEditing)} 
                         value={basicForm.cfsAddress || ''} 
                         onChange={e => setBasicForm(p => ({ ...p, cfsAddress: e.target.value }))} 
-                        disabled={!isEditing || basicForm.containerWorkspaceType !== 'CFS'} 
-                        placeholder={basicForm.containerWorkspaceType === 'CFS' ? "주소 및 담당자 정보" : "CFS 작업 시에만 입력 가능"} 
+                        disabled={!isEditing} 
+                        placeholder="주소 및 담당자 정보" 
                       />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감일</span>
+                      <input type="date" value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
+                      <input type="date" value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
+                      <input type="date" value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                     </div>
                   </div>
                 </div>
@@ -3102,6 +3120,46 @@ export const OrderDetail: React.FC = () => {
             }
           }}
         />
+      )}
+
+      {isForwarderSearchOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>🚢 포워더 지정업체 검색</h3>
+              <button onClick={() => setIsForwarderSearchOpen(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+            </div>
+            <input 
+              type="text" 
+              placeholder="업체명 검색..." 
+              value={forwarderSearchQuery} 
+              onChange={e => setForwarderSearchQuery(e.target.value)} 
+              style={{ ...inputStyle(true), marginBottom: '12px' }} 
+            />
+            <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+              {suppliersList
+                .filter(s => s.category === '포워딩사' && s.name.toLowerCase().includes(forwarderSearchQuery.toLowerCase()))
+                .map(sup => (
+                  <div 
+                    key={sup.id} 
+                    onClick={() => {
+                      setBasicForm(p => ({ ...p, forwarderConfirmed: sup.name }));
+                      setIsForwarderSearchOpen(false);
+                    }}
+                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px', transition: 'background 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <div style={{ fontWeight: 700, color: '#334155' }}>{sup.name}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>대표: {sup.representative} | 연락처: {sup.phone}</div>
+                  </div>
+                ))}
+              {suppliersList.filter(s => s.category === '포워딩사' && s.name.toLowerCase().includes(forwarderSearchQuery.toLowerCase())).length === 0 && (
+                <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>검색 결과가 없습니다.</div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
