@@ -229,6 +229,57 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
 
   const isLoadedRef = useRef(false);
+  const baselineStateRef = useRef<{ formData: any, items: any } | null>(null);
+
+  // Helper to deep clone state for dirty checking
+  const getSnapshot = (fData: any, iList: any) => {
+    return JSON.stringify({
+      piNumber: fData.piNumber || '',
+      piDate: fData.piDate || '',
+      validityDays: fData.validityDays || 30,
+      issuingCompany: fData.issuingCompany || 'YSACC',
+      customerId: fData.customerId || '',
+      customerName: fData.customerName || '',
+      customerAddress: fData.customerAddress || '',
+      contactPerson: fData.contactPerson || '',
+      email: fData.email || '',
+      incoterms: fData.incoterms || '',
+      destinationPort: fData.destinationPort || '',
+      departurePort: fData.departurePort || '',
+      packagingSpec: fData.packagingSpec || '',
+      paymentTerms: fData.paymentTerms || '',
+      shippingMethod: fData.shippingMethod || '',
+      remarks: fData.remarks || '',
+      deliveryTerm: fData.deliveryTerm || '',
+      origin: fData.origin || '',
+      yourRef: fData.yourRef || '',
+      items: iList.map((it: any) => ({
+        productCode: it.productCode || '',
+        description: it.description || '',
+        quantity: it.quantity || 0,
+        unit: it.unit || 'KG',
+        purchasePriceKrw: it.purchasePriceKrw || 0,
+        purchasePriceUsd: it.purchasePriceUsd || 0,
+        marginRate: it.marginRate || 15,
+        salePriceUsd: it.salePriceUsd || 0,
+        lineTotalUsd: it.lineTotalUsd || 0
+      }))
+    });
+  };
+
+  const handleCloseAttempt = async () => {
+    if (baselineStateRef.current) {
+      const currentSnap = getSnapshot(formData, items);
+      if (baselineStateRef.current.formData !== currentSnap) {
+        const confirmSave = window.confirm("변경사항이 있습니다. 저장하시겠습니까?\n\n[확인/OK]를 누르면 저장하고 닫으며,\n[취소/Cancel]를 누르면 저장하지 않고 그냥 닫습니다.");
+        if (confirmSave) {
+          // Attempt to save
+          await handleSave(false);
+        }
+      }
+    }
+    onClose();
+  };
 
   useEffect(() => {
     // Subscribe to customers in real-time
@@ -241,13 +292,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (prev.customerId) {
           const cust = loadedCusts.find(c => c.id === prev.customerId);
           if (cust) {
-            return {
+            const updated = {
               ...prev,
               customerName: prev.customerName || cust.name,
               customerAddress: prev.customerAddress || cust.addressEn || '',
               contactPerson: prev.contactPerson || cust.nameKo || '',
               email: prev.email || cust.email || ''
             };
+            return updated;
           }
         }
         return prev;
@@ -302,21 +354,30 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               setItems(loadedItems);
 
               // Load special custom values from the latest revision
-              setFormData(prev => ({
-                ...prev,
-                exchangeRate: latestRevData.exchangeRate !== undefined ? latestRevData.exchangeRate : prev.exchangeRate,
-                remarks: latestRevData.remarks !== undefined ? latestRevData.remarks : prev.remarks,
-                customerAddress: latestRevData.customerAddress !== undefined ? latestRevData.customerAddress : prev.customerAddress,
-                incoterms: latestRevData.incoterms !== undefined ? latestRevData.incoterms : prev.incoterms,
-                destinationPort: latestRevData.destinationPort !== undefined ? latestRevData.destinationPort : prev.destinationPort,
-                paymentTerms: latestRevData.paymentTerms !== undefined ? latestRevData.paymentTerms : prev.paymentTerms,
-                shippingMethod: latestRevData.shippingMethod !== undefined ? latestRevData.shippingMethod : prev.shippingMethod,
-                packagingSpec: latestRevData.packagingSpec !== undefined ? latestRevData.packagingSpec : prev.packagingSpec,
-                deliveryTerm: latestRevData.deliveryTerm !== undefined ? latestRevData.deliveryTerm : prev.deliveryTerm,
-                origin: latestRevData.origin !== undefined ? latestRevData.origin : prev.origin,
-                yourRef: latestRevData.yourRef !== undefined ? latestRevData.yourRef : prev.yourRef,
-                attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
-              }));
+              setFormData(prev => {
+                const updatedFormData = {
+                  ...prev,
+                  exchangeRate: latestRevData.exchangeRate !== undefined ? latestRevData.exchangeRate : prev.exchangeRate,
+                  remarks: latestRevData.remarks !== undefined ? latestRevData.remarks : prev.remarks,
+                  customerAddress: latestRevData.customerAddress !== undefined ? latestRevData.customerAddress : prev.customerAddress,
+                  incoterms: latestRevData.incoterms !== undefined ? latestRevData.incoterms : prev.incoterms,
+                  destinationPort: latestRevData.destinationPort !== undefined ? latestRevData.destinationPort : prev.destinationPort,
+                  paymentTerms: latestRevData.paymentTerms !== undefined ? latestRevData.paymentTerms : prev.paymentTerms,
+                  shippingMethod: latestRevData.shippingMethod !== undefined ? latestRevData.shippingMethod : prev.shippingMethod,
+                  packagingSpec: latestRevData.packagingSpec !== undefined ? latestRevData.packagingSpec : prev.packagingSpec,
+                  deliveryTerm: latestRevData.deliveryTerm !== undefined ? latestRevData.deliveryTerm : prev.deliveryTerm,
+                  origin: latestRevData.origin !== undefined ? latestRevData.origin : prev.origin,
+                  yourRef: latestRevData.yourRef !== undefined ? latestRevData.yourRef : prev.yourRef,
+                  attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
+                };
+
+                baselineStateRef.current = {
+                  formData: getSnapshot(updatedFormData, loadedItems),
+                  items: true
+                };
+
+                return updatedFormData;
+              });
             }
           }
           isLoadedRef.current = true;
@@ -329,7 +390,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       if (!isLoadedRef.current) {
         // Generate temp PI number
         const yy = new Date().getFullYear();
-        setFormData(prev => ({ ...prev, piNumber: `PI-YSACC-${yy}-TBD` }));
+        setFormData(prev => {
+          const initialForm = {
+            ...prev,
+            piNumber: `PI-YSACC-${yy}-TBD`
+          };
+          baselineStateRef.current = {
+            formData: getSnapshot(initialForm, []),
+            items: true
+          };
+          return initialForm;
+        });
         isLoadedRef.current = true;
       }
     }
@@ -1032,8 +1103,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         setDropdownRevId(revRef.id);
       }
       
-      // Clear revision reason input
-      setRevisionReason('');
+      // Update baselineStateRef to current snapshot since it is saved
+      baselineStateRef.current = {
+        formData: getSnapshot(formData, items),
+        items: true
+      };
 
       alert(isRevision ? `✅ Revision 저장 완료! (R${version})` : '✅ 일반저장 완료!');
       // onClose(); 삭제됨: 저장 후 창 닫지 않음
@@ -1327,23 +1401,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         
         setItems(loadedItems);
         
-        // If the revision saved special custom values (like exchangeRate, remarks etc.), we can load them too
-        setFormData(prev => ({
-          ...prev,
-          exchangeRate: data.exchangeRate !== undefined ? data.exchangeRate : prev.exchangeRate,
-          remarks: data.remarks !== undefined ? data.remarks : prev.remarks,
-          customerAddress: data.customerAddress !== undefined ? data.customerAddress : prev.customerAddress,
-          incoterms: data.incoterms !== undefined ? data.incoterms : prev.incoterms,
-          destinationPort: data.destinationPort !== undefined ? data.destinationPort : prev.destinationPort,
-          paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : prev.paymentTerms,
-          shippingMethod: data.shippingMethod !== undefined ? data.shippingMethod : prev.shippingMethod,
-          packagingSpec: data.packagingSpec !== undefined ? data.packagingSpec : prev.packagingSpec,
-          deliveryTerm: data.deliveryTerm !== undefined ? data.deliveryTerm : prev.deliveryTerm,
-          origin: data.origin !== undefined ? data.origin : prev.origin,
-          yourRef: data.yourRef !== undefined ? data.yourRef : prev.yourRef,
-          attachments: data.attachments !== undefined ? data.attachments : (prev.attachments || [])
-        }));
-        
+        // Update baselineStateRef to match the newly loaded revision state
+        const loadedForm = {
+          ...formData,
+          exchangeRate: data.exchangeRate !== undefined ? data.exchangeRate : formData.exchangeRate,
+          remarks: data.remarks !== undefined ? data.remarks : formData.remarks,
+          customerAddress: data.customerAddress !== undefined ? data.customerAddress : formData.customerAddress,
+          incoterms: data.incoterms !== undefined ? data.incoterms : formData.incoterms,
+          destinationPort: data.destinationPort !== undefined ? data.destinationPort : formData.destinationPort,
+          paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : formData.paymentTerms,
+          shippingMethod: data.shippingMethod !== undefined ? data.shippingMethod : formData.shippingMethod,
+          packagingSpec: data.packagingSpec !== undefined ? data.packagingSpec : formData.packagingSpec,
+          deliveryTerm: data.deliveryTerm !== undefined ? data.deliveryTerm : formData.deliveryTerm,
+          origin: data.origin !== undefined ? data.origin : formData.origin,
+          yourRef: data.yourRef !== undefined ? data.yourRef : formData.yourRef,
+          attachments: data.attachments !== undefined ? data.attachments : (formData.attachments || [])
+        };
+        baselineStateRef.current = {
+          formData: getSnapshot(loadedForm, loadedItems),
+          items: true
+        };
+
         alert(`ℹ️ Version ${data.version || ''}의 데이터가 로드되었습니다.`);
       }
     } catch (err) {
@@ -1426,7 +1504,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             )}
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <button onClick={handleCloseAttempt} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body */}
@@ -2096,7 +2174,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
+            <button onClick={handleCloseAttempt} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
             
             <button 
               type="button" 
