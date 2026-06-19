@@ -6,14 +6,14 @@ import { db, COMPANY_ID, storage } from '../firebase';
 import type { Order, OrderItem } from '../types/order';
 import type { Supplier } from '../types/supplier';
 
-const steps = ["발주", "선적관리", "이익관리"] as const;
+const steps = ["PO접수", "소싱발주", "선적관리", "정산마감"] as const;
 
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState<typeof steps[number]>("발주");
+  const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const isEditing = true;
   const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
   const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
@@ -103,7 +103,11 @@ export const OrderDetail: React.FC = () => {
         const data = docSnap.data() as Order;
         setOrder(data);
         if (data.status) {
-          const mappedStatus = data.status === '주문' ? '발주' : data.status;
+          const mappedStatus = 
+            data.status === '주문' ? 'PO접수' :
+            data.status === '발주' ? '소싱발주' :
+            data.status === '선적관리' ? '선적관리' :
+            data.status === '이익관리' ? '정산마감' : 'PO접수';
           setActiveStep(mappedStatus as any);
         }
         setBasicForm({
@@ -1522,8 +1526,8 @@ export const OrderDetail: React.FC = () => {
           </div>
           {/* Render corresponding form/contents based on activeStep */}
 
-          {/* 2. 발주 */}
-          {activeStep === '발주' && (
+          {/* 2. PO접수 */}
+          {activeStep === 'PO접수' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* 추가 발주사(원자재/OEM) 관리 UI */}
@@ -1747,7 +1751,12 @@ export const OrderDetail: React.FC = () => {
                   style={{ padding: '5px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', background: isEditing ? '#fff' : '#f8fafc' }} 
                 />
               </div>
+            </div>
+          )}
 
+          {/* 3. 소싱발주 */}
+          {activeStep === '소싱발주' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 6. 공급사 관리 서브메뉴 (세금계산서/구매확인서/결제) */}
               <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '20px', marginTop: '20px' }}>
                 {/* Sub Tab Buttons */}
@@ -2331,8 +2340,8 @@ export const OrderDetail: React.FC = () => {
             </div>
           )}
 
-          {/* 4. 이익관리 */}
-          {activeStep === '이익관리' && (
+          {/* 5. 정산마감 */}
+          {activeStep === '정산마감' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {(() => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
