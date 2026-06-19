@@ -20,7 +20,6 @@ export const OrderDetail: React.FC = () => {
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const isEditing = true;
   const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
-  const [supplierSubTab, setSupplierSubTab] = useState<'tax' | 'cert' | 'pay'>('tax');
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
@@ -2173,75 +2172,67 @@ export const OrderDetail: React.FC = () => {
                   style={{ padding: '5px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', background: isEditing ? '#fff' : '#f8fafc' }} 
                 />
               </div>
-              {/* 6. 공급사 관리 서브메뉴 (세금계산서/구매확인서/결제) */}
-              <div style={{ borderTop: '2px dashed #cbd5e1', paddingTop: '20px', marginTop: '20px' }}>
-                {/* Sub Tab Buttons */}
-                <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSupplierSubTab('tax')}
-                    style={{
-                      padding: '8px 16px',
-                      background: supplierSubTab === 'tax' ? '#1e3a8a' : '#fff',
-                      color: supplierSubTab === 'tax' ? '#fff' : '#475569',
-                      border: '1px solid ' + (supplierSubTab === 'tax' ? '#1e3a8a' : '#cbd5e1'),
-                      borderRadius: '6px',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    📄 1. 세금계산서 발행
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSupplierSubTab('cert')}
-                    style={{
-                      padding: '8px 16px',
-                      background: supplierSubTab === 'cert' ? '#1e3a8a' : '#fff',
-                      color: supplierSubTab === 'cert' ? '#fff' : '#475569',
-                      border: '1px solid ' + (supplierSubTab === 'cert' ? '#1e3a8a' : '#cbd5e1'),
-                      borderRadius: '6px',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    📑 2. 구매확인서 발행
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSupplierSubTab('pay')}
-                    style={{
-                      padding: '8px 16px',
-                      background: supplierSubTab === 'pay' ? '#1e3a8a' : '#fff',
-                      color: supplierSubTab === 'pay' ? '#fff' : '#475569',
-                      border: '1px solid ' + (supplierSubTab === 'pay' ? '#1e3a8a' : '#cbd5e1'),
-                      borderRadius: '6px',
-                      fontSize: '12.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    💳 3. 결제 관리
-                  </button>
+              {/* 공급사 관리 세부 업무 순서대로 나열 */}
+              <div style={{ borderTop: '2px solid #cbd5e1', paddingTop: '20px', marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                
+                {/* 2) 도착보고 작성 */}
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚚 2) 도착보고 작성 및 쉬핑마크 (기본정보입력 + 쉬핑마크 등록)</h4>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                    도착보고 상세내역(패킹 및 화물정보)을 작성하고 인쇄/PDF 저장 또는 이메일 발송이 가능합니다.
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {allOrderSuppliers.map(supplierName => {
+                      const items = groupedSupplierItems[supplierName] || [];
+                      return (
+                        <div key={supplierName} style={{ display: 'flex', gap: '6px', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>{supplierName} :</span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveArrivalReport({ supplierName, items })}
+                            style={{ padding: '4px 8px', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            🚚 도착보고 작성 / 수정 (인쇄/PDF, 이메일)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePrintShippingMark(supplierName)}
+                            style={{ padding: '4px 8px', background: '#ec4899', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 700, fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            🏷️ 쉬핑마크 등록/출력
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Sub Tab 1: 세금계산서 발행 */}
-                {supplierSubTab === 'tax' && (
+                {/* 3) COA 및 시험성적서 */}
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 3) COA 및 시험성적서 첨부 파일 관리</h4>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                    수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    {renderFileField('COA 유첨', 'coaFiles', 'coa-file-input')}
+                    {renderFileField('시험성적서 유첨', 'testReportFiles', 'test-report-file-input')}
+                    {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                  </div>
+                </div>
+
+                {/* 4) 세금계산서 발행 */}
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 발행 정보 등록</h4>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다.</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 업체별 세금계산서 발행일과 국세청 승인(발급)번호를 입력합니다.</div>
                     {allOrderSuppliers.length === 0 ? (
-                      <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
+                      <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
                     ) : (
                       allOrderSuppliers.map(supplier => {
                         const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
                         return (
                           <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a' }}>{supplier}</span>
+                            <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>발행일자</span>
@@ -2258,14 +2249,14 @@ export const OrderDetail: React.FC = () => {
                                       }
                                     }));
                                   }}
-                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
                                 />
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>세금계산서 발급번호</span>
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>세금계산서 승인번호</span>
                                 <input
                                   type="text"
-                                  placeholder="국세청 승인번호 입력"
+                                  placeholder="국세청 승인번호(발급번호) 입력"
                                   value={details.invoiceNo}
                                   onChange={e => {
                                     const val = e.target.value;
@@ -2277,7 +2268,7 @@ export const OrderDetail: React.FC = () => {
                                       }
                                     }));
                                   }}
-                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
                                 />
                               </div>
                             </div>
@@ -2286,19 +2277,19 @@ export const OrderDetail: React.FC = () => {
                       })
                     )}
                   </div>
-                )}
+                </div>
 
-                {/* Sub Tab 2: 구매확인서 발행 */}
-                {supplierSubTab === 'cert' && (
+                {/* 5) 구매확인서 발행 */}
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📑 5) 영세율 공급사 구매확인서 발행/유첨</h4>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>세율이 "영세"로 지정된 공급업체에 대해서 외화 획득을 위한 구매확인서 발급 파일을 업로드하고 관리합니다.</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>영세율 세금계산서 발행업체만 표시됩니다. 마우스 드래그로 구매확인서 PDF 등을 첨부할 수 있습니다.</div>
                     {(() => {
                       const zeroTaxSuppliers = allOrderSuppliers.filter(supplier => basicForm.supplierTaxTypes[supplier] === '영세');
                       if (zeroTaxSuppliers.length === 0) {
                         return (
-                          <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '13px' }}>
-                            영세율로 설정된 공급업체가 없습니다. <br />
-                            <span style={{ fontSize: '11.5px', color: '#64748b', marginTop: '6px', display: 'block' }}>(위 "공급업체별 발주서(PO) 인쇄 및 다운로드"에서 공급사별 세율 구분을 "영세"로 변경 후 저장해 주세요)</span>
+                          <div style={{ padding: '20px', textAlign: 'center', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8', fontSize: '12.5px' }}>
+                            영세율로 설정된 공급업체가 없습니다. (공급업체별 세율 구분을 "영세"로 변경하면 활성화됩니다)
                           </div>
                         );
                       }
@@ -2308,10 +2299,8 @@ export const OrderDetail: React.FC = () => {
                         const isUploadingThis = uploadingCertSupplier === supplier;
 
                         return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <span style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a' }}>{supplier}</span>
-                            
-                            {/* Drag and Drop Zone */}
+                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier} (영세율 거래처)</span>
                             <div 
                               onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; }}
                               onDragLeave={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; }}
@@ -2323,24 +2312,15 @@ export const OrderDetail: React.FC = () => {
                                   handleSupplierCertUpload(files[0], supplier);
                                 }
                               }}
-                              style={{
-                                border: '2px dashed #cbd5e1',
-                                borderRadius: '6px',
-                                background: '#fff',
-                                padding: '16px',
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s',
-                                position: 'relative'
-                              }}
+                              style={{ border: '2px dashed #cbd5e1', borderRadius: '6px', background: '#fff', padding: '12px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.15s' }}
                               onClick={() => {
-                                const fileInput = document.getElementById(`cert-uploader-${supplier}`);
+                                const fileInput = document.getElementById(`cert-uploader-direct-${supplier}`);
                                 fileInput?.click();
                               }}
                             >
                               <input 
                                 type="file" 
-                                id={`cert-uploader-${supplier}`}
+                                id={`cert-uploader-direct-${supplier}`}
                                 style={{ display: 'none' }}
                                 onChange={(e) => {
                                   const files = e.target.files;
@@ -2349,17 +2329,15 @@ export const OrderDetail: React.FC = () => {
                                   }
                                 }}
                               />
-                              <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>
-                                {isUploadingThis ? '⏳ 업로드 중...' : '📂 여기에 파일을 드래그하여 놓거나 클릭하여 구매확인서 등록'}
+                              <span style={{ fontSize: '11.5px', color: '#475569', fontWeight: 600 }}>
+                                {isUploadingThis ? '⏳ 업로드 중...' : '📂 여기에 파일을 드래그하여 놓거나 클릭하여 구매확인서 PDF 첨부'}
                               </span>
                             </div>
-
-                            {/* Attached files list */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                               {fileList.length > 0 ? (
                                 fileList.map((file, idx) => (
                                   <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                    <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 600 }}>
+                                    <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '11.5px', fontWeight: 600 }}>
                                       📄 {file.name}
                                     </a>
                                     <button
@@ -2380,23 +2358,22 @@ export const OrderDetail: React.FC = () => {
                       });
                     })()}
                   </div>
-                )}
+                </div>
 
-                {/* Sub Tab 3: 결제 관리 */}
-                {supplierSubTab === 'pay' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>각 공급업체별 1차~4차 결제일 및 결제금액(입금액)을 분할하여 지정할 수 있으며, 지급액 대비 미수금이 자동 계산됩니다.</div>
+                {/* 6) 대금결제관리 */}
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💳 6) 대금결제관리 (공급업체 외화/원화 대금 지급)</h4>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별 원화/외화 수주 금액 대비 지급(송금) 완료 내역 및 미수금을 분할 입금 형식으로 지정합니다.</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {allOrderSuppliers.length === 0 ? (
-                       <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>공급업체가 없습니다.</div>
+                      <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
                     ) : (
                       allOrderSuppliers.map(supplier => {
                         const list = basicForm.supplierPaymentInstallments[supplier] || [];
                         const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
                         const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
-
-                        // Calculate grand total from tax invoice items for this supplier
                         const items = groupedSupplierItems[supplier] || [];
-                        const taxType = basicForm.supplierTaxTypes[supplier] || '일반';
+                        const taxType = basicForm.supplierTaxTypes[supplier] || '과세';
                         const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
                           const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
                           return sum + price * (it.qty || 0);
@@ -2409,12 +2386,9 @@ export const OrderDetail: React.FC = () => {
                         const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
                         const usdGrand = usdTotal + usdVat;
                         const krwGrand = krwTotal + krwVat;
-
                         const isKrw = krwGrand > 0 || (usdGrand === 0 && krwGrand === 0);
                         const grandTotal = isKrw ? krwGrand : usdGrand;
                         const currencySymbol = isKrw ? '₩' : '$';
-                        const currencyText = isKrw ? 'KRW' : 'USD';
-
                         const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
                         const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
                         const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
@@ -2448,143 +2422,90 @@ export const OrderDetail: React.FC = () => {
                           });
                         };
 
-                        const addInstallment = () => {
-                          const newList = [...installments, { date: '', amount: 0 }];
-                          setBasicForm(prev => ({
-                            ...prev,
-                            supplierPaymentInstallments: {
-                              ...prev.supplierPaymentInstallments,
-                              [supplier]: newList
-                            }
-                          }));
-                        };
-
-                        const removeInstallment = (idx: number) => {
-                          const newList = installments.filter((_, i) => i !== idx);
-                          const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
-                          
-                          const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-                          const dates = finalList.map(inst => inst.date).filter(d => d);
-                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
-
-                          setBasicForm(prev => {
-                            const updatedPayments = { ...prev.supplierPayments };
-                            if (newIsCompleted) {
-                              updatedPayments[supplier] = { status: '입금완료', date: lastDate };
-                            } else {
-                              updatedPayments[supplier] = { status: '미수금 발생', date: '' };
-                            }
-                            return {
-                              ...prev,
-                              supplierPaymentInstallments: {
-                                ...prev.supplierPaymentInstallments,
-                                [supplier]: finalList
-                              },
-                              supplierPayments: updatedPayments
-                            };
-                          });
-                        };
-
                         return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e3a8a' }}>{supplier}</span>
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a' }}>{supplier}</span>
                                 <button
                                   type="button"
-                                  onClick={addInstallment}
-                                  style={{
-                                    background: '#fff',
-                                    border: '1px solid #cbd5e1',
-                                    borderRadius: '6px',
-                                    padding: '3px 8px',
-                                    fontSize: '11px',
-                                    fontWeight: 700,
-                                    color: '#0d9488',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '2px'
+                                  onClick={() => {
+                                    const newList = [...installments, { date: '', amount: 0 }];
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierPaymentInstallments: {
+                                        ...prev.supplierPaymentInstallments,
+                                        [supplier]: newList
+                                      }
+                                    }));
                                   }}
+                                  style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#0d9488', cursor: 'pointer' }}
                                 >
-                                  ＋ 입금 추가
+                                  ＋ 지급 내역 추가
                                 </button>
                               </div>
-                              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
-                                  지급 총액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
-                                </span>
-                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
-                                  입금 합계: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
-                                </span>
-                                <span style={{ fontSize: '12.5px', color: '#475569' }}>
-                                  미수금: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })} {currencyText}</strong>
-                                </span>
-                                <span style={{
-                                  fontSize: '11.5px',
-                                  fontWeight: 700,
-                                  padding: '4px 10px',
-                                  borderRadius: '12px',
-                                  background: isCompleted ? '#dcfce7' : '#fee2e2',
-                                  color: isCompleted ? '#15803d' : '#b91c1c',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}>
-                                  {isCompleted ? '✓ 입금완료' : '입금대기'}
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
+                                <span>총 발주액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span>송금액: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span style={{ padding: '2px 8px', borderRadius: '10px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '11px' }}>
+                                  {isCompleted ? '송금완료' : '지급대기'}
                                 </span>
                               </div>
                             </div>
                             {matchingSupplier && (
-                              <div style={{ display: 'flex', gap: '20px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', color: '#1e40af', marginBottom: '8px', flexWrap: 'wrap' }}>
-                                <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '등록정보 없음'}</span>
-                                <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '등록정보 없음'}</span>
+                              <div style={{ display: 'flex', gap: '15px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '6px 10px', borderRadius: '4px', fontSize: '11.5px', color: '#1e40af' }}>
+                                <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '-'}</span>
+                                <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '-'}</span>
                               </div>
                             )}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
                               {installments.map((inst, idx) => (
-                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', position: 'relative' }}>
+                                <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>{idx + 1}차 입금</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563' }}>{idx + 1}차 지급</span>
                                     {installments.length > 1 && (
                                       <button
                                         type="button"
-                                        onClick={() => removeInstallment(idx)}
-                                        style={{
-                                          background: 'transparent',
-                                          border: 'none',
-                                          color: '#ef4444',
-                                          cursor: 'pointer',
-                                          fontSize: '11px',
-                                          padding: '0 4px',
-                                          fontWeight: 700
+                                        onClick={() => {
+                                          const newList = installments.filter((_, i) => i !== idx);
+                                          const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
+                                          const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                                          const dates = finalList.map(inst => inst.date).filter(d => d);
+                                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                                          setBasicForm(prev => {
+                                            const updatedPayments = { ...prev.supplierPayments };
+                                            updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
+                                            return {
+                                              ...prev,
+                                              supplierPaymentInstallments: {
+                                                ...prev.supplierPaymentInstallments,
+                                                [supplier]: finalList
+                                              },
+                                              supplierPayments: updatedPayments
+                                            };
+                                          });
                                         }}
-                                        title="삭제"
+                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
                                       >
                                         ✕
                                       </button>
                                     )}
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>입금일자</span>
-                                    <input
-                                      type="date"
-                                      value={inst.date}
-                                      onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
-                                      style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
-                                    />
-                                  </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>입금금액</span>
-                                    <input
-                                      type="number"
-                                      placeholder="0"
-                                      value={inst.amount || ''}
-                                      onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
-                                      style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
-                                    />
-                                  </div>
+                                  <input
+                                    type="date"
+                                    value={inst.date}
+                                    onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
+                                    style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="지급액"
+                                    value={inst.amount || ''}
+                                    onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                    style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                  />
                                 </div>
                               ))}
                             </div>
@@ -2593,7 +2514,8 @@ export const OrderDetail: React.FC = () => {
                       })
                     )}
                   </div>
-                )}
+                </div>
+
               </div>
             </div>
           )}
