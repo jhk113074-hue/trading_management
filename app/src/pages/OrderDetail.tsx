@@ -2573,20 +2573,77 @@ export const OrderDetail: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>지정 포워더(Forwarder)</span>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input type="text" value={basicForm.forwarderConfirmed} onChange={e => setBasicForm(p => ({ ...p, forwarderConfirmed: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), flex: 1 }} placeholder="포워딩업체-운송비" />
-                        <button type="button" onClick={() => { setForwarderSearchQuery(''); setIsForwarderSearchOpen(true); }} disabled={!isEditing} style={{ padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 'bold' }}>🔍</button>
+                    {/* 포워딩업체 목록 및 비용 */}
+                    <div style={{ gridColumn: 'span 3', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '14px', background: '#f5f3ff', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</span>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={addForwarderRow}
+                          style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                        >
+                          + 운송사 추가
+                        </button>
                       </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 견적비용 (KRW ₩)</span>
+                        <span></span>
+                      </div>
+                      {forwardersList.length === 0 ? (
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (기본 1개 제공)</div>
+                      ) : (
+                        forwardersList.map((fw, idx) => (
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              value={fw.name || ''}
+                              disabled={!isEditing}
+                              onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
+                              placeholder="포워딩사명 입력"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#fff' }}
+                            />
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              disabled={!isEditing}
+                              value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US')}
+                              onChange={e => {
+                                const raw = e.target.value.replace(/,/g, '');
+                                const num = parseFloat(raw) || 0;
+                                handleForwarderChange(idx, 'amountUsd', num);
+                              }}
+                              placeholder="0.00"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
+                            />
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              disabled={!isEditing}
+                              value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                              onChange={e => {
+                                const raw = e.target.value.replace(/,/g, '');
+                                const num = parseInt(raw, 10) || 0;
+                                handleForwarderChange(idx, 'amountKrw', num);
+                              }}
+                              placeholder="0"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
+                            />
+                            <button
+                              type="button"
+                              disabled={!isEditing}
+                              onClick={() => removeForwarderRow(idx)}
+                              style={{ padding: '6px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700 }}
+                            >✕</button>
+                          </div>
+                        ))
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 견적운임 (KRW)</span>
-                      <input type="number" value={basicForm.forwarderQuotationAmount || ''} onChange={e => setBasicForm(p => ({ ...p, forwarderQuotationAmount: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 견적 운임" />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 최종운임 (KRW)</span>
-                      <input type="number" value={basicForm.finalFreight || ''} onChange={e => setBasicForm(p => ({ ...p, finalFreight: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 최종 운임" />
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 최종운임 (KRW 실비용)</span>
+                      <input type="number" value={basicForm.finalFreight || ''} onChange={e => setBasicForm(p => ({ ...p, finalFreight: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 최종 실 운임 입력" />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
