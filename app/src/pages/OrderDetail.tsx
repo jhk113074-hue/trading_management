@@ -2063,18 +2063,18 @@ export const OrderDetail: React.FC = () => {
 
                         {/* 수량 / 단위 */}
                         <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                             <input
                               type="number"
                               value={item.qty || ''}
                               onChange={e => handleItemChange(idx, 'qty', e.target.value)}
                               placeholder="수량"
-                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             />
                             <select
                               value={item.unit || 'kg'}
                               onChange={e => handleItemChange(idx, 'unit', e.target.value)}
-                              style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '60px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             >
                               <option value="kg">kg</option>
                               <option value="MT">MT</option>
@@ -2087,11 +2087,11 @@ export const OrderDetail: React.FC = () => {
 
                         {/* 통화 / 단가 */}
                         <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                             <select
                               value={item.currency || 'USD'}
                               onChange={e => handleItemChange(idx, 'currency', e.target.value)}
-                              style={{ width: '100%', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             >
                               <option value="USD">USD ($)</option>
                               <option value="KRW">KRW (₩)</option>
@@ -2102,7 +2102,7 @@ export const OrderDetail: React.FC = () => {
                               value={item.unitPrice || ''}
                               onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
                               placeholder="단가"
-                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             />
                           </div>
                         </td>
