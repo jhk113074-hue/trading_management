@@ -21,7 +21,7 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
@@ -567,7 +567,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -663,7 +663,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -687,7 +687,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles',
+    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -1826,64 +1826,14 @@ export const OrderDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: 수주품목 명세요약 또는 운송비/컨테이너 정보 및 비용 */}
+        {/* Right: PO/LC/Sales Contract 파일 첨부 관리 */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <>
-            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📋 수주품목 명세요약</div>
-            <div style={{ overflowY: 'auto', maxHeight: '220px', flex: 1 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>품목명</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '80px' }}>수량</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px' }}>단가</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right', width: '110px' }}>금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items && order.items.length > 0 ? (
-                    <>
-                      {order.items.map((it, idx) => {
-                        const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                        const totalAmt = price * (it.qty || 0);
-                        return (
-                          <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '6px 8px', fontWeight: 600, color: '#334155' }} title={it.name}>{it.name}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{it.currency === 'KRW' ? '₩' : '$'}{price?.toLocaleString()}</td>
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{it.currency === 'KRW' ? '₩' : '$'}{totalAmt?.toLocaleString()}</td>
-                          </tr>
-                        );
-                      })}
-                      {basicForm.forwarderQuotationAmount > 0 && (
-                        <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                          <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                        </tr>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {basicForm.forwarderQuotationAmount > 0 ? (
-                        <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-                          <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0284c7' }}>🚚 운송비 (컨테이너비)</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>1 식</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                          <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, color: '#0284c7' }}>₩{basicForm.forwarderQuotationAmount.toLocaleString()}</td>
-                        </tr>
-                      ) : (
-                        <tr>
-                          <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 수주 품목이 없습니다.</td>
-                        </tr>
-                      )}
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
+          <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📂 거래 서류 첨부 (PO / L/C / Sales Contract)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, maxHeight: '250px' }}>
+            {renderFileField("PO (Purchase Order) 파일 첨부", "poFiles", "po-file-uploader")}
+            {renderFileField("L/C (Letter of Credit) 파일 첨부", "lcFiles", "lc-file-uploader")}
+            {renderFileField("Sales Contract 파일 첨부", "scFiles", "sc-file-uploader")}
+          </div>
         </div>
       </div>
 
@@ -2618,37 +2568,31 @@ export const OrderDetail: React.FC = () => {
                             </div>
 
                             {/* 운송비(발주가) - USD */}
-                            {/* 운송비(발주가) - USD */}
-                            {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'budgetAmountUsd' ? (
-                              <input
-                                type="number"
-                                step="any"
-                                disabled={!isEditing}
-                                value={editingForwarderInput.value}
-                                onChange={e => {
-                                  const valStr = e.target.value;
-                                  setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: valStr });
-                                  const num = parseFloat(valStr) || 0;
-                                  handleForwarderChange(idx, 'budgetAmountUsd', num);
-                                }}
-                                onBlur={() => setEditingForwarderInput(null)}
-                                placeholder="0.00"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
-                                autoFocus
-                              />
-                            ) : (
-                              <input
-                                type="text"
-                                disabled={!isEditing}
-                                value={(fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                onFocus={() => {
-                                  const rawVal = (fw.budgetAmountUsd ?? 0) === 0 ? '' : String(fw.budgetAmountUsd);
-                                  setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: rawVal });
-                                }}
-                                placeholder="0.00"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
-                              />
-                            )}
+                            <input
+                              type="text"
+                              disabled={!isEditing}
+                              value={
+                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'budgetAmountUsd'
+                                  ? editingForwarderInput.value
+                                  : ((fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
+                              }
+                              onChange={e => {
+                                const valStr = e.target.value;
+                                const filtered = valStr.replace(/[^0-9.]/g, '');
+                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: filtered });
+                                const num = parseFloat(filtered) || 0;
+                                handleForwarderChange(idx, 'budgetAmountUsd', num);
+                              }}
+                              onFocus={() => {
+                                const rawVal = (fw.budgetAmountUsd ?? 0) === 0 ? '' : String(fw.budgetAmountUsd);
+                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: rawVal });
+                              }}
+                              onBlur={() => {
+                                setEditingForwarderInput(null);
+                              }}
+                              placeholder="0.00"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                            />
 
                             {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
                             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
@@ -2661,71 +2605,61 @@ export const OrderDetail: React.FC = () => {
                                 <option value="USD">USD</option>
                                 <option value="KRW">KRW</option>
                               </select>
-                              {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountUsd' ? (
-                                <input
-                                  type="number"
-                                  step="any"
-                                  disabled={!isEditing}
-                                  value={editingForwarderInput.value}
-                                  onChange={e => {
-                                    const valStr = e.target.value;
-                                    setEditingForwarderInput({ index: idx, field: 'amountUsd', value: valStr });
-                                    const num = parseFloat(valStr) || 0;
-                                    handleForwarderChange(idx, 'amountUsd', num);
-                                  }}
-                                  onBlur={() => setEditingForwarderInput(null)}
-                                  placeholder="0"
-                                  style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
-                                  autoFocus
-                                />
-                              ) : (
-                                <input
-                                  type="text"
-                                  disabled={!isEditing}
-                                  value={fw.freightCurrency === 'KRW'
-                                    ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
-                                    : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                                  }
-                                  onFocus={() => {
-                                    const rawVal = (fw.amountUsd ?? 0) === 0 ? '' : String(fw.amountUsd);
-                                    setEditingForwarderInput({ index: idx, field: 'amountUsd', value: rawVal });
-                                  }}
-                                  placeholder="0"
-                                  style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
-                                />
-                              )}
-                            </div>
-
-                            {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountKrw' ? (
-                              <input
-                                type="number"
-                                step="1"
-                                disabled={!isEditing}
-                                value={editingForwarderInput.value}
-                                onChange={e => {
-                                  const valStr = e.target.value;
-                                  setEditingForwarderInput({ index: idx, field: 'amountKrw', value: valStr });
-                                  const num = parseInt(valStr, 10) || 0;
-                                  handleForwarderChange(idx, 'amountKrw', num);
-                                }}
-                                onBlur={() => setEditingForwarderInput(null)}
-                                placeholder="0"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
-                                autoFocus
-                              />
-                            ) : (
                               <input
                                 type="text"
                                 disabled={!isEditing}
-                                value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                                value={
+                                  editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountUsd'
+                                    ? editingForwarderInput.value
+                                    : (fw.freightCurrency === 'KRW'
+                                      ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
+                                      : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
+                                    )
+                                }
+                                onChange={e => {
+                                  const valStr = e.target.value;
+                                  const filtered = valStr.replace(/[^0-9.]/g, '');
+                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: filtered });
+                                  const num = parseFloat(filtered) || 0;
+                                  handleForwarderChange(idx, 'amountUsd', num);
+                                }}
                                 onFocus={() => {
-                                  const rawVal = (fw.amountKrw ?? 0) === 0 ? '' : String(fw.amountKrw);
-                                  setEditingForwarderInput({ index: idx, field: 'amountKrw', value: rawVal });
+                                  const rawVal = (fw.amountUsd ?? 0) === 0 ? '' : String(fw.amountUsd);
+                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: rawVal });
+                                }}
+                                onBlur={() => {
+                                  setEditingForwarderInput(null);
                                 }}
                                 placeholder="0"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
                               />
-                            )}
+                            </div>
+
+                            <input
+                              type="text"
+                              disabled={!isEditing}
+                              value={
+                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountKrw'
+                                  ? editingForwarderInput.value
+                                  : ((fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR'))
+                              }
+                              onChange={e => {
+                                const valStr = e.target.value;
+                                const filtered = valStr.replace(/[^0-9]/g, '');
+                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: filtered });
+                                const num = parseInt(filtered, 10) || 0;
+                                handleForwarderChange(idx, 'amountKrw', num);
+                              }}
+                              onFocus={() => {
+                                const rawVal = (fw.amountKrw ?? 0) === 0 ? '' : String(fw.amountKrw);
+                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: rawVal });
+                              }}
+                              onBlur={() => {
+                                setEditingForwarderInput(null);
+                              }}
+                              placeholder="0"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                            />
                             <button
                               type="button"
                               disabled={!isEditing}
