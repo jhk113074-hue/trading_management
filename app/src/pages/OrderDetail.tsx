@@ -1209,7 +1209,10 @@ export const OrderDetail: React.FC = () => {
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
     const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
-    const email = prompt("발송할 공급업체 이메일 주소를 입력해주세요:", "");
+    const targetSupplier = suppliersList.find(s => s.name === supplierName);
+    const defaultEmail = targetSupplier?.email || '';
+
+    const email = prompt("발송할 공급업체 이메일 주소를 확인해주세요 (기본값: 거래처 등록 이메일):", defaultEmail);
     if (email === null) return; // User cancelled
 
     const subject = encodeURIComponent(`[발주서] PO No: ${poNum} (${order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'})`);
@@ -1235,7 +1238,13 @@ export const OrderDetail: React.FC = () => {
       `${order.issuingCompany === 'YS' ? '영성에이씨씨' : '(주)와이에스에이씨씨'} 대표이사 김주한`
     );
 
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    alert("보안 정책상 브라우저에서 이메일에 파일을 자동으로 첨부할 수 없습니다.\n\n확인을 누르시면 발주서 인쇄 창과 이메일 작성 창이 함께 열립니다.\n발주서를 'PDF로 저장' 하신 후 이메일에 첨부해 주시기 바랍니다.");
+
+    setTimeout(() => {
+      window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    }, 500);
+
+    handlePrintSupplierPo(supplierName, items);
   };
 
   // Shipping Mark Print handler
