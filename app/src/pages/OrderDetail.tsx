@@ -2150,45 +2150,23 @@ export const OrderDetail: React.FC = () => {
                     + 운송사 추가
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭하여 선택)</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
                   <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비(발주가) (USD $)</span>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(해상운임) (USD/KRW)</span>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(국내비용) (KRW ₩)</span>
                   <span></span>
                 </div>
                 {forwardersList.length === 0 ? (
                   <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
                 ) : (
                   forwardersList.map((fw, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                      
-                      {/* 포워더명 SubWindow 선택 */}
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          readOnly
-                          placeholder="포워딩사 클릭 선택..."
-                          value={fw.name || ''}
-                          onClick={() => {
-                            setForwarderSearchIndex(idx);
-                            setIsForwarderSearchOpen(true);
-                          }}
-                          style={{ flex: 1, padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#f8fafc', cursor: 'pointer', outline: 'none' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setForwarderSearchIndex(idx);
-                            setIsForwarderSearchOpen(true);
-                          }}
-                          style={{ padding: '8px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
-                        >
-                          🔍
-                        </button>
-                      </div>
-
-                      {/* 운송비(발주가) - USD */}
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '8px', marginBottom: '6px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        placeholder="포워딩사명 입력"
+                        value={fw.name || ''}
+                        onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
+                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
+                      />
                       <input
                         type="text"
                         inputMode="decimal"
@@ -2199,47 +2177,6 @@ export const OrderDetail: React.FC = () => {
                           handleForwarderChange(idx, 'budgetAmountUsd', num);
                         }}
                         placeholder="0.00"
-                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
-                      />
-
-                      {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
-                      <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                        <select
-                          value={fw.freightCurrency || 'USD'}
-                          onChange={e => handleForwarderChange(idx, 'freightCurrency', e.target.value)}
-                          style={{ padding: '8px 4px', border: '1px solid #ddd6fe', borderRadius: '6px 0 0 6px', fontSize: '11px', height: '33px', background: '#fff', borderRight: 'none', outline: 'none' }}
-                        >
-                          <option value="USD">USD</option>
-                          <option value="KRW">KRW</option>
-                        </select>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={fw.freightCurrency === 'KRW'
-                            ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
-                            : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                          }
-                          onChange={e => {
-                            const raw = e.target.value.replace(/,/g, '');
-                            const num = parseFloat(raw) || 0;
-                            handleForwarderChange(idx, 'amountUsd', num);
-                          }}
-                          placeholder="0"
-                          style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '0 6px 6px 0', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '33px', outline: 'none' }}
-                        />
-                      </div>
-
-                      {/* 실행(국내비용) - KRW */}
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
-                        onChange={e => {
-                          const raw = e.target.value.replace(/,/g, '');
-                          const num = parseInt(raw, 10) || 0;
-                          handleForwarderChange(idx, 'amountKrw', num);
-                        }}
-                        placeholder="0"
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
                       />
                       <button
@@ -2708,7 +2645,6 @@ export const OrderDetail: React.FC = () => {
                               <input
                                 type="text"
                                 inputMode="decimal"
-                                disabled={!isEditing}
                                 value={fw.freightCurrency === 'KRW'
                                   ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
                                   : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
