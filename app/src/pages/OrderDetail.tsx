@@ -2492,7 +2492,9 @@ export const OrderDetail: React.FC = () => {
                                     <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>총액</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>금액</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>부가세</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '110px' }}>합계</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -2566,8 +2568,28 @@ export const OrderDetail: React.FC = () => {
                                           </td>
                                           {/* 실매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '3px' }}>
-                                              <span>{purchaseCurrency === 'KRW' ? '₩' : '$'}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                              <select
+                                                value={purchaseCurrency}
+                                                disabled={!isEditing}
+                                                onChange={(e) => {
+                                                  const val = e.target.value as 'KRW' | 'USD';
+                                                  setOrder(prev => {
+                                                    if (!prev) return prev;
+                                                    const updatedItems = prev.items.map(item => {
+                                                      if (item.itemId === it.itemId) {
+                                                        return { ...item, purchaseUnitCurrency: val };
+                                                      }
+                                                      return item;
+                                                    });
+                                                    return { ...prev, items: updatedItems };
+                                                  });
+                                                }}
+                                                style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
+                                              >
+                                                <option value="KRW">₩</option>
+                                                <option value="USD">$</option>
+                                              </select>
                                               <input
                                                 type="text"
                                                 value={(() => {
@@ -2592,7 +2614,7 @@ export const OrderDetail: React.FC = () => {
                                                   });
                                                 }}
                                                 style={{
-                                                  width: '90px',
+                                                  width: '80px',
                                                   padding: '3px 6px',
                                                   border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
@@ -2602,12 +2624,49 @@ export const OrderDetail: React.FC = () => {
                                               />
                                             </div>
                                           </td>
-                                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700 }}>
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>
                                             {purchaseCurrency === 'KRW' ? '₩' : '$'}{totalPurchaseAmount.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                          </td>
+                                          <td style={{ padding: '6px', textAlign: 'right', color: '#64748b' }}>
+                                            {(() => {
+                                              const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                                              const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                            })()}
+                                          </td>
+                                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>
+                                            {(() => {
+                                              const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                                              const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
+                                              const grandAmt = totalPurchaseAmount + vatAmt;
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                            })()}
                                           </td>
                                         </tr>
                                       );
                                     })
+                                  )}
+                                  {/* SUBTOTAL ROW */}
+                                  {items.length > 0 && (
+                                    <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
+                                      <td colSpan={6} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
+                                      <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right' }}>
+                                        {(() => {
+                                          const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                                          const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                                          const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                                          const usdGrand = usdTotal + usdVat;
+                                          const krwGrand = krwTotal + krwVat;
+                                          
+                                          const parts = [];
+                                          if (usdGrand > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                          if (krwGrand > 0) parts.push(`₩${krwGrand.toLocaleString()}`);
+                                          return <span style={{ color: '#dc2626' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                        })()}
+                                      </td>
+                                    </tr>
                                   )}
                                 </tbody>
                               </table>
