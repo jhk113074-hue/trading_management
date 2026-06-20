@@ -10,6 +10,7 @@ import type { Product } from '../types/product';
 import { ProductModal } from '../components/ProductModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
 import { ArrivalReportModal } from '../components/ArrivalReportModal';
+import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
 
 const steps = ["PO접수", "소싱발주", "수출관리", "정산마감"] as const;
 
@@ -26,8 +27,6 @@ export const OrderDetail: React.FC = () => {
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
   const [activeSourcingTab, setActiveSourcingTab] = useState<'소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제'>('소싱발주');
-  const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
-  const [forwarderSearchQuery, setForwarderSearchQuery] = useState('');
   
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
@@ -35,6 +34,10 @@ export const OrderDetail: React.FC = () => {
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
+
+  // Forwarder subwindow state
+  const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
+  const [forwarderSearchIndex, setForwarderSearchIndex] = useState<number | null>(null);
   
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
@@ -523,7 +526,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   const addForwarderRow = () => {
-    setForwardersList(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }]);
+    setForwardersList(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }]);
   };
 
   const removeForwarderRow = (index: number) => {
@@ -2147,42 +2150,86 @@ export const OrderDetail: React.FC = () => {
                     + 운송사 추가
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
-                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭하여 선택)</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비(발주가) (USD $)</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(해상운임) (USD/KRW)</span>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(국내비용) (KRW ₩)</span>
                   <span></span>
                 </div>
                 {forwardersList.length === 0 ? (
                   <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
                 ) : (
                   forwardersList.map((fw, idx) => (
-                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                      <select
-                        value={fw.name || ''}
-                        onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
-                        style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
-                      >
-                        <option value="">-- 포워더 선택 --</option>
-                        {suppliersList.filter(s => s.category === '포워딩사').map(s => (
-                          <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
-                        {fw.name && !suppliersList.some(s => s.name === fw.name) && (
-                          <option value={fw.name}>{fw.name}</option>
-                        )}
-                      </select>
+                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                      
+                      {/* 포워더명 SubWindow 선택 */}
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          placeholder="포워딩사 클릭 선택..."
+                          value={fw.name || ''}
+                          onClick={() => {
+                            setForwarderSearchIndex(idx);
+                            setIsForwarderSearchOpen(true);
+                          }}
+                          style={{ flex: 1, padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#f8fafc', cursor: 'pointer', outline: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setForwarderSearchIndex(idx);
+                            setIsForwarderSearchOpen(true);
+                          }}
+                          style={{ padding: '8px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          🔍
+                        </button>
+                      </div>
+
+                      {/* 운송비(발주가) - USD */}
                       <input
                         type="text"
                         inputMode="decimal"
-                        value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                        value={(fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                         onChange={e => {
                           const raw = e.target.value.replace(/,/g, '');
                           const num = parseFloat(raw) || 0;
-                          handleForwarderChange(idx, 'amountUsd', num);
+                          handleForwarderChange(idx, 'budgetAmountUsd', num);
                         }}
                         placeholder="0.00"
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
                       />
+
+                      {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
+                      <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                        <select
+                          value={fw.freightCurrency || 'USD'}
+                          onChange={e => handleForwarderChange(idx, 'freightCurrency', e.target.value)}
+                          style={{ padding: '8px 4px', border: '1px solid #ddd6fe', borderRadius: '6px 0 0 6px', fontSize: '11px', height: '33px', background: '#fff', borderRight: 'none', outline: 'none' }}
+                        >
+                          <option value="USD">USD</option>
+                          <option value="KRW">KRW</option>
+                        </select>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={fw.freightCurrency === 'KRW'
+                            ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
+                            : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
+                          }
+                          onChange={e => {
+                            const raw = e.target.value.replace(/,/g, '');
+                            const num = parseFloat(raw) || 0;
+                            handleForwarderChange(idx, 'amountUsd', num);
+                          }}
+                          placeholder="0"
+                          style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '0 6px 6px 0', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '33px', outline: 'none' }}
+                        />
+                      </div>
+
+                      {/* 실행(국내비용) - KRW */}
                       <input
                         type="text"
                         inputMode="numeric"
@@ -2592,33 +2639,62 @@ export const OrderDetail: React.FC = () => {
                           + 운송사 추가
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 견적비용 (KRW ₩)</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭하여 선택)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비(발주가) (USD $)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(해상운임) (USD/KRW)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(국내비용) (KRW ₩)</span>
                         <span></span>
                       </div>
                       {forwardersList.length === 0 ? (
                         <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (기본 1개 제공)</div>
                       ) : (
                         forwardersList.map((fw, idx) => (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                            <select
-                              value={fw.name || ''}
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                            {/* 포워더명 SubWindow 선택 */}
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                readOnly
+                                disabled={!isEditing}
+                                placeholder="포워딩사 클릭 선택..."
+                                value={fw.name || ''}
+                                onClick={() => {
+                                  if (!isEditing) return;
+                                  setForwarderSearchIndex(idx);
+                                  setIsForwarderSearchOpen(true);
+                                }}
+                                style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#f8fafc', cursor: isEditing ? 'pointer' : 'default', outline: 'none' }}
+                              />
+                              <button
+                                type="button"
+                                disabled={!isEditing}
+                                onClick={() => {
+                                  setForwarderSearchIndex(idx);
+                                  setIsForwarderSearchOpen(true);
+                                }}
+                                style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                              >
+                                🔍
+                              </button>
+                            </div>
+
+                            {/* 운송비(발주가) - USD */}
+                            <input
+                              type="text"
+                              inputMode="decimal"
                               disabled={!isEditing}
-                              onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
-                            >
-                              <option value="">-- 포워더 선택 --</option>
-                              {suppliersList.filter(s => s.category === '포워딩사').map(s => (
-                                <option key={s.id} value={s.name}>{s.name}</option>
-                              ))}
-                              {fw.name && !suppliersList.some(s => s.name === fw.name) && (
-                                <option value={fw.name}>{fw.name}</option>
-                              )}
-                            </select>
-                            
-                            {/* 해상운임 (USD/KRW 선택 및 금액) */}
+                              value={(fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                              onChange={e => {
+                                const raw = e.target.value.replace(/,/g, '');
+                                const num = parseFloat(raw) || 0;
+                                handleForwarderChange(idx, 'budgetAmountUsd', num);
+                              }}
+                              placeholder="0.00"
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                            />
+
+                            {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
                             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                               <select
                                 value={fw.freightCurrency || 'USD'}
@@ -2635,7 +2711,7 @@ export const OrderDetail: React.FC = () => {
                                 disabled={!isEditing}
                                 value={fw.freightCurrency === 'KRW'
                                   ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
-                                  : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US'))
+                                  : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
                                 }
                                 onChange={e => {
                                   const raw = e.target.value.replace(/,/g, '');
@@ -4169,6 +4245,21 @@ export const OrderDetail: React.FC = () => {
         />
       )}
 
+      {isForwarderSearchOpen && forwarderSearchIndex !== null && (
+        <ForwarderSearchModal
+          suppliers={suppliersList}
+          onClose={() => {
+            setIsForwarderSearchOpen(false);
+            setForwarderSearchIndex(null);
+          }}
+          onSelect={(supplier) => {
+            handleForwarderChange(forwarderSearchIndex, 'name', supplier.name);
+            setIsForwarderSearchOpen(false);
+            setForwarderSearchIndex(null);
+          }}
+        />
+      )}
+
       {isProdModalOpen && (
         <ProductModal
           initialProduct={editingProd}
@@ -4399,45 +4490,7 @@ export const OrderDetail: React.FC = () => {
         />
       )}
 
-      {isForwarderSearchOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '450px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>🚢 포워더 지정업체 검색</h3>
-              <button onClick={() => setIsForwarderSearchOpen(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}>&times;</button>
-            </div>
-            <input 
-              type="text" 
-              placeholder="업체명 검색..." 
-              value={forwarderSearchQuery} 
-              onChange={e => setForwarderSearchQuery(e.target.value)} 
-              style={{ ...inputStyle(true), marginBottom: '12px' }} 
-            />
-            <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-              {suppliersList
-                .filter(s => s.category === '포워딩사' && s.name.toLowerCase().includes(forwarderSearchQuery.toLowerCase()))
-                .map(sup => (
-                  <div 
-                    key={sup.id} 
-                    onClick={() => {
-                      setBasicForm(p => ({ ...p, forwarderConfirmed: sup.name }));
-                      setIsForwarderSearchOpen(false);
-                    }}
-                    style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '13px', transition: 'background 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#eff6ff'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                  >
-                    <div style={{ fontWeight: 700, color: '#334155' }}>{sup.name}</div>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>대표: {sup.representative} | 연락처: {sup.phone}</div>
-                  </div>
-                ))}
-              {suppliersList.filter(s => s.category === '포워딩사' && s.name.toLowerCase().includes(forwarderSearchQuery.toLowerCase())).length === 0 && (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>검색 결과가 없습니다.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );

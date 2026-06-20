@@ -4,6 +4,7 @@ export interface ForwarderEntry {
   freightCurrency?: 'USD' | 'KRW';
   amountUsd?: number;
   amountKrw?: number;
+  budgetAmountUsd?: number; // 운송비(발주가) USD
   finalAmountUsd?: number;
   finalAmountKrw?: number;
   invoiceFiles?: Array<{ name: string; url: string; size: number; path: string }>;
