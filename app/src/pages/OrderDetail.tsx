@@ -1245,6 +1245,225 @@ export const OrderDetail: React.FC = () => {
     const isYS = order.issuingCompany === 'YS';
     const ciNum = basicForm.ciNumber || `CI-${order.id}`;
 
+    if (basicForm.packingList) {
+      // ── Custom Packing List Print Mode ─────────────────────────────────
+      const pl = basicForm.packingList;
+      const shipper = pl.shipper || '';
+      const applicant = pl.applicant || '';
+      const notifyParty = pl.notifyParty || '';
+      const pol = pl.pol || '';
+      const pod = pl.pod || '';
+      const vesselName = pl.vesselName || '';
+      const sailingDate = pl.sailingDate || '';
+      const deliveryTerms = pl.deliveryTerms || '';
+      const paymentTerms = pl.paymentTerms || '';
+      const remarks = pl.remarks || '';
+      const invoiceNo = pl.invoiceNo || '';
+      const invoiceDate = pl.invoiceDate || '';
+      const lcNo = pl.lcNo || '';
+      const lcDate = pl.lcDate || '';
+      const lcIssuingBank = pl.lcIssuingBank || '';
+      const containers = pl.containers || [];
+
+      // Calculate grand totals
+      let grandPkg = 0;
+      let grandNW = 0;
+      let grandGW = 0;
+      let grandCBM = 0;
+
+      containers.forEach((c: any) => {
+        (c.items || []).forEach((it: any) => {
+          grandPkg += Number(it.pkg) || 0;
+          grandNW += Number(it.netWeight) || 0;
+          grandGW += Number(it.grossWeight) || 0;
+          grandCBM += Number(it.cbm) || 0;
+        });
+      });
+
+      const printHtml = `
+        <html>
+          <head>
+            <title>PACKING LIST - ${invoiceNo}</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+              body { font-family: 'Inter', sans-serif; padding: 20px; color: #000; font-size: 10px; line-height: 1.35; }
+              .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 8px 16px; background: #be123c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; z-index: 9999; box-shadow: 0 2px 5px rgba(0,0,0,0.15); }
+              @media print {
+                .no-print { display: none !important; }
+                body { padding: 0; }
+              }
+              .header-title { text-align: center; font-size: 26px; font-weight: 800; text-transform: uppercase; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 6px; letter-spacing: 0.05em; }
+              .desc-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 9.5px; }
+              .desc-table th, .desc-table td { border: 1.5px solid #000; padding: 6px 5px; vertical-align: middle; }
+              .desc-table th { background: #fafafa; font-weight: 800; text-align: center; }
+              .desc-table td.right { text-align: right; }
+              .desc-table td.center { text-align: center; }
+              .signature-area { margin-top: 40px; text-align: right; font-size: 11px; font-weight: bold; }
+              pre { margin: 0; font-family: inherit; font-size: 9.5px; white-space: pre-wrap; }
+            </style>
+          </head>
+          <body>
+            <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
+            <div class="header-title">Packing List</div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10px;">
+              <tr>
+                <td style="width: 50%; border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="text-transform: uppercase; font-size: 8.5px; color: #475569;">Shipper / Beneficiary</strong><br/>
+                  <pre>${shipper}</pre>
+                </td>
+                <td style="width: 50%; border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="font-size: 8.5px; color: #475569;">Packing list No. & Date</strong><br/>
+                  <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 700;">
+                    <span>${invoiceNo}</span>
+                    <span>${invoiceDate}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="text-transform: uppercase; font-size: 8.5px; color: #475569;">Applicant</strong><br/>
+                  <pre>${applicant}</pre>
+                </td>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="font-size: 8.5px; color: #475569;">L/C No. & Date</strong><br/>
+                  <div style="display: flex; justify-content: space-between; margin-top: 4px; font-weight: 700;">
+                    <span>${lcNo}</span>
+                    <span>${lcDate || '-'}</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="text-transform: uppercase; font-size: 8.5px; color: #475569;">Notify Party</strong><br/>
+                  <pre>${notifyParty}</pre>
+                </td>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="font-size: 8.5px; color: #475569;">L/C Issuing Bank</strong><br/>
+                  <pre>${lcIssuingBank}</pre>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <div style="display: flex;">
+                    <div style="flex: 1; border-right: 1.5px solid #000; padding-right: 4px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Port of Loading</strong><br/>
+                      <strong>${pol}</strong>
+                    </div>
+                    <div style="flex: 1; padding-left: 6px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Port of Discharge</strong><br/>
+                      <strong>${pod}</strong>
+                    </div>
+                  </div>
+                </td>
+                <td rowspan="3" style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <strong style="font-size: 8.5px; color: #475569;">Remarks</strong><br/>
+                  <pre>${remarks}</pre>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <div style="display: flex;">
+                    <div style="flex: 1.2; border-right: 1.5px solid #000; padding-right: 4px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Vessel Name & Voyage No.</strong><br/>
+                      <strong>${vesselName}</strong>
+                    </div>
+                    <div style="flex: 0.8; padding-left: 6px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Sailing on or about</strong><br/>
+                      <strong>${sailingDate}</strong>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px; vertical-align: top;">
+                  <div style="display: flex;">
+                    <div style="flex: 1; border-right: 1.5px solid #000; padding-right: 4px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Payment Terms</strong><br/>
+                      <strong>${paymentTerms}</strong>
+                    </div>
+                    <div style="flex: 1; padding-left: 6px;">
+                      <strong style="font-size: 8.5px; color: #475569;">Delivery Terms</strong><br/>
+                      <strong>${deliveryTerms}</strong>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <table class="desc-table">
+              <thead>
+                <tr>
+                  <th style="width: 15%;">Shipping Marks</th>
+                  <th>Description of Goods<br/>Quantity / Number of Packages</th>
+                  <th style="width: 8%;">PKG</th>
+                  <th style="width: 12%;">Net Weight<br/>(Kg)</th>
+                  <th style="width: 12%;">Gross Weight<br/>(Kg)</th>
+                  <th style="width: 12%;">Measurement<br/>(CBM)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${containers.map((c: any) => {
+                  const itList = c.items || [];
+                  const subTotalPkg = itList.reduce((s: number, i: any) => s + (Number(i.pkg) || 0), 0);
+                  const subTotalNW = itList.reduce((s: number, i: any) => s + (Number(i.netWeight) || 0), 0);
+                  const subTotalGW = itList.reduce((s: number, i: any) => s + (Number(i.grossWeight) || 0), 0);
+                  const subTotalCBM = itList.reduce((s: number, i: any) => s + (Number(i.cbm) || 0), 0);
+
+                  return itList.map((it: any, itIdx: number) => `
+                    <tr>
+                      ${itIdx === 0 ? `
+                        <td rowspan="${itList.length + 1}" style="font-size: 8.5px; font-weight: 700; vertical-align: top;">
+                          <strong>CONTAINER NO:</strong><br/>${c.containerNo}<br/>
+                          <strong>SEAL NO:</strong><br/>${c.sealNo}
+                          ${it.shippingMark ? `<br/><br/>${it.shippingMark}` : ''}
+                        </td>
+                      ` : ''}
+                      <td>${it.description}</td>
+                      <td class="center">${it.pkg || ''}</td>
+                      <td class="right">${Number(it.netWeight || 0).toLocaleString()}</td>
+                      <td class="right">${Number(it.grossWeight || 0).toLocaleString()}</td>
+                      <td class="right">${Number(it.cbm || 0).toFixed(2)}</td>
+                    </tr>
+                  `).join('') + `
+                    <tr style="font-weight: 800; background: #fafafa;">
+                      <td>SUB TOTAL</td>
+                      <td class="center">${subTotalPkg} PKG</td>
+                      <td class="right">${subTotalNW.toLocaleString()} KGS</td>
+                      <td class="right">${subTotalGW.toLocaleString()} KGS</td>
+                      <td class="right">${subTotalCBM.toFixed(2)} CBM</td>
+                    </tr>
+                  `;
+                }).join('')}
+                <tr style="font-weight: 800; background: #f3f4f6; font-size: 10px;">
+                  <td colspan="2">GRAND TOTAL</td>
+                  <td class="center">${grandPkg} PKG</td>
+                  <td class="right">${grandNW.toLocaleString()} KGS</td>
+                  <td class="right">${grandGW.toLocaleString()} KGS</td>
+                  <td class="right">${grandCBM.toFixed(2)} CBM</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="signature-area">
+              Signed by<br/>
+              <span style="font-size: 15px; color: #1e3a8a; letter-spacing: 0.1em; display: block; margin: 10px 0;">${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
+              _______________________________<br/>
+              Managing Director JU HAN, KIM
+            </div>
+          </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(printHtml);
+        win.document.close();
+      }
+      return;
+    }
+
+    // ── Fallback to Default Auto Print Mode ──────────────────────────────
     const totalQty = order.items?.reduce((sum, it) => sum + (it.qty || 0), 0) || 0;
 
     const printHtml = `
