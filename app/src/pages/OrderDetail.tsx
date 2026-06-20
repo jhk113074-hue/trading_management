@@ -1913,7 +1913,7 @@ export const OrderDetail: React.FC = () => {
                   <thead>
                     <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
-                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드 / 스펙 (Spec)</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드</th>
                       <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '150px' }}>통화 / 단가</th>
@@ -1926,122 +1926,113 @@ export const OrderDetail: React.FC = () => {
                       <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                         <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
                         
-                        {/* 상품코드 / 스펙 (Spec) */}
+                        {/* 상품코드 */}
                         <td style={{ padding: '4px 4px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                <input
-                                  type="text"
-                                  list={`detail_products_datalist_${idx}`}
-                                  value={item.name || ''}
-                                  onChange={e => handleItemChange(idx, 'name', e.target.value)}
-                                  placeholder="상품코드 검색/입력"
-                                  style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
-                                />
-                                {item.name && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleItemChange(idx, 'name', '')}
-                                    style={{
-                                      position: 'absolute',
-                                      right: '20px',
-                                      background: 'transparent',
-                                      border: 'none',
-                                      color: '#94a3b8',
-                                      cursor: 'pointer',
-                                      fontSize: '10px',
-                                      padding: '2px',
-                                      zIndex: 5,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center'
-                                    }}
-                                    title="비우기"
-                                  >
-                                    ✕
-                                  </button>
-                                )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                list={`detail_products_datalist_${idx}`}
+                                value={item.name || ''}
+                                onChange={e => handleItemChange(idx, 'name', e.target.value)}
+                                placeholder="상품코드 검색/입력"
+                                style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              />
+                              {item.name && (
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSearchItemIndex(idx);
-                                    setIsProductSearchOpen(true);
-                                  }}
+                                  onClick={() => handleItemChange(idx, 'name', '')}
                                   style={{
                                     position: 'absolute',
-                                    right: '4px',
+                                    right: '20px',
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#3b82f6',
+                                    color: '#94a3b8',
                                     cursor: 'pointer',
-                                    fontSize: '11px',
+                                    fontSize: '10px',
                                     padding: '2px',
                                     zIndex: 5,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                   }}
-                                  title="상품 검색 (Subwindow)"
+                                  title="비우기"
                                 >
-                                  🔍
+                                  ✕
                                 </button>
-                                <datalist id={`detail_products_datalist_${idx}`}>
-                                  {products.map(p => {
-                                    const displayName = p.nameEn || p.nameKo || '';
-                                    return (
-                                      <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
-                                        [{p.productCode}] {displayName}
-                                      </option>
-                                    );
-                                  })}
-                                </datalist>
-                              </div>
-                              {(() => {
-                                const rawCode = getRawProductCode(item.name);
-                                const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                                return (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (p) {
-                                        setEditingProd(p);
-                                        setIsProdModalOpen(true);
-                                      } else {
-                                        alert('먼저 등록된 상품을 검색/선택해주세요.');
-                                      }
-                                    }}
-                                    disabled={!p}
-                                    title="선택된 상품 수정"
-                                    style={{
-                                      background: p ? '#fef08a' : '#f1f5f9',
-                                      border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                                      color: p ? '#a16207' : '#94a3b8',
-                                      borderRadius: '4px',
-                                      padding: '2px 4px',
-                                      cursor: p ? 'pointer' : 'not-allowed',
-                                      fontSize: '11px',
-                                      fontWeight: 600,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      height: '26px',
-                                      width: '26px',
-                                      boxSizing: 'border-box'
-                                    }}
-                                  >
-                                    ✏️
-                                  </button>
-                                );
-                              })()}
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSearchItemIndex(idx);
+                                  setIsProductSearchOpen(true);
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  right: '4px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: '#3b82f6',
+                                  cursor: 'pointer',
+                                  fontSize: '11px',
+                                  padding: '2px',
+                                  zIndex: 5,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                                title="상품 검색 (Subwindow)"
+                              >
+                                🔍
+                              </button>
+                              <datalist id={`detail_products_datalist_${idx}`}>
+                                {products.map(p => {
+                                  const displayName = p.nameEn || p.nameKo || '';
+                                  return (
+                                    <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                      [{p.productCode}] {displayName}
+                                    </option>
+                                  );
+                                })}
+                              </datalist>
                             </div>
-                            <input
-                              type="text"
-                              value={item.grade || ''}
-                              onChange={e => handleItemChange(idx, 'grade', e.target.value)}
-                              placeholder="스펙 (Spec)"
-                              style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
-                            />
+                            {(() => {
+                              const rawCode = getRawProductCode(item.name);
+                              const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (p) {
+                                      setEditingProd(p);
+                                      setIsProdModalOpen(true);
+                                    } else {
+                                      alert('먼저 등록된 상품을 검색/선택해주세요.');
+                                    }
+                                  }}
+                                  disabled={!p}
+                                  title="선택된 상품 수정"
+                                  style={{
+                                    background: p ? '#fef08a' : '#f1f5f9',
+                                    border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                    color: p ? '#a16207' : '#94a3b8',
+                                    borderRadius: '4px',
+                                    padding: '2px 4px',
+                                    cursor: p ? 'pointer' : 'not-allowed',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    height: '26px',
+                                    width: '26px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                >
+                                  ✏️
+                                </button>
+                              );
+                            })()}
                           </div>
                         </td>
 

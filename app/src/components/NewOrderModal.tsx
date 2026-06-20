@@ -638,7 +638,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
                   <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '250px' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '250px' }}>상품코드</th>
                   <th style={{ padding: '8px 4px', textAlign: 'left', width: '150px' }}>공급사</th>
                   <th style={{ padding: '8px 4px', textAlign: 'center', width: '100px' }}>수량 / 단위</th>
                   <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>매출 통화 / 단가</th>
@@ -652,7 +652,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
                     
-                    {/* 상품코드 / 스펙 (Spec) */}
+                    {/* 상품코드 */}
                     <td style={{ padding: '4px 4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -761,13 +761,6 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                             );
                           })()}
                         </div>
-                        <input
-                          type="text"
-                          value={item.grade || ''}
-                          onChange={e => handleItemChange(idx, 'grade', e.target.value)}
-                          placeholder="스펙 (Spec)"
-                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
-                        />
                       </div>
                     </td>
 
