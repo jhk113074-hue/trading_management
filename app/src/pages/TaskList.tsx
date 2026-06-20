@@ -5,6 +5,7 @@ import { TaskModal } from '../components/TaskModal';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
+import { calculateQuadrant } from '../utils/businessRules';
 
 const typeLabels: Record<string, string> = {
   PROJECT: '📁 프로젝트', DAILY: '📝 일상업무', PERIODIC: '🔄 주기업무', DELEGATED: '🤝 위임업무'
@@ -22,11 +23,11 @@ const statusLabels: Record<string, string> = {
 const columns = [
   { key: 'select', label: '□' }, { key: 'urgency_icon', label: '!' }, { key: 'urgency', label: '긴급' },
   { key: 'quadrant', label: 'Q' }, { key: 'title', label: '제목 *' }, { key: 'status', label: '상태' },
-  { key: 'type', label: '유형' }, { key: 'schedule', label: '일정방식' }, { key: 'project', label: '프로젝트명' },
-  { key: 'customer', label: '고객/요청' }, { key: 'delegator', label: '위임자' }, { key: 'assignee', label: '담당자' },
-  { key: 'startDate', label: '시작일' }, { key: 'dueDate', label: '마감일' }, { key: 'recurrence', label: '주기' },
-  { key: 'recurrenceEnd', label: '종료일' }, { key: 'link', label: '링크' }, { key: 'visibility', label: '공개범위' },
-  { key: 'updatedAt', label: '수정일' }, { key: 'doneAt', label: '완료일' }, { key: 'actions', label: '관리' }
+  { key: 'type', label: '유형' }, { key: 'delegator', label: '위임자' }, { key: 'assignee', label: '담당자' },
+  { key: 'startDate', label: '시작일' }, { key: 'dueDate', label: '마감일' }, { key: 'createdAt', label: '등록일' },
+  { key: 'recurrence', label: '주기' }, { key: 'recurrenceEnd', label: '종료일' }, { key: 'link', label: '링크' },
+  { key: 'visibility', label: '공개범위' }, { key: 'updatedAt', label: '수정일' }, { key: 'doneAt', label: '완료일' },
+  { key: 'actions', label: '관리' }
 ];
 
 export const TaskList: React.FC = () => {
@@ -63,6 +64,14 @@ export const TaskList: React.FC = () => {
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickTitle, setQuickTitle] = useState('');
+  const [inlineStatus, setInlineStatus] = useState<string>('TODO');
+  const [inlineType, setInlineType] = useState<string>('DAILY');
+  const [inlineSchedule, setInlineSchedule] = useState<string>('SELF');
+  const [inlineImportance, setInlineImportance] = useState<string>('B');
+  const [inlineUrgency, setInlineUrgency] = useState<number>(5);
+  const [inlineAssignee, setInlineAssignee] = useState<string>('');
+  const [inlineProjectName, setInlineProjectName] = useState<string>('');
+  const [inlineCustomerName, setInlineCustomerName] = useState<string>('');
   const [users, setUsers] = useState<User[]>([]);
 
   // ── 일간, 주간 및 기간 검색 기준 ──────────────────────────────────────────────
@@ -235,8 +244,8 @@ export const TaskList: React.FC = () => {
 
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     select: 35, urgency_icon: 30, urgency: 55, quadrant: 45, title: 280,
-    status: 90, type: 80, schedule: 80, project: 120, customer: 80,
-    delegator: 70, assignee: 70, startDate: 80, dueDate: 80,
+    status: 90, type: 80,
+    delegator: 70, assignee: 70, startDate: 80, dueDate: 80, createdAt: 80,
     recurrence: 70, recurrenceEnd: 70, link: 40, visibility: 80,
     updatedAt: 80, doneAt: 80, actions: 60
   });
@@ -290,13 +299,23 @@ export const TaskList: React.FC = () => {
       }
 
       await addTask({
-        title: quickTitle, status: 'TODO', type: 'DAILY', scheduleType: 'SELF',
-        importance: 'B', urgency: 5, quadrant: 'Q2',
-        assigneeId: userProfile?.id || '', assigneeName: userProfile?.name || '관리자',
+        title: quickTitle,
+        status: inlineStatus,
+        type: inlineType,
+        scheduleType: inlineSchedule,
+        importance: inlineImportance,
+        urgency: inlineUrgency,
+        quadrant: calculateQuadrant(inlineImportance, inlineUrgency),
+        assigneeId: inlineAssignee || userProfile?.id || '',
+        assigneeName: users.find(u => u.id === inlineAssignee)?.name || userProfile?.name || '관리자',
+        projectName: inlineProjectName,
+        customerName: inlineCustomerName,
         startDate: defaultStartDate || new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString()
       } as any);
       setQuickTitle('');
+      setInlineProjectName('');
+      setInlineCustomerName('');
     } catch (e) {
       console.error(e);
       alert('업무 등록 중 오류가 발생했습니다.');
@@ -491,6 +510,27 @@ export const TaskList: React.FC = () => {
                   width: '180px', maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px'
                 }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '4px' }}>표시할 열 선택</div>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const selectable = columns.filter(c => c.key !== 'select' && c.key !== 'title' && c.key !== 'actions').map(c => c.key);
+                        setVisibleColumns(['select', 'title', 'actions', ...selectable]);
+                      }}
+                      style={{ flex: 1, padding: '3px 0', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#f8fafc' }}
+                    >
+                      전체 선택
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVisibleColumns(['select', 'title', 'actions']);
+                      }}
+                      style={{ flex: 1, padding: '3px 0', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#f8fafc' }}
+                    >
+                      전체 해제
+                    </button>
+                  </div>
                   {columns.map(col => {
                     if (col.key === 'select' || col.key === 'title' || col.key === 'actions') return null;
                     const checked = visibleColumns.includes(col.key);
@@ -550,15 +590,41 @@ export const TaskList: React.FC = () => {
                   if (col.key === 'actions') {
                     return (
                       <td key={col.key} style={{ textAlign: 'center' }}>
-                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer' }}>+</button>
+                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold' }}>+</button>
                       </td>
                     );
                   }
                   if (col.key === 'urgency_icon') {
-                    return <td key={col.key} style={{ padding: '0 12px' }}>5</td>;
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineImportance}
+                          onChange={e => setInlineImportance(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem' }}
+                        >
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                        </select>
+                      </td>
+                    );
                   }
                   if (col.key === 'urgency') {
-                    return <td key={col.key} style={{ padding: '0 12px' }}>Q2</td>;
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineUrgency}
+                          onChange={e => setInlineUrgency(Number(e.target.value))}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem' }}
+                        >
+                          {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      </td>
+                    );
+                  }
+                  if (col.key === 'quadrant') {
+                    const quad = calculateQuadrant(inlineImportance, inlineUrgency);
+                    return <td key={col.key} style={{ padding: '0 8px', fontWeight: 'bold', color: '#475569' }}>{quad}</td>;
                   }
                   if (col.key === 'title') {
                     return (
@@ -574,13 +640,90 @@ export const TaskList: React.FC = () => {
                     );
                   }
                   if (col.key === 'status') {
-                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>시작 안 함</option></select></td>;
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineStatus}
+                          onChange={e => setInlineStatus(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                        >
+                          <option value="TODO">시작 안 함</option>
+                          <option value="IN_PROGRESS">진행중</option>
+                          <option value="HOLDING">Holding</option>
+                          <option value="DONE">완료</option>
+                        </select>
+                      </td>
+                    );
                   }
                   if (col.key === 'type') {
-                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>프로젝트</option></select></td>;
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineType}
+                          onChange={e => setInlineType(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                        >
+                          <option value="PROJECT">📁 프로젝트</option>
+                          <option value="DAILY">📝 일상업무</option>
+                          <option value="PERIODIC">🔄 주기업무</option>
+                          <option value="DELEGATED">🤝 위임업무</option>
+                        </select>
+                      </td>
+                    );
                   }
                   if (col.key === 'schedule') {
-                    return <td key={col.key}><select disabled style={{ width: '100%', border: 'none', background: 'transparent' }}><option>일정기반</option></select></td>;
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineSchedule}
+                          onChange={e => setInlineSchedule(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                        >
+                          <option value="SELF">스스로 계획</option>
+                          <option value="SCHEDULED">일정기반</option>
+                          <option value="PERIODIC">반복주기</option>
+                          <option value="REQUESTED">담당자 지정</option>
+                        </select>
+                      </td>
+                    );
+                  }
+                  if (col.key === 'project') {
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <input
+                          placeholder="프로젝트명"
+                          value={inlineProjectName}
+                          onChange={e => setInlineProjectName(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem' }}
+                        />
+                      </td>
+                    );
+                  }
+                  if (col.key === 'customer') {
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <input
+                          placeholder="고객명"
+                          value={inlineCustomerName}
+                          onChange={e => setInlineCustomerName(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem' }}
+                        />
+                      </td>
+                    );
+                  }
+                  if (col.key === 'assignee') {
+                    return (
+                      <td key={col.key} style={{ padding: '0 8px' }}>
+                        <select
+                          value={inlineAssignee}
+                          onChange={e => setInlineAssignee(e.target.value)}
+                          style={{ width: '100%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                        >
+                          <option value="">담당자 지정</option>
+                          {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                        </select>
+                      </td>
+                    );
                   }
                   return <td key={col.key} style={{ borderRight: '1px solid #f3f4f6' }}></td>;
                 })}
@@ -660,6 +803,8 @@ export const TaskList: React.FC = () => {
                       return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.startDate || '-'}</td>;
                     case 'dueDate':
                       return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.dueDate || '-'}</td>;
+                    case 'createdAt':
+                      return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.createdAt ? task.createdAt.split('T')[0] : '-'}</td>;
                     case 'recurrence':
                       return <td style={{ padding: '0 12px', opacity: isDone ? 0.5 : 1 }}>{task.recurrence || '-'}</td>;
                     case 'recurrenceEnd':

@@ -17,13 +17,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [description, setDescription] = useState(initialTask?.description || '');
   const [visibility, setVisibility] = useState<Visibility>(initialTask?.visibility || 'PUBLIC');
   const [type, setType] = useState<TaskType>(initialTask?.type || 'DAILY');
-  const [scheduleType, setScheduleType] = useState<ScheduleType>(initialTask?.scheduleType || 'SELF');
+  const [scheduleType] = useState<ScheduleType>(initialTask?.scheduleType || 'SELF');
   const [status, setStatus] = useState<TaskStatus>(initialTask?.status || 'TODO');
   const [importance, setImportance] = useState<string>(initialTask?.importance ? String(initialTask.importance) : 'B');
   const [urgency, setUrgency] = useState(initialTask?.urgency || 5);
   const [dueDate, setDueDate] = useState(initialTask?.dueDate || '');
-  const [projectName, setProjectName] = useState(initialTask?.projectName || '');
-  const [customerName, setCustomerName] = useState(initialTask?.customerName || '');
+  const [projectName] = useState(initialTask?.projectName || '');
+  const [customerName] = useState(initialTask?.customerName || '');
   
   const [requesterName] = useState(initialTask?.requesterName || '');
   const [requesterId, setRequesterId] = useState(initialTask?.requesterId || '');
@@ -395,15 +395,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           </div>
 
           {/* Details Row 1 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>프로젝트명</label>
-              <input style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={projectName} onChange={e => setProjectName(e.target.value)} placeholder="선택사항" />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>고객명</label>
-              <input style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="선택사항" />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>위임자 (요청자)</label>
               <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem', backgroundColor: '#fff' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
@@ -446,15 +438,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 <option value="DAILY">📝 일상업무</option>
                 <option value="PERIODIC">🔄 주기업무</option>
                 <option value="DELEGATED">🤝 위임업무</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>일정 방식</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={scheduleType} onChange={e => setScheduleType(e.target.value as ScheduleType)}>
-                <option value="SELF">스스로 계획</option>
-                <option value="SCHEDULED">일정기반</option>
-                <option value="PERIODIC">반복주기</option>
-                <option value="REQUESTED">담당자 지정</option>
               </select>
             </div>
           </div>

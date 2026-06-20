@@ -2,19 +2,19 @@
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
   --bg-header: #ffffff;
-  --bg-sidebar: #0f172a;
-  --sidebar-text: #94a3b8;
-  --sidebar-text-hover: #f1f5f9;
-  --sidebar-active-bg: rgba(13, 148, 136, 0.18);
-  --sidebar-active-text: #2dd4bf;
-  --sidebar-section-title: #475569;
+  --bg-sidebar: #0f172a; /* Deep Slate Blue */
+  --sidebar-text: #94a3b8; /* Slate-400 */
+  --sidebar-text-hover: #f8fafc; /* Slate-50 */
+  --sidebar-active-bg: linear-gradient(90deg, rgba(190, 18, 60, 0.15) 0%, rgba(190, 18, 60, 0.04) 100%);
+  --sidebar-active-text: #ffffff;
+  --sidebar-section-title: #64748b; /* Slate-500 for better visibility */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
   --border-color: #e8ecf0;
-  --primary-color: #0d9488;
-  --primary-hover: #0f766e;
-  --q1-color: #ef4444;
+  --primary-color: #be123c; /* Matching YSACC Brand Red */
+  --primary-hover: #9f1239;
+  --q1-color: #be123c;
 }
 
 * {
@@ -46,7 +46,8 @@ body {
 }
 
 .sidebar-header {
-  padding: 28px 20px 20px 20px;
+  height: 72px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,47 +81,47 @@ body {
 }
 
 .sidebar-section {
-  margin-bottom: 4px;
-  padding: 0 10px;
+  margin-bottom: 8px;
+  padding: 0 12px;
 }
 
 .sidebar-section-title {
-  padding: 14px 12px 6px 12px;
-  font-size: 0.65rem;
+  padding: 12px 12px 6px 12px;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--sidebar-section-title);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 2px;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
 }
 
 .nav-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 11px 14px;
+  padding: 10px 14px;
   color: var(--sidebar-text);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.18s ease;
-  margin-bottom: 2px;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 3px;
   gap: 10px;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 .nav-item:hover {
-  background-color: rgba(255,255,255,0.07);
+  background-color: rgba(255, 255, 255, 0.06);
   color: var(--sidebar-text-hover);
-  transform: translateX(2px);
+  padding-left: 18px; /* Smooth slide-in indicator instead of transform */
 }
 
 .nav-item.active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--sidebar-active-text);
+  font-weight: 600;
+  box-shadow: inset 4px 0 0 #be123c; /* Precise brand red indicator */
 }
 
 .header {

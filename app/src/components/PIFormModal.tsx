@@ -827,13 +827,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
-          <div style={{ display: 'flex', gap: '3px', height: '23px' }}>
+          <div style={{ display: 'flex', gap: '3px', height: '25px' }}>
             <input 
               type="text" 
               value={newVal} 
               onChange={e => setNewVal(e.target.value)} 
               placeholder="직접 입력..." 
-              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '12px', height: '23px', boxSizing: 'border-box' }}
+              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '13px', height: '25px', boxSizing: 'border-box' }}
               autoFocus
             />
             <button 
@@ -842,14 +842,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
                 setIsNewMode(false);
               }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✓
             </button>
             <button 
               type="button"
               onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               ✕
             </button>
@@ -867,7 +867,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             if (e.target.value === '__NEW__') setIsNewMode(true);
             else setFormData(prev => ({...prev, [field]: e.target.value}));
           }}
-          style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', height: '23px', boxSizing: 'border-box', background: '#fff' }}
+          style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%' }}
         >
           <option value="">{placeholder || '-- 선택 --'}</option>
           {options.map((opt: string) => (
@@ -1533,7 +1533,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
-                <div style={{ position: 'relative', height: '23px', display: 'flex', alignItems: 'center' }}>
+                <div style={{ position: 'relative', height: '25px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={formData.customerName || ''}
@@ -1541,8 +1541,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     readOnly
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
-                      width: '100%', height: '23px', padding: '1px 32px 1px 6px',
-                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px',
+                      width: '100%', height: '25px', padding: '1px 32px 1px 6px',
+                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
@@ -2339,7 +2339,7 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
     <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', background: disabled ? '#f1f5f9' : '#fff', height: '23px', boxSizing: 'border-box', width: '100%' }} />
+    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px', background: disabled ? '#f1f5f9' : '#fff', height: '25px', boxSizing: 'border-box', width: '100%' }} />
   </div>
 );
 

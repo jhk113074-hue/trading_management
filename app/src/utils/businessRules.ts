@@ -24,5 +24,24 @@ export const validateTask = (task: Partial<Task>): string | null => {
     return '주기업무는 반복 주기가 필수입니다.';
   }
 
+  if (task.type === 'PERIODIC') {
+    if (!task.startDate) {
+      return '주기업무는 반복 시작일이 필수입니다.';
+    }
+    if (!task.recurrenceEndDate) {
+      return '주기업무는 반복 종료일이 필수입니다.';
+    }
+    const start = new Date(task.startDate);
+    const end = new Date(task.recurrenceEndDate);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+      // Calculate 2 years from start date
+      const maxEnd = new Date(start);
+      maxEnd.setFullYear(maxEnd.getFullYear() + 2);
+      if (end > maxEnd) {
+        return '반복 종료일은 시작일 기준 최대 2년까지 설정할 수 있습니다.';
+      }
+    }
+  }
+
   return null; // Valid
 };

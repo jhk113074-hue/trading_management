@@ -71,13 +71,13 @@ export const Layout: React.FC = () => {
         { path: '/', label: '⊞ Dashboard' }
       ] as any },
       { section: '업무관리', items: [
-        { path: '/list', label: '📋 전체 업무 리스트' },
-        { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판 (새 창)', external: true }
+        { path: '/list', label: '📋 전체 업무 리스트' }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },
         { path: '/orders', label: '📦 주문관리', external: false },
-        { path: '/container/index.html', label: '🚢 컨테이너 적재 (새 창)', external: true }
+        { path: '/container/index.html', label: '🚢 컨테이너 적재 (새 창)', external: true },
+        { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판 (새 창)', external: true }
       ] as any },
       { section: 'DB관리', items: [
         { path: '/products', label: '◫ 상품 DB', external: false },
@@ -113,7 +113,7 @@ export const Layout: React.FC = () => {
         {/* 로고 */}
         <Link to="/" style={{ textDecoration: 'none', display: 'block' }}>
           <div className="sidebar-header">
-            <img src="/logo.png" alt="YSACC Logo" style={{ maxHeight: '48px', maxWidth: '140px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo.png" alt="YSACC Logo" style={{ maxHeight: '48px', maxWidth: '140px', objectFit: 'contain' }} />
           </div>
         </Link>
 

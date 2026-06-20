@@ -48,46 +48,46 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const getOccurrenceDates = (startStr: string, endStr: string, cycle: string): string[] => {
+    const dates: string[] = [];
+    if (!startStr || !endStr) return [startStr];
+    let current = new Date(startStr);
+    const end = new Date(endStr);
+    if (isNaN(current.getTime()) || isNaN(end.getTime()) || current > end) {
+      return [startStr];
+    }
+
+    let count = 0;
+    while (current <= end && count < 100) {
+      dates.push(current.toISOString().split('T')[0]);
+      const next = new Date(current);
+      if (cycle === '매일') {
+        next.setDate(next.getDate() + 1);
+      } else if (cycle === '매주') {
+        next.setDate(next.getDate() + 7);
+      } else if (cycle === '매월') {
+        next.setMonth(next.getMonth() + 1);
+      } else if (cycle === '매분기') {
+        next.setMonth(next.getMonth() + 3);
+      } else if (cycle === '매반기') {
+        next.setMonth(next.getMonth() + 6);
+      } else if (cycle === '매년') {
+        next.setFullYear(next.getFullYear() + 1);
+      } else {
+        next.setDate(next.getDate() + 7);
+      }
+      if (next.getTime() <= current.getTime()) {
+        next.setDate(next.getDate() + 1);
+      }
+      current = next;
+      count++;
+    }
+    return dates;
+  };
+
   const addTask = async (taskData: any) => {
     try {
       if (taskData.type === 'PERIODIC' && taskData.startDate && taskData.recurrenceEndDate) {
-        const getOccurrenceDates = (startStr: string, endStr: string, cycle: string): string[] => {
-          const dates: string[] = [];
-          if (!startStr || !endStr) return [startStr];
-          let current = new Date(startStr);
-          const end = new Date(endStr);
-          if (isNaN(current.getTime()) || isNaN(end.getTime()) || current > end) {
-            return [startStr];
-          }
-
-          let count = 0;
-          while (current <= end && count < 100) {
-            dates.push(current.toISOString().split('T')[0]);
-            const next = new Date(current);
-            if (cycle === '매일') {
-              next.setDate(next.getDate() + 1);
-            } else if (cycle === '매주') {
-              next.setDate(next.getDate() + 7);
-            } else if (cycle === '매월') {
-              next.setMonth(next.getMonth() + 1);
-            } else if (cycle === '매분기') {
-              next.setMonth(next.getMonth() + 3);
-            } else if (cycle === '매반기') {
-              next.setMonth(next.getMonth() + 6);
-            } else if (cycle === '매년') {
-              next.setFullYear(next.getFullYear() + 1);
-            } else {
-              next.setDate(next.getDate() + 7);
-            }
-            if (next.getTime() <= current.getTime()) {
-              next.setDate(next.getDate() + 1);
-            }
-            current = next;
-            count++;
-          }
-          return dates;
-        };
-
         const occurrences = getOccurrenceDates(taskData.startDate, taskData.recurrenceEndDate, taskData.recurrence || '매주');
         let durationDays = 0;
         if (taskData.startDate && taskData.dueDate) {
@@ -129,10 +129,55 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateTask = async (task: Task) => {
     try {
       const { id, ...data } = task;
-      await updateDoc(doc(db, 'tasks', id), {
-        ...data,
-        updatedAt: new Date().toISOString()
-      });
+      
+      // If it is updated to a PERIODIC task and we need to generate periodic items:
+      if (data.type === 'PERIODIC' && data.startDate && data.recurrenceEndDate) {
+        // Find existing tasks that might belong to the same repetition cycle so we don't duplicate them,
+        // or simple rule: if updating this specific task, update this one, but also generate the remaining ones.
+        // To be safe and clean: if it is periodic, we can update the clicked task (this one),
+        // and if there are other occurrences from getOccurrenceDates that don't exist yet, we add them.
+        const occurrences = getOccurrenceDates(data.startDate, data.recurrenceEndDate, data.recurrence || '매주');
+        let durationDays = 0;
+        if (data.startDate && data.dueDate) {
+          const s = new Date(data.startDate);
+          const d = new Date(data.dueDate);
+          if (!isNaN(s.getTime()) && !isNaN(d.getTime())) {
+            durationDays = Math.max(0, Math.round((d.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)));
+          }
+        }
+
+        // We update the clicked task itself first
+        await updateDoc(doc(db, 'tasks', id), {
+          ...data,
+          updatedAt: new Date().toISOString()
+        });
+
+        // Generate the other occurrences. We filter out the one that matches this updated task's start date (which is already updated)
+        const otherOccurrences = occurrences.filter(occDate => occDate !== data.startDate);
+        for (const occDate of otherOccurrences) {
+          // Check if a task with the same title and same startDate already exists to prevent duplicate generation
+          const duplicateExists = tasks.some(t => t.title === data.title && t.startDate === occDate);
+          if (!duplicateExists) {
+            const occDueDate = new Date(occDate);
+            occDueDate.setDate(occDueDate.getDate() + durationDays);
+            const occDueDateStr = occDueDate.toISOString().split('T')[0];
+
+            await addDoc(collection(db, 'tasks'), {
+              ...data,
+              startDate: occDate,
+              dueDate: occDueDateStr,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              timestamp: serverTimestamp()
+            });
+          }
+        }
+      } else {
+        await updateDoc(doc(db, 'tasks', id), {
+          ...data,
+          updatedAt: new Date().toISOString()
+        });
+      }
     } catch (err) {
       console.error("Update task error:", err);
       throw err;

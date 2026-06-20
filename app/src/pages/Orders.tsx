@@ -36,6 +36,15 @@ export const Orders: React.FC = () => {
   const [managerFilter, setManagerFilter] = useState('All');
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All'); // 'All' / 'Urgent'
+  
+  // Date Period Filters
+  const [dateFilterType, setDateFilterType] = useState<string>('All'); // 'All' | 'Monthly' | 'Quarterly' | 'HalfYearly' | 'Yearly' | 'Range'
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1 ~ 12
+  const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1); // 1 ~ 4
+  const [selectedHalf, setSelectedHalf] = useState<number>(new Date().getMonth() < 6 ? 1 : 2); // 1: 상반기, 2: 하반기
+  const [rangeStart, setRangeStart] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [rangeEnd, setRangeEnd] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const [selectedQuotationId, setSelectedQuotationId] = useState<string | undefined>(undefined);
 
@@ -186,39 +195,7 @@ export const Orders: React.FC = () => {
     return Array.from(list).sort();
   }, [orders]);
 
-  // Compute stats
-  const stats = useMemo(() => {
-    const activeOrders = orders.filter(o => o.status !== '이익관리');
-    const totalUsd = activeOrders.reduce((sum, o) => {
-      const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (pi?.totalUsd || o.totalAmount || 0);
-    }, 0);
-
-    const totalYsaccUsd = activeOrders.filter(o => o.issuingCompany === 'YSACC' || !o.issuingCompany).reduce((sum, o) => {
-      const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (pi?.totalUsd || o.totalAmount || 0);
-    }, 0);
-
-    const totalYsUsd = activeOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
-      const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (pi?.totalUsd || o.totalAmount || 0);
-    }, 0);
-
-    const urgentCount = orders.filter(o => {
-      const action = getNextAction(o);
-      return action.level === 'RED';
-    }).length;
-
-    return {
-      activeCount: activeOrders.length,
-      totalUsd,
-      totalYsaccUsd,
-      totalYsUsd,
-      urgentCount
-    };
-  }, [orders, quotations]);
-
-  // Filter & Sort
+  // Compute stats based on Date and Company/Manager/etc. filters
   const processedOrders = useMemo(() => {
     let result = orders.map(o => ({
       ...o,
@@ -245,6 +222,38 @@ export const Orders: React.FC = () => {
       result = result.filter(o => o.nextAction.level === 'RED');
     }
 
+    // Filter by Date Period (Monthly/Quarterly/Half-yearly/Yearly/Range)
+    if (dateFilterType !== 'All') {
+      result = result.filter(o => {
+        if (!o.poDate) return false;
+        const d = new Date(o.poDate);
+        if (isNaN(d.getTime())) return false;
+        
+        const y = d.getFullYear();
+        const m = d.getMonth() + 1; // 1 ~ 12
+
+        if (dateFilterType === 'Monthly') {
+          return y === selectedYear && m === selectedMonth;
+        }
+        if (dateFilterType === 'Quarterly') {
+          const quarter = Math.floor((m - 1) / 3) + 1;
+          return y === selectedYear && quarter === selectedQuarter;
+        }
+        if (dateFilterType === 'HalfYearly') {
+          const half = m <= 6 ? 1 : 2;
+          return y === selectedYear && half === selectedHalf;
+        }
+        if (dateFilterType === 'Yearly') {
+          return y === selectedYear;
+        }
+        if (dateFilterType === 'Range') {
+          const orderDateStr = o.poDate;
+          return orderDateStr >= rangeStart && orderDateStr <= rangeEnd;
+        }
+        return true;
+      });
+    }
+
     // Sort by Urgency (RED -> ORANGE -> WHITE) and then ID descending
     const levelWeight = { RED: 3, ORANGE: 2, WHITE: 1 };
     result.sort((a, b) => {
@@ -255,7 +264,37 @@ export const Orders: React.FC = () => {
     });
 
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, stepFilter, viewFilter]);
+  }, [orders, quotations, issuingCompanyFilter, managerFilter, stepFilter, viewFilter, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
+
+  // Compute stats based on processedOrders (which has been filtered)
+  const stats = useMemo(() => {
+    const activeOrders = processedOrders; // All statuses in Order.status ('주문', '발주', '선적관리', '이익관리') represent active/ongoing orders.
+
+    const totalUsd = activeOrders.reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
+    const totalYsaccUsd = activeOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
+    const totalYsUsd = activeOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
+    const urgentCount = processedOrders.filter(o => o.nextAction.level === 'RED').length;
+
+    return {
+      activeCount: activeOrders.length,
+      totalUsd,
+      totalYsaccUsd,
+      totalYsUsd,
+      urgentCount
+    };
+  }, [processedOrders, quotations]);
 
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -306,19 +345,19 @@ export const Orders: React.FC = () => {
       </div>
 
       {/* Filter Bar */}
-      <div style={{ display: 'flex', gap: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>발행사</label>
-          <select value={issuingCompanyFilter} onChange={e => setIssuingCompanyFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '130px' }}>
+      <div style={{ display: 'flex', gap: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', alignItems: 'center', flexWrap: 'wrap', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>발행사</label>
+          <select value={issuingCompanyFilter} onChange={e => setIssuingCompanyFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '130px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
             <option value="All">전체</option>
             <option value="YS">영성ACC</option>
             <option value="YSACC">YSACC</option>
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>담당자</label>
-          <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '130px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>담당자</label>
+          <select value={managerFilter} onChange={e => setManagerFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '130px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
             <option value="All">전체</option>
             {managers.map(m => (
               <option key={m} value={m}>{m}</option>
@@ -326,9 +365,9 @@ export const Orders: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>단계</label>
-          <select value={stepFilter} onChange={e => setStepFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '130px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>단계</label>
+          <select value={stepFilter} onChange={e => setStepFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '130px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
             <option value="All">전체</option>
             <option value="PO접수">PO 접수</option>
             <option value="소싱발주">소싱 발주</option>
@@ -337,13 +376,92 @@ export const Orders: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>보기 구분</label>
-          <select value={viewFilter} onChange={e => setViewFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '160px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>보기 구분</label>
+          <select value={viewFilter} onChange={e => setViewFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '160px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
             <option value="All">전체 오더 보기</option>
             <option value="Urgent">⚠️ 오늘 처리 필요만</option>
           </select>
         </div>
+
+        {/* Vertical divider */}
+        <div style={{ width: '1px', height: '36px', backgroundColor: '#e2e8f0', margin: '0 8px', alignSelf: 'flex-end', marginBottom: '4px' }}></div>
+
+        {/* Date Filter Type Selector */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', letterSpacing: '0.05em' }}>조회 기간</label>
+          <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '8px 12px', border: '1.5px solid #2563eb', borderRadius: '8px', fontSize: '13px', width: '145px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 600, outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
+            <option value="All">전체 기간</option>
+            <option value="Monthly">월별 조회</option>
+            <option value="Quarterly">분기별 조회</option>
+            <option value="HalfYearly">반기별 조회</option>
+            <option value="Yearly">연간 조회</option>
+            <option value="Range">직접 입력 (기간)</option>
+          </select>
+        </div>
+
+        {/* Year Dropdown (For Monthly, Quarterly, HalfYearly, Yearly) */}
+        {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>년도</label>
+            <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '100px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer' }}>
+              {[2024, 2025, 2026, 2027, 2028, 2029, 2030].map(y => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Month Dropdown (Monthly) */}
+        {dateFilterType === 'Monthly' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>월</label>
+            <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '90px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer' }}>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                <option key={m} value={m}>{m}월</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Quarter Dropdown (Quarterly) */}
+        {dateFilterType === 'Quarterly' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>분기</label>
+            <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '135px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer' }}>
+              <option value={1}>1분기 (1-3월)</option>
+              <option value={2}>2분기 (4-6월)</option>
+              <option value={3}>3분기 (7-9월)</option>
+              <option value={4}>4분기 (10-12월)</option>
+            </select>
+          </div>
+        )}
+
+        {/* Half Dropdown (HalfYearly) */}
+        {dateFilterType === 'HalfYearly' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>반기</label>
+            <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '135px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer' }}>
+              <option value={1}>상반기 (1-6월)</option>
+              <option value={2}>하반기 (7-12월)</option>
+            </select>
+          </div>
+        )}
+
+        {/* Custom Range Inputs (Range) */}
+        {dateFilterType === 'Range' && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>시작일</label>
+              <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '7px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', backgroundColor: '#fff', color: '#1e293b', outline: 'none' }} />
+            </div>
+            <span style={{ alignSelf: 'flex-end', paddingBottom: '12px', color: '#94a3b8', fontWeight: 'bold' }}>~</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>종료일</label>
+              <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '7px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', backgroundColor: '#fff', color: '#1e293b', outline: 'none' }} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dashboard List */}
