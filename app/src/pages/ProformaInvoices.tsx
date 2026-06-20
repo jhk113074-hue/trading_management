@@ -172,9 +172,10 @@ export const ProformaInvoices: React.FC = () => {
         if (p.piDate !== selectedDate) return false;
       } else if (dateMode === 'weekly') {
         const { start: wStart, end: wEnd } = getWeekRange(weekOffset);
+        const wStartStr = wStart.toISOString().split('T')[0];
+        const wEndStr = wEnd.toISOString().split('T')[0];
         if (!p.piDate) return false;
-        const dt = new Date(p.piDate);
-        if (dt < wStart || dt > wEnd) return false;
+        if (p.piDate < wStartStr || p.piDate > wEndStr) return false;
       } else {
         // 기간 검색
         if (!p.piDate) return false;

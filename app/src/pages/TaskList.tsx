@@ -176,35 +176,34 @@ export const TaskList: React.FC = () => {
     result = result.filter(task => {
       const isDone = task.status === 'DONE';
       
-      // 미완료 업무(TODO, IN_PROGRESS, HOLDING 등)는 시작일(startDate) 기준 필터링 적용. 시작일 없으면 항상 표시
-      if (!isDone) {
-        if (!task.startDate) return true;
+      if (isDone) {
+        const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
+        if (!compDate) return false;
+
         if (dateMode === 'daily') {
-          return task.startDate <= selectedDate;
+          return compDate === selectedDate;
         } else if (dateMode === 'weekly') {
-          const { end: wEnd } = getWeekRange(weekOffset);
-          const wEndStr = wEnd.toISOString().split('T')[0];
-          return task.startDate <= wEndStr;
+          const { start, end } = getWeekRange(weekOffset);
+          const wStartStr = start.toISOString().split('T')[0];
+          const wEndStr = end.toISOString().split('T')[0];
+          return compDate >= wStartStr && compDate <= wEndStr;
         } else {
-          return task.startDate <= endDate;
+          return compDate >= startDate && compDate <= endDate;
         }
-      }
-
-      // 완료된(DONE) 업무에 대한 날짜별 필터링 처리
-      const completedAt = task.completedAt ? new Date(task.completedAt) : null;
-      if (!completedAt) return false;
-
-      if (dateMode === 'daily') {
-        const compStr = completedAt.toISOString().split('T')[0];
-        return compStr === selectedDate;
-      } else if (dateMode === 'weekly') {
-        const thisWeekStart = getWeekRange(0).start;
-        const completedWeek = Math.floor((completedAt.getTime() - thisWeekStart.getTime()) / (7 * 24 * 3600 * 1000));
-        return completedWeek === weekOffset;
       } else {
-        // 기간 검색
-        const compStr = completedAt.toISOString().split('T')[0];
-        return compStr >= startDate && compStr <= endDate;
+        const tStart = task.startDate || task.createdAt?.split('T')[0] || '';
+        const tDue = task.dueDate || '9999-12-31';
+
+        if (dateMode === 'daily') {
+          return tStart <= selectedDate && tDue >= selectedDate;
+        } else if (dateMode === 'weekly') {
+          const { start, end } = getWeekRange(weekOffset);
+          const wStartStr = start.toISOString().split('T')[0];
+          const wEndStr = end.toISOString().split('T')[0];
+          return tStart <= wEndStr && tDue >= wStartStr;
+        } else {
+          return tStart <= endDate && tDue >= startDate;
+        }
       }
     });
 
