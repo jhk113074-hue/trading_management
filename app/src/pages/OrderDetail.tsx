@@ -4009,7 +4009,7 @@ export const OrderDetail: React.FC = () => {
                       {allOrderSuppliers.length === 0 ? (
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
                       ) : (
-                        allOrderSuppliers.map(supplier => {
+                        allOrderSuppliers.map((supplier, supplierIdx) => {
                           const list = basicForm.supplierPaymentInstallments[supplier] || [];
                           const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
                           const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
@@ -4062,7 +4062,7 @@ export const OrderDetail: React.FC = () => {
                           };
 
                         return (
-                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: supplierIdx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                 <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a', width: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={supplier}>{supplier}</span>
