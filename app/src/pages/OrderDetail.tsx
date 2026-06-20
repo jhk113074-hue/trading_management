@@ -164,6 +164,52 @@ export const OrderDetail: React.FC = () => {
     lcRemark: ''
   });
 
+  const initialLoadRef = useRef(false);
+  const isDirtyRef = useRef(false);
+  const skipNextDirtyCheck = useRef(true);
+
+  useEffect(() => {
+    if (skipNextDirtyCheck.current) {
+      skipNextDirtyCheck.current = false;
+      return;
+    }
+    isDirtyRef.current = true;
+  }, [basicForm, orderItems, forwardersList]);
+
+  const handleNavigation = async (path: string) => {
+    if (isDirtyRef.current) {
+      const wantToSave = window.confirm("저장하지 않은 변경사항이 있습니다. 저장하고 이동하시겠습니까?\n\n[확인] 저장 후 이동\n[취소] 저장하지 않고 이동");
+      if (wantToSave) {
+        await handleSaveBasic();
+      }
+      isDirtyRef.current = false;
+    }
+    navigate(path);
+  };
+
+  useEffect(() => {
+    const handleGlobalClick = async (e: MouseEvent) => {
+      if (!isDirtyRef.current) return;
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      // Intercept clicks on links that are internal
+      if (link && link.href && link.href !== window.location.href && (!link.target || link.target !== '_blank')) {
+        const wantToSave = window.confirm("저장하지 않은 변경사항이 있습니다. 저장하고 이동하시겠습니까?\n\n[확인] 저장 후 이동\n[취소] 저장하지 않고 이동");
+        if (wantToSave) {
+          e.preventDefault();
+          e.stopPropagation();
+          await handleSaveBasic();
+          isDirtyRef.current = false;
+          navigate(new URL(link.href).pathname + new URL(link.href).search);
+        } else {
+          isDirtyRef.current = false;
+        }
+      }
+    };
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => document.removeEventListener('click', handleGlobalClick, true);
+  }); // run on every render to capture the latest handleSaveBasic closure
+
   // Load Order document
   useEffect(() => {
     if (!id) return;
@@ -171,18 +217,23 @@ export const OrderDetail: React.FC = () => {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as Order;
+        skipNextDirtyCheck.current = true;
         setOrder(data);
-        const params = new URLSearchParams(window.location.search);
-        const urlStep = params.get('step');
-        if (urlStep && steps.includes(urlStep as any)) {
-          setActiveStep(urlStep as any);
-        } else if (data.status) {
-          const mappedStatus = 
-            data.status === '주문' ? 'PO접수' :
-            data.status === '발주' ? '소싱발주' :
-            data.status === '선적관리' ? '수출관리' :
-            data.status === '이익관리' ? '정산마감' : 'PO접수';
-          setActiveStep(mappedStatus as any);
+        
+        if (!initialLoadRef.current) {
+          const params = new URLSearchParams(window.location.search);
+          const urlStep = params.get('step');
+          if (urlStep && steps.includes(urlStep as any)) {
+            setActiveStep(urlStep as any);
+          } else if (data.status) {
+            const mappedStatus = 
+              data.status === '주문' ? 'PO접수' :
+              data.status === '발주' ? '소싱발주' :
+              data.status === '선적관리' ? '수출관리' :
+              data.status === '이익관리' ? '정산마감' : 'PO접수';
+            setActiveStep(mappedStatus as any);
+          }
+          initialLoadRef.current = true;
         }
         setBasicForm({
           piNumber: data.piNumber || data.quotationId || '',
@@ -493,6 +544,7 @@ export const OrderDetail: React.FC = () => {
         updatedAt: serverTimestamp()
       }, { merge: true });
 
+      isDirtyRef.current = false;
       alert('✅ 저장되었습니다.');
     } catch (e: any) {
       alert('❌ 저장 실패: ' + e.message);
@@ -1715,7 +1767,7 @@ export const OrderDetail: React.FC = () => {
       }
       
       alert("✅ 발주서(PO)가 취소 및 삭제되었으며, PI 상태가 복원되었습니다.");
-      navigate('/orders');
+      handleNavigation('/orders');
     } catch (e: any) {
       alert("❌ 발주 취소 중 오류 발생: " + e.message);
     }
@@ -1729,7 +1781,7 @@ export const OrderDetail: React.FC = () => {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
         <h3 style={{ color: '#ef4444' }}>⚠️ 해당 PO를 찾을 수 없습니다.</h3>
-        <button onClick={() => navigate('/orders')} style={{ marginTop: '14px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>PO 목록으로 이동</button>
+        <button onClick={() => handleNavigation('/orders')} style={{ marginTop: '14px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>PO 목록으로 이동</button>
       </div>
     );
   }
@@ -1741,7 +1793,7 @@ export const OrderDetail: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
-            onClick={() => navigate('/orders')}
+            onClick={() => handleNavigation('/orders')}
             style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
             이전으로
