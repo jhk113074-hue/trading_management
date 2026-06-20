@@ -27,7 +27,7 @@ export const OrderDetail: React.FC = () => {
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
-  const [activeSourcingTab, setActiveSourcingTab] = useState<'소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제'>('소싱발주');
+  const [activeSourcingTab, setActiveSourcingTab] = useState<'소싱발주' | '선적관리' | '패킹리스트' | '도착보고_쉬핑마크' | 'COA_성적서' | '세금계산서_결제' | '대금결제관리'>('소싱발주');
   
   // Product & editor state variables
   const [products, setProducts] = useState<Product[]>([]);
@@ -2315,7 +2315,8 @@ export const OrderDetail: React.FC = () => {
                   { id: '패킹리스트', label: '3) 패킹리스트 작성' },
                   { id: '도착보고_쉬핑마크', label: '4) 도착보고/쉬핑마크 작성' },
                   { id: 'COA_성적서', label: '5) COA/시험성적서/첨부파일관리' },
-                  { id: '세금계산서_결제', label: '6) 세금계산서/구매확인서/대금결제관리' }
+                  { id: '세금계산서_결제', label: '6) 세금계산서/구매확인서' },
+                  { id: '대금결제관리', label: '7) 대금결제관리' }
                 ].map(tab => {
                   const isActive = activeSourcingTab === tab.id;
                   return (
@@ -3755,46 +3756,44 @@ export const OrderDetail: React.FC = () => {
                         allOrderSuppliers.map(supplier => {
                           const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
                           return (
-                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div key={supplier} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
                               <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>발행일자</span>
-                                  <input
-                                    type="date"
-                                    value={details.date}
-                                    onChange={e => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => ({
-                                        ...prev,
-                                        supplierTaxInvoiceDetails: {
-                                          ...prev.supplierTaxInvoiceDetails,
-                                          [supplier]: { ...details, date: val }
-                                        }
-                                      }));
-                                    }}
-                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
-                                  />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563' }}>세금계산서 승인번호</span>
-                                  <input
-                                    type="text"
-                                    placeholder="국세청 승인번호(발급번호) 입력"
-                                    value={details.invoiceNo}
-                                    onChange={e => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => ({
-                                        ...prev,
-                                        supplierTaxInvoiceDetails: {
-                                          ...prev.supplierTaxInvoiceDetails,
-                                          [supplier]: { ...details, invoiceNo: val }
-                                        }
-                                      }));
-                                    }}
-                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff' }}
-                                  />
-                                </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
+                                <input
+                                  type="date"
+                                  value={details.date}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierTaxInvoiceDetails: {
+                                        ...prev.supplierTaxInvoiceDetails,
+                                        [supplier]: { ...details, date: val }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
+                                <input
+                                  type="text"
+                                  placeholder="국세청 승인번호(발급번호)"
+                                  value={details.invoiceNo}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => ({
+                                      ...prev,
+                                      supplierTaxInvoiceDetails: {
+                                        ...prev.supplierTaxInvoiceDetails,
+                                        [supplier]: { ...details, invoiceNo: val }
+                                      }
+                                    }));
+                                  }}
+                                  style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                />
                               </div>
                             </div>
                           );
@@ -3887,9 +3886,14 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 6) 대금결제관리 */}
+                </div>
+              )}
+
+              {activeSourcingTab === '대금결제관리' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* 7) 대금결제관리 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💳 6) 대금결제관리 (공급업체 외화/원화 대금 지급)</h4>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💳 7) 대금결제관리 (공급업체 외화/원화 대금 지급)</h4>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별 원화/외화 수주 금액 대비 지급(송금) 완료 내역 및 미수금을 분할 입금 형식으로 지정합니다.</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       {allOrderSuppliers.length === 0 ? (
