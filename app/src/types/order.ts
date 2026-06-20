@@ -59,11 +59,23 @@ export interface Order {
   coaFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   testReportFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  transactionFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   additionalSuppliers?: string[];
   ciPlSentDate?: string;
   bankSubmissionDate?: string;
   paymentCollectedDate?: string;
   issuingCompany?: 'YSACC' | 'YS';
+
+  // 주문 기본정보 및 L/C 거래 상세
+  piNumber?: string; // PI 번호
+  customerAddress?: string; // 고객주소
+  portOfLoading?: string; // 출발항 (POL)
+  portOfDischarge?: string; // 도착항 (POD)
+  destinationCountry?: string; // 목적국가 (발주행/도)
+  lcIssuingBank?: string; // L/C 개설은행
+  lcIssuingDate?: string; // L/C 개설일자
+  lcDescription?: string; // L/C 물품설명/상세 (Description)
+  lcRemark?: string; // L/C 중요사항 (Remark)
   
   // New progress tracking fields
   ciNumber?: string; // CI번호 확정

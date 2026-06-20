@@ -11,6 +11,7 @@ import { ProductModal } from '../components/ProductModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
 import { ArrivalReportModal } from '../components/ArrivalReportModal';
 import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
+import { previewFile } from '../components/FilePreviewModal';
 
 const steps = ["PO접수", "소싱발주", "수출관리", "정산마감"] as const;
 
@@ -21,7 +22,7 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
@@ -42,8 +43,27 @@ export const OrderDetail: React.FC = () => {
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
-  const [editingForwarderInput, setEditingForwarderInput] = useState<{ index: number; field: string; value: string } | null>(null);
   const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
+
+  // CFS related states
+  const [cfsList, setCfsList] = useState<string[]>([]);
+  const [isAddingCfs, setIsAddingCfs] = useState(false);
+  const [newCfsVal, setNewCfsVal] = useState('');
+
+  // Fetch CFS Locations
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'cfsLocations'), (snapshot) => {
+      const list: string[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.address) {
+          list.push(data.address);
+        }
+      });
+      setCfsList(list);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Fetch products
   useEffect(() => {
@@ -70,6 +90,8 @@ export const OrderDetail: React.FC = () => {
 
   // Form states for details editing
   const [basicForm, setBasicForm] = useState({
+    piNumber: '',
+    customer: '',
     custPo: '',
     incoterms: 'FOB' as any,
     paymentTerms: '',
@@ -128,7 +150,17 @@ export const OrderDetail: React.FC = () => {
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; }>>,
-    bankSubmissionStatus: '' as 'Y' | 'N' | ''
+    bankSubmissionStatus: '' as 'Y' | 'N' | '',
+
+    // 주문 기본정보 및 L/C 거래 상세
+    customerAddress: '',
+    portOfLoading: '',
+    portOfDischarge: '',
+    destinationCountry: '',
+    lcIssuingBank: '',
+    lcIssuingDate: '',
+    lcDescription: '',
+    lcRemark: ''
   });
 
   // Load Order document
@@ -152,6 +184,8 @@ export const OrderDetail: React.FC = () => {
           setActiveStep(mappedStatus as any);
         }
         setBasicForm({
+          piNumber: data.piNumber || data.quotationId || '',
+          customer: data.customer || '',
           custPo: data.custPo || '',
           incoterms: data.incoterms || 'FOB',
           paymentTerms: data.paymentTerms || '',
@@ -249,7 +283,17 @@ export const OrderDetail: React.FC = () => {
           supplierTaxInvoiceDetails: data.supplierTaxInvoiceDetails || {},
           supplierPurchaseCertFiles: data.supplierPurchaseCertFiles || {},
           supplierPaymentInstallments: data.supplierPaymentInstallments || {},
-          bankSubmissionStatus: data.bankSubmissionStatus || ''
+          bankSubmissionStatus: data.bankSubmissionStatus || '',
+
+          // 주문 기본정보 및 L/C 거래 상세 로드
+          customerAddress: data.customerAddress || '',
+          portOfLoading: data.portOfLoading || '',
+          portOfDischarge: data.portOfDischarge || '',
+          destinationCountry: data.destinationCountry || '',
+          lcIssuingBank: data.lcIssuingBank || '',
+          lcIssuingDate: data.lcIssuingDate || '',
+          lcDescription: data.lcDescription || '',
+          lcRemark: data.lcRemark || ''
         });
         setOrderItems(data.items || []);
         setForwardersList(data.forwarders || []);
@@ -336,6 +380,8 @@ export const OrderDetail: React.FC = () => {
       }
 
       await setDoc(docRef, {
+        piNumber: basicForm.piNumber,
+        customer: basicForm.customer,
         custPo: basicForm.custPo,
         incoterms: basicForm.incoterms,
         paymentTerms: basicForm.paymentTerms,
@@ -394,6 +440,17 @@ export const OrderDetail: React.FC = () => {
         supplierPurchaseCertFiles: basicForm.supplierPurchaseCertFiles,
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
+
+        // 주문 기본정보 및 L/C 거래 상세 저장
+        customerAddress: basicForm.customerAddress,
+        portOfLoading: basicForm.portOfLoading,
+        portOfDischarge: basicForm.portOfDischarge,
+        destinationCountry: basicForm.destinationCountry,
+        lcIssuingBank: basicForm.lcIssuingBank,
+        lcIssuingDate: basicForm.lcIssuingDate,
+        lcDescription: basicForm.lcDescription,
+        lcRemark: basicForm.lcRemark,
+
         packingList: basicForm.packingList || null,
         
         items: orderItems.map(it => ({
@@ -567,7 +624,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -663,7 +720,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -687,7 +744,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles',
+    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -742,7 +799,11 @@ export const OrderDetail: React.FC = () => {
           {fileList.length > 0 ? (
             fileList.map((file, idx) => (
               <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                <span style={{ fontSize: '12px', color: '#1e293b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }} title={file.name}>
+                <span 
+                  onClick={() => previewFile(file.url, file.name)}
+                  style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', cursor: 'pointer', textDecoration: 'underline' }} 
+                  title="클릭하여 미리보기"
+                >
                   {file.name}
                 </span>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -1726,6 +1787,36 @@ export const OrderDetail: React.FC = () => {
           {/* Form Fields Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>PI 번호</span>
+              <input type="text" value={basicForm.piNumber} onChange={e => setBasicForm(prev => ({ ...prev, piNumber: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="PI 번호 입력" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>고객정보</span>
+              <input type="text" value={basicForm.customer} onChange={e => setBasicForm(prev => ({ ...prev, customer: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="고객사명" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>발주행/도 (목적국가)</span>
+              <input type="text" value={basicForm.destinationCountry} onChange={e => setBasicForm(prev => ({ ...prev, destinationCountry: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="목적국가" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>주소 (Customer Address)</span>
+              <input type="text" value={basicForm.customerAddress} onChange={e => setBasicForm(prev => ({ ...prev, customerAddress: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="주소 입력" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>출발항</span>
+              <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="출발항" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>도착항</span>
+              <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="도착항" />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>발행사 (발주서 기준)</span>
               {isEditing ? (
                 <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ padding: '4px 6px', border: '2px solid #3b82f6', borderRadius: '5px', fontSize: '11.5px', fontWeight: 700, background: '#eff6ff', outline: 'none' }}>
@@ -1745,6 +1836,11 @@ export const OrderDetail: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>PO 접수일</span>
               <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>담당 영업사원</span>
+              <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1782,11 +1878,6 @@ export const OrderDetail: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>담당 영업사원</span>
-              <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>요청 납기일</span>
               <input type="date" value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
@@ -1812,27 +1903,81 @@ export const OrderDetail: React.FC = () => {
               />
             </div>
 
-            {basicForm.isLc === 'Y' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>L/C 번호</span>
-                <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="L/C 번호 입력" />
-              </div>
-            )}
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>비고 (Remarks)</span>
               <textarea rows={1} value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical', outline: 'none' }} />
             </div>
           </div>
+
+          {/* L/C Details Section */}
+          {basicForm.isLc === 'Y' && (
+            <div style={{ marginTop: '6px', padding: '10px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontWeight: 800, fontSize: '12px', color: '#1e40af' }}>💳 L/C 거래 상세 정보</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>L/C ISSUING BANK</span>
+                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC 번호</span>
+                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC ISSUING DATE</span>
+                  <input type="date" value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>DESCRIPTION</span>
+                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#c2410c' }}>L/C 중요사항 기록 (Remark)</span>
+                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #f97316', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right: PO/LC/Sales Contract 파일 첨부 관리 */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📂 거래 서류 첨부 (PO / L/C / Sales Contract)</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', flex: 1 }}>
-            {renderFileField("PO (Purchase Order)", "poFiles", "po-file-uploader")}
-            {renderFileField("L/C (Letter of Credit)", "lcFiles", "lc-file-uploader")}
-            {renderFileField("Sales Contract", "scFiles", "sc-file-uploader")}
+        {/* Right: L/C details & PO/LC/Sales Contract 파일 첨부 관리 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* L/C Details Section */}
+          {basicForm.isLc === 'Y' && (
+            <div style={{ padding: '12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontWeight: 800, fontSize: '12px', color: '#1e40af', borderBottom: '1px solid #bfdbfe', paddingBottom: '4px', marginBottom: '4px' }}>💳 L/C 거래 상세 정보</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>L/C ISSUING BANK</span>
+                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC 번호</span>
+                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC ISSUING DATE</span>
+                  <input type="date" value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>DESCRIPTION</span>
+                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#c2410c' }}>L/C 중요사항 기록 (Remark)</span>
+                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #f97316', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right Attachment Box */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📂 거래 서류 첨부 (PO / L/C / Sales Contract)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', flex: 1 }}>
+              {renderFileField("PO (Purchase Order)", "poFiles", "po-file-uploader")}
+              {renderFileField("L/C (Letter of Credit)", "lcFiles", "lc-file-uploader")}
+              {renderFileField("Sales Contract", "scFiles", "sc-file-uploader")}
+            </div>
           </div>
         </div>
       </div>
@@ -2569,26 +2714,12 @@ export const OrderDetail: React.FC = () => {
 
                             {/* 운송비(발주가) - USD */}
                             <input
-                              type="text"
+                              type="number"
                               disabled={!isEditing}
-                              value={
-                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'budgetAmountUsd'
-                                  ? editingForwarderInput.value
-                                  : ((fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                              }
+                              value={fw.budgetAmountUsd || ''}
                               onChange={e => {
-                                const valStr = e.target.value;
-                                const filtered = valStr.replace(/[^0-9.]/g, '');
-                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: filtered });
-                                const num = parseFloat(filtered) || 0;
+                                const num = parseFloat(e.target.value) || 0;
                                 handleForwarderChange(idx, 'budgetAmountUsd', num);
-                              }}
-                              onFocus={() => {
-                                const rawVal = (fw.budgetAmountUsd ?? 0) === 0 ? '' : String(fw.budgetAmountUsd);
-                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: rawVal });
-                              }}
-                              onBlur={() => {
-                                setEditingForwarderInput(null);
                               }}
                               placeholder="0.00"
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
@@ -2606,29 +2737,12 @@ export const OrderDetail: React.FC = () => {
                                 <option value="KRW">KRW</option>
                               </select>
                               <input
-                                type="text"
+                                type="number"
                                 disabled={!isEditing}
-                                value={
-                                  editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountUsd'
-                                    ? editingForwarderInput.value
-                                    : (fw.freightCurrency === 'KRW'
-                                      ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
-                                      : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                                    )
-                                }
+                                value={fw.amountUsd || ''}
                                 onChange={e => {
-                                  const valStr = e.target.value;
-                                  const filtered = valStr.replace(/[^0-9.]/g, '');
-                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: filtered });
-                                  const num = parseFloat(filtered) || 0;
+                                  const num = parseFloat(e.target.value) || 0;
                                   handleForwarderChange(idx, 'amountUsd', num);
-                                }}
-                                onFocus={() => {
-                                  const rawVal = (fw.amountUsd ?? 0) === 0 ? '' : String(fw.amountUsd);
-                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: rawVal });
-                                }}
-                                onBlur={() => {
-                                  setEditingForwarderInput(null);
                                 }}
                                 placeholder="0"
                                 style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
@@ -2636,26 +2750,12 @@ export const OrderDetail: React.FC = () => {
                             </div>
 
                             <input
-                              type="text"
+                              type="number"
                               disabled={!isEditing}
-                              value={
-                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountKrw'
-                                  ? editingForwarderInput.value
-                                  : ((fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR'))
-                              }
+                              value={fw.amountKrw || ''}
                               onChange={e => {
-                                const valStr = e.target.value;
-                                const filtered = valStr.replace(/[^0-9]/g, '');
-                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: filtered });
-                                const num = parseInt(filtered, 10) || 0;
+                                const num = parseFloat(e.target.value) || 0;
                                 handleForwarderChange(idx, 'amountKrw', num);
-                              }}
-                              onFocus={() => {
-                                const rawVal = (fw.amountKrw ?? 0) === 0 ? '' : String(fw.amountKrw);
-                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: rawVal });
-                              }}
-                              onBlur={() => {
-                                setEditingForwarderInput(null);
                               }}
                               placeholder="0"
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
@@ -2670,54 +2770,125 @@ export const OrderDetail: React.FC = () => {
                         ))
                       )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>포워더 최종운임 (KRW 실비용)</span>
-                      <input type="number" value={basicForm.finalFreight || ''} onChange={e => setBasicForm(p => ({ ...p, finalFreight: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="원화 최종 실 운임 입력" />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
-                      <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소</span>
-                      {isEditing ? (
-                        <select value={basicForm.containerWorkspaceType} onChange={e => setBasicForm(p => ({ ...p, containerWorkspaceType: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%' }}>
-                          <option value="">선택사항</option>
-                          <option value="CFS">CFS 작업</option>
-                          <option value="Door">Door 작업</option>
-                        </select>
-                      ) : (
-                        <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
-                      <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CFS 주소 및 정보</span>
-                      <input 
-                        type="text" 
-                        style={inputStyle(isEditing)} 
-                        value={basicForm.cfsAddress || ''} 
-                        onChange={e => setBasicForm(p => ({ ...p, cfsAddress: e.target.value }))} 
-                        disabled={!isEditing} 
-                        placeholder="주소 및 담당자 정보" 
-                      />
+                    {/* Vessel확정(선박명/항차)/서류마감일/ETD/ETA을 한줄로 표시 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
+                        <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감일</span>
+                        <input type="date" value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
+                        <input type="date" value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
+                        <input type="date" value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감일</span>
-                      <input type="date" value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                    {/* 컨테이너작업장소/컨테이너(CFS)입고일/CFS 회사명/주소 및 담당(신규등록 및 저장기능)-1줄 표현 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '120px 140px 1.2fr 2fr', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소</span>
+                        {isEditing ? (
+                          <select value={basicForm.containerWorkspaceType} onChange={e => setBasicForm(p => ({ ...p, containerWorkspaceType: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', height: '37px' }}>
+                            <option value="">선택사항</option>
+                            <option value="CFS">CFS 작업</option>
+                            <option value="Door">Door 작업</option>
+                          </select>
+                        ) : (
+                          <input type="text" value={basicForm.containerWorkspaceType === 'CFS' ? 'CFS 작업' : basicForm.containerWorkspaceType === 'Door' ? 'Door 작업' : '-'} disabled style={inputStyle(false)} />
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
+                        <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '37px' }} />
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>CFS 회사명</span>
+                          {isEditing && (
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingCfs((p: boolean) => !p)}
+                              style={{ border: 'none', background: 'none', color: '#3b82f6', fontSize: '10.5px', fontWeight: 700, padding: 0, cursor: 'pointer' }}
+                            >
+                              {isAddingCfs ? '선택형' : '직접등록'}
+                            </button>
+                          )}
+                        </span>
+                        {isAddingCfs && isEditing ? (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <input
+                              type="text"
+                              placeholder="새 CFS 입력"
+                              value={newCfsVal}
+                              onChange={e => setNewCfsVal(e.target.value)}
+                              style={{ ...inputStyle(true), height: '37px', flex: 1 }}
+                            />
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!newCfsVal.trim()) return;
+                                try {
+                                  const cfsId = `cfs_${Date.now()}`;
+                                  await setDoc(doc(db, 'companies', COMPANY_ID, 'cfsLocations', cfsId), {
+                                    address: newCfsVal.trim(),
+                                    createdAt: serverTimestamp()
+                                  });
+                                  setCfsList((prev: string[]) => [...prev, newCfsVal.trim()]);
+                                  setBasicForm(p => ({ ...p, cfsContactInfo: newCfsVal.trim() }));
+                                  setNewCfsVal('');
+                                  setIsAddingCfs(false);
+                                  alert('CFS가 등록 및 선택되었습니다.');
+                                } catch (err: any) {
+                                  alert('CFS 저장 실패: ' + err.message);
+                                }
+                              }}
+                              style={{ padding: '0 8px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              저장
+                            </button>
+                          </div>
+                        ) : (
+                          <select
+                            disabled={!isEditing}
+                            value={basicForm.cfsContactInfo || ''}
+                            onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))}
+                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', height: '37px', background: '#fff' }}
+                          >
+                            <option value="">선택하세요</option>
+                            {cfsList.map((cfs: string, idx: number) => (
+                              <option key={idx} value={cfs}>{cfs.split('\n')[0]}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>주소 및 담당자 정보</span>
+                        <input 
+                          type="text" 
+                          style={{ ...inputStyle(isEditing), height: '37px' }} 
+                          value={basicForm.cfsContactInfo || ''} 
+                          onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} 
+                          disabled={!isEditing} 
+                          placeholder="선택한 CFS 주소 및 담당자 정보 상세" />
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
-                      <input type="date" value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
-                      <input type="date" value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+
+                    {/* 거래서류 (거래명세표) 첨부 영역 추가 */}
+                    <div style={{ gridColumn: 'span 3', borderTop: '1px solid #e2e8f0', paddingTop: '14px', marginTop: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '8px' }}>📂 거래서류 첨부 (거래명세표 등)</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                        {renderFileField("거래서류 (거래명세표)", "transactionFiles", "transaction-file-uploader")}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3692,9 +3863,12 @@ export const OrderDetail: React.FC = () => {
                                 {fileList.length > 0 ? (
                                   fileList.map((file, idx) => (
                                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                      <a href={file.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#2563eb', fontSize: '11.5px', fontWeight: 600 }}>
+                                      <span 
+                                        onClick={() => previewFile(file.url, file.name)} 
+                                        style={{ textDecoration: 'underline', color: '#2563eb', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
+                                      >
                                         📄 {file.name}
-                                      </a>
+                                      </span>
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteSupplierCertFile(supplier, idx)}

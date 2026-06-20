@@ -19,10 +19,13 @@ import { Orders } from './pages/Orders';
 import { OrderDetail } from './pages/OrderDetail';
 import { IssueBoard } from './pages/IssueBoard';
 
+import { FilePreviewModal } from './components/FilePreviewModal';
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <TaskProvider>
+        <FilePreviewModal />
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />

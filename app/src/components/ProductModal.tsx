@@ -3,6 +3,7 @@ import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/fire
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Product, ProductPriceHistory } from '../types/product';
+import { previewFile } from './FilePreviewModal';
 
 interface Props {
   initialProduct?: Product;
@@ -1414,15 +1415,13 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               const origIdx = (formData.technicalDocuments || []).findIndex(d => d.path === docItem.path);
                               return (
                                 <div key={docItem.path} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #f1f5f9', fontSize: '12px' }}>
-                                  <a 
-                                    href={docItem.url} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
-                                    style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}
-                                    title={docItem.name}
+                                  <span 
+                                    onClick={() => previewFile(docItem.url, docItem.name)} 
+                                    style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', cursor: 'pointer' }}
+                                    title="클릭하여 미리보기"
                                   >
                                     {docItem.name}
-                                  </a>
+                                  </span>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <span style={{ fontSize: '10px', color: '#94a3b8' }}>({(docItem.size / 1024).toFixed(1)}KB)</span>
                                     <button 
