@@ -2423,8 +2423,8 @@ export const OrderDetail: React.FC = () => {
                             // Automatically build a default Packing List structure dynamically using order details
                             const defaultContainers = [
                               {
-                                containerNo: basicForm.containerVolumeQuantities || 'TGHU6160960',
-                                sealNo: 'K0011885',
+                                containerNo: basicForm.containerVolumeQuantities || '',
+                                sealNo: '',
                                 items: orderItems.map((it, idx) => {
                                   const netWeight = Math.round(it.qty || 0);
                                   const grossWeight = Math.round(netWeight * 1.02);
@@ -2443,21 +2443,23 @@ export const OrderDetail: React.FC = () => {
                             setBasicForm(prev => ({
                               ...prev,
                               packingList: {
-                                shipper: `YS ACC CO., LTD\nNO.302,180, SEONGBONG-RO\nSEOWON-GU.CHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nE-MAIL: ALEXPARK(AT)YSACC.CO.KR, TEL.+82-70-4141-2927, FAX.+82-303-3444-1130`,
-                                applicant: `NATIONAL FACTORY FOR FIBERGLASS\nP.O. BOX 7952 DAMMAM 31472\nSAUDI ARABIA.`,
-                                notifyParty: `NATIONAL FACTORY FOR FIBERGLASS\nP.O. BOX 7952 DAMMAM 31472\nSAUDI ARABIA.`,
-                                pol: basicForm.cfsContactInfo || 'BUSAN PORT, SOUTH KOREA',
-                                pod: basicForm.cfsAddress || 'JEDDAH SEAPORT, SAUDI ARABIA',
-                                vesselName: basicForm.vesselBooking || 'GFS GALAXY 02612W',
-                                sailingDate: basicForm.etd || '19-3-26',
-                                paymentTerms: basicForm.paymentTerms || '30 DAYS AFTER BILL OF LADING DATE',
-                                deliveryTerms: basicForm.incoterms || 'CIF JEDDAH SEAPORT, SAUDI ARABIA',
-                                remarks: basicForm.remark || 'BOLTS AND NUTS AND WASHER AND PVC SEALANT TAPE AND GLASS CLOTH,\nMANHOLE LOCKERS, MANHOLE HINGES, BLACK SEALANT TAPE, LEVEL\nINDICATOR,\n25MM INSULATION SKIN.\n.\nDELIVERY TERMS: CIF JEDDAH SEAPORT, SAUDI ARABIA',
-                                invoiceNo: basicForm.ciNumber || `YSACC(MNT)-26-01`,
-                                invoiceDate: basicForm.ciPlSentDate || '12-3-26',
-                                lcNo: basicForm.lcNo || 'IMEE045495',
-                                lcDate: basicForm.bankSubmissionDate || '12-2-26',
-                                lcIssuingBank: 'ARNBSARIXXX\nARAB NATIONAL BANK HEAD OFFICE\nRIYADH\nKING FAISAL STREET NORTH MURABBA RI\nYADH SAUDI ARABIA',
+                                shipper: prev.issuingCompany === 'YS' 
+                                  ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028` 
+                                  : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`,
+                                applicant: order?.customer || '',
+                                notifyParty: order?.customer || '',
+                                pol: basicForm.cfsContactInfo || '',
+                                pod: basicForm.cfsAddress || '',
+                                vesselName: basicForm.vesselBooking || '',
+                                sailingDate: basicForm.etd || '',
+                                paymentTerms: basicForm.paymentTerms || '',
+                                deliveryTerms: basicForm.incoterms || '',
+                                remarks: basicForm.remark || '',
+                                invoiceNo: basicForm.ciNumber || '',
+                                invoiceDate: basicForm.ciPlSentDate || new Date().toISOString().split('T')[0],
+                                lcNo: basicForm.lcNo || '',
+                                lcDate: basicForm.bankSubmissionDate || '',
+                                lcIssuingBank: '',
                                 containers: defaultContainers
                               }
                             }));
