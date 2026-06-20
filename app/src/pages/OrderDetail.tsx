@@ -2618,32 +2618,37 @@ export const OrderDetail: React.FC = () => {
                             </div>
 
                             {/* 운송비(발주가) - USD */}
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              disabled={!isEditing}
-                              value={
-                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'budgetAmountUsd'
-                                  ? editingForwarderInput.value
-                                  : ((fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                              }
-                              onChange={e => {
-                                const valStr = e.target.value;
-                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: valStr });
-                                const raw = valStr.replace(/,/g, '');
-                                const num = parseFloat(raw) || 0;
-                                handleForwarderChange(idx, 'budgetAmountUsd', num);
-                              }}
-                              onFocus={() => {
-                                const rawVal = (fw.budgetAmountUsd ?? 0) === 0 ? '' : String(fw.budgetAmountUsd);
-                                setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: rawVal });
-                              }}
-                              onBlur={() => {
-                                setEditingForwarderInput(null);
-                              }}
-                              placeholder="0.00"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
-                            />
+                            {/* 운송비(발주가) - USD */}
+                            {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'budgetAmountUsd' ? (
+                              <input
+                                type="number"
+                                step="any"
+                                disabled={!isEditing}
+                                value={editingForwarderInput.value}
+                                onChange={e => {
+                                  const valStr = e.target.value;
+                                  setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: valStr });
+                                  const num = parseFloat(valStr) || 0;
+                                  handleForwarderChange(idx, 'budgetAmountUsd', num);
+                                }}
+                                onBlur={() => setEditingForwarderInput(null)}
+                                placeholder="0.00"
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                                autoFocus
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                disabled={!isEditing}
+                                value={(fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                                onFocus={() => {
+                                  const rawVal = (fw.budgetAmountUsd ?? 0) === 0 ? '' : String(fw.budgetAmountUsd);
+                                  setEditingForwarderInput({ index: idx, field: 'budgetAmountUsd', value: rawVal });
+                                }}
+                                placeholder="0.00"
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                              />
+                            )}
 
                             {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
                             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
@@ -2656,63 +2661,71 @@ export const OrderDetail: React.FC = () => {
                                 <option value="USD">USD</option>
                                 <option value="KRW">KRW</option>
                               </select>
-                              <input
-                                type="text"
-                                inputMode="decimal"
-                                disabled={!isEditing}
-                                value={
-                                  editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountUsd'
-                                    ? editingForwarderInput.value
-                                    : (fw.freightCurrency === 'KRW'
-                                      ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
-                                      : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
-                                    )
-                                }
-                                onChange={e => {
-                                  const valStr = e.target.value;
-                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: valStr });
-                                  const raw = valStr.replace(/,/g, '');
-                                  const num = parseFloat(raw) || 0;
-                                  handleForwarderChange(idx, 'amountUsd', num);
-                                }}
-                                onFocus={() => {
-                                  const rawVal = (fw.amountUsd ?? 0) === 0 ? '' : String(fw.amountUsd);
-                                  setEditingForwarderInput({ index: idx, field: 'amountUsd', value: rawVal });
-                                }}
-                                onBlur={() => {
-                                  setEditingForwarderInput(null);
-                                }}
-                                placeholder="0"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
-                              />
+                              {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountUsd' ? (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  disabled={!isEditing}
+                                  value={editingForwarderInput.value}
+                                  onChange={e => {
+                                    const valStr = e.target.value;
+                                    setEditingForwarderInput({ index: idx, field: 'amountUsd', value: valStr });
+                                    const num = parseFloat(valStr) || 0;
+                                    handleForwarderChange(idx, 'amountUsd', num);
+                                  }}
+                                  onBlur={() => setEditingForwarderInput(null)}
+                                  placeholder="0"
+                                  style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
+                                  autoFocus
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  disabled={!isEditing}
+                                  value={fw.freightCurrency === 'KRW'
+                                    ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
+                                    : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
+                                  }
+                                  onFocus={() => {
+                                    const rawVal = (fw.amountUsd ?? 0) === 0 ? '' : String(fw.amountUsd);
+                                    setEditingForwarderInput({ index: idx, field: 'amountUsd', value: rawVal });
+                                  }}
+                                  placeholder="0"
+                                  style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
+                                />
+                              )}
                             </div>
 
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              disabled={!isEditing}
-                              value={
-                                editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountKrw'
-                                  ? editingForwarderInput.value
-                                  : ((fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR'))
-                              }
-                              onChange={e => {
-                                const valStr = e.target.value;
-                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: valStr });
-                                const raw = valStr.replace(/,/g, '');
-                                const num = parseInt(raw, 10) || 0;
-                                handleForwarderChange(idx, 'amountKrw', num);
-                              }}
-                              onFocus={() => {
-                                const rawVal = (fw.amountKrw ?? 0) === 0 ? '' : String(fw.amountKrw);
-                                setEditingForwarderInput({ index: idx, field: 'amountKrw', value: rawVal });
-                              }}
-                              onBlur={() => {
-                                setEditingForwarderInput(null);
-                              }}
-                              placeholder="0"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
-                            />
+                            {editingForwarderInput?.index === idx && editingForwarderInput?.field === 'amountKrw' ? (
+                              <input
+                                type="number"
+                                step="1"
+                                disabled={!isEditing}
+                                value={editingForwarderInput.value}
+                                onChange={e => {
+                                  const valStr = e.target.value;
+                                  setEditingForwarderInput({ index: idx, field: 'amountKrw', value: valStr });
+                                  const num = parseInt(valStr, 10) || 0;
+                                  handleForwarderChange(idx, 'amountKrw', num);
+                                }}
+                                onBlur={() => setEditingForwarderInput(null)}
+                                placeholder="0"
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                                autoFocus
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                disabled={!isEditing}
+                                value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
+                                onFocus={() => {
+                                  const rawVal = (fw.amountKrw ?? 0) === 0 ? '' : String(fw.amountKrw);
+                                  setEditingForwarderInput({ index: idx, field: 'amountKrw', value: rawVal });
+                                }}
+                                placeholder="0"
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                              />
+                            )}
                             <button
                               type="button"
                               disabled={!isEditing}
