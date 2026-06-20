@@ -143,7 +143,7 @@ export const TaskList: React.FC = () => {
   // Filtering & Sorting State
   const [filterAssignee, setFilterAssignee] = useState('전체 담당자');
   const [filterType, setFilterType] = useState('모든 유형');
-  const [filterStatus, setFilterStatus] = useState('모든 상태');
+  const [filterStatus, setFilterStatus] = useState('시작 안 함 + 진행중');
   
   const [sortField, setSortField] = useState<keyof Task | 'urgency_icon' | ''>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
