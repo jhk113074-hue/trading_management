@@ -2841,7 +2841,11 @@ export const OrderDetail: React.FC = () => {
                               type="text"
                               disabled={!isEditing}
                               placeholder="0"
-                              value={fw.amountKrw !== undefined && fw.amountKrw !== null && !Number.isNaN(Number(fw.amountKrw)) ? fw.amountKrw : ''}
+                              value={
+                                fw.amountKrw !== undefined && fw.amountKrw !== null && fw.amountKrw !== '' && !Number.isNaN(Number(fw.amountKrw))
+                                  ? Number(fw.amountKrw).toLocaleString()
+                                  : ''
+                              }
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 handleForwarderChange(idx, 'amountKrw', val);
@@ -2854,10 +2858,20 @@ export const OrderDetail: React.FC = () => {
                               type="text"
                               disabled={!isEditing}
                               placeholder="0"
-                              value={fw.freightAmount !== undefined && fw.freightAmount !== null && !Number.isNaN(Number(fw.freightAmount)) ? fw.freightAmount : ''}
+                              value={
+                                fw.freightAmount !== undefined && fw.freightAmount !== null && fw.freightAmount !== '' && !Number.isNaN(Number(fw.freightAmount))
+                                  ? (() => {
+                                      const parts = String(fw.freightAmount).split('.');
+                                      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                      return parts.join('.');
+                                    })()
+                                  : ''
+                              }
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
-                                handleForwarderChange(idx, 'freightAmount', val);
+                                const parts = val.split('.');
+                                const cleanVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+                                handleForwarderChange(idx, 'freightAmount', cleanVal);
                                 handleForwarderChange(idx, 'freightCurrency', 'USD'); // 강제로 USD 설정
                               }}
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
