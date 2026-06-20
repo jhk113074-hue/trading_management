@@ -2253,12 +2253,13 @@ export const OrderDetail: React.FC = () => {
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
                       />
                       <input
-                        type="number"
-                        step="any"
-                        min="0"
+                        type="text"
                         placeholder="0.00"
                         value={fw.budgetAmountUsd ?? ''}
-                        onChange={e => handleForwarderChange(idx, 'budgetAmountUsd', e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          handleForwarderChange(idx, 'budgetAmountUsd', val);
+                        }}
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
                       />
                       <button
@@ -2700,12 +2701,13 @@ export const OrderDetail: React.FC = () => {
 
                             {/* 운송비(발주가) - USD */}
                             <input
-                              type="number"
-                              step="any"
-                              min="0"
+                              type="text"
                               disabled={!isEditing}
                               value={fw.budgetAmountUsd ?? ''}
-                              onChange={e => handleForwarderChange(idx, 'budgetAmountUsd', e.target.value)}
+                              onChange={e => {
+                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                handleForwarderChange(idx, 'budgetAmountUsd', val);
+                              }}
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
 
@@ -2721,24 +2723,26 @@ export const OrderDetail: React.FC = () => {
                                 <option value="KRW">KRW</option>
                               </select>
                               <input
-                                type="number"
-                                step="any"
-                                min="0"
+                                type="text"
                                 disabled={!isEditing}
                                 value={fw.freightAmount ?? ''}
-                                onChange={e => handleForwarderChange(idx, 'freightAmount', e.target.value)}
+                                onChange={e => {
+                                  const val = e.target.value.replace(/[^0-9.]/g, '');
+                                  handleForwarderChange(idx, 'freightAmount', val);
+                                }}
                                 style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', flex: 1, height: '30px', outline: 'none' }}
                               />
                             </div>
 
                             {/* 실행(국내비용) - KRW */}
                             <input
-                              type="number"
-                              step="any"
-                              min="0"
+                              type="text"
                               disabled={!isEditing}
                               value={fw.amountKrw ?? ''}
-                              onChange={e => handleForwarderChange(idx, 'amountKrw', e.target.value)}
+                              onChange={e => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                handleForwarderChange(idx, 'amountKrw', val);
+                              }}
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
                             <button

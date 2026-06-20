@@ -60,7 +60,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
   };
   const [forwarders, setForwarders] = useState<ForwarderEntry[]>(initForwarders);
 
-  const addForwarder = () => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }]);
+  const addForwarder = () => setForwarders(prev => [...prev, { name: '', amountUsd: 0, budgetAmountUsd: 0 }]);
   const removeForwarder = (idx: number) => setForwarders(prev => prev.filter((_, i) => i !== idx));
   const updateForwarder = (idx: number, field: keyof ForwarderEntry, value: string | number) =>
     setForwarders(prev => prev.map((f, i) => i === idx ? (field === 'amountUsd' ? { ...f, amountUsd: value as number, budgetAmountUsd: value as number } : { ...f, [field]: value }) : f));
@@ -435,8 +435,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                       setForwarders([{
                         name: '포워딩업체-운송비',
                         amountUsd: selectedQuote.freightTotal,
-                        budgetAmountUsd: selectedQuote.freightTotal,
-                        amountKrw: 0
+                        budgetAmountUsd: selectedQuote.freightTotal
                       }]);
                     } else {
                       setForwarders([]);

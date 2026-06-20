@@ -146,8 +146,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         setForwarders([{
           name: '포워딩업체-운송비',
           amountUsd: selectedQuote.freightTotal,
-          budgetAmountUsd: selectedQuote.freightTotal,
-          amountKrw: 0
+          budgetAmountUsd: selectedQuote.freightTotal
         }]);
       } else {
         setForwarders([]);
@@ -899,7 +898,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
               <button
                 type="button"
-                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }])}
+                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, budgetAmountUsd: 0 }])}
                 style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
                 + 운송사 추가
