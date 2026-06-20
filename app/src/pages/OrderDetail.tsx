@@ -2665,18 +2665,29 @@ export const OrderDetail: React.FC = () => {
                           + 운송사 추가
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 110px 140px 120px 80px 32px', gap: '6px', marginBottom: '4px' }}>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭하여 선택)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비(발주가) (USD $)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(해상운임) (USD/KRW)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(국내비용) (KRW ₩)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>최종비율(%)</span>
                         <span></span>
                       </div>
                       {forwardersList.length === 0 ? (
                         <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (기본 1개 제공)</div>
                       ) : (
-                        forwardersList.map((fw, idx) => (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 130px 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                        forwardersList.map((fw, idx) => {
+                          const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
+                          const budgetUsd = Number(fw.budgetAmountUsd) || 0;
+                          const freightAmt = Number(fw.freightAmount) || 0;
+                          const amtKrw = Number(fw.amountKrw) || 0;
+                          const freightKrw = fw.freightCurrency === 'KRW' ? freightAmt : freightAmt * customsRate;
+                          const finalKrw = freightKrw + amtKrw;
+                          const finalUsd = finalKrw / customsRate;
+                          const percentage = budgetUsd > 0 ? ((finalUsd / budgetUsd) * 100).toFixed(1) : '0.0';
+
+                          return (
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 110px 140px 120px 80px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                             {/* 포워더명 SubWindow 선택 */}
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                               <input
@@ -2709,7 +2720,8 @@ export const OrderDetail: React.FC = () => {
                             <input
                               type="text"
                               disabled={!isEditing}
-                              value={fw.budgetAmountUsd ?? 0}
+                              placeholder="0"
+                              value={fw.budgetAmountUsd !== undefined && fw.budgetAmountUsd !== null && !Number.isNaN(Number(fw.budgetAmountUsd)) ? fw.budgetAmountUsd : ''}
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
                                 handleForwarderChange(idx, 'budgetAmountUsd', val);
@@ -2731,7 +2743,8 @@ export const OrderDetail: React.FC = () => {
                               <input
                                 type="text"
                                 disabled={!isEditing}
-                                value={fw.freightAmount ?? 0}
+                                placeholder="0"
+                                value={fw.freightAmount !== undefined && fw.freightAmount !== null && !Number.isNaN(Number(fw.freightAmount)) ? fw.freightAmount : ''}
                                 onChange={e => {
                                   const val = e.target.value.replace(/[^0-9.]/g, '');
                                   handleForwarderChange(idx, 'freightAmount', val);
@@ -2744,13 +2757,20 @@ export const OrderDetail: React.FC = () => {
                             <input
                               type="text"
                               disabled={!isEditing}
-                              value={fw.amountKrw ?? 0}
+                              placeholder="0"
+                              value={fw.amountKrw !== undefined && fw.amountKrw !== null && !Number.isNaN(Number(fw.amountKrw)) ? fw.amountKrw : ''}
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 handleForwarderChange(idx, 'amountKrw', val);
                               }}
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
+
+                            {/* 최종비율(%) 표시 */}
+                            <div style={{ padding: '6px 8px', fontSize: '11.5px', fontWeight: 700, color: percentage !== '0.0' ? '#ef4444' : '#64748b', textAlign: 'right', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                              {percentage}%
+                            </div>
+
                             <button
                               type="button"
                               disabled={!isEditing}
@@ -2758,7 +2778,8 @@ export const OrderDetail: React.FC = () => {
                               style={{ padding: '6px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700 }}
                             >✕</button>
                           </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                     {/* Vessel확정(선박명/항차)/서류마감일/ETD/ETA을 한줄로 표시 */}
