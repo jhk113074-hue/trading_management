@@ -898,7 +898,13 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
               <button
                 type="button"
-                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, budgetAmountUsd: 0 }])}
+                onClick={() => {
+                  if (forwarders.length >= 4) {
+                    alert("운송사는 최대 4개까지 추가 가능합니다.");
+                    return;
+                  }
+                  setForwarders(prev => [...prev, { name: '', amountUsd: 0, budgetAmountUsd: 0 }]);
+                }}
                 style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
                 + 운송사 추가

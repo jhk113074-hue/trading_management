@@ -2235,7 +2235,13 @@ export const OrderDetail: React.FC = () => {
                   <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
                   <button
                     type="button"
-                    onClick={addForwarderRow}
+                    onClick={() => {
+                      if (forwardersList.length >= 4) {
+                        alert("운송사는 최대 4개까지 추가 가능합니다.");
+                        return;
+                      }
+                      addForwarderRow();
+                    }}
                     style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
                   >
                     + 운송사 추가
@@ -2659,35 +2665,38 @@ export const OrderDetail: React.FC = () => {
                         <button
                           type="button"
                           disabled={!isEditing}
-                          onClick={addForwarderRow}
+                          onClick={() => {
+                            if (forwardersList.length >= 4) {
+                              alert("운송사는 최대 4개까지 추가 가능합니다.");
+                              return;
+                            }
+                            addForwarderRow();
+                          }}
                           style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                         >
                           + 운송사 추가
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 110px 140px 120px 80px 32px', gap: '6px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭하여 선택)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비(발주가) (USD $)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(해상운임) (USD/KRW)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>실행(국내비용) (KRW ₩)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>최종비율(%)</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 140px 140px 120px 32px', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송비(KRW)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임(USD)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>최종(USD)</span>
                         <span></span>
                       </div>
                       {forwardersList.length === 0 ? (
-                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (기본 1개 제공)</div>
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (최대 4개)</div>
                       ) : (
                         forwardersList.map((fw, idx) => {
                           const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
-                          const budgetUsd = Number(fw.budgetAmountUsd) || 0;
                           const freightAmt = Number(fw.freightAmount) || 0;
                           const amtKrw = Number(fw.amountKrw) || 0;
-                          const freightKrw = fw.freightCurrency === 'KRW' ? freightAmt : freightAmt * customsRate;
-                          const finalKrw = freightKrw + amtKrw;
-                          const finalUsd = finalKrw / customsRate;
-                          const percentage = budgetUsd > 0 ? ((finalUsd / budgetUsd) * 100).toFixed(1) : '0.0';
+                          
+                          // 최종(USD) = 해상운임(USD) + 국내운송비(KRW)/환율
+                          const finalUsd = freightAmt + (amtKrw / customsRate);
 
                           return (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 110px 140px 120px 80px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 140px 140px 120px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                             {/* 포워더명 SubWindow 선택 */}
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                               <input
@@ -2716,43 +2725,6 @@ export const OrderDetail: React.FC = () => {
                               </button>
                             </div>
 
-                            {/* 운송비(발주가) - USD */}
-                            <input
-                              type="text"
-                              disabled={!isEditing}
-                              placeholder="0"
-                              value={fw.budgetAmountUsd !== undefined && fw.budgetAmountUsd !== null && !Number.isNaN(Number(fw.budgetAmountUsd)) ? fw.budgetAmountUsd : ''}
-                              onChange={e => {
-                                const val = e.target.value.replace(/[^0-9.]/g, '');
-                                handleForwarderChange(idx, 'budgetAmountUsd', val);
-                              }}
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
-                            />
-
-                            {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
-                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                              <select
-                                value={fw.freightCurrency || 'USD'}
-                                disabled={!isEditing}
-                                onChange={e => handleForwarderChange(idx, 'freightCurrency', e.target.value)}
-                                style={{ padding: '6px 2px', border: '1px solid #ddd6fe', borderRadius: '4px 0 0 4px', fontSize: '10.5px', height: '30px', background: isEditing ? '#fff' : '#f8fafc', borderRight: 'none', outline: 'none' }}
-                              >
-                                <option value="USD">USD</option>
-                                <option value="KRW">KRW</option>
-                              </select>
-                              <input
-                                type="text"
-                                disabled={!isEditing}
-                                placeholder="0"
-                                value={fw.freightAmount !== undefined && fw.freightAmount !== null && !Number.isNaN(Number(fw.freightAmount)) ? fw.freightAmount : ''}
-                                onChange={e => {
-                                  const val = e.target.value.replace(/[^0-9.]/g, '');
-                                  handleForwarderChange(idx, 'freightAmount', val);
-                                }}
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', flex: 1, height: '30px', outline: 'none' }}
-                              />
-                            </div>
-
                             {/* 실행(국내비용) - KRW */}
                             <input
                               type="text"
@@ -2766,9 +2738,23 @@ export const OrderDetail: React.FC = () => {
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
 
-                            {/* 최종비율(%) 표시 */}
-                            <div style={{ padding: '6px 8px', fontSize: '11.5px', fontWeight: 700, color: percentage !== '0.0' ? '#ef4444' : '#64748b', textAlign: 'right', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              {percentage}%
+                            {/* 해상운임 - USD */}
+                            <input
+                              type="text"
+                              disabled={!isEditing}
+                              placeholder="0"
+                              value={fw.freightAmount !== undefined && fw.freightAmount !== null && !Number.isNaN(Number(fw.freightAmount)) ? fw.freightAmount : ''}
+                              onChange={e => {
+                                const val = e.target.value.replace(/[^0-9.]/g, '');
+                                handleForwarderChange(idx, 'freightAmount', val);
+                                handleForwarderChange(idx, 'freightCurrency', 'USD'); // 강제로 USD 설정
+                              }}
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
+                            />
+
+                            {/* 최종(USD) 표시 */}
+                            <div style={{ padding: '6px 8px', fontSize: '11.5px', fontWeight: 700, color: '#ef4444', textAlign: 'right', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                              ${finalUsd > 0 ? finalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </div>
 
                             <button
