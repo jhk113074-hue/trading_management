@@ -1829,10 +1829,10 @@ export const OrderDetail: React.FC = () => {
         {/* Right: PO/LC/Sales Contract 파일 첨부 관리 */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ fontSize: '14px', fontWeight: 700, color: '#1f2937', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>📂 거래 서류 첨부 (PO / L/C / Sales Contract)</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, maxHeight: '250px' }}>
-            {renderFileField("PO (Purchase Order) 파일 첨부", "poFiles", "po-file-uploader")}
-            {renderFileField("L/C (Letter of Credit) 파일 첨부", "lcFiles", "lc-file-uploader")}
-            {renderFileField("Sales Contract 파일 첨부", "scFiles", "sc-file-uploader")}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', flex: 1 }}>
+            {renderFileField("PO (Purchase Order)", "poFiles", "po-file-uploader")}
+            {renderFileField("L/C (Letter of Credit)", "lcFiles", "lc-file-uploader")}
+            {renderFileField("Sales Contract", "scFiles", "sc-file-uploader")}
           </div>
         </div>
       </div>
