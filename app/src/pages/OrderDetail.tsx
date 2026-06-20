@@ -4115,17 +4115,25 @@ export const OrderDetail: React.FC = () => {
                           const krwGrand = krwTotal + krwVat;
                           const isKrw = krwGrand > 0 || (usdGrand === 0 && krwGrand === 0);
                           const grandTotal = isKrw ? krwGrand : usdGrand;
-                          const currencySymbol = isKrw ? '₩' : '$';
-                          const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                          const outstanding = Math.max(0, isKrw ? Math.round(grandTotal - totalPaid) : parseFloat((grandTotal - totalPaid).toFixed(2)));
-                          const isCompleted = grandTotal > 0 && totalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                          const list = basicForm.supplierPaymentInstallments[supplier] || [];
+                          const installments = list.length > 0 ? list : [{ date: '', amount: 0, currency: isKrw ? 'KRW' : 'USD' as 'KRW' | 'USD' }];
+                          
+                          // Calculate Paid Amounts
+                          const krwPaid = installments.filter(inst => inst.currency === 'KRW' || (!inst.currency && isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const usdPaid = installments.filter(inst => inst.currency === 'USD' || (!inst.currency && !isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          
+                          const krwOutstanding = Math.max(0, Math.round(krwGrand - krwPaid));
+                          const usdOutstanding = Math.max(0, parseFloat((usdGrand - usdPaid).toFixed(2)));
+                          
+                          const isCompleted = (krwGrand === 0 || krwPaid >= (krwGrand - 0.9)) && (usdGrand === 0 || usdPaid >= (usdGrand - 0.009));
 
-                          const handleInstallmentChange = (idx: number, field: 'date' | 'amount', value: any) => {
+                          const handleInstallmentChange = (idx: number, field: 'date' | 'amount' | 'currency', value: any) => {
                             const newList = [...installments];
                             newList[idx] = { ...newList[idx], [field]: value };
                             
-                            const newTotalPaid = newList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                            const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                            const newKrwPaid = newList.filter(inst => inst.currency === 'KRW' || (!inst.currency && isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                            const newUsdPaid = newList.filter(inst => inst.currency === 'USD' || (!inst.currency && !isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                            const newIsCompleted = (krwGrand === 0 || newKrwPaid >= (krwGrand - 0.9)) && (usdGrand === 0 || newUsdPaid >= (usdGrand - 0.009));
                             
                             const dates = newList.map(inst => inst.date).filter(d => d);
                             const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
@@ -4162,9 +4170,9 @@ export const OrderDetail: React.FC = () => {
                                 )}
                               </div>
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11.5px' }}>
-                                <span>발주: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                <span>송금: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span>발주: <strong>{usdGrand > 0 ? `$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdGrand > 0 && krwGrand > 0 ? ' / ' : ''} {krwGrand > 0 ? `₩${krwGrand.toLocaleString()}` : (usdGrand === 0 ? '₩0' : '')}</strong></span>
+                                <span>송금: <strong style={{ color: '#0d9488' }}>{usdPaid > 0 ? `$${usdPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdPaid > 0 && krwPaid > 0 ? ' / ' : ''} {krwPaid > 0 ? `₩${krwPaid.toLocaleString()}` : (usdPaid === 0 ? '₩0' : '')}</strong></span>
+                                <span>잔액: <strong style={{ color: (krwOutstanding > 0 || usdOutstanding > 0) ? '#ef4444' : '#64748b' }}>{usdOutstanding > 0 ? `$${usdOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdOutstanding > 0 && krwOutstanding > 0 ? ' / ' : ''} {krwOutstanding > 0 ? `₩${krwOutstanding.toLocaleString()}` : (usdOutstanding === 0 ? '₩0' : '')}</strong></span>
                                 <span style={{ padding: '2px 6px', borderRadius: '4px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '10.5px' }}>
                                   {isCompleted ? '송금완료' : '지급대기'}
                                 </span>
@@ -4180,6 +4188,14 @@ export const OrderDetail: React.FC = () => {
                                     onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
                                     style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
                                   />
+                                  <select
+                                    value={inst.currency || (isKrw ? 'KRW' : 'USD')}
+                                    onChange={e => handleInstallmentChange(i, 'currency', e.target.value)}
+                                    style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
+                                  >
+                                    <option value="KRW">₩</option>
+                                    <option value="USD">$</option>
+                                  </select>
                                   <input
                                     type="number"
                                     placeholder="지급액"
@@ -4242,14 +4258,20 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
                       ) : (
                         forwardersList.map((fw, idx) => {
-                          const installments = fw.paymentInstallments || [{ date: '', amount: 0 }];
+                          const installments = fw.paymentInstallments || [{ date: '', amount: 0, currency: (fw.freightCurrency || 'KRW') as 'KRW' | 'USD' }];
                           
                           // Calculate total final cost (USD final + KRW final converted or handled separately, we display both)
-                          const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const krwPaid = installments.filter(inst => inst.currency === 'KRW' || (!inst.currency && fw.freightCurrency !== 'USD')).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const usdPaid = installments.filter(inst => inst.currency === 'USD' || (!inst.currency && fw.freightCurrency === 'USD')).reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          
                           const finalUsd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                           const finalKrw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                           
-                          const handleFwInstallmentChange = (instIdx: number, field: 'date' | 'amount', value: any) => {
+                          const krwOutstanding = Math.max(0, finalKrw - krwPaid);
+                          const usdOutstanding = Math.max(0, finalUsd - usdPaid);
+                          const isCompleted = (finalKrw === 0 || krwOutstanding <= 0) && (finalUsd === 0 || usdOutstanding <= 0);
+                          
+                          const handleFwInstallmentChange = (instIdx: number, field: 'date' | 'amount' | 'currency', value: any) => {
                             const updatedList = [...installments];
                             updatedList[instIdx] = { ...updatedList[instIdx], [field]: value };
                             
@@ -4268,11 +4290,11 @@ export const OrderDetail: React.FC = () => {
                                   <span style={{ fontWeight: 800, fontSize: '13px', color: '#6b21a8', width: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={fw.name || `포워더 #${idx+1}`}>{fw.name || `포워더 #${idx+1}`}</span>
                                 </div>
                                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11.5px' }}>
-                                  <span>발주: <strong>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : '0'}</strong></span>
-                                  <span>송금: <strong style={{ color: '#0d9488' }}>₩{totalPaid.toLocaleString()}</strong></span>
-                                  <span>잔액: <strong style={{ color: (finalKrw - totalPaid) > 0 ? '#ef4444' : '#64748b' }}>₩{Math.max(0, finalKrw - totalPaid).toLocaleString()}</strong></span>
-                                  <span style={{ padding: '2px 6px', borderRadius: '4px', background: (finalKrw - totalPaid) <= 0 ? '#dcfce7' : '#fee2e2', color: (finalKrw - totalPaid) <= 0 ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '10.5px' }}>
-                                    {(finalKrw - totalPaid) <= 0 ? '송금완료' : '지급대기'}
+                                  <span>최종실비용: <strong>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : (finalUsd === 0 ? '₩0' : '')}</strong></span>
+                                  <span>송금: <strong style={{ color: '#0d9488' }}>{usdPaid > 0 ? `$${usdPaid.toLocaleString()}` : ''} {usdPaid > 0 && krwPaid > 0 ? ' / ' : ''} {krwPaid > 0 ? `₩${krwPaid.toLocaleString()}` : (usdPaid === 0 ? '₩0' : '')}</strong></span>
+                                  <span>미수잔액: <strong style={{ color: (krwOutstanding > 0 || usdOutstanding > 0) ? '#ef4444' : '#64748b' }}>{usdOutstanding > 0 ? `$${usdOutstanding.toLocaleString()}` : ''} {usdOutstanding > 0 && krwOutstanding > 0 ? ' / ' : ''} {krwOutstanding > 0 ? `₩${krwOutstanding.toLocaleString()}` : (usdOutstanding === 0 ? '₩0' : '')}</strong></span>
+                                  <span style={{ padding: '2px 6px', borderRadius: '4px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '10.5px' }}>
+                                    {isCompleted ? '송금완료' : '지급대기'}
                                   </span>
                                 </div>
                               </div>
@@ -4287,9 +4309,17 @@ export const OrderDetail: React.FC = () => {
                                       onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
                                       style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
                                     />
+                                    <select
+                                      value={inst.currency || fw.freightCurrency || 'KRW'}
+                                      onChange={e => handleFwInstallmentChange(instIdx, 'currency', e.target.value)}
+                                      style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
+                                    >
+                                      <option value="KRW">₩</option>
+                                      <option value="USD">$</option>
+                                    </select>
                                     <input
                                       type="number"
-                                      placeholder="지급액(₩)"
+                                      placeholder="지급액"
                                       value={inst.amount || ''}
                                       onChange={e => handleFwInstallmentChange(instIdx, 'amount', parseFloat(e.target.value) || 0)}
                                       style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}

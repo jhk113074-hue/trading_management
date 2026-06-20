@@ -11,7 +11,7 @@ export interface ForwarderEntry {
   taxInvoiceDate?: string;
   taxInvoiceNo?: string;
   taxInvoices?: Array<{ date: string; invoiceNo: string; amount?: number }>; // 다중 세금계산서 지원
-  paymentInstallments?: Array<{ date: string; amount: number }>;
+  paymentInstallments?: Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>;
 }
 
 export interface OrderItem {
@@ -122,7 +122,7 @@ export interface Order {
   supplierTaxTypes?: Record<string, '영세' | '과세'>; // 공급사별 과세구분 (영세/과세)
   supplierTaxInvoiceDetails?: Record<string, { date: string; invoiceNo: string; }>; // 공급사별 세금계산서 정보
   supplierPurchaseCertFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>; // 공급사별 구매확인서 파일
-  supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; }>>; // 공급사별 3-4차 분할 결제 정보
+  supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>; // 공급사별 분할 결제 정보
   bankSubmissionStatus?: 'Y' | 'N' | ''; // 은행 제출 여부
   forwarderFreightAmount?: number; // 포워딩 운송비 금액 (legacy)
   forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화 (legacy)
