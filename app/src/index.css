@@ -2,7 +2,7 @@
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
   --bg-header: #ffffff;
-  --bg-sidebar: #0f172a; /* Deep Slate Blue */
+  --bg-sidebar: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); /* Premium Slate-to-Dark Gradient */
   --sidebar-text: #94a3b8; /* Slate-400 */
   --sidebar-text-hover: #f8fafc; /* Slate-50 */
   --sidebar-active-bg: linear-gradient(90deg, rgba(190, 18, 60, 0.15) 0%, rgba(190, 18, 60, 0.04) 100%);
@@ -36,8 +36,8 @@ body {
 }
 
 .sidebar {
-  background-color: var(--bg-sidebar);
-  border-right: none;
+  background: var(--bg-sidebar);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   padding: 0;
