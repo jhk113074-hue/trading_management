@@ -3325,7 +3325,7 @@ export const OrderDetail: React.FC = () => {
                           </html>
                         `;
 
-                        const win = window.open('', '_blank');
+                        const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
                         if (win) {
                           win.document.write(printHtml);
                           win.document.close();
