@@ -40,6 +40,26 @@ export const OrderDetail: React.FC = () => {
   const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
   const [forwarderSearchIndex, setForwarderSearchIndex] = useState<number | null>(null);
   
+  const getSupplierPurchaseInfo = (it: any) => {
+    const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+    const itemCode = match ? match[1] : '-';
+    const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
+    const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
+    const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+    
+    let purchaseCurrency = it.purchaseUnitCurrency;
+    if (!purchaseCurrency) {
+      if (purchasePrice > 1000) {
+        purchaseCurrency = 'KRW';
+      } else if (matchedProd) {
+        purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
+      } else {
+        purchaseCurrency = 'USD';
+      }
+    }
+    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name };
+  };
+
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
@@ -1050,21 +1070,18 @@ export const OrderDetail: React.FC = () => {
             </thead>
             <tbody>
               ${items.map((it) => {
-                const isKrw = it.currency === 'KRW';
-                const currencySymbol = isKrw ? '' : '$';
-                const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                const rawAmt = price * (it.qty || 0);
+                const { purchasePrice, purchaseCurrency, itemCode, itemName } = getSupplierPurchaseInfo(it);
+                const isKrw = purchaseCurrency === 'KRW';
+                const currencySymbol = isKrw ? '₩' : '$';
+                const rawAmt = purchasePrice * (it.qty || 0);
                 const vatAmt = taxType === '영세' ? 0 : (isKrw ? Math.round(rawAmt * 0.1) : parseFloat((rawAmt * 0.1).toFixed(2)));
-                const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
-                const itemCode = match ? match[1] : '-';
-                const itemName = match ? match[2] : it.name;
                 return `
                   <tr>
                     <td class="center">${itemCode}</td>
                     <td><strong>${itemName}</strong></td>
                     <td class="center">${it.grade || '-'}</td>
                     <td class="right">${(it.qty || 0).toLocaleString()}</td>
-                    <td class="right">${currencySymbol}${price.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
                     <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
                     <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
                     <td style="font-size: 10px; color: #475569;">${it.unit} 발주</td>
@@ -1092,48 +1109,30 @@ export const OrderDetail: React.FC = () => {
                 <td></td>
                 <td class="right">
                   ${(() => {
-                    const usdSub = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
-                    const krwSub = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
+                    const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
                     const parts = [];
                     if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwSub > 0) parts.push(`${krwSub.toLocaleString()}`);
+                    if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
                     return parts.join(' / ');
                   })()}
                 </td>
                 <td class="right">
                   ${(() => {
-                    const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
-                    const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
+                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
                     const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
                     const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
                     const parts = [];
                     if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
-                    if (krwTotal > 0) parts.push(`${krwVat.toLocaleString()}`);
+                    if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
                     return parts.join(' / ');
                   })()}
                 </td>
                 <td class="right" style="color: #dc2626;">
                   ${(() => {
-                    const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
-                    const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
-                      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                      return sum + price * (it.qty || 0);
-                    }, 0);
+                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
                     const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
                     const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
                     const usdGrand = usdTotal + usdVat;
@@ -3957,13 +3956,11 @@ export const OrderDetail: React.FC = () => {
                           const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
                           const items = groupedSupplierItems[supplier] || [];
                           const taxType = basicForm.supplierTaxTypes[supplier] || '과세';
-                          const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => {
-                            const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                            return sum + price * (it.qty || 0);
+                          const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => {
+                            return sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0);
                           }, 0);
-                          const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => {
-                            const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
-                            return sum + price * (it.qty || 0);
+                          const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => {
+                            return sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0);
                           }, 0);
                           const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
                           const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
