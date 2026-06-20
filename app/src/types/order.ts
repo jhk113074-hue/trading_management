@@ -104,6 +104,7 @@ export interface Order {
   forwarderFreightAmount?: number; // 포워딩 운송비 금액 (legacy)
   forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화 (legacy)
   forwarders?: ForwarderEntry[]; // 포워더 목록 (다수 지원)
+  packingList?: any;
   
   // Container & transportation photos/files
   containerWorkFiles?: Array<{ name: string; url: string; size: number; path: string }>;

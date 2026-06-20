@@ -118,6 +118,7 @@ export const OrderDetail: React.FC = () => {
     supplierPayments: {} as Record<string, { status: string; date: string; }>,
     
     supplierTaxInvoice: {} as Record<string, 'Y' | 'N' | ''>,
+    packingList: null as any,
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; }>,
@@ -197,6 +198,7 @@ export const OrderDetail: React.FC = () => {
           supplierPayments: data.supplierPayments || {},
           
           supplierTaxInvoice: data.supplierTaxInvoice || {},
+          packingList: data.packingList || null,
           supplierPurchaseCertificate: data.supplierPurchaseCertificate || {},
           supplierTaxTypes: data.supplierTaxTypes || {},
           supplierTaxInvoiceDetails: data.supplierTaxInvoiceDetails || {},
@@ -347,6 +349,7 @@ export const OrderDetail: React.FC = () => {
         supplierPurchaseCertFiles: basicForm.supplierPurchaseCertFiles,
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
+        packingList: basicForm.packingList || null,
         
         items: orderItems.map(it => ({
           itemId: it.itemId || '',
@@ -2386,56 +2389,392 @@ export const OrderDetail: React.FC = () => {
               {/* 3) 패킹리스트 작성 및 검토 */}
               {activeSourcingTab === '패킹리스트' && (
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📦 3) 패킹리스트 작성 및 검토</h4>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
-                    주문 상품의 수량 및 세부 정보를 확인하고 Commercial Invoice(CI) 및 Packing List(PL)를 자동으로 생성 및 인쇄할 수 있습니다.
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📦 3) 패킹리스트 작성 및 검토 (자동/수동 편집 지원)</h4>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        type="button" 
+                        onClick={handlePrintCI}
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        CI 자동인쇄/생성
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={handlePrintPL}
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        PL 인쇄/PDF 저장
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-                    <button 
-                      type="button" 
-                      onClick={handlePrintCI}
-                      style={{ padding: '8px 16px', fontSize: '12.5px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      CI 자동인쇄/생성
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={handlePrintPL}
-                      style={{ padding: '8px 16px', fontSize: '12.5px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      PL 자동인쇄/생성
-                    </button>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+                    주문 정보를 기반으로 패킹리스트를 자동으로 생성하거나, 직접 컨테이너 및 품목 정보를 수정/추가(수동 작성)할 수 있습니다.
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '600px' }}>
-                      <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                          <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>상품코드</th>
-                          <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>품명</th>
-                          <th style={{ padding: '8px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>스팩</th>
-                          <th style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>수량</th>
-                          <th style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>단위</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orderItems.map((item, idx) => {
-                          const match = item.name ? item.name.match(/^\[(.*?)\]\s*(.*)$/) : null;
-                          const itemCode = match ? match[1] : '-';
-                          const itemName = match ? match[2] : (item.name || '-');
-                          const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '8px', color: '#334155' }}>{itemCode}</td>
-                              <td style={{ padding: '8px', color: '#334155', fontWeight: 600 }}>{itemName}</td>
-                              <td style={{ padding: '8px', color: '#334155' }}>{matchedProd?.spec || '-'}</td>
-                              <td style={{ padding: '8px', textAlign: 'right', color: '#334155' }}>{item.qty?.toLocaleString()}</td>
-                              <td style={{ padding: '8px', textAlign: 'center', color: '#334155' }}>{item.unit || '-'}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+
+                  {!basicForm.packingList ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', border: '2px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#475569' }}>현재 등록된 패킹리스트 데이터가 없습니다.</p>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() => {
+                            // Automatically build a default Packing List structure
+                            const defaultContainers = [
+                              {
+                                containerNo: 'TGHU6160960',
+                                sealNo: 'K0011885',
+                                items: orderItems.map((it, idx) => {
+                                  const netWeight = Math.round(it.qty || 0);
+                                  const grossWeight = Math.round(netWeight * 1.02);
+                                  const cbm = Number(((netWeight / 1000) * 1.5).toFixed(2));
+                                  return {
+                                    shippingMark: '',
+                                    description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
+                                    pkg: '1',
+                                    netWeight: String(netWeight),
+                                    grossWeight: String(grossWeight),
+                                    cbm: String(cbm)
+                                  };
+                                })
+                              }
+                            ];
+                            setBasicForm(prev => ({
+                              ...prev,
+                              packingList: {
+                                shipper: `YS ACC CO., LTD\nNO.302,180, SEONGBONG-RO\nSEOWON-GU.CHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nE-MAIL: ALEXPARK(AT)YSACC.CO.KR, TEL.+82-70-4141-2927, FAX.+82-303-3444-1130`,
+                                applicant: `NATIONAL FACTORY FOR FIBERGLASS\nP.O. BOX 7952 DAMMAM 31472\nSAUDI ARABIA.`,
+                                notifyParty: `NATIONAL FACTORY FOR FIBERGLASS\nP.O. BOX 7952 DAMMAM 31472\nSAUDI ARABIA.`,
+                                pol: 'BUSAN PORT, SOUTH KOREA',
+                                pod: 'JEDDAH SEAPORT, SAUDI ARABIA',
+                                vesselName: 'GFS GALAXY 02612W',
+                                sailingDate: '19-3-26',
+                                paymentTerms: '30 DAYS AFTER BILL OF LADING DATE',
+                                deliveryTerms: 'CIF JEDDAH SEAPORT, SAUDI ARABIA',
+                                remarks: 'BOLTS AND NUTS AND WASHER AND PVC SEALANT TAPE AND GLASS CLOTH,\nMANHOLE LOCKERS, MANHOLE HINGES, BLACK SEALANT TAPE, LEVEL\nINDICATOR,\n25MM INSULATION SKIN.\n.\nDELIVERY TERMS: CIF JEDDAH SEAPORT, SAUDI ARABIA',
+                                invoiceNo: `YSACC(MNT)-26-01`,
+                                invoiceDate: '12-3-26',
+                                lcNo: 'IMEE045495',
+                                lcDate: '12-2-26',
+                                lcIssuingBank: 'ARNBSARIXXX\nARAB NATIONAL BANK HEAD OFFICE\nRIYADH\nKING FAISAL STREET NORTH MURABBA RI\nYADH SAUDI ARABIA',
+                                containers: defaultContainers
+                              }
+                            }));
+                          }}
+                          style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', opacity: isEditing ? 1 : 0.6 }}
+                        >
+                          ⚡ 패킹리스트 자동생성 (기본값 설정)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() => {
+                            // Blank initialized Manual Packing List
+                            setBasicForm(prev => ({
+                              ...prev,
+                              packingList: {
+                                shipper: '', applicant: '', notifyParty: '',
+                                pol: '', pod: '', vesselName: '', sailingDate: '',
+                                paymentTerms: '', deliveryTerms: '', remarks: '',
+                                invoiceNo: '', invoiceDate: '', lcNo: '', lcDate: '', lcIssuingBank: '',
+                                containers: [
+                                  { containerNo: '', sealNo: '', items: [] }
+                                ]
+                              }
+                            }));
+                          }}
+                          style={{ padding: '8px 16px', background: '#475569', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', fontSize: '13px', cursor: isEditing ? 'pointer' : 'not-allowed', opacity: isEditing ? 1 : 0.6 }}
+                        >
+                          ✍️ 빈 서식으로 수동 작성
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#ef4444', marginTop: '10px' }}>
+                        * 수동/자동 작성 및 세부 항목 편집을 진행하시려면 우측 상단 [수정] 상태여야 합니다.
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      {/* Header values edit fields */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: '#f8fafc', padding: '14px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice No</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceNo || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceNo: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice Date</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceDate || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceDate: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C No</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcNo || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcNo: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Date</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcDate || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcDate: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Loading</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pol || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pol: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Discharge</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pod || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pod: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Vessel Name</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.vesselName || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, vesselName: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Sailing Date</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.sailingDate || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, sailingDate: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Delivery Terms</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.deliveryTerms || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, deliveryTerms: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Payment Terms</span>
+                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.paymentTerms || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, paymentTerms: val } }));
+                          }} />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Shipper / Beneficiary (지면 표시용)</span>
+                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.shipper || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, shipper: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Applicant (신청인 / 수하인)</span>
+                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.applicant || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, applicant: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Notify Party (통지처)</span>
+                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.notifyParty || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, notifyParty: val } }));
+                          }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Issuing Bank</span>
+                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.lcIssuingBank || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcIssuingBank: val } }));
+                          }} />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Remarks</span>
+                        <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.remarks || ''} onChange={e => {
+                          const val = e.target.value;
+                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, remarks: val } }));
+                        }} />
+                      </div>
+
+                      {/* Containers Section */}
+                      <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>📦 컨테이너별 패킹 목록</h5>
+                          <button
+                            type="button"
+                            disabled={!isEditing}
+                            onClick={() => {
+                              const newContainers = [...(basicForm.packingList.containers || [])];
+                              newContainers.push({ containerNo: '', sealNo: '', items: [] });
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
+                            }}
+                            style={{ padding: '5px 12px', fontSize: '11.5px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                          >
+                            + 컨테이너 추가
+                          </button>
+                        </div>
+
+                        {(basicForm.packingList.containers || []).map((c: any, cIdx: number) => (
+                          <div key={cIdx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '12px', marginBottom: '16px', background: '#fafafa' }}>
+                            <div style={{ display: 'flex', gap: '12px', marginBottom: '10px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>Container No</span>
+                                <input type="text" disabled={!isEditing} style={{ padding: '5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '150px' }} value={c.containerNo || ''} onChange={e => {
+                                  const val = e.target.value;
+                                  const nextContainers = [...basicForm.packingList.containers];
+                                  nextContainers[cIdx].containerNo = val;
+                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                }} />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>Seal No</span>
+                                <input type="text" disabled={!isEditing} style={{ padding: '5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '150px' }} value={c.sealNo || ''} onChange={e => {
+                                  const val = e.target.value;
+                                  const nextContainers = [...basicForm.packingList.containers];
+                                  nextContainers[cIdx].sealNo = val;
+                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                }} />
+                              </div>
+                              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    const nextContainers = [...basicForm.packingList.containers];
+                                    nextContainers[cIdx].items.push({ description: '', pkg: '1', netWeight: '0', grossWeight: '0', cbm: '0', shippingMark: '' });
+                                    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                  }}
+                                  style={{ padding: '4px 10px', fontSize: '11px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                >
+                                  + 품목 행 추가
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!isEditing}
+                                  onClick={() => {
+                                    if (window.confirm(`${cIdx + 1}번째 컨테이너를 삭제하시겠습니까?`)) {
+                                      const nextContainers = basicForm.packingList.containers.filter((_: any, idx: number) => idx !== cIdx);
+                                      setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                    }
+                                  }}
+                                  style={{ padding: '4px 10px', fontSize: '11px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                >
+                                  컨테이너 삭제
+                                </button>
+                              </div>
+                            </div>
+
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
+                              <thead>
+                                <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '45%' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '13%' }}>Net Wt (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '13%' }}>Gross Wt (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '13%' }}>CBM</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>동작</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(c.items || []).map((it: any, itIdx: number) => (
+                                  <tr key={itIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="text" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }} value={it.description || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].description = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkg || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].pkg = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.netWeight || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].netWeight = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.grossWeight || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].grossWeight = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="number" step="0.01" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.cbm || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].cbm = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px', textAlign: 'center' }}>
+                                      <button
+                                        type="button"
+                                        disabled={!isEditing}
+                                        onClick={() => {
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                        style={{ padding: '2px 6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                      >
+                                        삭제
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {c.items?.length === 0 && (
+                                  <tr>
+                                    <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
+                                      등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() => {
+                            if (window.confirm('패킹리스트 데이터를 초기화하시겠습니까?')) {
+                              setBasicForm(prev => ({ ...prev, packingList: null }));
+                            }
+                          }}
+                          style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                        >
+                          초기화
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
