@@ -170,7 +170,7 @@ export const OrderDetail: React.FC = () => {
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
-    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; }>>,
+    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
 
     // 주문 기본정보 및 L/C 거래 상세
@@ -4098,8 +4098,6 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
                       ) : (
                         allOrderSuppliers.map((supplier, supplierIdx) => {
-                          const list = basicForm.supplierPaymentInstallments[supplier] || [];
-                          const installments = list.length > 0 ? list : [{ date: '', amount: 0 }];
                           const matchingSupplier = suppliersList.find(s => s.name?.trim() === supplier.trim());
                           const items = groupedSupplierItems[supplier] || [];
                           const taxType = basicForm.supplierTaxTypes[supplier] || '과세';
