@@ -2605,19 +2605,36 @@ export const OrderDetail: React.FC = () => {
                               placeholder="포워딩사명 입력"
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#fff' }}
                             />
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              disabled={!isEditing}
-                              value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US')}
-                              onChange={e => {
-                                const raw = e.target.value.replace(/,/g, '');
-                                const num = parseFloat(raw) || 0;
-                                handleForwarderChange(idx, 'amountUsd', num);
-                              }}
-                              placeholder="0.00"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
-                            />
+                            
+                            {/* 해상운임 (USD/KRW 선택 및 금액) */}
+                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                              <select
+                                value={fw.freightCurrency || 'USD'}
+                                disabled={!isEditing}
+                                onChange={e => handleForwarderChange(idx, 'freightCurrency', e.target.value)}
+                                style={{ padding: '6px 2px', border: '1px solid #ddd6fe', borderRadius: '4px 0 0 4px', fontSize: '10.5px', height: '30px', background: '#fff', borderRight: 'none', outline: 'none' }}
+                              >
+                                <option value="USD">USD</option>
+                                <option value="KRW">KRW</option>
+                              </select>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                disabled={!isEditing}
+                                value={fw.freightCurrency === 'KRW'
+                                  ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
+                                  : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US'))
+                                }
+                                onChange={e => {
+                                  const raw = e.target.value.replace(/,/g, '');
+                                  const num = parseFloat(raw) || 0;
+                                  handleForwarderChange(idx, 'amountUsd', num);
+                                }}
+                                placeholder="0"
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
+                              />
+                            </div>
+
                             <input
                               type="text"
                               inputMode="numeric"
@@ -2629,7 +2646,7 @@ export const OrderDetail: React.FC = () => {
                                 handleForwarderChange(idx, 'amountKrw', num);
                               }}
                               placeholder="0"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
                             />
                             <button
                               type="button"
