@@ -2,12 +2,12 @@
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
   --bg-header: #ffffff;
-  --bg-sidebar: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); /* Premium Slate-to-Dark Gradient */
-  --sidebar-text: #94a3b8; /* Slate-400 */
-  --sidebar-text-hover: #f8fafc; /* Slate-50 */
-  --sidebar-active-bg: linear-gradient(90deg, rgba(190, 18, 60, 0.15) 0%, rgba(190, 18, 60, 0.04) 100%);
-  --sidebar-active-text: #ffffff;
-  --sidebar-section-title: #64748b; /* Slate-500 for better visibility */
+  --bg-sidebar: #f8fafc; /* Clean Light Slate Background */
+  --sidebar-text: #475569; /* Slate-600 for high readability */
+  --sidebar-text-hover: #be123c; /* Brand Red on hover */
+  --sidebar-active-bg: rgba(190, 18, 60, 0.07); /* Light Red Tint */
+  --sidebar-active-text: #be123c; /* Brand Red */
+  --sidebar-section-title: #94a3b8; /* Slate-400 */
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
@@ -37,12 +37,12 @@ body {
 
 .sidebar {
   background: var(--bg-sidebar);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid #e2e8f0; /* Clean Light Border */
   display: flex;
   flex-direction: column;
   padding: 0;
   overflow-y: auto;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  box-shadow: 4px 0 16px rgba(0,0,0,0.03); /* Subtle Shadow */
 }
 
 .sidebar-header {
@@ -52,7 +52,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid #e2e8f0; /* Clean Light Border */
   margin-bottom: 8px;
 }
 
@@ -112,7 +112,7 @@ body {
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(190, 18, 60, 0.04);
   color: var(--sidebar-text-hover);
   padding-left: 18px; /* Smooth slide-in indicator instead of transform */
 }
