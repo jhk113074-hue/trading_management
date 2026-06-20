@@ -2645,6 +2645,7 @@ export const OrderDetail: React.FC = () => {
                               <input
                                 type="text"
                                 inputMode="decimal"
+                                disabled={!isEditing}
                                 value={fw.freightCurrency === 'KRW'
                                   ? ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('ko-KR'))
                                   : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }))
