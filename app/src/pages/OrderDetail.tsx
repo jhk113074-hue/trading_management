@@ -626,12 +626,12 @@ export const OrderDetail: React.FC = () => {
       };
 
       setBasicForm(prev => {
-        const currentFiles = prev.supplierPurchaseCertFiles[supplierName] || [];
+        // Keep only 1 file (the newly uploaded file) for the supplier
         return {
           ...prev,
           supplierPurchaseCertFiles: {
             ...prev.supplierPurchaseCertFiles,
-            [supplierName]: [...currentFiles, newFile]
+            [supplierName]: [newFile]
           }
         };
       });
@@ -3387,15 +3387,23 @@ export const OrderDetail: React.FC = () => {
                               <tbody>
                                 {packingItemsList.map((it: any, itemIdx: number) => (
                                   <tr key={itemIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '5px' }}>
-                                      <textarea
-                                        rows={2}
-                                        disabled={!isEditing}
-                                        value={it.marks || ''}
-                                        onChange={e => updateArrivalReportItem(itemIdx, 'marks', e.target.value)}
-                                        style={{ width: '95%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace' }}
-                                      />
-                                    </td>
+                                    {itemIdx === 0 && (
+                                      <td rowSpan={packingItemsList.length} style={{ padding: '5px', verticalAlign: 'top', borderRight: '1px solid #e2e8f0' }}>
+                                        <textarea
+                                          rows={6}
+                                          disabled={!isEditing}
+                                          value={it.marks || ''}
+                                          onChange={e => {
+                                            const val = e.target.value;
+                                            // Update marks for all items so it stays synced
+                                            packingItemsList.forEach((_, idx) => {
+                                              updateArrivalReportItem(idx, 'marks', val);
+                                            });
+                                          }}
+                                          style={{ width: '95%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', height: '90%' }}
+                                        />
+                                      </td>
+                                    )}
                                     <td style={{ padding: '5px' }}>
                                       <textarea
                                         rows={2}
