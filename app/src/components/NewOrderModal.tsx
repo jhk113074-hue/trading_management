@@ -146,6 +146,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         setForwarders([{
           name: '포워딩업체-운송비',
           amountUsd: selectedQuote.freightTotal,
+          budgetAmountUsd: selectedQuote.freightTotal,
           amountKrw: 0
         }]);
       } else {
@@ -386,7 +387,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         forwarders: forwarders,
         forwarderConfirmed: forwarders[0]?.name || '',
         forwarderFreightAmount: forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0,
-        forwarderFreightCurrency: (forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any
+        forwarderFreightCurrency: (forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any,
+        
+        // fields copied from selected PI to prevent data loss in PO접수 step
+        piNumber: formData.quotationId || '',
+        customerAddress: quotations.find(q => q.id === formData.quotationId)?.customerAddress || '',
+        portOfLoading: quotations.find(q => q.id === formData.quotationId)?.departurePort || '',
+        portOfDischarge: quotations.find(q => q.id === formData.quotationId)?.destinationPort || '',
+        destinationCountry: quotations.find(q => q.id === formData.quotationId)?.destinationPort || ''
       };
 
       // 1. Save to orders collection
@@ -891,23 +899,22 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
               <button
                 type="button"
-                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }])}
+                onClick={() => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }])}
                 style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
                 + 운송사 추가
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '4px' }}>
               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
-              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
               <span></span>
             </div>
             {forwarders.length === 0 ? (
               <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
             ) : (
               forwarders.map((fw, idx) => (
-                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={fw.name || ''}
@@ -922,21 +929,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     onChange={e => {
                       const raw = e.target.value.replace(/,/g, '');
                       const num = parseFloat(raw) || 0;
-                      setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: num } : f));
+                      setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: num, budgetAmountUsd: num } : f));
                     }}
                     placeholder="0.00"
-                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
-                    onChange={e => {
-                      const raw = e.target.value.replace(/,/g, '');
-                      const num = parseInt(raw, 10) || 0;
-                      setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: num } : f));
-                    }}
-                    placeholder="0"
                     style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                   />
                   <button

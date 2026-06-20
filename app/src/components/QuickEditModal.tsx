@@ -54,15 +54,16 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
     return list.map(f => ({
       name: f.name,
       amountUsd: f.amountUsd !== undefined ? f.amountUsd : (f.freightCurrency === 'USD' ? f.freightAmount : 0),
+      budgetAmountUsd: f.budgetAmountUsd !== undefined ? f.budgetAmountUsd : (f.amountUsd !== undefined ? f.amountUsd : (f.freightCurrency === 'USD' ? f.freightAmount : 0)),
       amountKrw: f.amountKrw !== undefined ? f.amountKrw : (f.freightCurrency === 'KRW' ? f.freightAmount : 0)
     }));
   };
   const [forwarders, setForwarders] = useState<ForwarderEntry[]>(initForwarders);
 
-  const addForwarder = () => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0 }]);
+  const addForwarder = () => setForwarders(prev => [...prev, { name: '', amountUsd: 0, amountKrw: 0, budgetAmountUsd: 0 }]);
   const removeForwarder = (idx: number) => setForwarders(prev => prev.filter((_, i) => i !== idx));
   const updateForwarder = (idx: number, field: keyof ForwarderEntry, value: string | number) =>
-    setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, [field]: value } : f));
+    setForwarders(prev => prev.map((f, i) => i === idx ? (field === 'amountUsd' ? { ...f, amountUsd: value as number, budgetAmountUsd: value as number } : { ...f, [field]: value }) : f));
 
   // Supplier payments (supplierRemitted)
   const [supplierPayments, setSupplierPayments] = useState<Record<string, { status: string; date: string }>>(
@@ -434,6 +435,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                       setForwarders([{
                         name: '포워딩업체-운송비',
                         amountUsd: selectedQuote.freightTotal,
+                        budgetAmountUsd: selectedQuote.freightTotal,
                         amountKrw: 0
                       }]);
                     } else {
@@ -613,10 +615,9 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 </button>
               </div>
               {/* 헤더 라벨 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '4px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
                 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송 및 비용 (KRW ₩)</span>
                 <span></span>
               </div>
               {/* 포워더 행 목록 */}
@@ -624,7 +625,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
               ) : (
                 forwarders.map((fw, idx) => (
-                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                     <select
                       value={fw.name}
                       onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
@@ -652,18 +653,6 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                         updateForwarder(idx, 'amountUsd', num);
                       }}
                       placeholder="0.00"
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
-                    />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={(fw.amountKrw ?? 0) === 0 ? '' : (fw.amountKrw ?? 0).toLocaleString('ko-KR')}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/,/g, '');
-                        const num = parseInt(raw, 10) || 0;
-                        updateForwarder(idx, 'amountKrw', num);
-                      }}
-                      placeholder="0"
                       style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
                     />
                     <button

@@ -467,9 +467,27 @@ export const OrderDetail: React.FC = () => {
         })),
         totalAmount,
         currency: orderCurrency,
-        forwarders: forwardersList,
-        forwarderFreightAmount: forwardersList[0] ? (forwardersList[0].amountUsd || forwardersList[0].amountKrw || 0) : 0,
-        forwarderFreightCurrency: (forwardersList[0] ? (forwardersList[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any,
+        forwarders: forwardersList.map(fw => {
+          const budget = !fw.budgetAmountUsd ? 0 : Number(fw.budgetAmountUsd);
+          const freight = !fw.freightAmount ? 0 : Number(fw.freightAmount);
+          const domestic = !fw.amountKrw ? 0 : Number(fw.amountKrw);
+          return {
+            ...fw,
+            budgetAmountUsd: budget,
+            freightAmount: freight,
+            amountKrw: domestic,
+            amountUsd: budget,
+            finalAmountUsd: fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? freight : 0),
+            finalAmountKrw: fw.finalAmountKrw || domestic + (fw.freightCurrency === 'KRW' ? freight : 0),
+          };
+        }),
+        forwarderFreightAmount: forwardersList[0] ? (
+          (forwardersList[0].freightCurrency === 'USD' ? Number(forwardersList[0].freightAmount) : 0) || 
+          Number(forwardersList[0].amountUsd) || 
+          Number(forwardersList[0].amountKrw) || 
+          0
+        ) : 0,
+        forwarderFreightCurrency: (forwardersList[0] ? (forwardersList[0].freightCurrency || (forwardersList[0].amountUsd ? 'USD' : 'KRW')) : 'KRW') as any,
         
         updatedAt: serverTimestamp()
       }, { merge: true });
@@ -2235,15 +2253,12 @@ export const OrderDetail: React.FC = () => {
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
                       />
                       <input
-                        type="text"
-                        inputMode="decimal"
-                        value={(fw.budgetAmountUsd ?? 0) === 0 ? '' : (fw.budgetAmountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                        onChange={e => {
-                          const raw = e.target.value.replace(/,/g, '');
-                          const num = parseFloat(raw) || 0;
-                          handleForwarderChange(idx, 'budgetAmountUsd', num);
-                        }}
+                        type="number"
+                        step="any"
+                        min="0"
                         placeholder="0.00"
+                        value={fw.budgetAmountUsd ?? ''}
+                        onChange={e => handleForwarderChange(idx, 'budgetAmountUsd', e.target.value)}
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right', background: '#fff' }}
                       />
                       <button
@@ -2686,14 +2701,12 @@ export const OrderDetail: React.FC = () => {
                             {/* 운송비(발주가) - USD */}
                             <input
                               type="number"
+                              step="any"
+                              min="0"
                               disabled={!isEditing}
-                              value={fw.budgetAmountUsd || ''}
-                              onChange={e => {
-                                const num = parseFloat(e.target.value) || 0;
-                                handleForwarderChange(idx, 'budgetAmountUsd', num);
-                              }}
-                              placeholder="0.00"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                              value={fw.budgetAmountUsd ?? ''}
+                              onChange={e => handleForwarderChange(idx, 'budgetAmountUsd', e.target.value)}
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
 
                             {/* 실행(해상운임) - USD/KRW 선택 및 금액 */}
@@ -2702,34 +2715,31 @@ export const OrderDetail: React.FC = () => {
                                 value={fw.freightCurrency || 'USD'}
                                 disabled={!isEditing}
                                 onChange={e => handleForwarderChange(idx, 'freightCurrency', e.target.value)}
-                                style={{ padding: '6px 2px', border: '1px solid #ddd6fe', borderRadius: '4px 0 0 4px', fontSize: '10.5px', height: '30px', background: '#fff', borderRight: 'none', outline: 'none' }}
+                                style={{ padding: '6px 2px', border: '1px solid #ddd6fe', borderRadius: '4px 0 0 4px', fontSize: '10.5px', height: '30px', background: isEditing ? '#fff' : '#f8fafc', borderRight: 'none', outline: 'none' }}
                               >
                                 <option value="USD">USD</option>
                                 <option value="KRW">KRW</option>
                               </select>
                               <input
                                 type="number"
+                                step="any"
+                                min="0"
                                 disabled={!isEditing}
-                                value={fw.amountUsd || ''}
-                                onChange={e => {
-                                  const num = parseFloat(e.target.value) || 0;
-                                  handleForwarderChange(idx, 'amountUsd', num);
-                                }}
-                                placeholder="0"
-                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', flex: 1, height: '30px', outline: 'none' }}
+                                value={fw.freightAmount ?? ''}
+                                onChange={e => handleForwarderChange(idx, 'freightAmount', e.target.value)}
+                                style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '0 4px 4px 0', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', flex: 1, height: '30px', outline: 'none' }}
                               />
                             </div>
 
+                            {/* 실행(국내비용) - KRW */}
                             <input
                               type="number"
+                              step="any"
+                              min="0"
                               disabled={!isEditing}
-                              value={fw.amountKrw || ''}
-                              onChange={e => {
-                                const num = parseFloat(e.target.value) || 0;
-                                handleForwarderChange(idx, 'amountKrw', num);
-                              }}
-                              placeholder="0"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: '#fff', height: '30px', outline: 'none' }}
+                              value={fw.amountKrw ?? ''}
+                              onChange={e => handleForwarderChange(idx, 'amountKrw', e.target.value)}
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
                             <button
                               type="button"
@@ -4029,8 +4039,8 @@ export const OrderDetail: React.FC = () => {
                           
                           // Calculate total final cost (USD final + KRW final converted or handled separately, we display both)
                           const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                          const finalKrw = fw.finalAmountKrw || 0;
-                          const finalUsd = fw.finalAmountUsd || 0;
+                          const finalUsd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                          const finalKrw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                           
                           const handleFwInstallmentChange = (instIdx: number, field: 'date' | 'amount', value: any) => {
                             const updatedList = [...installments];
@@ -4266,8 +4276,8 @@ export const OrderDetail: React.FC = () => {
 
                 // Sum all forwarders final actual costs (KRW + USD converted by customsRate)
                 const forwarderExpenseKrw = forwardersList.reduce((sum, fw) => {
-                  const krw = fw.finalAmountKrw || 0;
-                  const usd = fw.finalAmountUsd || 0;
+                  const usd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                  const krw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                   return sum + krw + Math.round(usd * customsRate);
                 }, 0);
 
