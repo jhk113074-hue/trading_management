@@ -4,6 +4,12 @@ export interface ForwarderEntry {
   freightCurrency?: 'USD' | 'KRW';
   amountUsd?: number;
   amountKrw?: number;
+  finalAmountUsd?: number;
+  finalAmountKrw?: number;
+  invoiceFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  taxInvoiceDate?: string;
+  taxInvoiceNo?: string;
+  paymentInstallments?: Array<{ date: string; amount: number }>;
 }
 
 export interface OrderItem {

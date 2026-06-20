@@ -3837,6 +3837,131 @@ export const OrderDetail: React.FC = () => {
                               </div>
                             </div>
                           );
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 7) 포워딩업체 대금결제 및 세금계산서 관리 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#7c3aed' }}>💳 7) 포워딩/운송사 대금결제 및 세금계산서 관리</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 지정 포워딩업체별 최종 실 청구액에 대한 송금 지급내역 및 세금계산서 정보를 관리합니다.</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {forwardersList.length === 0 ? (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
+                      ) : (
+                        forwardersList.map((fw, idx) => {
+                          const installments = fw.paymentInstallments || [{ date: '', amount: 0 }];
+                          
+                          // Calculate total final cost (USD final + KRW final converted or handled separately, we display both)
+                          const totalPaid = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const finalKrw = fw.finalAmountKrw || 0;
+                          const finalUsd = fw.finalAmountUsd || 0;
+                          
+                          const handleFwInstallmentChange = (instIdx: number, field: 'date' | 'amount', value: any) => {
+                            const updatedList = [...installments];
+                            updatedList[instIdx] = { ...updatedList[instIdx], [field]: value };
+                            
+                            setForwardersList(prev => prev.map((f, i) => {
+                              if (i === idx) {
+                                return { ...f, paymentInstallments: updatedList };
+                              }
+                              return f;
+                            }));
+                          };
+
+                          return (
+                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#faf5ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #d8b4fe', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#6b21a8' }}>{fw.name || `포워더 #${idx+1}`}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newList = [...installments, { date: '', amount: 0 }];
+                                      setForwardersList(prev => prev.map((f, i) => {
+                                        if (i === idx) {
+                                          return { ...f, paymentInstallments: newList };
+                                        }
+                                        return f;
+                                      }));
+                                    }}
+                                    style={{ background: '#fff', border: '1px solid #d8b4fe', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#7c3aed', cursor: 'pointer' }}
+                                  >
+                                    ＋ 지급 내역 추가
+                                  </button>
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
+                                  <span>최종실비용: <strong style={{ color: '#2563eb' }}>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : '0'}</strong></span>
+                                  <span>지급(송금)액: <strong style={{ color: '#7c3aed' }}>₩{totalPaid.toLocaleString()}</strong></span>
+                                  <span>미수잔액: <strong style={{ color: (finalKrw - totalPaid) > 0 ? '#ef4444' : '#64748b' }}>₩{Math.max(0, finalKrw - totalPaid).toLocaleString()}</strong></span>
+                                </div>
+                              </div>
+                              
+                              {/* Tax Invoice fields */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#581c87' }}>계산서 발행일자</span>
+                                  <input
+                                    type="date"
+                                    value={fw.taxInvoiceDate || ''}
+                                    onChange={e => handleForwarderChange(idx, 'taxInvoiceDate', e.target.value)}
+                                    style={{ padding: '5px 8px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11.5px', background: '#fff' }}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#581c87' }}>승인번호 (발급번호)</span>
+                                  <input
+                                    type="text"
+                                    placeholder="포워더 세금계산서 국세청 승인번호"
+                                    value={fw.taxInvoiceNo || ''}
+                                    onChange={e => handleForwarderChange(idx, 'taxInvoiceNo', e.target.value)}
+                                    style={{ padding: '5px 8px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11.5px', background: '#fff' }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                                {installments.map((inst, instIdx) => (
+                                  <div key={instIdx} style={{ background: '#fff', border: '1px solid #e9d5ff', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b21a8' }}>{instIdx + 1}차 지급</span>
+                                      {installments.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const filtered = installments.filter((_, i) => i !== instIdx);
+                                            const updated = filtered.length > 0 ? filtered : [{ date: '', amount: 0 }];
+                                            setForwardersList(prev => prev.map((f, i) => {
+                                              if (i === idx) {
+                                                return { ...f, paymentInstallments: updated };
+                                              }
+                                              return f;
+                                            }));
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
+                                        >
+                                          ✕
+                                        </button>
+                                      )}
+                                    </div>
+                                    <input
+                                      type="date"
+                                      value={inst.date || ''}
+                                      onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
+                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="지급액(₩)"
+                                      value={inst.amount || ''}
+                                      onChange={e => handleFwInstallmentChange(instIdx, 'amount', parseFloat(e.target.value) || 0)}
+                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
                         })
                       )}
                     </div>
@@ -3964,7 +4089,13 @@ export const OrderDetail: React.FC = () => {
                 }, 0) || 0;
                 const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
 
-                const forwarderExpenseKrw = basicForm.forwarderQuotationAmount || 0;
+                // Sum all forwarders final actual costs (KRW + USD converted by customsRate)
+                const forwarderExpenseKrw = forwardersList.reduce((sum, fw) => {
+                  const krw = fw.finalAmountKrw || 0;
+                  const usd = fw.finalAmountUsd || 0;
+                  return sum + krw + Math.round(usd * customsRate);
+                }, 0);
+
                 const totalCostKrw = consolidatedPurchaseKrw + forwarderExpenseKrw;
                 const profitKrw = consolidatedRevenueKrw - totalCostKrw;
                 const profitMargin = consolidatedRevenueKrw > 0 ? ((profitKrw / consolidatedRevenueKrw) * 100).toFixed(2) : '0.00';
