@@ -25,7 +25,7 @@ export const Dashboard: React.FC = () => {
 
   // ── Trading Data States ──
   const [pis, setPis] = useState<any[]>([]);
-  const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
+  const [orders, setOrders] = useState<any[]>([]);
   const [tradingLoading, setTradingLoading] = useState(true);
   
   useEffect(() => {
@@ -48,14 +48,6 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const COMPANY_ID = "YSACC";
 
-    const unsubCustomers = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "customers"), (snapshot) => {
-      const cmap: Record<string, string> = {};
-      snapshot.forEach(doc => {
-        cmap[doc.id] = doc.data().name || "Unknown";
-      });
-      setCustomerMap(cmap);
-    });
-
     const unsubPIs = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"), (snapshot) => {
       const piData: any[] = [];
       snapshot.forEach(doc => {
@@ -69,9 +61,19 @@ export const Dashboard: React.FC = () => {
       setTradingLoading(false);
     });
 
+    const unsubOrders = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "orders"), (snapshot) => {
+      const orderData: any[] = [];
+      snapshot.forEach(doc => {
+        orderData.push({ id: doc.id, ...doc.data() });
+      });
+      setOrders(orderData);
+    }, (err) => {
+      console.error("Orders subscription error:", err);
+    });
+
     return () => {
-      unsubCustomers();
       unsubPIs();
+      unsubOrders();
     };
   }, []);
 
@@ -488,28 +490,61 @@ export const Dashboard: React.FC = () => {
   const tradingKPIs = useMemo(() => {
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const thisMonthPIs = pis.filter(p => (p.piDate || "").startsWith(thisMonth));
-    const confirmedPIs = pis.filter(p => p.status === "confirmed");
-    const confirmedRev = confirmedPIs.reduce((s, p) => s + (p.totalUsd || 0), 0);
-    const winRate = pis.length ? Math.round(confirmedPIs.length / pis.length * 100) : 0;
+
+    // 1. 이번달 PI 건수 (piDate 기준)
+    let piYsCount = 0;
+    let piYsaccCount = 0;
+
+    pis.forEach(p => {
+      if ((p.piDate || "").startsWith(thisMonth)) {
+        if (p.issuingCompany === 'YS') piYsCount++;
+        else piYsaccCount++;
+      }
+    });
+
+    // 2. 수주 금액 (발주일 poDate 기준) & 3. 매출 금액 (ETD 기준)
+    let orderYsAmount = 0;
+    let orderYsaccAmount = 0;
+    let orderYsCount = 0;
+    let orderYsaccCount = 0;
+
+    let salesYsAmount = 0;
+    let salesYsaccAmount = 0;
+    let salesYsCount = 0;
+    let salesYsaccCount = 0;
+
+    orders.forEach(o => {
+      const pi = pis.find(p => p.id === o.quotationId);
+      const amount = pi?.totalUsd || o.totalAmount || 0;
+      const isYs = o.issuingCompany === 'YS';
+
+      if ((o.poDate || "").startsWith(thisMonth)) {
+        if (isYs) {
+          orderYsAmount += amount;
+          orderYsCount++;
+        } else {
+          orderYsaccAmount += amount;
+          orderYsaccCount++;
+        }
+      }
+
+      if ((o.etd || "").startsWith(thisMonth)) {
+        if (isYs) {
+          salesYsAmount += amount;
+          salesYsCount++;
+        } else {
+          salesYsaccAmount += amount;
+          salesYsaccCount++;
+        }
+      }
+    });
 
     return {
-      thisMonthCount: thisMonthPIs.length,
-      confirmedRevenue: confirmedRev,
-      winRate,
-      totalCount: pis.length
+      piYsCount, piYsaccCount,
+      orderYsAmount, orderYsaccAmount, orderYsCount, orderYsaccCount,
+      salesYsAmount, salesYsaccAmount, salesYsCount, salesYsaccCount
     };
-  }, [pis]);
-
-  const statusSummary = useMemo(() => {
-    const counts: Record<string, number> = { draft: 0, sent: 0, confirmed: 0, expired: 0 };
-    pis.forEach(p => {
-      const s = (p.status || "draft").toLowerCase();
-      if (counts[s] !== undefined) counts[s]++;
-      else counts.draft++;
-    });
-    return counts;
-  }, [pis]);
+  }, [pis, orders]);
 
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
@@ -527,76 +562,74 @@ export const Dashboard: React.FC = () => {
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '10px', marginBottom: '12px' }}>
-            {/* KPI Cards (2x2 Grid) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#3b82f6' }} />
-                <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>이번 달 PI 건수</div>
-                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.thisMonthCount} <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
-                </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>건 (이번 달 작성)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            
+            {/* 1. 이번달 PI 건수 */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
+                이번달 PI 건수
               </div>
-              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#0891b2' }} />
-                <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>확정 매출 (Confirmed)</div>
-                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#0891b2' }}>${tradingKPIs.confirmedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>영성ACC</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.piYsCount} <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></span>
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>USD · 전체 누계</div>
-              </div>
-              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#10b981' }} />
-                <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>수주율 (Win Rate)</div>
-                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#10b981' }}>{tradingKPIs.winRate}%</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>(주)YSACC</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#3b82f6' }}>{tradingKPIs.piYsaccCount} <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></span>
                 </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Confirmed / 전체 PI</div>
-              </div>
-              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', position: 'relative', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#f59e0b' }} />
-                <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: 600 }}>전체 PI 건수</div>
-                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#f59e0b' }}>{tradingKPIs.totalCount} <span style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--text-secondary)' }}>건</span></div>
-                </div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Draft 포함 누계</div>
               </div>
             </div>
 
-            {/* PI 상태 현황 */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
-                  PI 상태 현황 <span style={{ fontSize: '9px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '1px 5px', borderRadius: '3px', marginLeft: '6px', fontWeight: 600 }}>● LIVE</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <span><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4f46e5', marginRight: '6px', display: 'inline-block' }} />Draft</span>
-                    <span style={{ fontWeight: 600, color: '#4f46e5' }}>{statusSummary.draft}건</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <span><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0ea5e9', marginRight: '6px', display: 'inline-block' }} />Sent</span>
-                    <span style={{ fontWeight: 600, color: '#0ea5e9' }}>{statusSummary.sent}건</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <span><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', marginRight: '6px', display: 'inline-block' }} />Confirmed</span>
-                    <span style={{ fontWeight: 600, color: '#10b981' }}>{statusSummary.confirmed}건</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
-                    <span><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', marginRight: '6px', display: 'inline-block' }} />Expired</span>
-                    <span style={{ fontWeight: 600, color: '#ef4444' }}>{statusSummary.expired}건</span>
-                  </div>
-                </div>
+            {/* 2. 수주 금액 (발주일 기준) */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                수주 금액 (발주일 기준)
               </div>
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 600 }}>글로벌 거래처 DB</div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#0891b2', marginTop: '1px' }}>{Object.keys(customerMap).length}개사 등록됨</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>영성ACC</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tradingKPIs.orderYsCount}건</span>
+                  </div>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#10b981' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
-                <a href="/customers.html" style={{ fontSize: '10px', padding: '4px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', textDecoration: 'none', color: 'var(--text-primary)', background: '#f8fafc', fontWeight: 600, display: 'inline-block', transition: 'all 0.2s' }}>👥 고객 관리 →</a>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>(주)YSACC</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tradingKPIs.orderYsaccCount}건</span>
+                  </div>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#10b981' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
               </div>
             </div>
+
+            {/* 3. 매출금액 (ETD기준) */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
+                매출금액 (ETD기준)
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>영성ACC</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tradingKPIs.salesYsCount}건</span>
+                  </div>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#f59e0b' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>(주)YSACC</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tradingKPIs.salesYsaccCount}건</span>
+                  </div>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#f59e0b' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
 
