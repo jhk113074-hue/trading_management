@@ -4262,72 +4262,69 @@ export const OrderDetail: React.FC = () => {
                           };
 
                           return (
-                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#faf5ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #d8b4fe', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#6b21a8' }}>{fw.name || `포워더 #${idx+1}`}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newList = [...installments, { date: '', amount: 0 }];
-                                      setForwardersList(prev => prev.map((f, i) => {
-                                        if (i === idx) {
-                                          return { ...f, paymentInstallments: newList };
-                                        }
-                                        return f;
-                                      }));
-                                    }}
-                                    style={{ background: '#fff', border: '1px solid #d8b4fe', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#7c3aed', cursor: 'pointer' }}
-                                  >
-                                    ＋ 지급 내역 추가
-                                  </button>
+                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#6b21a8', width: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={fw.name || `포워더 #${idx+1}`}>{fw.name || `포워더 #${idx+1}`}</span>
                                 </div>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
-                                  <span>최종실비용: <strong style={{ color: '#2563eb' }}>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : '0'}</strong></span>
-                                  <span>지급(송금)액: <strong style={{ color: '#7c3aed' }}>₩{totalPaid.toLocaleString()}</strong></span>
-                                  <span>미수잔액: <strong style={{ color: (finalKrw - totalPaid) > 0 ? '#ef4444' : '#64748b' }}>₩{Math.max(0, finalKrw - totalPaid).toLocaleString()}</strong></span>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11.5px' }}>
+                                  <span>발주: <strong>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : '0'}</strong></span>
+                                  <span>송금: <strong style={{ color: '#0d9488' }}>₩{totalPaid.toLocaleString()}</strong></span>
+                                  <span>잔액: <strong style={{ color: (finalKrw - totalPaid) > 0 ? '#ef4444' : '#64748b' }}>₩{Math.max(0, finalKrw - totalPaid).toLocaleString()}</strong></span>
+                                  <span style={{ padding: '2px 6px', borderRadius: '4px', background: (finalKrw - totalPaid) <= 0 ? '#dcfce7' : '#fee2e2', color: (finalKrw - totalPaid) <= 0 ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '10.5px' }}>
+                                    {(finalKrw - totalPaid) <= 0 ? '송금완료' : '지급대기'}
+                                  </span>
                                 </div>
                               </div>
 
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingLeft: '165px' }}>
                                 {installments.map((inst, instIdx) => (
-                                  <div key={instIdx} style={{ background: '#fff', border: '1px solid #e9d5ff', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#6b21a8' }}>{instIdx + 1}차 지급</span>
-                                      {installments.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const filtered = installments.filter((_, i) => i !== instIdx);
-                                            const updated = filtered.length > 0 ? filtered : [{ date: '', amount: 0 }];
-                                            setForwardersList(prev => prev.map((f, i) => {
-                                              if (i === idx) {
-                                                return { ...f, paymentInstallments: updated };
-                                              }
-                                              return f;
-                                            }));
-                                          }}
-                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
-                                        >
-                                          ✕
-                                        </button>
-                                      )}
-                                    </div>
+                                  <div key={instIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{instIdx + 1}차</span>
                                     <input
                                       type="date"
                                       value={inst.date || ''}
                                       onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
-                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
+                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
                                     />
                                     <input
                                       type="number"
                                       placeholder="지급액(₩)"
                                       value={inst.amount || ''}
                                       onChange={e => handleFwInstallmentChange(instIdx, 'amount', parseFloat(e.target.value) || 0)}
-                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                      style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
                                     />
+                                    {installments.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const filtered = installments.filter((_, i) => i !== instIdx);
+                                          const updated = filtered.length > 0 ? filtered : [{ date: '', amount: 0 }];
+                                          setForwardersList(prev => prev.map((f, i) => {
+                                            if (i === idx) return { ...f, paymentInstallments: updated };
+                                            return f;
+                                          }));
+                                        }}
+                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
                                   </div>
                                 ))}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newList = [...installments, { date: '', amount: 0 }];
+                                    setForwardersList(prev => prev.map((f, i) => {
+                                      if (i === idx) return { ...f, paymentInstallments: newList };
+                                      return f;
+                                    }));
+                                  }}
+                                  style={{ background: '#f1f5f9', border: '1px dashed #94a3b8', borderRadius: '4px', padding: '3px 10px', fontSize: '10.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                                >
+                                  ＋ 내역 추가
+                                </button>
                               </div>
                             </div>
                           );
