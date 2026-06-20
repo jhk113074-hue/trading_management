@@ -2164,7 +2164,7 @@ export const OrderDetail: React.FC = () => {
                         style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
                       >
                         <option value="">-- 포워더 선택 --</option>
-                        {suppliersList.filter(s => s.category === '포워더' || s.category === '운송사').map(s => (
+                        {suppliersList.filter(s => s.category === '포워딩사').map(s => (
                           <option key={s.id} value={s.name}>{s.name}</option>
                         ))}
                         {fw.name && !suppliersList.some(s => s.name === fw.name) && (
@@ -2603,14 +2603,20 @@ export const OrderDetail: React.FC = () => {
                       ) : (
                         forwardersList.map((fw, idx) => (
                           <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                            <input
-                              type="text"
+                            <select
                               value={fw.name || ''}
                               disabled={!isEditing}
                               onChange={e => handleForwarderChange(idx, 'name', e.target.value)}
-                              placeholder="포워딩사명 입력"
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#fff' }}
-                            />
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#fff', outline: 'none' }}
+                            >
+                              <option value="">-- 포워더 선택 --</option>
+                              {suppliersList.filter(s => s.category === '포워딩사').map(s => (
+                                <option key={s.id} value={s.name}>{s.name}</option>
+                              ))}
+                              {fw.name && !suppliersList.some(s => s.name === fw.name) && (
+                                <option value={fw.name}>{fw.name}</option>
+                              )}
+                            </select>
                             
                             {/* 해상운임 (USD/KRW 선택 및 금액) */}
                             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
@@ -3860,6 +3866,7 @@ export const OrderDetail: React.FC = () => {
                               </div>
                             </div>
                           );
+                        })
                       )}
                     </div>
                   </div>
