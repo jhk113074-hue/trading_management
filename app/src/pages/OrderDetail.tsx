@@ -1210,7 +1210,7 @@ export const OrderDetail: React.FC = () => {
     const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
 
     const targetSupplier = suppliersList.find(s => s.name === supplierName);
-    const defaultEmail = targetSupplier?.email || '';
+    const defaultEmail = targetSupplier?.purchaseEmail || '';
 
     const email = prompt("발송할 공급업체 이메일 주소를 확인해주세요 (기본값: 거래처 등록 이메일):", defaultEmail);
     if (email === null) return; // User cancelled
