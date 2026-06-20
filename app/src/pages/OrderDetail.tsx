@@ -2261,7 +2261,7 @@ export const OrderDetail: React.FC = () => {
                       <input
                         type="text"
                         placeholder="0.00"
-                        value={fw.budgetAmountUsd ?? ''}
+                        value={fw.budgetAmountUsd ?? 0}
                         onChange={e => {
                           const val = e.target.value.replace(/[^0-9.]/g, '');
                           handleForwarderChange(idx, 'budgetAmountUsd', val);
@@ -2709,7 +2709,7 @@ export const OrderDetail: React.FC = () => {
                             <input
                               type="text"
                               disabled={!isEditing}
-                              value={fw.budgetAmountUsd ?? ''}
+                              value={fw.budgetAmountUsd ?? 0}
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9.]/g, '');
                                 handleForwarderChange(idx, 'budgetAmountUsd', val);
@@ -2731,7 +2731,7 @@ export const OrderDetail: React.FC = () => {
                               <input
                                 type="text"
                                 disabled={!isEditing}
-                                value={fw.freightAmount ?? ''}
+                                value={fw.freightAmount ?? 0}
                                 onChange={e => {
                                   const val = e.target.value.replace(/[^0-9.]/g, '');
                                   handleForwarderChange(idx, 'freightAmount', val);
@@ -2744,7 +2744,7 @@ export const OrderDetail: React.FC = () => {
                             <input
                               type="text"
                               disabled={!isEditing}
-                              value={fw.amountKrw ?? ''}
+                              value={fw.amountKrw ?? 0}
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 handleForwarderChange(idx, 'amountKrw', val);
