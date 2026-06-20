@@ -3991,8 +3991,94 @@ export const OrderDetail: React.FC = () => {
                               </div>
                             </div>
                           );
-                        });
-                      })()}
+                    </div>
+                  </div>
+
+                  {/* 포워딩/운송사 세금계산서 관리 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', marginTop: '24px' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#7c3aed' }}>📄 포워딩/운송사 세금계산서 관리</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 지정 포워딩업체별 세금계산서 발행 내역을 관리합니다. (여러 건 등록 가능)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      {forwardersList.length === 0 ? (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
+                      ) : (
+                        forwardersList.map((fw, idx) => {
+                          const taxInvoices = fw.taxInvoices || (fw.taxInvoiceDate || fw.taxInvoiceNo ? [{ date: fw.taxInvoiceDate || '', invoiceNo: fw.taxInvoiceNo || '', amount: 0 }] : [{ date: '', invoiceNo: '', amount: 0 }]);
+                          
+                          return (
+                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: '#faf5ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #d8b4fe', paddingBottom: '8px', marginBottom: '4px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#6b21a8' }}>{fw.name || `포워더 #${idx+1}`}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newList = [...taxInvoices, { date: '', invoiceNo: '', amount: 0 }];
+                                    setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                  }}
+                                  style={{ background: '#fff', border: '1px solid #d8b4fe', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', cursor: 'pointer' }}
+                                >
+                                  ＋ 계산서 추가
+                                </button>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
+                                {taxInvoices.map((inv, invIdx) => (
+                                  <div key={invIdx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff', position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#581c87' }}>{invIdx + 1}차 계산서</span>
+                                      {taxInvoices.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const filtered = taxInvoices.filter((_, i) => i !== invIdx);
+                                            const updated = filtered.length > 0 ? filtered : [{ date: '', invoiceNo: '', amount: 0 }];
+                                            setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: updated } : f));
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
+                                        >✕</button>
+                                      )}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                      <input
+                                        type="date"
+                                        title="계산서 발행일자"
+                                        value={inv.date || ''}
+                                        onChange={e => {
+                                          const newList = [...taxInvoices];
+                                          newList[invIdx].date = e.target.value;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '4px 6px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11px', flex: 1 }}
+                                      />
+                                      <input
+                                        type="number"
+                                        placeholder="금액(₩)"
+                                        value={inv.amount || ''}
+                                        onChange={e => {
+                                          const newList = [...taxInvoices];
+                                          newList[invIdx].amount = parseFloat(e.target.value) || 0;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '4px 6px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11px', flex: 1, textAlign: 'right' }}
+                                      />
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="국세청 승인번호 (발급번호)"
+                                      value={inv.invoiceNo || ''}
+                                      onChange={e => {
+                                        const newList = [...taxInvoices];
+                                        newList[invIdx].invoiceNo = e.target.value;
+                                        setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                      }}
+                                      style={{ padding: '4px 6px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 
@@ -4147,8 +4233,8 @@ export const OrderDetail: React.FC = () => {
 
                   {/* 7) 포워딩업체 대금결제 및 세금계산서 관리 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#7c3aed' }}>💳 7) 포워딩/운송사 대금결제 및 세금계산서 관리</h4>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 지정 포워딩업체별 최종 실 청구액에 대한 송금 지급내역 및 세금계산서 정보를 관리합니다.</div>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#7c3aed' }}>💳 7-2) 포워딩/운송사 대금결제 관리</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 지정 포워딩업체별 최종 실 청구액에 대한 송금 지급내역을 관리합니다.</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       {forwardersList.length === 0 ? (
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
@@ -4198,29 +4284,6 @@ export const OrderDetail: React.FC = () => {
                                   <span>최종실비용: <strong style={{ color: '#2563eb' }}>{finalUsd > 0 ? `$${finalUsd.toLocaleString()}` : ''} {finalUsd > 0 && finalKrw > 0 ? ' / ' : ''} {finalKrw > 0 ? `₩${finalKrw.toLocaleString()}` : '0'}</strong></span>
                                   <span>지급(송금)액: <strong style={{ color: '#7c3aed' }}>₩{totalPaid.toLocaleString()}</strong></span>
                                   <span>미수잔액: <strong style={{ color: (finalKrw - totalPaid) > 0 ? '#ef4444' : '#64748b' }}>₩{Math.max(0, finalKrw - totalPaid).toLocaleString()}</strong></span>
-                                </div>
-                              </div>
-                              
-                              {/* Tax Invoice fields */}
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #f3e8ff' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#581c87' }}>계산서 발행일자</span>
-                                  <input
-                                    type="date"
-                                    value={fw.taxInvoiceDate || ''}
-                                    onChange={e => handleForwarderChange(idx, 'taxInvoiceDate', e.target.value)}
-                                    style={{ padding: '5px 8px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11.5px', background: '#fff' }}
-                                  />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#581c87' }}>승인번호 (발급번호)</span>
-                                  <input
-                                    type="text"
-                                    placeholder="포워더 세금계산서 국세청 승인번호"
-                                    value={fw.taxInvoiceNo || ''}
-                                    onChange={e => handleForwarderChange(idx, 'taxInvoiceNo', e.target.value)}
-                                    style={{ padding: '5px 8px', border: '1px solid #d8b4fe', borderRadius: '4px', fontSize: '11.5px', background: '#fff' }}
-                                  />
                                 </div>
                               </div>
 

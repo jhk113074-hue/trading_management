@@ -10,6 +10,7 @@ export interface ForwarderEntry {
   invoiceFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   taxInvoiceDate?: string;
   taxInvoiceNo?: string;
+  taxInvoices?: Array<{ date: string; invoiceNo: string; amount?: number }>; // 다중 세금계산서 지원
   paymentInstallments?: Array<{ date: string; amount: number }>;
 }
 
