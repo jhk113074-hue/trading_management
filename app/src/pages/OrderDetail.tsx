@@ -2842,7 +2842,7 @@ export const OrderDetail: React.FC = () => {
                               disabled={!isEditing}
                               placeholder="0"
                               value={
-                                fw.amountKrw !== undefined && fw.amountKrw !== null && fw.amountKrw !== '' && !Number.isNaN(Number(fw.amountKrw))
+                                fw.amountKrw !== undefined && fw.amountKrw !== null && String(fw.amountKrw) !== '' && !Number.isNaN(Number(fw.amountKrw))
                                   ? Number(fw.amountKrw).toLocaleString()
                                   : ''
                               }
@@ -2859,7 +2859,7 @@ export const OrderDetail: React.FC = () => {
                               disabled={!isEditing}
                               placeholder="0"
                               value={
-                                fw.freightAmount !== undefined && fw.freightAmount !== null && fw.freightAmount !== '' && !Number.isNaN(Number(fw.freightAmount))
+                                fw.freightAmount !== undefined && fw.freightAmount !== null && String(fw.freightAmount) !== '' && !Number.isNaN(Number(fw.freightAmount))
                                   ? (() => {
                                       const parts = String(fw.freightAmount).split('.');
                                       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
