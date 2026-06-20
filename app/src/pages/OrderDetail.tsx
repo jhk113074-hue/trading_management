@@ -4061,95 +4061,85 @@ export const OrderDetail: React.FC = () => {
                             });
                           };
 
-                          return (
-                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a' }}>{supplier}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newList = [...installments, { date: '', amount: 0 }];
-                                      setBasicForm(prev => ({
-                                        ...prev,
-                                        supplierPaymentInstallments: {
-                                          ...prev.supplierPaymentInstallments,
-                                          [supplier]: newList
-                                        }
-                                      }));
-                                    }}
-                                    style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', fontWeight: 700, color: '#0d9488', cursor: 'pointer' }}
-                                  >
-                                    ＋ 지급 내역 추가
-                                  </button>
-                                </div>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '12px' }}>
-                                  <span>총 발주액: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                  <span>송금액: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                  <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
-                                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '11px' }}>
-                                    {isCompleted ? '송금완료' : '지급대기'}
-                                  </span>
-                                </div>
-                              </div>
-                              {matchingSupplier && (
-                                <div style={{ display: 'flex', gap: '15px', background: '#eff6ff', border: '1px solid #dbeafe', padding: '6px 10px', borderRadius: '4px', fontSize: '11.5px', color: '#1e40af' }}>
-                                  <span>🏦 <strong>원화계좌:</strong> {matchingSupplier.bankKrw || '-'}</span>
-                                  <span>🌍 <strong>외화계좌:</strong> {matchingSupplier.bankUsd || '-'}</span>
-                                </div>
-                              )}
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
-                                {installments.map((inst, idx) => (
-                                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563' }}>{idx + 1}차 지급</span>
-                                      {installments.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const newList = installments.filter((_, i) => i !== idx);
-                                            const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
-                                            const newTotalPaid = finalList.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-                                            const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-                                            const dates = finalList.map(inst => inst.date).filter(d => d);
-                                            const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
-                                            setBasicForm(prev => {
-                                              const updatedPayments = { ...prev.supplierPayments };
-                                              updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
-                                              return {
-                                                ...prev,
-                                                supplierPaymentInstallments: {
-                                                  ...prev.supplierPaymentInstallments,
-                                                  [supplier]: finalList
-                                                },
-                                                supplierPayments: updatedPayments
-                                              };
-                                            });
-                                          }}
-                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '10px', fontWeight: 700 }}
-                                        >
-                                          ✕
-                                        </button>
-                                      )}
-                                    </div>
-                                    <input
-                                      type="date"
-                                      value={inst.date}
-                                      onChange={e => handleInstallmentChange(idx, 'date', e.target.value)}
-                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box' }}
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="지급액"
-                                      value={inst.amount || ''}
-                                      onChange={e => handleInstallmentChange(idx, 'amount', parseFloat(e.target.value) || 0)}
-                                      style={{ padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
-                                    />
+                        return (
+                          <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 12px', background: idx % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#1e3a8a', width: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={supplier}>{supplier}</span>
+                                {matchingSupplier && (
+                                  <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#475569' }}>
+                                    <span>🏦 {matchingSupplier.bankKrw || '-'}</span>
+                                    <span>🌍 {matchingSupplier.bankUsd || '-'}</span>
                                   </div>
-                                ))}
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '11.5px' }}>
+                                <span>발주: <strong>{currencySymbol}{grandTotal.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span>송금: <strong style={{ color: '#0d9488' }}>{currencySymbol}{totalPaid.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span>잔액: <strong style={{ color: outstanding > 0 ? '#ef4444' : '#64748b' }}>{currencySymbol}{outstanding.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</strong></span>
+                                <span style={{ padding: '2px 6px', borderRadius: '4px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '10.5px' }}>
+                                  {isCompleted ? '송금완료' : '지급대기'}
+                                </span>
                               </div>
                             </div>
-                          );
+                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingLeft: '165px' }}>
+                              {installments.map((inst, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{i + 1}차</span>
+                                  <input
+                                    type="date"
+                                    value={inst.date}
+                                    onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
+                                    style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="지급액"
+                                    value={inst.amount || ''}
+                                    onChange={e => handleInstallmentChange(i, 'amount', parseFloat(e.target.value) || 0)}
+                                    style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
+                                  />
+                                  {installments.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newList = installments.filter((_, idxToRemove) => idxToRemove !== i);
+                                        const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
+                                        const newTotalPaid = finalList.reduce((sum, item) => sum + (item.amount || 0), 0);
+                                        const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                                        const dates = finalList.map(item => item.date).filter(d => d);
+                                        const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                                        setBasicForm(prev => {
+                                          const updatedPayments = { ...prev.supplierPayments };
+                                          updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
+                                          return {
+                                            ...prev,
+                                            supplierPaymentInstallments: { ...prev.supplierPaymentInstallments, [supplier]: finalList },
+                                            supplierPayments: updatedPayments
+                                          };
+                                        });
+                                      }}
+                                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                    >✕</button>
+                                  )}
+                                </div>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newList = [...installments, { date: '', amount: 0 }];
+                                  setBasicForm(prev => ({
+                                    ...prev,
+                                    supplierPaymentInstallments: { ...prev.supplierPaymentInstallments, [supplier]: newList }
+                                  }));
+                                }}
+                                style={{ background: '#f1f5f9', border: '1px dashed #94a3b8', borderRadius: '4px', padding: '3px 10px', fontSize: '10.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                              >
+                                ＋ 내역 추가
+                              </button>
+                            </div>
+                          </div>
+                        );
                         })
                       )}
                     </div>
