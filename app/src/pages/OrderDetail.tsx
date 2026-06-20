@@ -43,6 +43,7 @@ export const OrderDetail: React.FC = () => {
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
+  console.log("[DEBUG] Rendering OrderDetail page. forwardersList:", forwardersList);
   const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
 
   // CFS related states
@@ -598,7 +599,12 @@ export const OrderDetail: React.FC = () => {
   };
 
   const handleForwarderChange = (index: number, field: keyof ForwarderEntry, value: any) => {
-    setForwardersList(prev => prev.map((f, i) => i === index ? { ...f, [field]: value } : f));
+    console.log("[DEBUG] handleForwarderChange called:", index, field, value);
+    setForwardersList(prev => {
+      const next = prev.map((f, i) => i === index ? { ...f, [field]: value } : f);
+      console.log("[DEBUG] Updated forwardersList state to:", next);
+      return next;
+    });
   };
 
   const addForwarderRow = () => {
