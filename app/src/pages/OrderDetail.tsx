@@ -1535,6 +1535,16 @@ export const OrderDetail: React.FC = () => {
               />
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#0f766e' }}>제품준비일 (최종 완료일)</span>
+              <input
+                type="date"
+                value={basicForm.cargoReadyDate || ''}
+                disabled={true}
+                style={{ padding: '4px 6px', border: '1px solid #99f6e4', borderRadius: '5px', fontSize: '11.5px', background: '#f0fdfa', color: '#0f766e', fontWeight: 'bold', outline: 'none' }}
+              />
+            </div>
+
             {basicForm.isLc === 'Y' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
                 <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>L/C 번호</span>
@@ -2254,6 +2264,61 @@ export const OrderDetail: React.FC = () => {
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚢 2) 선적관리 정보 등록</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                    {/* 제품준비일 및 선적일정 수립 가이드 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '8px', gridColumn: 'span 3', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>💡</span> 생산 기준 제품준비일 (최종 생산완료일)
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#15803d', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                          {basicForm.cargoReadyDate ? `📅 ${basicForm.cargoReadyDate}` : '미정 (소싱발주 탭에서 생산완료일 지정)'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#166534', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                        <span>각사별 생산완료일 중 가장 늦은 날짜를 제품준비일로 판단하며, 이를 토대로 선적 스케줄을 결정합니다.</span>
+                        {basicForm.cargoReadyDate && isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              try {
+                                const baseDate = new Date(basicForm.cargoReadyDate);
+                                const addDays = (d: Date, days: number) => {
+                                  const nd = new Date(d);
+                                  nd.setDate(nd.getDate() + days);
+                                  return nd.toISOString().split('T')[0];
+                                };
+                                setBasicForm(prev => ({
+                                  ...prev,
+                                  cfsEntryDate: addDays(baseDate, 1),      // 1일 뒤 입고
+                                  docCutoffDate: addDays(baseDate, 2),     // 2일 뒤 서류마감
+                                  etd: addDays(baseDate, 4),               // 4일 뒤 출항
+                                  eta: addDays(baseDate, 18)               // 14일 운송 표준 적용
+                                }));
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              background: '#16af52',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#16af52'}
+                          >
+                            추천 선적일정 자동 적용 (CFS/ETD/ETA)
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>지정 포워더(Forwarder)</span>
                       <div style={{ display: 'flex', gap: '4px' }}>
