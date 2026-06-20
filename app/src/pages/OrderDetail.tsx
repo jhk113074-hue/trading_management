@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -22,7 +22,7 @@ export const OrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
@@ -198,10 +198,7 @@ export const OrderDetail: React.FC = () => {
 
   const handleNavigation = async (path: string) => {
     if (isDirtyRef.current) {
-      const wantToSave = window.confirm("저장하지 않은 변경사항이 있습니다. 저장하고 이동하시겠습니까?\n\n[확인] 저장 후 이동\n[취소] 저장하지 않고 이동");
-      if (wantToSave) {
-        await handleSaveBasic();
-      }
+      await handleSaveBasic(false);
       isDirtyRef.current = false;
     }
     navigate(path);
@@ -214,16 +211,11 @@ export const OrderDetail: React.FC = () => {
       const link = target.closest('a');
       // Intercept clicks on links that are internal
       if (link && link.href && link.href !== window.location.href && (!link.target || link.target !== '_blank')) {
-        const wantToSave = window.confirm("저장하지 않은 변경사항이 있습니다. 저장하고 이동하시겠습니까?\n\n[확인] 저장 후 이동\n[취소] 저장하지 않고 이동");
-        if (wantToSave) {
-          e.preventDefault();
-          e.stopPropagation();
-          await handleSaveBasic();
-          isDirtyRef.current = false;
-          navigate(new URL(link.href).pathname + new URL(link.href).search);
-        } else {
-          isDirtyRef.current = false;
-        }
+        e.preventDefault();
+        e.stopPropagation();
+        await handleSaveBasic(false);
+        isDirtyRef.current = false;
+        navigate(new URL(link.href).pathname + new URL(link.href).search);
       }
     };
     document.addEventListener('click', handleGlobalClick, true);
@@ -400,7 +392,10 @@ export const OrderDetail: React.FC = () => {
   }, [order?.quotationId]);
 
   // Switch active tab view locally
-  const handleStepClick = (stepName: typeof steps[number]) => {
+  const handleStepClick = async (stepName: typeof steps[number]) => {
+    if (isDirtyRef.current) {
+      await handleSaveBasic(false);
+    }
     setActiveStep(stepName);
   };
 
@@ -426,7 +421,7 @@ export const OrderDetail: React.FC = () => {
   }, [groupedSupplierItems, order]);
 
   // Save details changes
-  const handleSaveBasic = async () => {
+  const handleSaveBasic = async (showMsg: boolean = true) => {
     if (!order) return;
     try {
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
@@ -565,9 +560,13 @@ export const OrderDetail: React.FC = () => {
       }, { merge: true });
 
       isDirtyRef.current = false;
-      alert('✅ 저장되었습니다.');
+      if (showMsg) {
+        alert('✅ 저장되었습니다.');
+      }
     } catch (e: any) {
-      alert('❌ 저장 실패: ' + e.message);
+      if (showMsg) {
+        alert('❌ 저장 실패: ' + e.message);
+      }
     }
   };
 
@@ -720,7 +719,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -816,7 +815,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -840,7 +839,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'coaFiles' | 'testReportFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles',
+    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -930,7 +929,7 @@ export const OrderDetail: React.FC = () => {
 
 
   // Grouped Supplier PO Print handler
-  const handlePrintSupplierPo = (supplierName: string, items: OrderItem[]) => {
+  const handlePrintSupplierPo = async (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
@@ -939,6 +938,24 @@ export const OrderDetail: React.FC = () => {
 
     const logoVersion = Date.now();
     const isYS = order.issuingCompany === 'YS';
+    let bizNo = isYS ? '730-17-00185' : '217-87-00384';
+    let compName = isYS ? '영성에이씨씨(영성ACC)' : '(주)와이에스에이씨씨';
+    let address = isYS ? '충북 청주시 흥덕구 월명로 76, 111-201호' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
+    let compPresident = '김 주 한'; // Default fallback
+
+    try {
+      const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+      if (compDoc.exists()) {
+        const data = compDoc.data();
+        if (data.bizNo) bizNo = data.bizNo;
+        if (data.nameKo) compName = data.nameKo;
+        else if (data.name) compName = data.name;
+        if (data.addressKo) address = data.addressKo;
+        if (data.manager) compPresident = data.manager;
+      }
+    } catch (e) {
+      console.error("Failed to load company info for PO", e);
+    }
 
     const printHtml = `
       <html>
@@ -1017,7 +1034,7 @@ export const OrderDetail: React.FC = () => {
               <table class="business-table">
                 <tr>
                   <th>등록번호</th>
-                  <td style="font-weight: bold; letter-spacing: 1px;">${isYS ? '730-17-00185' : '217-87-00384'}</td>
+                  <td style="font-weight: bold; letter-spacing: 1px;">${bizNo}</td>
                 </tr>
                 <tr>
                   <th>상  호</th>
@@ -1026,15 +1043,15 @@ export const OrderDetail: React.FC = () => {
                       <img src="/logo.png?v=${logoVersion}" class="seal-bg" />
                       <img src="${isYS ? '/YS_ACC_STAMP.jpg' : '/YSACC_STAMP.png'}?v=${logoVersion}" class="seal-stamp" />
                       <div style="width: 100%; display: flex; justify-content: space-between; padding: 0 10px; z-index: 3; position: relative;">
-                        <span>${isYS ? '영성에이씨씨(영성ACC)' : '(주)와이에스에이씨씨'}</span>
-                        <span style="font-weight: normal; margin-right: 50px;">김 주 한</span>
+                        <span>${compName}</span>
+                        <span style="font-weight: normal; margin-right: 50px;">${compPresident}</span>
                       </div>
                     </div>
                   </td>
                 </tr>
                 <tr>
                   <th>사업장</th>
-                  <td style="font-size: 10px; text-align: left; padding-left: 8px;">${isYS ? '충북 청주시 흥덕구 월명로 76, 111-201호' : '충북 청주시 흥덕구 가로수로 1251, 201-1호'}</td>
+                  <td style="font-size: 10px; text-align: left; padding-left: 8px;">${address}</td>
                 </tr>
                 <tr>
                   <th>업  태</th>
@@ -1810,7 +1827,7 @@ export const OrderDetail: React.FC = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
-            onClick={handleSaveBasic}
+            onClick={() => handleSaveBasic(true)}
             style={{ background: '#10b981', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
             💾 변경사항 저장
@@ -2383,7 +2400,12 @@ export const OrderDetail: React.FC = () => {
                     <button
                       key={tab.id}
                       type="button"
-                      onClick={() => setActiveSourcingTab(tab.id as any)}
+                      onClick={async () => {
+                        if (isDirtyRef.current) {
+                          await handleSaveBasic(false);
+                        }
+                        setActiveSourcingTab(tab.id as any);
+                      }}
                       style={{
                         padding: '10px 16px',
                         fontSize: '12.5px',
@@ -2923,7 +2945,7 @@ export const OrderDetail: React.FC = () => {
                     </div>
 
                     {/* 컨테이너작업장소/컨테이너(CFS)입고일/CFS 회사명/주소 및 담당(신규등록 및 저장기능)-1줄 표현 */}
-                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '120px 140px 1.2fr 2fr', gap: '10px' }}>
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '120px 140px 1fr', gap: '10px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너 작업장소</span>
                         {isEditing ? (
@@ -2944,7 +2966,7 @@ export const OrderDetail: React.FC = () => {
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>CFS 회사명</span>
+                          <span>CFS 정보 (회사명, 주소 및 담당자)</span>
                           {isEditing && (
                             <button
                               type="button"
@@ -2959,7 +2981,7 @@ export const OrderDetail: React.FC = () => {
                           <div style={{ display: 'flex', gap: '4px' }}>
                             <input
                               type="text"
-                              placeholder="새 CFS 입력"
+                              placeholder="새 CFS 입력 (회사명 / 담당자 / 연락처 / 주소 등)"
                               value={newCfsVal}
                               onChange={e => setNewCfsVal(e.target.value)}
                               style={{ ...inputStyle(true), height: '37px', flex: 1 }}
@@ -2989,29 +3011,28 @@ export const OrderDetail: React.FC = () => {
                             </button>
                           </div>
                         ) : (
-                          <select
-                            disabled={!isEditing}
-                            value={basicForm.cfsContactInfo || ''}
-                            onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))}
-                            style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '100%', height: '37px', background: '#fff' }}
-                          >
-                            <option value="">선택하세요</option>
-                            {cfsList.map((cfs: string, idx: number) => (
-                              <option key={idx} value={cfs}>{cfs.split('\n')[0]}</option>
-                            ))}
-                          </select>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <select
+                              disabled={!isEditing}
+                              value={basicForm.cfsContactInfo || ''}
+                              onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))}
+                              style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', width: '220px', height: '37px', background: '#fff' }}
+                            >
+                              <option value="">선택하세요</option>
+                              {cfsList.map((cfs: string, idx: number) => (
+                                <option key={idx} value={cfs}>{cfs.split('\n')[0]}</option>
+                              ))}
+                            </select>
+                            <input 
+                              type="text" 
+                              style={{ ...inputStyle(isEditing), height: '37px', flex: 1 }} 
+                              value={basicForm.cfsContactInfo || ''} 
+                              onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} 
+                              disabled={!isEditing} 
+                              placeholder="선택한 CFS 주소 및 담당자 정보 상세" 
+                            />
+                          </div>
                         )}
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>주소 및 담당자 정보</span>
-                        <input 
-                          type="text" 
-                          style={{ ...inputStyle(isEditing), height: '37px' }} 
-                          value={basicForm.cfsContactInfo || ''} 
-                          onChange={e => setBasicForm(p => ({ ...p, cfsContactInfo: e.target.value }))} 
-                          disabled={!isEditing} 
-                          placeholder="선택한 CFS 주소 및 담당자 정보 상세" />
                       </div>
                     </div>
 
@@ -3516,22 +3537,62 @@ export const OrderDetail: React.FC = () => {
                         }
                       };
 
-                      const handlePrintArrivalReportInline = () => {
+                      const handlePrintArrivalReportInline = async () => {
+                        // Open window synchronously to avoid popup blocker
+                        const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
+                        if (win) {
+                          win.document.write("<html><body><div style='text-align:center; padding: 50px; font-family: sans-serif;'>데이터를 불러오는 중입니다...</div></body></html>");
+                        }
+
+                        const isYS = order.issuingCompany === 'YS';
+                        let defaultConsignee = isYS 
+                          ? `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한` 
+                          : `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`;
+
+                        try {
+                          const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+                          if (compDoc.exists()) {
+                            const data = compDoc.data();
+                            const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
+                            const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
+                            const phone = data.phone || '010-4494-1028';
+                            const manager = data.manager || '김주한';
+                            defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}`;
+                          }
+                        } catch (e) {
+                          console.error("Failed to load company info", e);
+                        }
+
+                        let finalConsignee = repData.consignee || defaultConsignee;
+                        if (finalConsignee.includes('서울 강남구 테헤란로 419') || finalConsignee.includes('경기 김포시 양촌읍 듬박로 89')) {
+                          finalConsignee = defaultConsignee;
+                        }
+
+                        let finalCfsAddress = basicForm.cfsContactInfo || basicForm.cfsAddress || '';
+                        if (repData.cfsAddress && repData.cfsAddress !== 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13') {
+                           finalCfsAddress = repData.cfsAddress;
+                        }
+                        // Always prefer basicForm.cfsContactInfo if it's explicitly set for this order, 
+                        // because user requested to use CFS Contact Info.
+                        if (basicForm.cfsContactInfo) {
+                           finalCfsAddress = basicForm.cfsContactInfo;
+                        }
+                        if (!finalCfsAddress) {
+                           finalCfsAddress = 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
+                        }
+
                         const rep = {
                           bookingNo: basicForm.vesselBooking || '',
                           remarks: 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
                           notifyParty: 'SAME AS ABOVE',
-                          portOfLoading: 'BUSAN PORT, SOUTH KOREA',
-                          finalDestination: order.eta || order.cfsAddress || '',
-                          carrier: order.vesselBooking || '',
-                          sailingOnOrAbout: order.etd || '',
-                          cfsAddress: basicForm.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
-                          cfsEta: order.cfsEntryDate || '',
-                          shipper: supplierName,
-                          consignee: order.issuingCompany === 'YS' 
-                            ? `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한` 
-                            : `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`,
                           ...repData,
+                          portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
+                          finalDestination: basicForm.portOfDischarge || repData.finalDestination || '',
+                          carrier: basicForm.vesselBooking || repData.carrier || '',
+                          sailingOnOrAbout: basicForm.etd || repData.sailingOnOrAbout || '',
+                          cfsEta: basicForm.cfsEntryDate || repData.cfsEta || '',
+                          consignee: finalConsignee,
+                          cfsAddress: finalCfsAddress,
                           packingItems: packingItemsList
                         };
 
@@ -3705,8 +3766,8 @@ export const OrderDetail: React.FC = () => {
                           </html>
                         `;
 
-                        const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
                         if (win) {
+                          win.document.open();
                           win.document.write(printHtml);
                           win.document.close();
                         }
@@ -3868,8 +3929,7 @@ export const OrderDetail: React.FC = () => {
                     수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                    {renderFileField('COA 유첨', 'coaFiles', 'coa-file-input')}
-                    {renderFileField('시험성적서 유첨', 'testReportFiles', 'test-report-file-input')}
+                    {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
                     {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
                   </div>
                 </div>
@@ -4439,8 +4499,7 @@ export const OrderDetail: React.FC = () => {
               </div>
 
               <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
-                {renderFileField('COA 유첨', 'coaFiles', 'coa-file-input')}
-                {renderFileField('시험성적서 유첨', 'testReportFiles', 'test-report-file-input')}
+                {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
                 {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
               </div>
 
@@ -4598,12 +4657,12 @@ export const OrderDetail: React.FC = () => {
             incoterms: order.incoterms,
             paymentTerms: order.paymentTerms,
             issuingCompany: order.issuingCompany || 'YSACC',
-            portOfLoading: 'BUSAN PORT, SOUTH KOREA',
-            finalDestination: order.eta || order.cfsAddress || '',
-            carrier: order.vesselBooking || '',
-            sailingOnOrAbout: order.etd || '',
-            cfsAddress: order.cfsAddress || '',
-            cfsEntryDate: order.cfsEntryDate || '',
+            portOfLoading: basicForm.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
+            finalDestination: basicForm.portOfDischarge || '',
+            carrier: basicForm.vesselBooking || '',
+            sailingOnOrAbout: basicForm.etd || '',
+            cfsAddress: basicForm.cfsContactInfo || basicForm.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
+            cfsEntryDate: basicForm.cfsEntryDate || '',
             items: activeArrivalReport.items
           }}
           packingList={basicForm.packingList}

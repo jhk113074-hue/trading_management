@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { db, COMPANY_ID } from '../firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import type { Supplier } from '../types/supplier';
 
 interface Props {
@@ -9,6 +11,14 @@ interface Props {
 
 export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppliers }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [newForwarder, setNewForwarder] = useState({
+    name: '',
+    bizNumber: '',
+    representative: '',
+    phone: '',
+    address: ''
+  });
 
   const filteredForwarders = useMemo(() => {
     // Filter only suppliers where category is "포워딩사"
@@ -63,22 +73,84 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
           </button>
         </div>
 
-        {/* Search Input */}
-        <div style={{ padding: '16px 24px', background: '#fff', borderBottom: '1px solid #f1f5f9' }}>
+        {/* Search Input & Add Button */}
+        <div style={{ padding: '16px 24px', background: '#fff', borderBottom: '1px solid #f1f5f9', display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
             type="text"
             placeholder="업체명, 대표자, 주소 등으로 검색..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
-              width: '100%', padding: '10px 14px',
+              flex: 1, padding: '10px 14px',
               border: '1px solid #cbd5e1', borderRadius: '8px',
               fontSize: '13px', color: '#1e293b', outline: 'none',
               boxSizing: 'border-box'
             }}
             autoFocus
           />
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            style={{
+              padding: '10px 16px', background: isAdding ? '#e2e8f0' : '#10b981', color: isAdding ? '#475569' : '#fff',
+              border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
+            }}
+          >
+            {isAdding ? '취소' : '신규등록'}
+          </button>
         </div>
+
+        {isAdding && (
+          <div style={{ padding: '16px 24px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#4b5563', marginBottom: '4px' }}>업체명 *</label>
+                <input type="text" value={newForwarder.name} onChange={e => setNewForwarder({...newForwarder, name: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#4b5563', marginBottom: '4px' }}>사업자번호</label>
+                <input type="text" value={newForwarder.bizNumber} onChange={e => setNewForwarder({...newForwarder, bizNumber: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#4b5563', marginBottom: '4px' }}>대표자</label>
+                <input type="text" value={newForwarder.representative} onChange={e => setNewForwarder({...newForwarder, representative: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#4b5563', marginBottom: '4px' }}>전화번호</label>
+                <input type="text" value={newForwarder.phone} onChange={e => setNewForwarder({...newForwarder, phone: e.target.value})} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+            <div style={{ marginTop: '12px', textAlign: 'right' }}>
+              <button
+                onClick={async () => {
+                  if (!newForwarder.name.trim()) {
+                    alert('업체명을 입력해주세요.');
+                    return;
+                  }
+                  try {
+                    const newId = `FWD_${Date.now()}`;
+                    const newData = {
+                      ...newForwarder,
+                      category: '포워딩사',
+                      createdAt: serverTimestamp()
+                    };
+                    await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', newId), newData);
+                    alert('성공적으로 등록되었습니다.');
+                    setIsAdding(false);
+                    setNewForwarder({ name: '', bizNumber: '', representative: '', phone: '', address: '' });
+                    // Provide a partial object sufficient for onSelect
+                    onSelect({ id: newId, ...newData } as Supplier);
+                  } catch (e: any) {
+                    alert('등록 중 오류가 발생했습니다: ' + e.message);
+                  }
+                }}
+                style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                저장 및 선택
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* List Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>

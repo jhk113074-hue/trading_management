@@ -1,5 +1,7 @@
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
 
 export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: PIItem[]) => {
@@ -536,12 +538,31 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   const bankName = "INDUSTRIAL BANK OF KOREA, SEOUL, KOREA";
   const bankAddress = "50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA";
-  const beneficiary = isYS ? "YS ACC" : "YSACC Co., LTD";
+  let bankBeneficiary = isYS ? "YS ACC" : "YSACC Co., LTD";
   const bankAccountNo = isYS ? "940-013901-56-00011" : "143-129260-56-00012";
   const swiftCode = isYS ? "IBKOKRSE" : "IBKOKRSEXXX";
-  const beneficiaryAddress = isYS 
+  let beneficiaryAddress = isYS 
     ? "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea" 
     : "201-1HO, 1251, GAROSU-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28420, SOUTH KOREA";
+  let sellerSignature = `${isYS ? 'YS ACC' : 'YSACC CO., LTD.'} (SELLER)\n\n\n\n\nAuthorized Signature`;
+  let issuerName = isYS ? 'YS ACC' : 'YSACC CO., LTD.';
+
+  try {
+    const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+    if (compDoc.exists()) {
+      const data = compDoc.data();
+      if (data.nameEn) issuerName = data.nameEn;
+      else if (data.nameKo) issuerName = data.nameKo;
+      else if (data.name) issuerName = data.name;
+      
+      bankBeneficiary = issuerName;
+      sellerSignature = `${issuerName} (SELLER)\n\n\n\n\nAuthorized Signature`;
+      
+      if (data.addressEn) beneficiaryAddress = data.addressEn;
+    }
+  } catch (e) {
+    // ignore
+  }
 
   writeBank("Bank Name", bankName, currentRow); 
   worksheet.getRow(currentRow).height = 18;
@@ -551,7 +572,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getRow(currentRow).height = 25; // multi-line address space
   currentRow++;
   
-  writeBank("Beneficiary", beneficiary, currentRow); 
+  writeBank("Beneficiary", bankBeneficiary, currentRow); 
   worksheet.getRow(currentRow).height = 18;
   currentRow++;
   
@@ -580,7 +601,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   // Seller Signature Box (H)
   worksheet.mergeCells(`H${sigStartRow}:H${sigStartRow+5}`);
   const sellerBox = worksheet.getCell(`H${sigStartRow}`);
-  sellerBox.value = `${isYS ? 'YS ACC' : 'YSACC CO., LTD.'} (SELLER)\n\n\n\n\nAuthorized Signature`;
+  sellerBox.value = sellerSignature;
   sellerBox.font = { size: 8, color: { argb: 'FF94A3B8' } };
   sellerBox.alignment = { horizontal: 'center', vertical: 'top', wrapText: true };
   sellerBox.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F9FF' } };

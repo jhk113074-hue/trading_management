@@ -87,7 +87,6 @@ export const Orders: React.FC = () => {
   // Rules Engine: Compute Next Action for an Order
   const getNextAction = (order: Order): NextAction => {
     const currentStep = mapStatusToStep(order.status || '');
-    const todayStr = new Date().toISOString().split('T')[0];
 
     // 1. PO 접수
     if (currentStep === 'PO접수') {
@@ -122,16 +121,7 @@ export const Orders: React.FC = () => {
         }
       }
 
-      // Condition C: Production date passed & no COA files
-      const hasCoa = order.coaFiles && order.coaFiles.length > 0;
-      if (!hasCoa) {
-        for (const sup of suppliers) {
-          const prodDate = order.supplierProductionDates?.[sup];
-          if (prodDate && prodDate < todayStr) {
-            return { text: `공급사 ${sup} COA 미수취 (생산기한경과)`, level: 'ORANGE', step: '소싱발주' };
-          }
-        }
-      }
+
 
       return { text: '수출 관리 단계로 진행 필요', level: 'WHITE', step: '수출관리' };
     }

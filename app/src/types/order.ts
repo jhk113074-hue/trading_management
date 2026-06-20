@@ -57,8 +57,8 @@ export interface Order {
   plFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   cooFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   blFiles?: Array<{ name: string; url: string; size: number; path: string }>;
-  coaFiles?: Array<{ name: string; url: string; size: number; path: string }>;
-  testReportFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  exportDeclarationFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+
   otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   transactionFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   additionalSuppliers?: string[];

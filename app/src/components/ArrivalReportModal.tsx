@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, doc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Supplier } from '../types/supplier';
 
@@ -65,12 +65,12 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
     bookingNo: initialData?.bookingNo || '',
     remarks: initialData?.remarks || 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
     notifyParty: initialData?.notifyParty || 'SAME AS ABOVE',
-    portOfLoading: initialData?.portOfLoading || orderInfo.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
-    finalDestination: initialData?.finalDestination || orderInfo.finalDestination || 'HAMAD PORT, QATAR',
-    carrier: initialData?.carrier || orderInfo.carrier || '',
-    sailingOnOrAbout: initialData?.sailingOnOrAbout || orderInfo.sailingOnOrAbout || '',
-    cfsAddress: initialData?.cfsAddress || orderInfo.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
-    cfsEta: initialData?.cfsEta || orderInfo.cfsEntryDate || '',
+    portOfLoading: orderInfo.portOfLoading || initialData?.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
+    finalDestination: orderInfo.finalDestination || initialData?.finalDestination || 'HAMAD PORT, QATAR',
+    carrier: orderInfo.carrier || initialData?.carrier || '',
+    sailingOnOrAbout: orderInfo.sailingOnOrAbout || initialData?.sailingOnOrAbout || '',
+    cfsAddress: orderInfo.cfsAddress || initialData?.cfsAddress || 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13',
+    cfsEta: orderInfo.cfsEntryDate || initialData?.cfsEta || '',
   });
 
   // Load shippers and CFS list
@@ -106,20 +106,54 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
 
   // Consignee setup
   useEffect(() => {
-    if (initialData?.consignee) {
-      setConsigneeVal(initialData.consignee);
-      return;
-    }
     const isYS = orderInfo.issuingCompany === 'YS';
-    if (isYS) {
-      setConsigneeVal(
-        `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한`
-      );
-    } else {
-      setConsigneeVal(
-        `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`
-      );
-    }
+
+    const loadMyCompany = async () => {
+      try {
+        const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+        if (compDoc.exists()) {
+          const data = compDoc.data();
+          const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
+          const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
+          const phone = data.phone || '010-4494-1028';
+          const manager = data.manager || '김주한';
+          
+          const newConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}`;
+          
+          // Check if initialData.consignee is exactly the legacy hardcoded string. 
+          // If it is, or if it doesn't exist, use the fresh DB data.
+          const currentText = initialData?.consignee || '';
+          const isLegacy = currentText.includes('서울 강남구 테헤란로 419') || currentText.includes('경기 김포시 양촌읍 듬박로 89');
+
+          if (!currentText || isLegacy) {
+            setConsigneeVal(newConsignee);
+          } else {
+            setConsigneeVal(currentText);
+          }
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to load company info", e);
+      }
+      
+      // Fallback
+      const fallbackText = initialData?.consignee || '';
+      const isFallbackLegacy = fallbackText.includes('서울 강남구 테헤란로 419') || fallbackText.includes('경기 김포시 양촌읍 듬박로 89');
+
+      if (fallbackText && !isFallbackLegacy) {
+        setConsigneeVal(fallbackText);
+      } else if (isYS) {
+        setConsigneeVal(
+          `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한`
+        );
+      } else {
+        setConsigneeVal(
+          `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`
+        );
+      }
+    };
+    
+    loadMyCompany();
   }, [orderInfo.issuingCompany, initialData]);
 
   // Packing Items setup

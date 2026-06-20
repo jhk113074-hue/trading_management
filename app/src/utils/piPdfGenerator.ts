@@ -1,3 +1,5 @@
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import type { ProformaInvoice, PIItem } from '../types/pi';
 
 /**
@@ -5,19 +7,33 @@ import type { ProformaInvoice, PIItem } from '../types/pi';
  * using a new browser window and window.print() (Save as PDF).
  * This matches the professional Excel sheet layout exactly.
  */
-export const generatePIPdf = (piData: ProformaInvoice, items: PIItem[]) => {
-  const issuerName = piData.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.';
-  const logoVersion = Date.now();
-
+export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) => {
   const isYS = piData.issuingCompany === 'YS';
-  const bankName = "INDUSTRIAL BANK OF KOREA, SEOUL,KOREA";
-  const bankAddress = "50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA";
-  const beneficiary = isYS ? "YS ACC" : "YSACC Co.,LTD";
-  const bankAccountNo = isYS ? "940-013901-56-00011" : "143-129260-56-00012";
-  const swiftCode = isYS ? "IBKOKRSE" : "IBKOKRSEXXX";
-  const beneficiaryAddress = isYS 
+  
+  let issuerName = isYS ? 'YS ACC' : 'YSACC CO., LTD.';
+  let beneficiaryAddress = isYS 
     ? "111-201, 76, Wolmyeong-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do, 28589, Korea" 
     : "201-1HO, 1251, GAROSU-RO, HEUNGDEOK-GU, CHEONGJU-SI, CHUNGCHEONGBUK-DO, 28420, SOUTH KOREA";
+
+  try {
+    const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+    if (compDoc.exists()) {
+      const data = compDoc.data();
+      if (data.nameEn) issuerName = data.nameEn;
+      else if (data.nameKo) issuerName = data.nameKo;
+      else if (data.name) issuerName = data.name;
+      if (data.addressEn) beneficiaryAddress = data.addressEn;
+    }
+  } catch (e) {
+    console.error("Failed to load company info for PDF", e);
+  }
+
+  const logoVersion = Date.now();
+  const bankName = "INDUSTRIAL BANK OF KOREA, SEOUL,KOREA";
+  const bankAddress = "50, ULCHIRO 2-GA, CHUNG-GU, SEOUL, 100-758, SOUTH KOREA";
+  const beneficiary = issuerName;
+  const bankAccountNo = isYS ? "940-013901-56-00011" : "143-129260-56-00012";
+  const swiftCode = isYS ? "IBKOKRSE" : "IBKOKRSEXXX";
 
   const itemRows = items.map((item, index) => {
     let prodName = item.productName || '';

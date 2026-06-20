@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { TaskList } from './pages/TaskList';
 import { TeamManagement } from './pages/TeamManagement';
 import { ProfileSettings } from './pages/ProfileSettings';
+import { MyCompanySettings } from './pages/MyCompanySettings';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Products } from './pages/Products';
@@ -39,11 +40,12 @@ const App: React.FC = () => {
               <Route path="products" element={<Products />} />
               <Route path="customers" element={<Customers />} />
               <Route path="suppliers" element={<Suppliers />} />
-              <Route path="container-packer" element={<ContainerPacker />} />
               <Route path="team-management" element={<TeamManagement />} />
               <Route path="profile" element={<ProfileSettings />} />
+              <Route path="my-company" element={<MyCompanySettings />} />
               <Route path="issues" element={<IssueBoard />} />
             </Route>
+            <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </BrowserRouter>
