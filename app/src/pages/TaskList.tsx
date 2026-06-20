@@ -215,8 +215,12 @@ export const TaskList: React.FC = () => {
       if (typeKey) result = result.filter(t => t.type === typeKey);
     }
     if (filterStatus !== '모든 상태') {
-      const statusKey = Object.keys(statusLabels).find(k => statusLabels[k] === filterStatus);
-      if (statusKey) result = result.filter(t => t.status === statusKey);
+      if (filterStatus === '시작 안 함 + 진행중') {
+        result = result.filter(t => t.status === 'TODO' || t.status === 'IN_PROGRESS');
+      } else {
+        const statusKey = Object.keys(statusLabels).find(k => statusLabels[k] === filterStatus);
+        if (statusKey) result = result.filter(t => t.status === statusKey);
+      }
     }
 
     if (sortField) {
@@ -490,6 +494,7 @@ export const TaskList: React.FC = () => {
             </select>
             <select className="btn" style={{ padding: '6px 12px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option>모든 상태</option>
+              <option>시작 안 함 + 진행중</option>
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
             
