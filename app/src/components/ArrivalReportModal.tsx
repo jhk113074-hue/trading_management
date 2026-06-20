@@ -29,6 +29,7 @@ interface Props {
     cfsEntryDate?: string;
     items: any[];
   };
+  packingList?: any;
   initialData?: {
     shipper?: string;
     bookingNo?: string;
@@ -47,7 +48,7 @@ interface Props {
   onSave: (data: any) => void;
 }
 
-export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, initialData, onClose, onSave }) => {
+export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, packingList, initialData, onClose, onSave }) => {
   const [cfsList, setCfsList] = useState<string[]>([]);
   const [isAddingCfs, setIsAddingCfs] = useState(false);
   const [newCfsVal, setNewCfsVal] = useState('');
@@ -72,7 +73,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, i
     cfsEta: initialData?.cfsEta || orderInfo.cfsEntryDate || '',
   });
 
-  // Load suppliers and CFS list
+  // Load shippers and CFS list
   useEffect(() => {
     const loadSuppliersAndCfs = async () => {
       try {
@@ -125,6 +126,45 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, i
   useEffect(() => {
     if (initialData?.packingItems && initialData.packingItems.length > 0) {
       setPackingItems(initialData.packingItems);
+    } else if (packingList && packingList.containers) {
+      // Find matching items mapped to this manufacturer/supplierName from the packing list containers
+      const matchedItems: PackingItem[] = [];
+      packingList.containers.forEach((container: any) => {
+        const matchingContainerItems = (container.items || []).filter((it: any) => 
+          (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
+        );
+        
+        matchingContainerItems.forEach((it: any) => {
+          matchedItems.push({
+            marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+            descOfGoods: it.description || '',
+            qty: Number(it.pkg) || 0,
+            packageType: 'PL',
+            netWeight: Number(it.netWeight) || 0,
+            grossWeight: Number(it.grossWeight) || 0,
+            measurement: it.cbm ? `${it.cbm} CBM` : ''
+          });
+        });
+      });
+
+      if (matchedItems.length > 0) {
+        setPackingItems(matchedItems);
+      } else {
+        // Fallback to default setup if no matching manufacturer items in packing list
+        const itemDesc = orderInfo.items.map(it => `P#${orderInfo.custPo || '1'}. ${it.name}`).join(' / ');
+        const totalQty = orderInfo.items.reduce((sum, it) => sum + (it.qty || 0), 0);
+        setPackingItems([
+          {
+            marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+            descOfGoods: itemDesc || '',
+            qty: totalQty || 1,
+            packageType: 'PL',
+            netWeight: 0,
+            grossWeight: 0,
+            measurement: ''
+          }
+        ]);
+      }
     } else {
       // Default to one packing item referencing first order item
       const itemDesc = orderInfo.items.map(it => `P#${orderInfo.custPo || '1'}. ${it.name}`).join(' / ');
@@ -141,7 +181,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, i
         }
       ]);
     }
-  }, [orderInfo.items, initialData]);
+  }, [orderInfo.items, initialData, packingList, supplierName]);
 
   const handleSave = () => {
     onSave({
