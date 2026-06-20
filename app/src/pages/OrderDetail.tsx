@@ -1908,35 +1908,6 @@ export const OrderDetail: React.FC = () => {
               <textarea rows={1} value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical', outline: 'none' }} />
             </div>
           </div>
-
-          {/* L/C Details Section */}
-          {basicForm.isLc === 'Y' && (
-            <div style={{ marginTop: '6px', padding: '10px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ fontWeight: 800, fontSize: '12px', color: '#1e40af' }}>💳 L/C 거래 상세 정보</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>L/C ISSUING BANK</span>
-                  <input type="text" value={basicForm.lcIssuingBank} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingBank: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="발행 은행" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC 번호</span>
-                  <input type="text" value={basicForm.lcNo} onChange={e => setBasicForm(prev => ({ ...prev, lcNo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="LC 번호" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>LC ISSUING DATE</span>
-                  <input type="date" value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1e40af' }}>DESCRIPTION</span>
-                  <textarea rows={1} value={basicForm.lcDescription} onChange={e => setBasicForm(prev => ({ ...prev, lcDescription: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="물품 설명 / LC Description" />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#c2410c' }}>L/C 중요사항 기록 (Remark)</span>
-                  <textarea rows={2} value={basicForm.lcRemark} onChange={e => setBasicForm(prev => ({ ...prev, lcRemark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1.5px solid #f97316', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none', resize: 'vertical' }} placeholder="L/C 관련 중요사항 기록" />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right: L/C details & PO/LC/Sales Contract 파일 첨부 관리 */}
