@@ -2394,17 +2394,10 @@ export const OrderDetail: React.FC = () => {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         type="button" 
-                        onClick={handlePrintCI}
-                        style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        CI 자동인쇄/생성
-                      </button>
-                      <button 
-                        type="button" 
                         onClick={handlePrintPL}
                         style={{ padding: '6px 12px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
-                        PL 인쇄/PDF 저장
+                        PL 미리보기 및 PDF 저장
                       </button>
                     </div>
                   </div>
