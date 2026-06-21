@@ -15,7 +15,7 @@ import { previewFile } from '../components/FilePreviewModal';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const steps = ["PO접수", "소싱발주", "수출관리", "정산마감"] as const;
+const steps = ["PO접수", "소싱발주", "수출관리", "정산마감", "변경이력(Log)"] as const;
 
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -452,7 +452,49 @@ export const OrderDetail: React.FC = () => {
         orderCurrency = 'KRW';
       }
 
+      // Detect changes and generate log description
+      const changes: string[] = [];
+      if (order.piNumber !== basicForm.piNumber) changes.push(`PI 번호 변경: "${order.piNumber || ''}" → "${basicForm.piNumber}"`);
+      if (order.customer !== basicForm.customer) changes.push(`고객사 변경: "${order.customer || ''}" → "${basicForm.customer}"`);
+      if (order.custPo !== basicForm.custPo) changes.push(`고객사 PO 변경: "${order.custPo || ''}" → "${basicForm.custPo}"`);
+      if (order.incoterms !== basicForm.incoterms) changes.push(`인코텀즈 변경: "${order.incoterms || ''}" → "${basicForm.incoterms}"`);
+      if (order.paymentTerms !== basicForm.paymentTerms) changes.push(`결제조건 변경: "${order.paymentTerms || ''}" → "${basicForm.paymentTerms}"`);
+      if (order.poDate !== basicForm.poDate) changes.push(`PO접수일 변경: "${order.poDate || ''}" → "${basicForm.poDate}"`);
+      if (order.requestedDelivery !== basicForm.requestedDelivery) changes.push(`요청납기 변경: "${order.requestedDelivery || ''}" → "${basicForm.requestedDelivery}"`);
+      if (order.remark !== basicForm.remark) changes.push(`비고(Remarks) 변경: "${order.remark || ''}" → "${basicForm.remark}"`);
+      if (order.ciNumber !== basicForm.ciNumber) changes.push(`CI 번호 변경: "${order.ciNumber || ''}" → "${basicForm.ciNumber}"`);
+      if (order.isLc !== basicForm.isLc) changes.push(`L/C거래여부 변경: "${order.isLc || ''}" → "${basicForm.isLc}"`);
+      const mappedStatus = activeStep === 'PO접수' ? '주문' : 
+                           activeStep === '소싱발주' ? '발주' :
+                           activeStep === '수출관리' ? '선적관리' :
+                           activeStep === '정산마감' ? '이익관리' : null;
+
+      if (mappedStatus && order.status !== mappedStatus) {
+        changes.push(`진행단계 변경: "${order.status || ''}" → "${mappedStatus}"`);
+      }
+
+      // Compare items length or amounts
+      if (JSON.stringify(order.items || []) !== JSON.stringify(orderItems)) {
+        changes.push(`품목 리스트 변경 (총 ${orderItems.length}개 품목)`);
+      }
+      if (JSON.stringify(order.forwarders || []) !== JSON.stringify(forwardersList)) {
+        changes.push('운송사(포워더) 지정 및 운임 예산 변경');
+      }
+
+      let nextHistoryLogs = (order as any).history_logs || [];
+      if (changes.length > 0) {
+        const logEntry = {
+          timestamp: new Date().toISOString(),
+          actionType: 'update',
+          user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+          description: changes.join('\n')
+        };
+        nextHistoryLogs = [logEntry, ...nextHistoryLogs];
+      }
+
       await setDoc(docRef, {
+        history_logs: nextHistoryLogs,
+        status: activeStep === '변경이력(Log)' ? (order.status || '주문') : (mappedStatus || '주문'),
         piNumber: basicForm.piNumber,
         customer: basicForm.customer,
         custPo: basicForm.custPo,
@@ -1615,10 +1657,20 @@ export const OrderDetail: React.FC = () => {
       });
       updatedDocs.push(newDoc);
 
+      const currentLogs = (order as any).history_logs || [];
+      const newLog = {
+        timestamp: new Date().toISOString(),
+        actionType: 'po_issue',
+        user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+        description: `공급업체 "${supplierName}" 발주서 발행완료 (버전 v${version}, 파일명: ${safeFileName})`
+      };
+      const nextHistoryLogs = [newLog, ...currentLogs];
+
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
       await updateDoc(docRef, {
         po_issued_documents: updatedDocs,
-        po_issue_status: 'issued'
+        po_issue_status: 'issued',
+        history_logs: nextHistoryLogs
       });
 
       alert('✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
@@ -1662,11 +1714,21 @@ export const OrderDetail: React.FC = () => {
         }
       });
 
+      const currentLogs = (order as any).history_logs || [];
+      const newLog = {
+        timestamp: new Date().toISOString(),
+        actionType: 'po_delete',
+        user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+        description: `발주서 삭제/취소 완료 (파일명: ${fileName})`
+      };
+      const nextHistoryLogs = [newLog, ...currentLogs];
+
       const hasActiveDocs = updatedDocs.some((d: any) => d.status === 'active');
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
       await updateDoc(docRef, {
         po_issued_documents: updatedDocs,
-        po_issue_status: hasActiveDocs ? 'issued' : 'not_issued'
+        po_issue_status: hasActiveDocs ? 'issued' : 'not_issued',
+        history_logs: nextHistoryLogs
       });
 
       alert('✅ 발주서가 성공적으로 삭제되었습니다.');
@@ -5175,6 +5237,47 @@ export const OrderDetail: React.FC = () => {
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* 5. 변경이력(Log) */}
+          {activeStep === '변경이력(Log)' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📋 오더 변경 및 액션 이력 로그</h4>
+                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                  이 오더에 대해 시스템에서 수행된 발행, 수정, 삭제 등의 중요 활동 로그를 기록하고 타임라인으로 조회합니다.
+                </div>
+                {(order as any).history_logs && (order as any).history_logs.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {(order as any).history_logs.map((log: any, index: number) => (
+                      <div key={index} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '12.5px', color: '#334155' }}>
+                            {log.actionType === 'create' ? '✨ 신규 생성' : 
+                             log.actionType === 'update' ? '✏️ 기본정보 수정' :
+                             log.actionType === 'po_issue' ? '📄 발주서 발행' :
+                             log.actionType === 'po_delete' ? '🗑️ 발주서 취소' : '🔔 액션 수행'}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#475569', whiteSpace: 'pre-wrap' }}>
+                          {log.description}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                          수행자: {log.user || 'System'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#94a3b8', fontSize: '12px', border: '1px solid #e2e8f0' }}>
+                    기록된 활동 로그가 없습니다. 변경 사항이 생기면 이력이 자동 기록됩니다.
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
