@@ -1530,7 +1530,7 @@ export const OrderDetail: React.FC = () => {
       const safeFileName = `${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
       const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
       
-      const snapshot = await uploadBytesResumable(storageRef, pdfBlob);
+      const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       const newDoc = {
