@@ -305,14 +305,24 @@ app.post('/api/pdf/generate', async (req, res) => {
     let browser;
     const args = ['--no-sandbox', '--disable-setuid-sandbox'];
     
-    // Sometimes Render env sets this to a bad path, so we try multiple
+    // Find the Chrome binary dynamically since different Docker setups put it in different places
+    let dynamicPath = '';
+    try {
+      dynamicPath = require('child_process').execSync('find /home/pptruser/.cache/puppeteer -type f -name chrome | head -n 1').toString().trim();
+    } catch(e) {}
+    if (!dynamicPath) {
+      try {
+        dynamicPath = require('child_process').execSync('find / -type f -name chrome 2>/dev/null | grep puppeteer | head -n 1').toString().trim();
+      } catch(e) {}
+    }
+
     const pathsToTry = [
+      dynamicPath,
       process.env.PUPPETEER_EXECUTABLE_PATH,
       '/usr/bin/google-chrome-stable',
       '/usr/bin/google-chrome',
       '/usr/bin/chromium',
-      '/usr/bin/chromium-browser',
-      puppeteer.executablePath()
+      '/usr/bin/chromium-browser'
     ].filter(Boolean);
 
     let lastError;
@@ -328,12 +338,11 @@ app.post('/api/pdf/generate', async (req, res) => {
     }
 
     if (!browser) {
-      // Final fallback without executablePath, which relies on bundled
       delete process.env.PUPPETEER_EXECUTABLE_PATH;
       try {
         browser = await puppeteer.launch({ args });
       } catch (err) {
-        throw new Error("All browser launch attempts failed. Last error: " + lastError?.message);
+        throw new Error("All browser launch attempts failed. Searched paths: " + pathsToTry.join(', ') + " | Last error: " + lastError?.message);
       }
     }
     const page = await browser.newPage();
