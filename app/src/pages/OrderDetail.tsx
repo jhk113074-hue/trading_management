@@ -228,7 +228,7 @@ export const OrderDetail: React.FC = () => {
     if (!id) return;
     const fetchIssuedDocs = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/po/${id}/documents`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${id}/documents`);
         const data = await res.json();
         if (data.documents) setIssuedDocs(data.documents);
       } catch (e) {
@@ -1524,7 +1524,7 @@ export const OrderDetail: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      const resApi = await fetch(`http://localhost:3000/api/po/${order?.id}/issue`, {
+      const resApi = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${order?.id}/issue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1537,7 +1537,7 @@ export const OrderDetail: React.FC = () => {
       const data = await resApi.json();
       if (data.success) {
         alert('✅ 발주서가 발행 저장되었습니다.');
-        const resDocs = await fetch(`http://localhost:3000/api/po/${order?.id}/documents`);
+        const resDocs = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${order?.id}/documents`);
         const docsData = await resDocs.json();
         if (docsData.documents) setIssuedDocs(docsData.documents);
       } else {
@@ -1574,7 +1574,7 @@ export const OrderDetail: React.FC = () => {
     
     let pdfLinkStr = '';
     if (latestDoc) {
-      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\nhttp://localhost:3000${latestDoc.fileUrl}\n\n`;
+      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\n${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${latestDoc.fileUrl}\n\n`;
     }
 
     const body = encodeURIComponent(
@@ -2893,8 +2893,8 @@ export const OrderDetail: React.FC = () => {
             <td style={{ padding: '6px', textAlign: 'center' }}>v{doc.version}</td>
             <td style={{ padding: '6px', textAlign: 'center' }}>{doc.issuedBy}</td>
             <td style={{ padding: '6px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-              <a href={`http://localhost:3000${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>보기</a>
-              <a href={`http://localhost:3000${doc.fileUrl}`} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>↓ 다운</a>
+              <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>보기</a>
+              <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>↓ 다운</a>
             </td>
           </tr>
         ))}
@@ -4348,8 +4348,8 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
                               <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                <a href={`http://localhost:3000${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
-                                <a href={`http://localhost:3000${doc.fileUrl}`} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
+                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
+                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
                               </td>
                             </tr>
                           ))}
