@@ -1576,7 +1576,7 @@ export const OrderDetail: React.FC = () => {
       heightLeft -= pageHeight;
 
       let pageCount = 1;
-      while (heightLeft >= 15) {
+      while (heightLeft >= 100) { // Only create a new page if the overflow content height is substantial (>= 100pt)
         position = - (pageHeight * pageCount);
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
