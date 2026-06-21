@@ -4408,6 +4408,11 @@ export const OrderDetail: React.FC = () => {
                           <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                               <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13px' }}>🚚 {supplierName} 도착보고서 ({poNum})</span>
+                              {order.supplierArrivalReports && order.supplierArrivalReports[supplierName] && (
+                                <span style={{ marginLeft: '10px', padding: '2px 8px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  ✓ 저장 완료 (클라우드)
+                                </span>
+                              )}
                             </div>
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <button 
