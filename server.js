@@ -311,11 +311,13 @@ app.post('/api/pdf/generate', async (req, res) => {
       });
     } catch (e) {
       console.warn("First launch failed, trying fallback:", e.message);
+      // delete the env var so puppeteer uses bundled chromium
+      delete process.env.PUPPETEER_EXECUTABLE_PATH;
       try {
-        browser = await puppeteer.launch({ args, executablePath: 'google-chrome-stable' });
-      } catch (e2) {
-        console.warn("Second launch failed, trying undefined fallback:", e2.message);
         browser = await puppeteer.launch({ args });
+      } catch (e2) {
+        console.warn("Second launch failed, using default:", e2.message);
+        browser = await puppeteer.launch({ args, executablePath: '/usr/bin/google-chrome' });
       }
     }
     const page = await browser.newPage();
