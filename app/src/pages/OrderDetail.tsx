@@ -1540,6 +1540,10 @@ export const OrderDetail: React.FC = () => {
       
       document.body.appendChild(container);
 
+      // Wait for fonts & images to be fully loaded/rendered
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Render the container to a canvas
       const canvas = await html2canvas(container, {
         scale: 2, // higher resolution
