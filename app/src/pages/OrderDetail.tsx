@@ -1558,16 +1558,16 @@ export const OrderDetail: React.FC = () => {
 
       document.body.removeChild(container);
 
-      // Create PDF using jsPDF
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      // Create PDF using jsPDF in points unit to match canvas pixels perfectly
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({
         orientation: 'p',
-        unit: 'mm',
+        unit: 'pt',
         format: 'a4'
       });
 
-      const imgWidth = 210; // A4 size width in mm
-      const pageHeight = 297; // A4 size height in mm
+      const imgWidth = 595.28; // A4 size width in points (72 points per inch)
+      const pageHeight = 841.89; // A4 size height in points
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
@@ -1577,7 +1577,7 @@ export const OrderDetail: React.FC = () => {
 
       // Support multi-page PO sheets if needed
       let pageCount = 1;
-      while (heightLeft >= 10) { // If remaining height is greater than 10mm
+      while (heightLeft >= 20) { // If remaining height is greater than 20 points
         position = - (pageHeight * pageCount);
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
