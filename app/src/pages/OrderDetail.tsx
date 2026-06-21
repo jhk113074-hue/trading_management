@@ -1519,55 +1519,51 @@ export const OrderDetail: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      // Client-side PDF generation using html2canvas & jsPDF
-      // Create a temporary hidden container to render the print HTML
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.top = '0px';
-      container.style.left = '0px';
-      container.style.width = '800px'; // A4 width at standard scaling
-      container.style.height = 'auto'; // allow complete layout expansion
-      container.style.boxSizing = 'border-box';
-      container.style.background = '#ffffff';
-      container.style.zIndex = '-9999';
-      container.innerHTML = printHtml;
-      
-      // Remove no-print buttons from the temporary DOM element before rendering
-      const noPrintBtn = container.querySelector('.no-print');
-      if (noPrintBtn) {
-        noPrintBtn.remove();
-      }
-      
-      document.body.appendChild(container);
+      // Sandbox-isolated PDF generation using a temporary hidden iframe
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.top = '0';
+      iframe.style.left = '0';
+      iframe.style.width = '820px'; // fixed wide A4 content wrapper
+      iframe.style.height = '1200px';
+      iframe.style.border = '0';
+      iframe.style.zIndex = '-9999';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
 
-      // Wait for fonts & images to be fully loaded/rendered
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+      if (!iframeDoc) throw new Error('Failed to access sandbox iframe context');
 
-      // Render the container to a canvas
-      const canvas = await html2canvas(container, {
-        scale: 2, // higher resolution
+      iframeDoc.open();
+      iframeDoc.write(printHtml);
+      iframeDoc.close();
+
+      // Wait for fonts & images to render inside the iframe
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const printBody = iframeDoc.body;
+      const canvas = await html2canvas(printBody, {
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
         width: 800,
+        height: printBody.scrollHeight,
         windowWidth: 800,
-        height: container.scrollHeight,
-        windowHeight: container.scrollHeight
+        windowHeight: printBody.scrollHeight
       });
 
-      document.body.removeChild(container);
+      document.body.removeChild(iframe);
 
-      // Create PDF using jsPDF in points unit to match canvas pixels perfectly
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'pt',
         format: 'a4'
       });
 
-      const imgWidth = 595.28; // A4 size width in points (72 points per inch)
-      const pageHeight = 841.89; // A4 size height in points
+      const imgWidth = 595.28;
+      const pageHeight = 841.89;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
@@ -1575,9 +1571,8 @@ export const OrderDetail: React.FC = () => {
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
-      // Support multi-page PO sheets if needed
       let pageCount = 1;
-      while (heightLeft >= 20) { // If remaining height is greater than 20 points
+      while (heightLeft >= 15) {
         position = - (pageHeight * pageCount);
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
