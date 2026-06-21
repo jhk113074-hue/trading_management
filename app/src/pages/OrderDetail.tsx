@@ -63,6 +63,7 @@ export const OrderDetail: React.FC = () => {
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
+  const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
   console.log("[DEBUG] Rendering OrderDetail page. forwardersList:", forwardersList);
   const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
 
@@ -225,6 +226,16 @@ export const OrderDetail: React.FC = () => {
   // Load Order document
   useEffect(() => {
     if (!id) return;
+    const fetchIssuedDocs = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/po/${id}/documents`);
+        const data = await res.json();
+        if (data.documents) setIssuedDocs(data.documents);
+      } catch (e) {
+        console.error("Failed to fetch issued docs", e);
+      }
+    };
+    fetchIssuedDocs();
     const docRef = doc(db, 'companies', COMPANY_ID, 'orders', id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -1220,6 +1231,324 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const issueAndSavePO = async (supplierName: string, items: OrderItem[]) => {
+
+    if (!order) return;
+    const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+    const cleanSupplierName = supplierName.replace(/\s+/g, '');
+    const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
+    const poNum = `${getFormattedPoId(order.id, order.issuingCompany)}-${supplierCode}`;
+
+    const logoVersion = Date.now();
+    const isYS = order.issuingCompany === 'YS';
+    let bizNo = isYS ? '730-17-00185' : '217-87-00384';
+    let compName = isYS ? '영성에이씨씨(영성ACC)' : '(주)와이에스에이씨씨';
+    let address = isYS ? '충북 청주시 흥덕구 월명로 76, 111-201호' : '충북 청주시 흥덕구 가로수로 1251, 201-1호';
+    let compPresident = '김 주 한'; // Default fallback
+
+    try {
+      const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+      if (compDoc.exists()) {
+        const data = compDoc.data();
+        if (data.bizNo) bizNo = data.bizNo;
+        if (data.nameKo) compName = data.nameKo;
+        else if (data.name) compName = data.name;
+        if (data.addressKo) address = data.addressKo;
+        if (data.manager) compPresident = data.manager;
+      }
+    } catch (e) {
+      console.error("Failed to load company info for PO", e);
+    }
+
+    const printHtml = `
+      <html>
+        <head>
+          <title>발주서 - ${poNum}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 12px; line-height: 1.4; }
+            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
+            @media print {
+              .no-print { display: none !important; }
+              body { padding: 0; }
+            }
+            .po-title-container { text-align: center; margin-bottom: 25px; position: relative; }
+            .po-title { font-size: 36px; font-weight: 800; letter-spacing: 12px; margin: 0; display: inline-block; border-bottom: 2px solid #000; padding-bottom: 5px; }
+            .po-subtitle { position: absolute; right: 0; bottom: 5px; font-size: 11px; font-weight: bold; }
+            
+            .meta-grid { display: grid; grid-template-columns: 1.1fr 1.3fr; gap: 10px; margin-bottom: 15px; }
+            .meta-left { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+            .meta-left div { font-size: 11px; }
+            .meta-left strong { width: 70px; display: inline-block; }
+
+            .business-table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
+            .business-table th, .business-table td { border: 1px solid #000; padding: 4px; height: 26px; }
+            .business-table th { background-color: #f3f4f6; font-weight: 600; width: 25%; }
+            .business-table td { width: 75%; position: relative; }
+            
+            .supplier-seal-container { display: flex; align-items: center; justify-content: space-between; font-weight: bold; padding: 0 10px; width: 100%; height: 100%; box-sizing: border-box; }
+            .supplier-seal-container img.seal-bg { position: absolute; left: 45%; top: 50%; transform: translate(-50%, -50%); height: 28px; width: auto; z-index: 1; opacity: 0.12; }
+            .supplier-seal-container img.seal-stamp { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); height: 48px; width: auto; z-index: 5; opacity: 0.85; }
+
+            .delivery-info { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 0; margin-bottom: 15px; font-size: 12px; }
+            .delivery-info div { margin-bottom: 4px; }
+            .delivery-info div:last-child { margin-bottom: 0; }
+
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+            .items-table th, .items-table td { border: 1px solid #000; padding: 6px 4px; }
+            .items-table th { background-color: #f3f4f6; font-weight: 600; text-align: center; }
+            .items-table td { text-align: left; }
+            .items-table td.center { text-align: center; }
+            .items-table td.right { text-align: right; }
+
+            .notes-box { border: 1.5px solid #000; padding: 10px; margin-bottom: 15px; font-size: 11px; }
+            .notes-title { font-weight: 700; margin-bottom: 5px; text-decoration: underline; }
+            .notes-box ol { margin: 0; padding-left: 15px; }
+            .notes-box li { margin-bottom: 4px; }
+
+            .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px; }
+            .bottom-box { border: 1px solid #000; padding: 8px; min-height: 80px; }
+            .bottom-box-title { font-weight: 700; margin-bottom: 4px; }
+            
+            .bottom-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+            .bottom-table td { border: 1px solid #000; padding: 3px; font-size: 10px; }
+            .bottom-table td.label { background-color: #f3f4f6; text-align: center; font-weight: 600; width: 20%; }
+            .bottom-table td.value { text-align: center; width: 80%; }
+
+            .footer-name { text-align: center; margin-top: 25px; font-size: 18px; font-weight: 900; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+            .footer-logo { height: 24px; width: auto; object-fit: contain; }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()">🖨️ 인쇄하기 / PDF 저장</button>
+          
+          <div class="po-title-container">
+            <h1 class="po-title">발 주 서</h1>
+            <div class="po-subtitle">* 물탱크용 부자재 및 관련 자재</div>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-left">
+              <div><strong>발주번호 :</strong> ${poNum}</div>
+              <div><strong>발주일자 :</strong> ${new Date().toISOString().split('T')[0].replace(/-/g, '년 ').concat('일').replace(/(\d{4})년\s0?(\d{1,2})월\s0?(\d{1,2})일/, '$1년 $2월 $3일')}</div>
+              <div><strong>수&nbsp;&nbsp;&nbsp;&nbsp;신 :</strong> ${supplierName}</div>
+            </div>
+            <div>
+              <table class="business-table">
+                <tr>
+                  <th>등록번호</th>
+                  <td style="font-weight: bold; letter-spacing: 1px;">${bizNo}</td>
+                </tr>
+                <tr>
+                  <th>상  호</th>
+                  <td style="position: relative; padding: 0;">
+                    <div class="supplier-seal-container">
+                      <img src="/logo.png?v=${logoVersion}" class="seal-bg" />
+                      <img src="${isYS ? '/YS_ACC_STAMP.jpg' : '/YSACC_STAMP.png'}?v=${logoVersion}" class="seal-stamp" />
+                      <div style="width: 100%; display: flex; justify-content: space-between; padding: 0 10px; z-index: 3; position: relative;">
+                        <span>${compName}</span>
+                        <span style="font-weight: normal; margin-right: 50px;">${compPresident}</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th>사업장</th>
+                  <td style="font-size: 10px; text-align: left; padding-left: 8px;">${address}</td>
+                </tr>
+                <tr>
+                  <th>업  태</th>
+                  <td>${isYS ? '도소매업 외' : '제조업 외'}</td>
+                </tr>
+                <tr>
+                  <th>종  목</th>
+                  <td>${isYS ? '물탱크 및 기자재' : '물탱크 및 관련부품'}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div style="font-weight: bold; font-size: 12px; margin-bottom: 15px;">하기와 같이 발주 드립니다.</div>
+
+          <div class="delivery-info">
+            <div><strong>입고요청일 :</strong> 추후 안내 예정</div>
+            <div><strong>납품처(주소, 담당자, 연락처) :</strong> 추후 통보예정</div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 100px;">상품코드</th>
+                <th style="width: 200px;">품 명</th>
+                <th style="width: 120px;">스 펙</th>
+                <th style="width: 60px;">수량</th>
+                <th style="width: 80px;">단 가</th>
+                <th style="width: 100px;">금 액</th>
+                <th style="width: 90px;">부가세</th>
+                <th>비 고</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map((it) => {
+                const { purchasePrice, purchaseCurrency, itemCode, itemName } = getSupplierPurchaseInfo(it);
+                const isKrw = purchaseCurrency === 'KRW';
+                const currencySymbol = isKrw ? '₩' : '$';
+                const rawAmt = purchasePrice * (it.qty || 0);
+                const vatAmt = taxType === '영세' ? 0 : (isKrw ? Math.round(rawAmt * 0.1) : parseFloat((rawAmt * 0.1).toFixed(2)));
+                return `
+                  <tr>
+                    <td class="center">${itemCode}</td>
+                    <td><strong>${itemName}</strong></td>
+                    <td class="center">${it.grade || '-'}</td>
+                    <td class="right">${(it.qty || 0).toLocaleString()}</td>
+                    <td class="right">${currencySymbol}${purchasePrice.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${currencySymbol}${rawAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td class="right">${currencySymbol}${vatAmt.toLocaleString(undefined, isKrw ? {} : { minimumFractionDigits: 2 })}</td>
+                    <td style="font-size: 10px; color: #475569;">${it.unit} 발주</td>
+                  </tr>
+                `;
+              }).join('')}
+              
+              <!-- Blank rows for layout stability -->
+              ${Array.from({ length: Math.max(0, 5 - items.length) }).map(() => `
+                <tr>
+                  <td style="height: 25px;"></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              `).join('')}
+
+              <tr style="font-weight: bold; background-color: #fafafa;">
+                <td colspan="3" class="center">합   계</td>
+                <td class="right">${items.reduce((sum, it) => sum + (it.qty || 0), 0).toLocaleString()}</td>
+                <td></td>
+                <td class="right">
+                  ${(() => {
+                    const usdSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwSub = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const parts = [];
+                    if (usdSub > 0) parts.push(`$${usdSub.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                    if (krwSub > 0) parts.push(`₩${krwSub.toLocaleString()}`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+                <td class="right">
+                  ${(() => {
+                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                    const parts = [];
+                    if (usdTotal > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                    if (krwTotal > 0) parts.push(`₩${krwVat.toLocaleString()}`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+                <td class="right" style="color: #dc2626;">
+                  ${(() => {
+                    const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                    const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
+                    const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
+                    const usdGrand = usdTotal + usdVat;
+                    const krwGrand = krwTotal + krwVat;
+                    const parts = [];
+                    if (usdTotal > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD`);
+                    if (krwTotal > 0) parts.push(`₩${krwGrand.toLocaleString()} KRW`);
+                    return parts.join(' / ');
+                  })()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="notes-box">
+            <div class="notes-title">※ 특이사항:</div>
+            <ol>
+              <li>부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})</li>
+              <li>세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.</li>
+              <li>Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.</li>
+            </ol>
+          </div>
+
+          <div class="bottom-grid">
+            <div class="bottom-box">
+              <div class="bottom-box-title">※ 일반사항</div>
+              <div style="font-size: 10px; color: #334155; line-height: 1.4;">
+                1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
+                2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}
+              </div>
+            </div>
+            <div class="bottom-box" style="padding: 4px;">
+              <div class="bottom-box-title" style="margin-left: 4px; font-size: 11px;">※ 참고사항</div>
+              <table class="bottom-table">
+                <tr>
+                  <td colspan="2" class="label" style="height: 18px; padding: 2px;">발주담당</td>
+                </tr>
+                <tr>
+                  <td class="label">직 위</td>
+                  <td class="value">대표이사</td>
+                </tr>
+                <tr>
+                  <td class="label">성 명</td>
+                  <td class="value">김 주 한</td>
+                </tr>
+                <tr>
+                  <td class="label">연락처</td>
+                  <td class="value">010-4494-1028</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <div class="footer-name">
+            <img src="/logo.png?v=${logoVersion}" class="footer-logo" />
+            <span>${isYS ? '영성에이씨씨' : '(주)와이에스에이씨씨'}</span>
+          </div>
+        </body>
+      </html>
+    `;
+
+    
+    const totalAmount = items.reduce((sum, it) => {
+      const price = (it as any).purchaseUnitPrice !== undefined ? (it as any).purchaseUnitPrice : it.unitPrice;
+      return sum + (price || 0) * (it.qty || 0);
+    }, 0);
+
+    const confirmed = window.confirm(`발주서를 발행하시겠습니까?\n\nPO번호: ${poNum}\n거래처: ${supplierName}\n⚠️ 발행 후 금액/수량 수정 시 재발행이 필요합니다.`);
+    if (!confirmed) return;
+
+    try {
+      const resApi = await fetch(`http://localhost:3000/api/po/${order?.id}/issue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          htmlContent: printHtml,
+          poNumber: poNum,
+          supplierName,
+          totalAmount
+        })
+      });
+      const data = await resApi.json();
+      if (data.success) {
+        alert('✅ 발주서가 발행 저장되었습니다.');
+        const resDocs = await fetch(`http://localhost:3000/api/po/${order?.id}/documents`);
+        const docsData = await resDocs.json();
+        if (docsData.documents) setIssuedDocs(docsData.documents);
+      } else {
+        alert('발행 실패: ' + data.error);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('발행 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleEmailSupplierPo = (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
@@ -1241,6 +1570,13 @@ export const OrderDetail: React.FC = () => {
       return `- 품명: ${it.name}${spec} / 수량: ${it.qty?.toLocaleString()} ${it.unit} / 단가: ${currencySymbol}${price.toLocaleString()}`;
     }).join('\n');
 
+    const latestDoc = issuedDocs.find(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierCode)));
+    
+    let pdfLinkStr = '';
+    if (latestDoc) {
+      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\nhttp://localhost:3000${latestDoc.fileUrl}\n\n`;
+    }
+
     const body = encodeURIComponent(
       `안녕하세요,\n\n` +
       `${supplierName} 담당자님 귀하,\n\n` +
@@ -1249,19 +1585,26 @@ export const OrderDetail: React.FC = () => {
       `- 발주일자: ${new Date().toISOString().split('T')[0]}\n\n` +
       `[발주 내역]\n` +
       `${itemsText}\n\n` +
+      pdfLinkStr +
       `자세한 내용은 본 이메일 혹은 시스템에 접속하여 첨부된 발주서(PDF)를 참조해 주시기 바랍니다.\n` +
       `감사합니다.\n` +
       `\n` +
       `${order.issuingCompany === 'YS' ? '영성에이씨씨' : '(주)와이에스에이씨씨'} 대표이사 김주한`
     );
 
-    alert("보안 정책상 브라우저에서 이메일에 파일을 자동으로 첨부할 수 없습니다.\n\n확인을 누르시면 발주서 인쇄 창과 이메일 작성 창이 함께 열립니다.\n발주서를 'PDF로 저장' 하신 후 이메일에 첨부해 주시기 바랍니다.");
+    if (latestDoc) {
+      alert("이메일 작성 창이 열립니다. 이메일 내용에 발주서 다운로드 링크가 포함되어 있습니다.");
+    } else {
+      alert("보안 정책상 브라우저에서 이메일에 파일을 자동으로 첨부할 수 없습니다.\n\n확인을 누르시면 발주서 인쇄 창과 이메일 작성 창이 함께 열립니다.\n발주서를 'PDF로 저장' 하신 후 이메일에 첨부해 주시기 바랍니다.");
+    }
 
     setTimeout(() => {
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
     }, 500);
 
-    handlePrintSupplierPo(supplierName, items);
+    if (!latestDoc) {
+      handlePrintSupplierPo(supplierName, items);
+    }
   };
 
   // Shipping Mark Print handler
@@ -2473,6 +2816,11 @@ export const OrderDetail: React.FC = () => {
                             <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <span style={{ fontWeight: 800, color: '#1e3a8a', fontSize: '13px' }}>📄 {supplierName} PO ({poNum})</span>
+                                  {issuedDocs.some(d => d.status === 'active' && (d.supplier_name === supplierName || d.po_number.includes(supplierName.replace(/\s+/g, '').substring(0,3).toUpperCase()))) && (
+                                    <span style={{ padding: '2px 6px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                                      ✅ 발행완료
+                                    </span>
+                                  )}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px' }}>
                                   <span style={{ fontWeight: 600, color: '#4b5563' }}>세율:</span>
                                   <select
@@ -2497,9 +2845,15 @@ export const OrderDetail: React.FC = () => {
                               <div style={{ display: 'flex', gap: '6px' }}>
                                 <button 
                                   onClick={() => handlePrintSupplierPo(supplierName, items)}
+                                  style={{ padding: '5px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                >
+                                  미리보기 / 인쇄
+                                </button>
+                                <button 
+                                  onClick={() => issueAndSavePO(supplierName, items)}
                                   style={{ padding: '5px 10px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                                 >
-                                  🖨️ 인쇄 / PDF
+                                  📥 발주서 발행 및 저장
                                 </button>
                                 <button 
                                   onClick={() => handleEmailSupplierPo(supplierName, items)}
@@ -2509,7 +2863,46 @@ export const OrderDetail: React.FC = () => {
                                 </button>
                               </div>
                             </div>
-                            <div style={{ padding: '12px 16px', background: '#fff', fontSize: '12px' }}>
+                            {issuedDocs.filter(d => d.supplier_name === supplierName || d.po_number.includes(supplierName.replace(/\s+/g, '').substring(0,3).toUpperCase())).length > 0 && (
+  <div style={{ marginTop: '15px', marginBottom: '15px', padding: '12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+    <h4 style={{ margin: '0 0 10px 0', fontSize: '12.5px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      📁 발행 문서 보관함
+    </h4>
+    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', backgroundColor: '#fff' }}>
+      <thead>
+        <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f1f5f9' }}>
+          <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}>No</th>
+          <th style={{ padding: '6px', textAlign: 'left' }}>문서명</th>
+          <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>발행일시</th>
+          <th style={{ padding: '6px', textAlign: 'center', width: '60px' }}>버전</th>
+          <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>발행자</th>
+          <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>액션</th>
+        </tr>
+      </thead>
+      <tbody>
+        {issuedDocs
+          .filter(d => d.supplier_name === supplierName || d.po_number.includes(supplierName.replace(/\s+/g, '').substring(0,3).toUpperCase()))
+          .map((doc, idx) => (
+          <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0', color: doc.status === 'superseded' ? '#94a3b8' : 'inherit' }}>
+            <td style={{ padding: '6px', textAlign: 'center' }}>{idx + 1}</td>
+            <td style={{ padding: '6px', textAlign: 'left' }}>
+              {doc.fileName}
+              {doc.status === 'active' && <span style={{ marginLeft: '6px', padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>}
+            </td>
+            <td style={{ padding: '6px', textAlign: 'center' }}>{new Date(doc.issuedAt).toLocaleString()}</td>
+            <td style={{ padding: '6px', textAlign: 'center' }}>v{doc.version}</td>
+            <td style={{ padding: '6px', textAlign: 'center' }}>{doc.issuedBy}</td>
+            <td style={{ padding: '6px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+              <a href={`http://localhost:3000${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>보기</a>
+              <a href={`http://localhost:3000${doc.fileUrl}`} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>↓ 다운</a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+<div style={{ padding: '12px 16px', background: '#fff', fontSize: '12px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
                                 <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
@@ -3923,14 +4316,61 @@ export const OrderDetail: React.FC = () => {
 
               {/* 3) COA 및 시험성적서 탭 */}
               {activeSourcingTab === 'COA_성적서' && (
-                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 3) COA 및 시험성적서 첨부 파일 관리</h4>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
-                    수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📁 발주서(PO) 통합 보관함</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                      해당 오더에 대해 시스템을 통해 발행된 모든 발주서 PDF 원본을 통합 관리합니다.
+                    </div>
+                    {issuedDocs.length > 0 ? (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f1f5f9' }}>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '50px' }}>No</th>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>공급사</th>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>문서명</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>발행일시</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>버전</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>발행자</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>액션</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {issuedDocs.map((doc, idx) => (
+                            <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0', color: doc.status === 'superseded' ? '#94a3b8' : 'inherit' }}>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                              <td style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold' }}>{doc.supplier_name}</td>
+                              <td style={{ padding: '8px', textAlign: 'left' }}>
+                                {doc.fileName}
+                                {doc.status === 'active' && <span style={{ marginLeft: '6px', padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>}
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{new Date(doc.issuedAt).toLocaleString()}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                <a href={`http://localhost:3000${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
+                                <a href={`http://localhost:3000${doc.fileUrl}`} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#94a3b8', fontSize: '12px', border: '1px solid #e2e8f0' }}>
+                        발행된 발주서가 없습니다. 소싱발주 탭에서 발주서를 발행해주세요.
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                    {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                    {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 COA 및 시험성적서 첨부 파일 관리</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                      수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                    </div>
                   </div>
                 </div>
               )}

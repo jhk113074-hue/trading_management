@@ -2,13 +2,17 @@ const express = require('express');
 const cors    = require('cors');
 require('dotenv').config();
 const pool = require('./db/pool');
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static('dashboard')); // dashboard/ 폴더를 정적 파일로 서빙
+app.use('/files', express.static(path.join(__dirname, 'files')));
 
 // ─────────────────────────────────────────
 // 공통 헬퍼
@@ -185,6 +189,123 @@ app.post('/api/proforma-invoices', async (req, res) => {
     res.status(500).json({ error: e.message });
   } finally {
     client.release();
+  }
+});
+
+// ─────────────────────────────────────────
+// API: Purchase Orders (PO Issue)
+// ─────────────────────────────────────────
+app.post('/api/po/:poId/issue', async (req, res) => {
+  const { poId } = req.params;
+  const { htmlContent, poNumber, supplierName, totalAmount, issuedBy = 'System' } = req.body;
+
+  try {
+    // Determine new version
+    const versionRes = await pool.query(
+      `SELECT COALESCE(MAX(version), 0) + 1 AS next_version FROM po_issued_documents WHERE po_id = $1`,
+      [poId]
+    );
+    const version = versionRes.rows[0].next_version;
+
+    // Create filename & path
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // Clean poNumber for path
+    const safePoNumber = poNumber.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+    const safeFileName = `${safePoNumber}_v${version}.pdf`;
+    
+    const relativeDir = path.join('po', String(year), month);
+    const uploadDir = path.join(__dirname, 'files', relativeDir);
+    
+    // Ensure directory exists
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, safeFileName);
+    const fileUrl = `/files/${relativeDir.replace(/\\/g, '/')}/${safeFileName}`;
+
+    // Generate PDF using Puppeteer
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+
+    fs.writeFileSync(filePath, pdfBuffer);
+
+    // Update DB
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Set previous versions to superseded
+      await client.query(
+        `UPDATE po_issued_documents SET status = 'superseded' WHERE po_id = $1`,
+        [poId]
+      );
+
+      // Insert new document
+      const docRes = await client.query(
+        `INSERT INTO po_issued_documents 
+         (po_id, po_number, supplier_name, version, file_name, file_path, file_size, issued_at, issued_by, total_amount, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, 'active')
+         RETURNING id, issued_at`,
+        [poId, poNumber, supplierName, version, safeFileName, fileUrl, pdfBuffer.length, issuedBy, totalAmount]
+      );
+      
+      const newDocId = docRes.rows[0].id;
+      const issuedAt = docRes.rows[0].issued_at;
+
+      // Update PO status (ignoring error if migration not run yet)
+      try {
+        await client.query(
+          `UPDATE purchase_orders SET issue_status = 'issued', latest_issue_id = $1 WHERE id = $2`,
+          [newDocId, poId]
+        );
+      } catch (e) {
+        console.warn("Could not update purchase_orders table. Check if migration ran:", e.message);
+      }
+
+      await client.query('COMMIT');
+
+      res.status(200).json({
+        success: true,
+        documentId: newDocId,
+        version,
+        fileName: safeFileName,
+        fileUrl,
+        issuedAt
+      });
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("PDF Generation Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/po/:poId/documents', async (req, res) => {
+  const { poId } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT id, version, file_name AS "fileName", file_path AS "fileUrl", 
+              issued_at AS "issuedAt", issued_by AS "issuedBy", 
+              total_amount AS "totalAmount", status
+       FROM po_issued_documents 
+       WHERE po_id = $1 
+       ORDER BY version DESC`,
+      [poId]
+    );
+    res.json({ documents: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
