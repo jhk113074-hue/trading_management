@@ -12,6 +12,8 @@ import { ProductSearchModal } from '../components/ProductSearchModal';
 import { ArrivalReportModal } from '../components/ArrivalReportModal';
 import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
 import { previewFile } from '../components/FilePreviewModal';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const steps = ["PO접수", "소싱발주", "수출관리", "정산마감"] as const;
 
@@ -1259,7 +1261,8 @@ export const OrderDetail: React.FC = () => {
           <title>발주서 - ${poNum}</title>
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
-            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 12px; line-height: 1.4; }
+            * { box-sizing: border-box; }
+            body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 12px; line-height: 1.4; width: 100%; max-width: 800px; margin: 0 auto; }
             .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
             @media print {
               .no-print { display: none !important; }
@@ -1516,14 +1519,66 @@ export const OrderDetail: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      const resApi = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/pdf/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ htmlContent: printHtml })
-      });
+      // Client-side PDF generation using html2canvas & jsPDF
+      // Create a temporary hidden container to render the print HTML
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.top = '0px';
+      container.style.left = '0px';
+      container.style.width = '800px'; // A4 width at standard scaling
+      container.style.boxSizing = 'border-box';
+      container.style.background = '#ffffff';
+      container.style.zIndex = '-9999';
+      container.innerHTML = printHtml;
       
-      if (!resApi.ok) throw new Error('PDF 변환에 실패했습니다.');
-      const pdfBlob = await resApi.blob();
+      // Remove no-print buttons from the temporary DOM element before rendering
+      const noPrintBtn = container.querySelector('.no-print');
+      if (noPrintBtn) {
+        noPrintBtn.remove();
+      }
+      
+      document.body.appendChild(container);
+
+      // Render the container to a canvas
+      const canvas = await html2canvas(container, {
+        scale: 2, // higher resolution
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 800,
+        windowWidth: 800,
+      });
+
+      document.body.removeChild(container);
+
+      // Create PDF using jsPDF
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 size width in mm
+      const pageHeight = 297; // A4 size height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Support multi-page PO sheets if needed
+      let pageCount = 1;
+      while (heightLeft >= 0) {
+        position = - (pageHeight * pageCount);
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        pageCount++;
+      }
+
+      const pdfBlob = pdf.output('blob');
 
       const currentIssuedDocs = (order as any)?.po_issued_documents || [];
       const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum).length + 1;
@@ -1569,6 +1624,53 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const handleDeletePoIssuedDoc = async (docId: string, fileName: string) => {
+    if (!order) return;
+    const confirmed = window.confirm(`발행된 발주서를 삭제하시겠습니까?\n\n파일명: ${fileName}\n⚠️ 삭제 시 복구할 수 없으며, 목록에서 제거됩니다.`);
+    if (!confirmed) return;
+
+    try {
+      // 1. Delete from Firebase Storage
+      const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${fileName}`);
+      try {
+        await deleteObject(storageRef);
+      } catch (err) {
+        console.warn("Storage deletion failed or file already missing:", err);
+      }
+
+      // 2. Remove from Firestore list
+      const currentIssuedDocs = (order as any)?.po_issued_documents || [];
+      const updatedDocs = currentIssuedDocs.filter((d: any) => d.id !== docId);
+
+      // Restore superseded status if a previous active version exists for that PO number
+      const poNumbers = Array.from(new Set(updatedDocs.map((d: any) => d.po_number)));
+      poNumbers.forEach(poNo => {
+        const docsForPo = updatedDocs.filter((d: any) => d.po_number === poNo);
+        if (docsForPo.length > 0) {
+          // Sort descending by version
+          docsForPo.sort((a: any, b: any) => b.version - a.version);
+          // Set the latest one to 'active', others to 'superseded'
+          docsForPo.forEach((d: any, idx: number) => {
+            d.status = idx === 0 ? 'active' : 'superseded';
+          });
+        }
+      });
+
+      const hasActiveDocs = updatedDocs.some((d: any) => d.status === 'active');
+      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
+      await updateDoc(docRef, {
+        po_issued_documents: updatedDocs,
+        po_issue_status: hasActiveDocs ? 'issued' : 'not_issued'
+      });
+
+      alert('✅ 발주서가 성공적으로 삭제되었습니다.');
+      setIssuedDocs(updatedDocs);
+    } catch (e) {
+      console.error(e);
+      alert('삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleEmailSupplierPo = (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
@@ -1594,7 +1696,7 @@ export const OrderDetail: React.FC = () => {
     
     let pdfLinkStr = '';
     if (latestDoc) {
-      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\n${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${latestDoc.fileUrl}\n\n`;
+      pdfLinkStr = `\n[발주서 PDF 다운로드 링크]\n${latestDoc.fileUrl}\n\n`;
     }
 
     const body = encodeURIComponent(
@@ -3183,6 +3285,7 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
                                 <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
                                 <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
+                                <button onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 10px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>취소</button>
                               </td>
                             </tr>
                           ))}
