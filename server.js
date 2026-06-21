@@ -294,6 +294,32 @@ app.post('/api/po/:poId/issue', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────
+// API: Stateless PDF Generation (No DB/Storage)
+// ─────────────────────────────────────────
+app.post('/api/pdf/generate', async (req, res) => {
+  const { htmlContent } = req.body;
+  if (!htmlContent) return res.status(400).send('htmlContent is required');
+
+  try {
+    const browser = await puppeteer.launch({ 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+    });
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    await browser.close();
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Stateless PDF Gen Error:", error);
+    res.status(500).send('PDF Generation Failed: ' + error.message);
+  }
+});
+
 app.get('/api/po/:poId/documents', async (req, res) => {
   const { poId } = req.params;
   try {
