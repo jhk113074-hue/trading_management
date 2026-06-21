@@ -4685,27 +4685,58 @@ export const OrderDetail: React.FC = () => {
                                   {isUploadingThis ? '⏳ 업로드 중...' : '📂 여기에 파일을 드래그하여 놓거나 클릭하여 구매확인서 PDF 첨부'}
                                 </span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                              {/* 구매확인서 발행 문서 보관함 스타일 표기 */}
+                              <div style={{ marginTop: '10px' }}>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '6px' }}>📁 {supplier} 구매확인서 문서 보관함</div>
                                 {fileList.length > 0 ? (
-                                  fileList.map((file, idx) => (
-                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                                      <span 
-                                        onClick={() => previewFile(file.url, file.name)} 
-                                        style={{ textDecoration: 'underline', color: '#2563eb', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer' }}
-                                      >
-                                        📄 {file.name}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeleteSupplierCertFile(supplier, idx)}
-                                        style={{ border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontSize: '12px' }}
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  ))
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
+                                    <thead>
+                                      <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f1f5f9' }}>
+                                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '40px' }}>No</th>
+                                        <th style={{ padding: '6px 8px', textAlign: 'left' }}>문서명</th>
+                                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '100px' }}>상태</th>
+                                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '150px' }}>액션</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {fileList.map((file, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center' }}>{idx + 1}</td>
+                                          <td style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', color: '#334155' }}>{file.name}</td>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                            <span style={{ padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>
+                                          </td>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                            <button 
+                                              type="button"
+                                              onClick={() => previewFile(file.url, file.name)} 
+                                              style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                              보기
+                                            </button>
+                                            <a 
+                                              href={file.url} 
+                                              download 
+                                              style={{ padding: '3px 8px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold', display: 'inline-block' }}
+                                            >
+                                              ↓ 다운로드
+                                            </a>
+                                            <button 
+                                              type="button"
+                                              onClick={() => handleDeleteSupplierCertFile(supplier, idx)} 
+                                              style={{ padding: '3px 8px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                            >
+                                              취소
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
                                 ) : (
-                                  <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>첨부된 구매확인서 파일이 없습니다.</span>
+                                  <div style={{ padding: '12px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#94a3b8', fontSize: '11.5px', border: '1px solid #e2e8f0' }}>
+                                    보관된 구매확인서 문서가 없습니다. 위 입력창을 통해 등록해주세요.
+                                  </div>
                                 )}
                               </div>
                             </div>
