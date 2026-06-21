@@ -829,17 +829,26 @@ export const OrderDetail: React.FC = () => {
         path: uploadTask.snapshot.ref.fullPath
       };
 
+      const updatedCertFiles = {
+        ...basicForm.supplierPurchaseCertFiles,
+        [supplierName]: [newFile]
+      };
+
       setBasicForm(prev => {
-        // Keep only 1 file (the newly uploaded file) for the supplier
         return {
           ...prev,
-          supplierPurchaseCertFiles: {
-            ...prev.supplierPurchaseCertFiles,
-            [supplierName]: [newFile]
-          }
+          supplierPurchaseCertFiles: updatedCertFiles
         };
       });
-      alert('✅ 구매확인서 파일이 성공적으로 업로드되었습니다.');
+
+      // Save to Firebase immediately
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        supplierPurchaseCertFiles: updatedCertFiles,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 구매확인서 파일이 성공적으로 업로드 및 클라우드에 저장되었습니다.');
     } catch (err: any) {
       alert('❌ 업로드 실패: ' + err.message);
     } finally {
@@ -847,19 +856,41 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  const handleDeleteSupplierCertFile = (supplierName: string, idx: number) => {
+  const handleDeleteSupplierCertFile = async (supplierName: string, idx: number) => {
+    if (!order) return;
     if (!window.confirm('이 파일을 삭제하시겠습니까?')) return;
-    setBasicForm(prev => {
-      const currentFiles = prev.supplierPurchaseCertFiles[supplierName] || [];
+    try {
+      const currentFiles = basicForm.supplierPurchaseCertFiles[supplierName] || [];
+      const target = currentFiles[idx];
+      if (target && target.path) {
+        const fileRef = ref(storage, target.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete cert from storage:", e));
+      }
+      
       const updated = currentFiles.filter((_, i) => i !== idx);
-      return {
-        ...prev,
-        supplierPurchaseCertFiles: {
-          ...prev.supplierPurchaseCertFiles,
-          [supplierName]: updated
-        }
+      const updatedCertFiles = {
+        ...basicForm.supplierPurchaseCertFiles,
+        [supplierName]: updated
       };
-    });
+
+      setBasicForm(prev => {
+        return {
+          ...prev,
+          supplierPurchaseCertFiles: updatedCertFiles
+        };
+      });
+
+      // Save to Firebase immediately
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        supplierPurchaseCertFiles: updatedCertFiles,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 구매확인서 파일이 삭제되었습니다.');
+    } catch (err: any) {
+      alert('❌ 파일 삭제 실패: ' + err.message);
+    }
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
