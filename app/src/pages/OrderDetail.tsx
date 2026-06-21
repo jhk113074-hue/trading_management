@@ -1542,6 +1542,10 @@ export const OrderDetail: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const printBody = iframeDoc.body;
+      // Remove any no-print buttons from the iframe DOM so they are not captured in the PDF image
+      const noPrintElements = printBody.querySelectorAll('.no-print');
+      noPrintElements.forEach(el => el.remove());
+
       const canvas = await html2canvas(printBody, {
         scale: 2,
         useCORS: true,
