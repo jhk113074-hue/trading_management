@@ -228,7 +228,10 @@ app.post('/api/po/:poId/issue', async (req, res) => {
     const fileUrl = `/files/${relativeDir.replace(/\\/g, '/')}/${safeFileName}`;
 
     // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    const browser = await puppeteer.launch({ 
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+    });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
