@@ -3150,7 +3150,52 @@ export const OrderDetail: React.FC = () => {
                       })
                     )}
                   </div>
-                </>
+                <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📁 발주서(PO) 통합 보관함</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                      해당 오더에 대해 시스템을 통해 발행된 모든 발주서 PDF 원본을 통합 관리합니다.
+                    </div>
+                    {issuedDocs.length > 0 ? (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f1f5f9' }}>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '50px' }}>No</th>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>공급사</th>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>문서명</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>발행일시</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>버전</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>발행자</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>액션</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {issuedDocs.map((doc, idx) => (
+                            <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0', color: doc.status === 'superseded' ? '#94a3b8' : 'inherit' }}>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                              <td style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold' }}>{doc.supplier_name}</td>
+                              <td style={{ padding: '8px', textAlign: 'left' }}>
+                                {doc.fileName}
+                                {doc.status === 'active' && <span style={{ marginLeft: '6px', padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>}
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{new Date(doc.issuedAt).toLocaleString()}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
+                              <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
+                                <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#94a3b8', fontSize: '12px', border: '1px solid #e2e8f0' }}>
+                        발행된 발주서가 없습니다. 소싱발주 탭에서 발주서를 발행해주세요.
+                      </div>
+                    )}
+                  </div>
+
+                                  </>
               )}
 
               {/* 2) 선적관리 정보 등록 */}
@@ -4337,51 +4382,6 @@ export const OrderDetail: React.FC = () => {
               {/* 3) COA 및 시험성적서 탭 */}
               {activeSourcingTab === 'COA_성적서' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📁 발주서(PO) 통합 보관함</h4>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
-                      해당 오더에 대해 시스템을 통해 발행된 모든 발주서 PDF 원본을 통합 관리합니다.
-                    </div>
-                    {issuedDocs.length > 0 ? (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', backgroundColor: '#fff', border: '1px solid #e2e8f0' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '2px solid #cbd5e1', backgroundColor: '#f1f5f9' }}>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '50px' }}>No</th>
-                            <th style={{ padding: '8px', textAlign: 'left' }}>공급사</th>
-                            <th style={{ padding: '8px', textAlign: 'left' }}>문서명</th>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>발행일시</th>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>버전</th>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>발행자</th>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>액션</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {issuedDocs.map((doc, idx) => (
-                            <tr key={doc.id} style={{ borderBottom: '1px solid #e2e8f0', color: doc.status === 'superseded' ? '#94a3b8' : 'inherit' }}>
-                              <td style={{ padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
-                              <td style={{ padding: '8px', textAlign: 'left', fontWeight: 'bold' }}>{doc.supplier_name}</td>
-                              <td style={{ padding: '8px', textAlign: 'left' }}>
-                                {doc.fileName}
-                                {doc.status === 'active' && <span style={{ marginLeft: '6px', padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>}
-                              </td>
-                              <td style={{ padding: '8px', textAlign: 'center' }}>{new Date(doc.issuedAt).toLocaleString()}</td>
-                              <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
-                              <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
-                              <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
-                                <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#94a3b8', fontSize: '12px', border: '1px solid #e2e8f0' }}>
-                        발행된 발주서가 없습니다. 소싱발주 탭에서 발주서를 발행해주세요.
-                      </div>
-                    )}
-                  </div>
-
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                     <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 COA 및 시험성적서 첨부 파일 관리</h4>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
