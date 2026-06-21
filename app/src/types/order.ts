@@ -154,6 +154,13 @@ export interface Order {
       measurement?: string;
     }>;
   }>;
+  supplierArrivalReportFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>;
+  supplierPoDetails?: Record<string, {
+    deliveryRequestDate?: string;
+    deliveryPlace?: string;
+    specialRemarks?: string;
+    generalNotes?: string;
+  }>;
 }
 
 export const getFormattedPoId = (poId: string, issuingCompany?: 'YSACC' | 'YS'): string => {

@@ -74,6 +74,88 @@ export const OrderDetail: React.FC = () => {
   const [isAddingCfs, setIsAddingCfs] = useState(false);
   const [newCfsVal, setNewCfsVal] = useState('');
 
+  // PO presets states
+  const [poPresets, setPoPresets] = useState<{ specialRemarks: string[]; generalNotes: string[] }>({
+    specialRemarks: [],
+    generalNotes: []
+  });
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings'), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setPoPresets({
+          specialRemarks: data.specialRemarks || [],
+          generalNotes: data.generalNotes || []
+        });
+      } else {
+        setPoPresets({
+          specialRemarks: [],
+          generalNotes: []
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAddPoPreset = async (type: 'specialRemarks' | 'generalNotes', text: string) => {
+    if (!text.trim()) {
+      alert("등록할 문구를 입력해주세요.");
+      return;
+    }
+    const currentList = poPresets[type];
+    if (currentList.includes(text)) {
+      alert("이미 동일한 템플릿이 등록되어 있습니다.");
+      return;
+    }
+    try {
+      const presetsRef = doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings');
+      const nextList = [...currentList, text];
+      await setDoc(presetsRef, {
+        [type]: nextList
+      }, { merge: true });
+      alert("✅ 신규 템플릿이 성공적으로 DB에 등록되었습니다.");
+    } catch (err: any) {
+      alert("템플릿 등록 실패: " + err.message);
+    }
+  };
+
+  const handleDeletePoPreset = async (type: 'specialRemarks' | 'generalNotes', text: string) => {
+    if (!text) return;
+    if (!window.confirm("선택한 템플릿을 DB에서 삭제하시겠습니까?")) return;
+    const currentList = poPresets[type];
+    try {
+      const presetsRef = doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings');
+      const nextList = currentList.filter(item => item !== text);
+      await setDoc(presetsRef, {
+        [type]: nextList
+      }, { merge: true });
+      alert("✅ 템플릿이 DB에서 성공적으로 삭제되었습니다.");
+    } catch (err: any) {
+      alert("템플릿 삭제 실패: " + err.message);
+    }
+  };
+
+  // Common shipping mark configuration state
+  const [commonShippingMark, setCommonShippingMark] = useState({
+    shape: 'circle',
+    company: 'YSACC',
+    port: '',
+    country: '',
+    origin: 'MADE IN KOREA'
+  });
+
+  // Sync common shipping mark defaults with order details
+  useEffect(() => {
+    if (order) {
+      setCommonShippingMark(prev => ({
+        ...prev,
+        port: prev.port || order.portOfDischarge || '',
+        country: prev.country || order.destinationCountry || ''
+      }));
+    }
+  }, [order]);
+
   // Fetch CFS Locations
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'cfsLocations'), (snapshot) => {
@@ -172,6 +254,7 @@ export const OrderDetail: React.FC = () => {
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; }>,
+    supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
@@ -351,6 +434,7 @@ export const OrderDetail: React.FC = () => {
           supplierPurchaseCertificate: data.supplierPurchaseCertificate || {},
           supplierTaxTypes: data.supplierTaxTypes || {},
           supplierTaxInvoiceDetails: data.supplierTaxInvoiceDetails || {},
+          supplierPoDetails: data.supplierPoDetails || {},
           supplierPurchaseCertFiles: data.supplierPurchaseCertFiles || {},
           supplierPaymentInstallments: data.supplierPaymentInstallments || {},
           bankSubmissionStatus: data.bankSubmissionStatus || '',
@@ -552,6 +636,7 @@ export const OrderDetail: React.FC = () => {
         supplierPurchaseCertificate: basicForm.supplierPurchaseCertificate,
         supplierTaxTypes: basicForm.supplierTaxTypes,
         supplierTaxInvoiceDetails: basicForm.supplierTaxInvoiceDetails,
+        supplierPoDetails: basicForm.supplierPoDetails,
         supplierPurchaseCertFiles: basicForm.supplierPurchaseCertFiles,
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
@@ -856,6 +941,66 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const renderShippingMarkCellHtml = (marksText: string) => {
+    if (!marksText) return '';
+    const lines = marksText.split('\n');
+    const shapeSymbol = lines[0] || '';
+    const comp = lines[1] || '';
+    const portCountry = lines[2] || '';
+    const pltNo = lines[3] || '';
+    const origin = lines[4] || '';
+
+    let shapeSvg = '';
+    if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
+      shapeSvg = `<svg width="70" height="70" style="display: block; margin: 0 auto;"><circle cx="35" cy="35" r="30" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+    } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
+      shapeSvg = `<svg width="75" height="55" style="display: block; margin: 0 auto;"><rect x="5" y="5" width="65" height="45" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+    } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
+      shapeSvg = `<svg width="75" height="70" style="display: block; margin: 0 auto;"><polygon points="37,5 5,65 70,65" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="68%" font-size="13" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+    } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
+      shapeSvg = `<svg width="75" height="55" style="display: block; margin: 0 auto;"><polygon points="37,5 70,27 37,50 5,27" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+    } else {
+      return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
+    }
+
+    return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2;">
+      ${shapeSvg}
+      <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
+        <div>${portCountry}</div>
+        <div style="margin: 2px 0;">${pltNo}</div>
+        <div>${origin}</div>
+      </div>
+    </div>`;
+  };
+
+  const handleSaveSupplierPoDetails = async (supplierName: string) => {
+    if (!order) return;
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      const supplierDetail = basicForm.supplierPoDetails[supplierName] || {};
+      
+      const currentPoDetails = order.supplierPoDetails || {};
+      const updatedPoDetails = {
+        ...currentPoDetails,
+        [supplierName]: {
+          requestDate: supplierDetail.requestDate ?? '',
+          deliveryPlace: supplierDetail.deliveryPlace ?? '',
+          specialRemarks: supplierDetail.specialRemarks ?? '',
+          generalNotes: supplierDetail.generalNotes ?? ''
+        }
+      };
+
+      await setDoc(orderRef, {
+        supplierPoDetails: updatedPoDetails,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert(`✅ [${supplierName}]의 발주 조건이 클라우드에 성공적으로 저장되었습니다.`);
+    } catch (err: any) {
+      alert('❌ 발주조건 저장 실패: ' + err.message);
+    }
+  };
+
   const handleDeleteSupplierCertFile = async (supplierName: string, idx: number) => {
     if (!order) return;
     if (!window.confirm('이 파일을 삭제하시겠습니까?')) return;
@@ -1036,6 +1181,27 @@ export const OrderDetail: React.FC = () => {
       console.error("Failed to load company info for PO", e);
     }
 
+    const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
+    const reqDateText = poDetails.requestDate || '추후 안내 예정';
+    const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
+
+    let specialRemarksHtml = '';
+    if (poDetails.specialRemarks) {
+      specialRemarksHtml = poDetails.specialRemarks.replace(/\n/g, '<br/>');
+    } else {
+      specialRemarksHtml = `1. 부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})<br/>
+2. 세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.<br/>
+3. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`;
+    }
+
+    let generalNotesHtml = '';
+    if (poDetails.generalNotes) {
+      generalNotesHtml = poDetails.generalNotes.replace(/\n/g, '<br/>');
+    } else {
+      generalNotesHtml = `1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
+2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
+    }
+
     const printHtml = `
       <html>
         <head>
@@ -1147,8 +1313,8 @@ export const OrderDetail: React.FC = () => {
           <div style="font-weight: bold; font-size: 12px; margin-bottom: 15px;">하기와 같이 발주 드립니다.</div>
 
           <div class="delivery-info">
-            <div><strong>입고요청일 :</strong> 추후 안내 예정</div>
-            <div><strong>납품처(주소, 담당자, 연락처) :</strong> 추후 통보예정</div>
+            <div><strong>입고요청일 :</strong> ${reqDateText}</div>
+            <div><strong>납품처(주소, 담당자, 연락처) :</strong> ${delPlaceText}</div>
           </div>
 
           <table class="items-table">
@@ -1245,19 +1411,16 @@ export const OrderDetail: React.FC = () => {
 
           <div class="notes-box">
             <div class="notes-title">※ 특이사항:</div>
-            <ol>
-              <li>부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})</li>
-              <li>세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.</li>
-              <li>Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.</li>
-            </ol>
+            <div style="font-size: 10px; color: #334155; line-height: 1.5; padding-left: 4px;">
+              ${specialRemarksHtml}
+            </div>
           </div>
 
           <div class="bottom-grid">
             <div class="bottom-box">
               <div class="bottom-box-title">※ 일반사항</div>
               <div style="font-size: 10px; color: #334155; line-height: 1.4;">
-                1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
-                2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}
+                ${generalNotesHtml}
               </div>
             </div>
             <div class="bottom-box" style="padding: 4px;">
@@ -1302,6 +1465,26 @@ export const OrderDetail: React.FC = () => {
   const issueAndSavePO = async (supplierName: string, items: OrderItem[]) => {
 
     if (!order) return;
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      const supplierDetail = basicForm.supplierPoDetails[supplierName] || {};
+      const currentPoDetails = order.supplierPoDetails || {};
+      const updatedPoDetails = {
+        ...currentPoDetails,
+        [supplierName]: {
+          requestDate: supplierDetail.requestDate ?? '',
+          deliveryPlace: supplierDetail.deliveryPlace ?? '',
+          specialRemarks: supplierDetail.specialRemarks ?? '',
+          generalNotes: supplierDetail.generalNotes ?? ''
+        }
+      };
+      await setDoc(orderRef, {
+        supplierPoDetails: updatedPoDetails,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn("Failed to auto-save supplier PO details on issue:", e);
+    }
     const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
     const supplierCode = cleanSupplierName.substring(0, 3).toUpperCase();
@@ -1326,6 +1509,27 @@ export const OrderDetail: React.FC = () => {
       }
     } catch (e) {
       console.error("Failed to load company info for PO", e);
+    }
+
+    const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
+    const reqDateText = poDetails.requestDate || '추후 안내 예정';
+    const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
+
+    let specialRemarksHtml = '';
+    if (poDetails.specialRemarks) {
+      specialRemarksHtml = poDetails.specialRemarks.replace(/\n/g, '<br/>');
+    } else {
+      specialRemarksHtml = `1. 부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})<br/>
+2. 세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.<br/>
+3. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`;
+    }
+
+    let generalNotesHtml = '';
+    if (poDetails.generalNotes) {
+      generalNotesHtml = poDetails.generalNotes.replace(/\n/g, '<br/>');
+    } else {
+      generalNotesHtml = `1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
+2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
     }
 
     const printHtml = `
@@ -1440,8 +1644,8 @@ export const OrderDetail: React.FC = () => {
           <div style="font-weight: bold; font-size: 12px; margin-bottom: 15px;">하기와 같이 발주 드립니다.</div>
 
           <div class="delivery-info">
-            <div><strong>입고요청일 :</strong> 추후 안내 예정</div>
-            <div><strong>납품처(주소, 담당자, 연락처) :</strong> 추후 통보예정</div>
+            <div><strong>입고요청일 :</strong> ${reqDateText}</div>
+            <div><strong>납품처(주소, 담당자, 연락처) :</strong> ${delPlaceText}</div>
           </div>
 
           <table class="items-table">
@@ -1538,19 +1742,16 @@ export const OrderDetail: React.FC = () => {
 
           <div class="notes-box">
             <div class="notes-title">※ 특이사항:</div>
-            <ol>
-              <li>부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})</li>
-              <li>세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.</li>
-              <li>Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.</li>
-            </ol>
+            <div style="font-size: 10px; color: #334155; line-height: 1.5; padding-left: 4px;">
+              ${specialRemarksHtml}
+            </div>
           </div>
 
           <div class="bottom-grid">
             <div class="bottom-box">
               <div class="bottom-box-title">※ 일반사항</div>
               <div style="font-size: 10px; color: #334155; line-height: 1.4;">
-                1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
-                2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}
+                ${generalNotesHtml}
               </div>
             </div>
             <div class="bottom-box" style="padding: 4px;">
@@ -3124,6 +3325,211 @@ export const OrderDetail: React.FC = () => {
   </div>
 )}
 <div style={{ padding: '12px 16px', background: '#fff', fontSize: '12px' }}>
+                              {/* PO Custom Details Panel */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>입고요청일 (Request Date)</label>
+                                  <input 
+                                    type="text" 
+                                    placeholder="예: 2026-07-15"
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.requestDate ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, requestDate: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
+                                  />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                  <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>납품처 (Delivery Place)</label>
+                                  <input 
+                                    type="text" 
+                                    placeholder="예: YSACC 인천창고"
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.deliveryPlace ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, deliveryPlace: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
+                                  />
+                                </div>
+
+                                {/* 특이사항 */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                    <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>※ 특이사항 (줄바꿈 가능)</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <select
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (!val) return;
+                                          setBasicForm(prev => {
+                                            const current = prev.supplierPoDetails?.[supplierName] || {};
+                                            return {
+                                              ...prev,
+                                              supplierPoDetails: {
+                                                ...prev.supplierPoDetails,
+                                                [supplierName]: { ...current, specialRemarks: val }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        style={{ padding: '3px 6px', fontSize: '10.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '200px', outline: 'none' }}
+                                      >
+                                        <option value="">📋 등록된 템플릿 선택</option>
+                                        {poPresets.specialRemarks.map((preset, pIdx) => (
+                                          <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.specialRemarks || '';
+                                          handleAddPoPreset('specialRemarks', currentText);
+                                        }}
+                                        style={{ padding: '3px 8px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        ➕ 신규 등록 (DB)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                                          if (selectEl && selectEl.value) {
+                                            handleDeletePoPreset('specialRemarks', selectEl.value);
+                                          } else {
+                                            alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
+                                          }
+                                        }}
+                                        style={{ padding: '3px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        ❌ 삭제
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <textarea 
+                                    rows={3}
+                                    placeholder={`1. 부산항 도착도 조건 (기본 인코텀즈: FOB)\n2. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`}
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.specialRemarks ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, specialRemarks: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none', fontFamily: 'sans-serif' }}
+                                  />
+                                </div>
+
+                                {/* 일반사항 */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                    <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>※ 일반사항 (줄바꿈 가능)</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <select
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          if (!val) return;
+                                          setBasicForm(prev => {
+                                            const current = prev.supplierPoDetails?.[supplierName] || {};
+                                            return {
+                                              ...prev,
+                                              supplierPoDetails: {
+                                                ...prev.supplierPoDetails,
+                                                [supplierName]: { ...current, generalNotes: val }
+                                              }
+                                            };
+                                          });
+                                        }}
+                                        style={{ padding: '3px 6px', fontSize: '10.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '200px', outline: 'none' }}
+                                      >
+                                        <option value="">📋 등록된 템플릿 선택</option>
+                                        {poPresets.generalNotes.map((preset, pIdx) => (
+                                          <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                          handleAddPoPreset('generalNotes', currentText);
+                                        }}
+                                        style={{ padding: '3px 8px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        ➕ 신규 등록 (DB)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                                          if (selectEl && selectEl.value) {
+                                            handleDeletePoPreset('generalNotes', selectEl.value);
+                                          } else {
+                                            alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
+                                          }
+                                        }}
+                                        style={{ padding: '3px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        ❌ 삭제
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <textarea 
+                                    rows={2}
+                                    placeholder={`1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준\n2. 결제조건: L/C 90 days from B/L date`}
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.generalNotes ?? ''}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setBasicForm(prev => {
+                                        const current = prev.supplierPoDetails?.[supplierName] || {};
+                                        return {
+                                          ...prev,
+                                          supplierPoDetails: {
+                                            ...prev.supplierPoDetails,
+                                            [supplierName]: { ...current, generalNotes: val }
+                                          }
+                                        };
+                                      });
+                                    }}
+                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none', fontFamily: 'sans-serif' }}
+                                  />
+                                </div>
+
+                                <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveSupplierPoDetails(supplierName)}
+                                    style={{ padding: '6px 12px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                  >
+                                    💾 이 공급사의 발주조건 저장 (DB)
+                                  </button>
+                                </div>
+                              </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
                                 <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
@@ -3366,7 +3772,7 @@ export const OrderDetail: React.FC = () => {
                             <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>발행일시</th>
                             <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>버전</th>
                             <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>발행자</th>
-                            <th style={{ padding: '8px', textAlign: 'center', width: '120px' }}>액션</th>
+                            <th style={{ padding: '8px', textAlign: 'center', width: '220px' }}>액션</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -3381,10 +3787,12 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px', textAlign: 'center' }}>{new Date(doc.issuedAt).toLocaleString()}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
-                              <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
-                                <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
-                                <button onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 10px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>취소</button>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
+                                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', whiteSpace: 'nowrap' }}>보기</a>
+                                  <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', whiteSpace: 'nowrap' }}>↓ 다운로드</a>
+                                  <button onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 10px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>취소</button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -4086,6 +4494,78 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* 공통 쉬핑마크 설정 */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                      {/* 도형 선택 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도형 선택</span>
+                        <select 
+                          value={commonShippingMark.shape}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, shape: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        >
+                          <option value="circle">◯ 원형 (Circle)</option>
+                          <option value="square">▢ 사각형 (Square)</option>
+                          <option value="triangle">△ 삼각형 (Triangle)</option>
+                          <option value="diamond">◇ 다이아몬드 (Diamond)</option>
+                        </select>
+                      </div>
+
+                      {/* 회사/바이어 약자 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>회사/고객 약자</span>
+                        <select 
+                          value={commonShippingMark.company}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, company: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        >
+                          <option value="YSACC">YSACC</option>
+                          <option value={order.customer?.split(' ')[0] || 'CUSTOMER'}>고객사 약칭 ({order.customer?.split(' ')[0] || 'CUSTOMER'})</option>
+                        </select>
+                      </div>
+
+                      {/* 도착 포트 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 포트</span>
+                        <input 
+                          type="text" 
+                          placeholder="도착 포트 (예: DOHA)" 
+                          value={commonShippingMark.port}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, port: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+
+                      {/* 국가 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 국가</span>
+                        <input 
+                          type="text" 
+                          placeholder="국가 (예: QATAR)" 
+                          value={commonShippingMark.country}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, country: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+
+                      {/* 원산지 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>원산지</span>
+                        <input 
+                          type="text" 
+                          placeholder="원산지" 
+                          value={commonShippingMark.origin}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, origin: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {allOrderSuppliers.length === 0 ? (
                     <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
                       등록된 제조사(공급업체) 정보가 없습니다.
@@ -4260,6 +4740,38 @@ export const OrderDetail: React.FC = () => {
                         const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
                         const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
 
+                        const renderShippingMarkCellHtml = (marksText: string) => {
+                          if (!marksText) return '';
+                          const lines = marksText.split('\n');
+                          const shapeSymbol = lines[0] || '';
+                          const comp = lines[1] || '';
+                          const portCountry = lines[2] || '';
+                          const pltNo = lines[3] || '';
+                          const origin = lines[4] || '';
+
+                          let shapeSvg = '';
+                          if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
+                            shapeSvg = `<svg width="60" height="60" style="display: block; margin: 0 auto;"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
+                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
+                            shapeSvg = `<svg width="65" height="60" style="display: block; margin: 0 auto;"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
+                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><polygon points="32,4 60,22 32,40 4,22" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else {
+                            return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
+                          }
+
+                          return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto;">
+                            ${shapeSvg}
+                            <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
+                              <div>${portCountry}</div>
+                              <div style="margin: 2px 0;">${pltNo}</div>
+                              <div>${origin}</div>
+                            </div>
+                          </div>`;
+                        };
+
                         const printHtml = `
                           <html>
                             <head>
@@ -4388,9 +4900,7 @@ export const OrderDetail: React.FC = () => {
                                   ${packingItemsList.map((it: any) => `
                                     <tr>
                                       <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                                        <div style="border: 1px solid #000; padding: 4px; display: inline-block;">
-                                          ${(it.marks || '').replace(/\n/g, '<br/>')}
-                                        </div>
+                                        ${renderShippingMarkCellHtml(it.marks)}
                                       </td>
                                       <td style="font-size: 11px; line-height: 1.5;">
                                         ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
@@ -4495,19 +5005,173 @@ export const OrderDetail: React.FC = () => {
                                   <tr key={itemIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                                     {itemIdx === 0 && (
                                       <td rowSpan={packingItemsList.length} style={{ padding: '5px', verticalAlign: 'top', borderRight: '1px solid #e2e8f0' }}>
-                                        <textarea
-                                          rows={6}
-                                          disabled={!isEditing}
-                                          value={it.marks || ''}
-                                          onChange={e => {
-                                            const val = e.target.value;
-                                            // Update marks for all items so it stays synced
-                                            packingItemsList.forEach((_, idx) => {
-                                              updateArrivalReportItem(idx, 'marks', val);
-                                            });
-                                          }}
-                                          style={{ width: '95%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontFamily: 'monospace', height: '90%' }}
-                                        />
+                                        <div style={{ padding: '6px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10.5px' }}>
+                                          <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '6px', fontSize: '10px' }}>⚙️ 쉬핑마크 생성기</div>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {/* 수량 설정 */}
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <span style={{ fontSize: '8px', color: '#64748b' }}>시작 번호</span>
+                                                <input 
+                                                  id={`sm-start-${supplierName}`}
+                                                  type="number" 
+                                                  defaultValue="1"
+                                                  style={{ width: '100%', padding: '2px 4px', fontSize: '9.5px', border: '1px solid #cbd5e1', borderRadius: '3px' }}
+                                                />
+                                              </div>
+                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                <span style={{ fontSize: '8px', color: '#64748b' }}>총 PLT 수량</span>
+                                                <input 
+                                                  id={`sm-total-${supplierName}`}
+                                                  type="number" 
+                                                  defaultValue={packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0) || "5"}
+                                                  style={{ width: '100%', padding: '2px 4px', fontSize: '9.5px', border: '1px solid #cbd5e1', borderRadius: '3px' }}
+                                                />
+                                              </div>
+                                            </div>
+
+                                            {isEditing && (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const shapeVal = commonShippingMark.shape;
+                                                  const compVal = commonShippingMark.company;
+                                                  const portVal = commonShippingMark.port;
+                                                  const countryVal = commonShippingMark.country;
+                                                  const originVal = commonShippingMark.origin;
+                                                  const totalVal = (document.getElementById(`sm-total-${supplierName}`) as HTMLInputElement)?.value || '5';
+                                                  
+                                                  let shapeSymbol = '◯';
+                                                  if (shapeVal === 'circle') shapeSymbol = '◯';
+                                                  else if (shapeVal === 'square') shapeSymbol = '▢';
+                                                  else if (shapeVal === 'triangle') shapeSymbol = '△';
+                                                  else shapeSymbol = '◇';
+
+                                                  const formattedMark = `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : 1 / ${totalVal}\n${originVal}`;
+                                                  packingItemsList.forEach((_, idx) => {
+                                                    updateArrivalReportItem(idx, 'marks', formattedMark);
+                                                  });
+                                                }}
+                                                style={{ marginTop: '2px', padding: '3px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', cursor: 'pointer', fontSize: '9.5px', textAlign: 'center' }}
+                                              >
+                                                ⚡ 테이블에 마크 적용
+                                              </button>
+                                            )}
+
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const shapeVal = commonShippingMark.shape;
+                                                const compVal = commonShippingMark.company;
+                                                const portVal = commonShippingMark.port;
+                                                const countryVal = commonShippingMark.country;
+                                                const originVal = commonShippingMark.origin;
+                                                const startVal = parseInt((document.getElementById(`sm-start-${supplierName}`) as HTMLInputElement)?.value || '1', 10);
+                                                const totalVal = parseInt((document.getElementById(`sm-total-${supplierName}`) as HTMLInputElement)?.value || '1', 10);
+                                                
+                                                // Open window for print
+                                                const printWin = window.open('', '_blank', 'width=800,height=900,resizable=yes,scrollbars=yes');
+                                                if (!printWin) return;
+                                                
+                                                let htmlContent = '<html>' +
+                                                  '<head>' +
+                                                    '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
+                                                    '<style>' +
+                                                      '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
+                                                      '@page { size: A4 portrait; margin: 0; }' +
+                                                      'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
+                                                      '.page {' +
+                                                        'width: 210mm;' +
+                                                        'height: 297mm;' +
+                                                        'box-sizing: border-box;' +
+                                                        'padding: 15mm;' +
+                                                        'display: flex;' +
+                                                        'align-items: center;' +
+                                                        'justify-content: center;' +
+                                                        'page-break-after: always;' +
+                                                      '}' +
+                                                      '.outer-border {' +
+                                                        'border: 10px solid #000;' +
+                                                        'width: 100%;' +
+                                                        'height: 100%;' +
+                                                        'box-sizing: border-box;' +
+                                                        'display: flex;' +
+                                                        'flex-direction: column;' +
+                                                        'align-items: center;' +
+                                                        'justify-content: center;' +
+                                                        'padding: 40px;' +
+                                                      '}' +
+                                                      '.shape-container {' +
+                                                        'display: flex;' +
+                                                        'align-items: center;' +
+                                                        'justify-content: center;' +
+                                                        'margin-bottom: 40px;' +
+                                                      '}' +
+                                                      '.info-container {' +
+                                                        'display: flex;' +
+                                                        'flex-direction: column;' +
+                                                        'justify-content: center;' +
+                                                        'align-items: center;' +
+                                                        'text-align: center;' +
+                                                      '}' +
+                                                      '.info-text1 {' +
+                                                        'font-size: 38px;' +
+                                                        'font-weight: 900;' +
+                                                        'margin: 15px 0;' +
+                                                        'text-transform: uppercase;' +
+                                                        'color: #000;' +
+                                                        'letter-spacing: 0.5px;' +
+                                                      '}' +
+                                                      '.info-text2 {' +
+                                                        'font-size: 42px;' +
+                                                        'font-weight: 900;' +
+                                                        'margin: 15px 0;' +
+                                                        'text-transform: uppercase;' +
+                                                        'color: #000;' +
+                                                        'letter-spacing: 0.5px;' +
+                                                      '}' +
+                                                      '@media print {' +
+                                                        'body { -webkit-print-color-adjust: exact; }' +
+                                                      '}' +
+                                                    '</style>' +
+                                                  '</head>' +
+                                                  '<body onload="window.print()">';
+
+                                                for (let i = startVal; i <= totalVal; i++) {
+                                                  let shapeSvg = '';
+                                                  if (shapeVal === 'circle') {
+                                                    shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                                                  } else if (shapeVal === 'square') {
+                                                    shapeSvg = '<svg viewBox="0 0 450 300" style="width: 85%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                                                  } else if (shapeVal === 'triangle') {
+                                                    shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                                                  } else { // diamond
+                                                    shapeSvg = '<svg viewBox="0 0 560 280" style="width: 100%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                                                  }
+
+                                                  htmlContent += '<div class="page">' +
+                                                    '<div class="outer-border">' +
+                                                      '<div class="shape-container">' + shapeSvg + '</div>' +
+                                                      '<div class="info-container">' +
+                                                        '<div class="info-text1">' + portVal + ', ' + countryVal + '</div>' +
+                                                        '<div class="info-text2">PALLET NO. : ' + i + '/' + totalVal + '</div>' +
+                                                        '<div class="info-text1">' + originVal + '</div>' +
+                                                      '</div>' +
+                                                    '</div>' +
+                                                  '</div>';
+                                                }
+
+                                                htmlContent += '</body></html>';
+                                                
+                                                printWin.document.write(htmlContent);
+                                                printWin.document.close();
+                                              }}
+                                              style={{ marginTop: '2px', padding: '3px', background: '#059669', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', cursor: 'pointer', fontSize: '9.5px', textAlign: 'center' }}
+                                            >
+                                              🖨️ PLT 쉬핑마크 라벨 인쇄
+                                            </button>
+                                          </div>
+                                        </div>
                                       </td>
                                     )}
                                     <td style={{ padding: '5px' }}>
@@ -4726,7 +5390,7 @@ export const OrderDetail: React.FC = () => {
                                         <th style={{ padding: '6px 8px', textAlign: 'center', width: '40px' }}>No</th>
                                         <th style={{ padding: '6px 8px', textAlign: 'left' }}>문서명</th>
                                         <th style={{ padding: '6px 8px', textAlign: 'center', width: '100px' }}>상태</th>
-                                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '150px' }}>액션</th>
+                                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '220px' }}>액션</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -4737,7 +5401,8 @@ export const OrderDetail: React.FC = () => {
                                           <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                             <span style={{ padding: '2px 6px', backgroundColor: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>최신</span>
                                           </td>
-                                          <td style={{ padding: '6px 8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                          <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                                             <button 
                                               type="button"
                                               onClick={() => previewFile(file.url, file.name)} 
@@ -4759,6 +5424,7 @@ export const OrderDetail: React.FC = () => {
                                             >
                                               취소
                                             </button>
+                                          </div>
                                           </td>
                                         </tr>
                                       ))}
@@ -5554,9 +6220,7 @@ export const OrderDetail: React.FC = () => {
                         ${packingItemsList.map((it: any) => `
                           <tr>
                             <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
-                              <div style="border: 1px solid #000; padding: 4px; display: inline-block;">
-                                ${(it.marks || '').replace(/\n/g, '<br/>')}
-                              </div>
+                              ${renderShippingMarkCellHtml(it.marks)}
                             </td>
                             <td style="font-size: 11px; line-height: 1.5;">
                               ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
