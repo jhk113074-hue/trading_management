@@ -304,20 +304,36 @@ app.post('/api/pdf/generate', async (req, res) => {
   try {
     let browser;
     const args = ['--no-sandbox', '--disable-setuid-sandbox'];
-    try {
-      browser = await puppeteer.launch({ 
-        args,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-      });
-    } catch (e) {
-      console.warn("First launch failed, trying fallback:", e.message);
-      // delete the env var so puppeteer uses bundled chromium
+    
+    // Sometimes Render env sets this to a bad path, so we try multiple
+    const pathsToTry = [
+      process.env.PUPPETEER_EXECUTABLE_PATH,
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      puppeteer.executablePath()
+    ].filter(Boolean);
+
+    let lastError;
+    for (const p of pathsToTry) {
+      try {
+        console.log("Trying executablePath:", p);
+        browser = await puppeteer.launch({ args, executablePath: p });
+        break; // Success
+      } catch (err) {
+        lastError = err;
+        console.warn(`Launch failed with path ${p}:`, err.message);
+      }
+    }
+
+    if (!browser) {
+      // Final fallback without executablePath, which relies on bundled
       delete process.env.PUPPETEER_EXECUTABLE_PATH;
       try {
         browser = await puppeteer.launch({ args });
-      } catch (e2) {
-        console.warn("Second launch failed, using default:", e2.message);
-        browser = await puppeteer.launch({ args, executablePath: '/usr/bin/google-chrome' });
+      } catch (err) {
+        throw new Error("All browser launch attempts failed. Last error: " + lastError?.message);
       }
     }
     const page = await browser.newPage();
