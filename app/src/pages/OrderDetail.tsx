@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, COMPANY_ID, storage } from '../firebase';
+import { db, COMPANY_ID, storage, auth } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
 import { getFormattedPoId } from '../types/order';
 import type { Supplier } from '../types/supplier';
@@ -226,22 +226,15 @@ export const OrderDetail: React.FC = () => {
   // Load Order document
   useEffect(() => {
     if (!id) return;
-    const fetchIssuedDocs = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${id}/documents`);
-        const data = await res.json();
-        if (data.documents) setIssuedDocs(data.documents);
-      } catch (e) {
-        console.error("Failed to fetch issued docs", e);
-      }
-    };
-    fetchIssuedDocs();
     const docRef = doc(db, 'companies', COMPANY_ID, 'orders', id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as Order;
         skipNextDirtyCheck.current = true;
         setOrder(data);
+        if ((data as any).po_issued_documents) {
+          setIssuedDocs((data as any).po_issued_documents);
+        }
         
         if (!initialLoadRef.current) {
           const params = new URLSearchParams(window.location.search);
@@ -1514,7 +1507,6 @@ export const OrderDetail: React.FC = () => {
       </html>
     `;
 
-    
     const totalAmount = items.reduce((sum, it) => {
       const price = (it as any).purchaseUnitPrice !== undefined ? (it as any).purchaseUnitPrice : it.unitPrice;
       return sum + (price || 0) * (it.qty || 0);
@@ -1524,25 +1516,53 @@ export const OrderDetail: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      const resApi = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${order?.id}/issue`, {
+      const resApi = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/pdf/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          htmlContent: printHtml,
-          poNumber: poNum,
-          supplierName,
-          totalAmount
-        })
+        body: JSON.stringify({ htmlContent: printHtml })
       });
-      const data = await resApi.json();
-      if (data.success) {
-        alert('✅ 발주서가 발행 저장되었습니다.');
-        const resDocs = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/po/${order?.id}/documents`);
-        const docsData = await resDocs.json();
-        if (docsData.documents) setIssuedDocs(docsData.documents);
-      } else {
-        alert('발행 실패: ' + data.error);
-      }
+      
+      if (!resApi.ok) throw new Error('PDF 변환에 실패했습니다.');
+      const pdfBlob = await resApi.blob();
+
+      const currentIssuedDocs = (order as any)?.po_issued_documents || [];
+      const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum).length + 1;
+      const safeFileName = `${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+      const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
+      
+      const snapshot = await uploadBytesResumable(storageRef, pdfBlob);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      const newDoc = {
+        id: new Date().getTime().toString(),
+        po_number: poNum,
+        supplier_name: supplierName,
+        version: version,
+        fileName: safeFileName,
+        fileUrl: downloadURL,
+        issuedAt: new Date().toISOString(),
+        issuedBy: auth.currentUser?.displayName || 'System',
+        totalAmount: totalAmount,
+        status: 'active'
+      };
+
+      const updatedDocs = currentIssuedDocs.map((doc: any) => {
+        if (doc.po_number === poNum) {
+          return { ...doc, status: 'superseded' };
+        }
+        return doc;
+      });
+      updatedDocs.push(newDoc);
+
+      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
+      await updateDoc(docRef, {
+        po_issued_documents: updatedDocs,
+        po_issue_status: 'issued'
+      });
+
+      alert('✅ 발주서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
+      setIssuedDocs(updatedDocs);
+      
     } catch (e) {
       console.error(e);
       alert('발행 중 오류가 발생했습니다.');
@@ -2893,8 +2913,8 @@ export const OrderDetail: React.FC = () => {
             <td style={{ padding: '6px', textAlign: 'center' }}>v{doc.version}</td>
             <td style={{ padding: '6px', textAlign: 'center' }}>{doc.issuedBy}</td>
             <td style={{ padding: '6px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-              <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>보기</a>
-              <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>↓ 다운</a>
+              <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>보기</a>
+              <a href={doc.fileUrl} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px' }}>↓ 다운</a>
             </td>
           </tr>
         ))}
@@ -4348,8 +4368,8 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px', textAlign: 'center' }}>v{doc.version}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
                               <td style={{ padding: '8px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
-                                <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${doc.fileUrl}`} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
+                                <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>보기</a>
+                                <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '11px', fontWeight: 'bold' }}>↓ 다운로드</a>
                               </td>
                             </tr>
                           ))}

@@ -302,10 +302,22 @@ app.post('/api/pdf/generate', async (req, res) => {
   if (!htmlContent) return res.status(400).send('htmlContent is required');
 
   try {
-    const browser = await puppeteer.launch({ 
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-    });
+    let browser;
+    const args = ['--no-sandbox', '--disable-setuid-sandbox'];
+    try {
+      browser = await puppeteer.launch({ 
+        args,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+      });
+    } catch (e) {
+      console.warn("First launch failed, trying fallback:", e.message);
+      try {
+        browser = await puppeteer.launch({ args, executablePath: 'google-chrome-stable' });
+      } catch (e2) {
+        console.warn("Second launch failed, trying undefined fallback:", e2.message);
+        browser = await puppeteer.launch({ args });
+      }
+    }
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
