@@ -1577,7 +1577,7 @@ export const OrderDetail: React.FC = () => {
 
       // Support multi-page PO sheets if needed
       let pageCount = 1;
-      while (heightLeft >= 5) { // Stop if remaining height is negligible (avoid trailing blank page)
+      while (heightLeft >= 10) { // If remaining height is greater than 10mm
         position = - (pageHeight * pageCount);
         pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
