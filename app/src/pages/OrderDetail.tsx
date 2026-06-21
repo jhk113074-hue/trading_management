@@ -1526,6 +1526,7 @@ export const OrderDetail: React.FC = () => {
       container.style.top = '0px';
       container.style.left = '0px';
       container.style.width = '800px'; // A4 width at standard scaling
+      container.style.height = 'auto'; // allow complete layout expansion
       container.style.boxSizing = 'border-box';
       container.style.background = '#ffffff';
       container.style.zIndex = '-9999';
@@ -1547,6 +1548,8 @@ export const OrderDetail: React.FC = () => {
         logging: false,
         width: 800,
         windowWidth: 800,
+        height: container.scrollHeight,
+        windowHeight: container.scrollHeight
       });
 
       document.body.removeChild(container);
