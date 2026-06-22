@@ -92,10 +92,39 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     loadSelectionData();
   }, []);
 
-  // Pre-load from initialQuotationId if passed
+  // Pre-load from initialQuotationId if passed — direct setFormData to avoid stale closure
   useEffect(() => {
     if (initialQuotationId && quotations.length > 0) {
-      handleFormDataChange('quotationId', initialQuotationId);
+      const selectedQuote = quotations.find(q => q.id === initialQuotationId);
+      if (selectedQuote) {
+        const selectedCust = customers.find(c => c.id === selectedQuote.customerId);
+        setFormData(prev => ({
+          ...prev,
+          quotationId: initialQuotationId,
+          customerId: selectedQuote.customerId || '',
+          customerName: selectedQuote.customerName || (selectedCust ? selectedCust.name : ''),
+          customerAddress: selectedQuote.customerAddress || '',
+          contactPerson: selectedQuote.contactPerson || '',
+          incoterms: (selectedQuote.incoterms as any) || prev.incoterms,
+          paymentTerms: selectedQuote.paymentTerms || prev.paymentTerms,
+          exchangeRate: selectedQuote.exchangeRate || prev.exchangeRate,
+          issuingCompany: selectedQuote.issuingCompany || prev.issuingCompany,
+          departurePort: selectedQuote.departurePort || '',
+          destinationPort: selectedQuote.destinationPort || '',
+          packagingSpec: selectedQuote.packagingSpec || '',
+          shippingMethod: selectedQuote.shippingMethod || '',
+          deliveryTerm: selectedQuote.deliveryTerm || '',
+          origin: selectedQuote.origin || '',
+          yourRef: selectedQuote.yourRef || '',
+          piDate: selectedQuote.piDate || '',
+          validUntilDate: selectedQuote.validUntilDate || '',
+          remark: prev.remark || selectedQuote.remarks || '',
+        }));
+        fetchQuoteItems(initialQuotationId);
+        if (selectedQuote.freightTotal && selectedQuote.freightTotal > 0) {
+          setForwarders([{ name: '포워딩업체-운송비', amountUsd: selectedQuote.freightTotal, budgetAmountUsd: selectedQuote.freightTotal }]);
+        }
+      }
     }
   }, [initialQuotationId, quotations]);
 
@@ -191,6 +220,21 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         const latestRev = sortedRevs[0];
         const latestRevDoc = revSnap.docs.find(d => d.id === latestRev.id);
         if (latestRevDoc) {
+          // Also pull shipping metadata from latest revision to fill any revision-level fields
+          const latestRevData = latestRev as any;
+          setFormData(prev => ({
+            ...prev,
+            deliveryTerm: prev.deliveryTerm || latestRevData.deliveryTerm || '',
+            origin: prev.origin || latestRevData.origin || '',
+            yourRef: prev.yourRef || latestRevData.yourRef || '',
+            packagingSpec: prev.packagingSpec || latestRevData.packagingSpec || '',
+            shippingMethod: prev.shippingMethod || latestRevData.shippingMethod || '',
+            destinationPort: prev.destinationPort || latestRevData.destinationPort || '',
+            incoterms: prev.incoterms || latestRevData.incoterms || 'FOB',
+            paymentTerms: prev.paymentTerms || latestRevData.paymentTerms || '',
+            customerAddress: prev.customerAddress || latestRevData.customerAddress || '',
+          }));
+
           const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
           const quoteItems = liSnap.docs.map(d => d.data() as any);
           
