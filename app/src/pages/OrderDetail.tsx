@@ -176,7 +176,7 @@ export const OrderDetail: React.FC = () => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'products'), (snapshot) => {
       const list: Product[] = [];
       snapshot.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() } as Product);
+        list.push({ ...docSnap.data(), id: docSnap.id } as Product);
       });
       setProducts(list);
     });
@@ -187,7 +187,7 @@ export const OrderDetail: React.FC = () => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
       const list: Supplier[] = [];
       snapshot.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() } as Supplier);
+        list.push({ ...docSnap.data(), id: docSnap.id } as Supplier);
       });
       setSuppliersList(list);
     });

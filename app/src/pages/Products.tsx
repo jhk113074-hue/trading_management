@@ -161,7 +161,7 @@ export const Products: React.FC = () => {
 
   useEffect(() => {
     const unsub = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "products"), (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+      const data = snap.docs.map(d => ({ ...d.data(), id: d.id } as Product));
       setProducts(data);
       setLoading(false);
     });
