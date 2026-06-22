@@ -5125,8 +5125,8 @@ export const OrderDetail: React.FC = () => {
                               <table class="desc-table">
                                 <thead>
                                   <tr>
-                                    <th style="width: 15%">10) Marks</th>
-                                    <th>11) Description of Goods</th>
+                                    <th style="width: 25%">10) Marks</th>
+                                    <th style="width: 25%">11) Description of Goods</th>
                                     <th style="width: 10%">12) Qty</th>
                                     <th style="width: 10%">13) Package</th>
                                     <th style="width: 15%" colspan="2">14) Weight (kg)</th>
@@ -5383,8 +5383,8 @@ export const OrderDetail: React.FC = () => {
                               <table class="desc-table">
                                 <thead>
                                   <tr>
-                                    <th style="width: 15%">10) Marks</th>
-                                    <th>11) Description of Goods</th>
+                                    <th style="width: 25%">10) Marks</th>
+                                    <th style="width: 25%">11) Description of Goods</th>
                                     <th style="width: 10%">12) Qty</th>
                                     <th style="width: 10%">13) Package</th>
                                     <th style="width: 15%" colspan="2">14) Weight (kg)</th>
@@ -5820,8 +5820,8 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '15%' }}>10) Marks (쉬핑마크)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '38%' }}>11) Description of Goods (품명)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '25%' }}>10) Marks (쉬핑마크)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '28%' }}>11) Description of Goods (품명)</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>12) Qty (수량)</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>13) Package (단위)</th>
                                   <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>14) Net Wt (kg)</th>
@@ -6897,8 +6897,8 @@ export const OrderDetail: React.FC = () => {
                     <table class="desc-table">
                       <thead>
                         <tr>
-                          <th style="width: 15%">10) Marks</th>
-                          <th>11) Description of Goods</th>
+                          <th style="width: 25%">10) Marks</th>
+                          <th style="width: 25%">11) Description of Goods</th>
                           <th style="width: 10%">12) Qty</th>
                           <th style="width: 10%">13) Package</th>
                           <th style="width: 15%" colspan="2">14) Weight (kg)</th>
