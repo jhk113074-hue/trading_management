@@ -145,13 +145,31 @@ export const OrderDetail: React.FC = () => {
     origin: 'MADE IN KOREA'
   });
 
+  const getDefaultShippingMark = (total = '1') => {
+    const shapeVal = commonShippingMark.shape;
+    const compVal = commonShippingMark.company;
+    const portVal = commonShippingMark.port;
+    const countryVal = commonShippingMark.country;
+    const originVal = commonShippingMark.origin;
+    
+    let shapeSymbol = '◯';
+    if (shapeVal === 'circle') shapeSymbol = '◯';
+    else if (shapeVal === 'square') shapeSymbol = '▢';
+    else if (shapeVal === 'triangle') shapeSymbol = '△';
+    else shapeSymbol = '◇';
+
+    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : 1 / ${total}\n${originVal}`;
+  };
+
   // Sync common shipping mark defaults with order details
   useEffect(() => {
     if (order) {
       setCommonShippingMark(prev => ({
-        ...prev,
-        port: prev.port || order.portOfDischarge || '',
-        country: prev.country || order.destinationCountry || ''
+        shape: (order as any).commonShippingMark?.shape || prev.shape || 'circle',
+        company: (order as any).commonShippingMark?.company || prev.company || 'YSACC',
+        port: (order as any).commonShippingMark?.port || prev.port || order.portOfDischarge || '',
+        country: (order as any).commonShippingMark?.country || prev.country || order.destinationCountry || '',
+        origin: (order as any).commonShippingMark?.origin || prev.origin || 'MADE IN KOREA'
       }));
     }
   }, [order]);
@@ -280,7 +298,7 @@ export const OrderDetail: React.FC = () => {
       return;
     }
     isDirtyRef.current = true;
-  }, [basicForm, orderItems, forwardersList]);
+  }, [basicForm, orderItems, forwardersList, commonShippingMark]);
 
   const handleNavigation = async (path: string) => {
     if (isDirtyRef.current) {
@@ -652,6 +670,7 @@ export const OrderDetail: React.FC = () => {
         lcRemark: basicForm.lcRemark,
 
         packingList: basicForm.packingList || null,
+        commonShippingMark: commonShippingMark,
         
         items: orderItems.map(it => ({
           itemId: it.itemId || '',
@@ -4589,7 +4608,7 @@ export const OrderDetail: React.FC = () => {
                           );
                           matchingContainerItems.forEach((it: any) => {
                             packingItemsList.push({
-                              marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+                              marks: getDefaultShippingMark(),
                               descOfGoods: it.description || '',
                               qty: Number(it.pkg) || 0,
                               packageType: 'PL',
@@ -4606,7 +4625,7 @@ export const OrderDetail: React.FC = () => {
                         const itemDesc = items.map(it => `P#${order.custPo || '1'}. ${it.name}`).join(' / ');
                         const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
                         packingItemsList = [{
-                          marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+                          marks: getDefaultShippingMark(),
                           descOfGoods: itemDesc || '',
                           qty: totalQty || 1,
                           packageType: 'PL',
@@ -4633,7 +4652,7 @@ export const OrderDetail: React.FC = () => {
 
                       const addArrivalReportItemRow = () => {
                         const nextItems = [...packingItemsList, {
-                          marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+                          marks: getDefaultShippingMark(),
                           descOfGoods: '',
                           qty: 1,
                           packageType: 'PL',
@@ -6072,6 +6091,7 @@ export const OrderDetail: React.FC = () => {
           }}
           packingList={basicForm.packingList}
           initialData={(order.supplierArrivalReports || {})[activeArrivalReport.supplierName]}
+          defaultShippingMark={getDefaultShippingMark()}
           onClose={() => setActiveArrivalReport(null)}
           onSave={async (reportData) => {
             try {

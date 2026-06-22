@@ -44,11 +44,12 @@ interface Props {
     cfsEta?: string;
     packingItems?: PackingItem[];
   };
+  defaultShippingMark?: string;
   onClose: () => void;
   onSave: (data: any) => void;
 }
 
-export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, packingList, initialData, onClose, onSave }) => {
+export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, packingList, initialData, defaultShippingMark = '', onClose, onSave }) => {
   const [cfsList, setCfsList] = useState<string[]>([]);
   const [isAddingCfs, setIsAddingCfs] = useState(false);
   const [newCfsVal, setNewCfsVal] = useState('');
@@ -170,7 +171,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         
         matchingContainerItems.forEach((it: any) => {
           matchedItems.push({
-            marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+            marks: defaultShippingMark,
             descOfGoods: it.description || '',
             qty: Number(it.pkg) || 0,
             packageType: 'PL',
@@ -189,7 +190,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         const totalQty = orderInfo.items.reduce((sum, it) => sum + (it.qty || 0), 0);
         setPackingItems([
           {
-            marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+            marks: defaultShippingMark,
             descOfGoods: itemDesc || '',
             qty: totalQty || 1,
             packageType: 'PL',
@@ -205,7 +206,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
       const totalQty = orderInfo.items.reduce((sum, it) => sum + (it.qty || 0), 0);
       setPackingItems([
         {
-          marks: '2026\n/ALMUFTAH/\nDOHA/QATAR',
+          marks: defaultShippingMark,
           descOfGoods: itemDesc || '',
           qty: totalQty || 1,
           packageType: 'PL',
@@ -215,7 +216,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         }
       ]);
     }
-  }, [orderInfo.items, initialData, packingList, supplierName]);
+  }, [orderInfo.items, initialData, packingList, supplierName, defaultShippingMark]);
 
   const handleSave = () => {
     onSave({
@@ -229,7 +230,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
   const addPackingItem = () => {
     setPackingItems(prev => [
       ...prev,
-      { marks: '2026\n/ALMUFTAH/\nDOHA/QATAR', descOfGoods: '', qty: 1, packageType: 'PL', netWeight: 0, grossWeight: 0, measurement: '' }
+      { marks: defaultShippingMark, descOfGoods: '', qty: 1, packageType: 'PL', netWeight: 0, grossWeight: 0, measurement: '' }
     ]);
   };
 
