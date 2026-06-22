@@ -21,7 +21,7 @@ export interface OrderItem {
   supplierContact: string;
   grade: string;
   qty: number;
-  unit: "kg" | "MT" | "L" | "drum" | "set";
+  unit: string;
   unitPrice: number;
   purchaseUnitPrice?: number;
   purchaseUnitCurrency?: "USD" | "KRW";

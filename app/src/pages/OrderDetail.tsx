@@ -3017,17 +3017,13 @@ export const OrderDetail: React.FC = () => {
                               placeholder="수량"
                               style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             />
-                            <select
-                              value={item.unit || 'kg'}
+                            <input
+                              type="text"
+                              value={item.unit || ''}
                               onChange={e => handleItemChange(idx, 'unit', e.target.value)}
-                              style={{ width: '60px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
-                            >
-                              <option value="kg">kg</option>
-                              <option value="MT">MT</option>
-                              <option value="L">L</option>
-                              <option value="drum">drum</option>
-                              <option value="set">set</option>
-                            </select>
+                              placeholder="단위"
+                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none', textAlign: 'center' }}
+                            />
                           </div>
                         </td>
 
