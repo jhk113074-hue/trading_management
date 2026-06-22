@@ -1075,6 +1075,60 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
+    const compEscaped = (comp || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let svg = '';
+    let w = 60, h = 60;
+    if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 60; h = 60;
+    } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="45"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 65; h = 45;
+    } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="65" height="60"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 65; h = 60;
+    } else {
+      // diamond
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><polygon points="30,4 56,30 30,56 4,30" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+      w = 60; h = 60;
+    }
+    
+    let imgData = '';
+    try {
+      imgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    } catch (e) {
+      console.error(e);
+    }
+    return `<img src="${imgData}" style="display: block; margin: 5px auto; width: ${w}px; height: ${h}px;" />`;
+  };
+
+  const getLargeShippingMarkShapeImgHtml = (shapeVal: string, compVal: string) => {
+    const compEscaped = (compVal || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let svg = '';
+    if (shapeVal === 'circle') {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+    } else if (shapeVal === 'square') {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+    } else if (shapeVal === 'triangle') {
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+    } else { // diamond
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+    }
+
+    let imgData = '';
+    try {
+      imgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+    } catch (e) {
+      console.error(e);
+    }
+    
+    const widthStyle = shapeVal === 'diamond' ? 'width: 100%;' : 'width: 85%;';
+    const maxHeightStyle = (shapeVal === 'square' || shapeVal === 'diamond') ? 'max-height: 30vh;' : 'max-height: 35vh;';
+    
+    return `<img src="${imgData}" style="${widthStyle} height: auto; ${maxHeightStyle} display: block; margin: 0 auto;" />`;
+  };
+
   const renderShippingMarkCellHtml = (marksText: string) => {
     if (!marksText) return '';
     const lines = marksText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -1091,17 +1145,7 @@ export const OrderDetail: React.FC = () => {
       const comp = lines[1];
       const remainingLines = lines.slice(2);
 
-      let shapeHtml = '';
-      if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
-        shapeHtml = `<div style="width: 50px; height: 50px; border: 2.5px solid black; border-radius: 50%; margin: 5px auto; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: bold; white-space: nowrap; box-sizing: border-box;">${comp}</div>`;
-      } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
-        shapeHtml = `<div style="width: 55px; height: 40px; border: 2.5px solid black; margin: 5px auto; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: bold; white-space: nowrap; box-sizing: border-box;">${comp}</div>`;
-      } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
-        shapeHtml = `<svg width="65" height="55" style="display: block; margin: 0 auto; box-sizing: border-box;"><polygon points="32,4 4,51 61,51" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="65%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-      } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆')) {
-        shapeHtml = `<div style="width: 38px; height: 38px; border: 2.5px solid black; transform: rotate(45deg); margin: 10px auto; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"><div style="transform: rotate(-45deg); font-size: 11px; font-weight: bold; white-space: nowrap; text-align: center; width: 100%;">${comp}</div></div>`;
-      }
-
+      const shapeHtml = getShippingMarkShapeImgHtml(shapeSymbol, comp);
       const extraLinesHtml = remainingLines.map(line => `<div>${line}</div>`).join('');
 
       return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto; text-align: center;">
@@ -4986,37 +5030,7 @@ export const OrderDetail: React.FC = () => {
                         const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
                         const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
 
-                        const renderShippingMarkCellHtml = (marksText: string) => {
-                          if (!marksText) return '';
-                          const lines = marksText.split('\n');
-                          const shapeSymbol = lines[0] || '';
-                          const comp = lines[1] || '';
-                          const portCountry = lines[2] || '';
-                          const pltNo = lines[3] || '';
-                          const origin = lines[4] || '';
 
-                          let shapeSvg = '';
-                          if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
-                            shapeSvg = `<svg width="60" height="60" style="display: block; margin: 0 auto;"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
-                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
-                            shapeSvg = `<svg width="65" height="60" style="display: block; margin: 0 auto;"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
-                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><polygon points="32,4 60,22 32,40 4,22" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else {
-                            return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
-                          }
-
-                          return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto;">
-                            ${shapeSvg}
-                            <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
-                              <div>${portCountry}</div>
-                              <div style="margin: 2px 0;">${pltNo}</div>
-                              <div>${origin}</div>
-                            </div>
-                          </div>`;
-                        };
 
                         const printHtml = `
                           <html>
@@ -5249,37 +5263,7 @@ export const OrderDetail: React.FC = () => {
                         const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
                         const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
 
-                        const renderShippingMarkCellHtml = (marksText: string) => {
-                          if (!marksText) return '';
-                          const lines = marksText.split('\n');
-                          const shapeSymbol = lines[0] || '';
-                          const comp = lines[1] || '';
-                          const portCountry = lines[2] || '';
-                          const pltNo = lines[3] || '';
-                          const origin = lines[4] || '';
 
-                          let shapeSvg = '';
-                          if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
-                            shapeSvg = `<svg width="60" height="60" style="display: block; margin: 0 auto;"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
-                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
-                            shapeSvg = `<svg width="65" height="60" style="display: block; margin: 0 auto;"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
-                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><polygon points="32,4 60,22 32,40 4,22" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-                          } else {
-                            return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
-                          }
-
-                          return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto;">
-                            ${shapeSvg}
-                            <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
-                              <div>${portCountry}</div>
-                              <div style="margin: 2px 0;">${pltNo}</div>
-                              <div>${origin}</div>
-                            </div>
-                          </div>`;
-                        };
 
                         const printHtml = `
                           <html>
@@ -5634,20 +5618,11 @@ export const OrderDetail: React.FC = () => {
                           '<body>';
 
                         for (let i = startVal; i <= totalVal; i++) {
-                          let shapeSvg = '';
-                          if (shapeVal === 'circle') {
-                            shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                          } else if (shapeVal === 'square') {
-                            shapeSvg = '<svg viewBox="0 0 450 300" style="width: 85%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                          } else if (shapeVal === 'triangle') {
-                            shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                          } else { // diamond
-                            shapeSvg = '<svg viewBox="0 0 560 280" style="width: 100%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                          }
+                          const shapeHtml = getLargeShippingMarkShapeImgHtml(shapeVal, compVal);
 
                           htmlContent += '<div class="page">' +
                             '<div class="outer-border">' +
-                              '<div class="shape-container">' + shapeSvg + '</div>' +
+                              '<div class="shape-container" style="width: 100%;">' + shapeHtml + '</div>' +
                               '<div class="info-container">' +
                                 '<div class="info-text1">' + portVal + ', ' + countryVal + '</div>' +
                                 '<div class="info-text2">PKG NO. : ' + i + '/' + totalVal + '</div>' +
