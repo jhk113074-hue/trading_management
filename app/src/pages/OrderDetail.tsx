@@ -4225,6 +4225,58 @@ export const OrderDetail: React.FC = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Live Preview and Direct Save Action */}
+                    <div style={{ marginTop: '16px', display: 'flex', gap: '20px', alignItems: 'center', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '220px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11.5px', color: '#475569', display: 'block', marginBottom: '8px' }}>🔍 실시간 쉬핑마크 미리보기 (Live Preview)</span>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px', background: '#fafafa', border: '1px solid #e2e8f0', borderRadius: '4px', minHeight: '110px' }}>
+                          {(() => {
+                            const comp = commonShippingMark.company || 'YSACC';
+                            const portCountry = `${commonShippingMark.port || ''}, ${commonShippingMark.country || ''}`;
+                            const pltNo = 'PALLET NO. : 1 / 5';
+                            const origin = commonShippingMark.origin || 'MADE IN KOREA';
+                            
+                            let shapeSvg = null;
+                            if (commonShippingMark.shape === 'circle') {
+                              shapeSvg = <svg width="55" height="55" style={{ display: 'block', margin: '0 auto' }}><circle cx="27.5" cy="27.5" r="24" stroke="black" strokeWidth="2" fill="none" /><text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text></svg>;
+                            } else if (commonShippingMark.shape === 'square') {
+                              shapeSvg = <svg width="55" height="40" style={{ display: 'block', margin: '0 auto' }}><rect x="3" y="3" width="49" height="34" stroke="black" strokeWidth="2" fill="none" /><text x="50%" y="54%" fontSize="11" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text></svg>;
+                            } else if (commonShippingMark.shape === 'triangle') {
+                              shapeSvg = <svg width="55" height="50" style={{ display: 'block', margin: '0 auto' }}><polygon points="27.5,3 3,47 52,47" stroke="black" strokeWidth="2" fill="none" /><text x="50%" y="68%" fontSize="10" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text></svg>;
+                            } else {
+                              shapeSvg = <svg width="55" height="40" style={{ display: 'block', margin: '0 auto' }}><polygon points="27.5,3 52,20 27.5,37 3,20" stroke="black" strokeWidth="2" fill="none" /><text x="50%" y="54%" fontSize="10" fontWeight="bold" textAnchor="middle" dominantBaseline="middle" fill="black">{comp}</text></svg>;
+                            }
+
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', lineHeight: 1.2 }}>
+                                {shapeSvg}
+                                <div style={{ fontSize: '8px', fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase', color: '#334155' }}>
+                                  <div>{portCountry}</div>
+                                  <div style={{ margin: '2px 0' }}>{pltNo}</div>
+                                  <div>{origin}</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await handleSaveBasic(true);
+                          }}
+                          style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          💾 쉬핑마크 설정 저장 (클라우드)
+                        </button>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>
+                          ※ 수정한 마크 설정을 저장한 후, 4) 도착보고 탭에서<br/>
+                          '⚡ 테이블에 마크 적용' 버튼을 눌러 적용하세요.
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {basicForm.packingList && (
