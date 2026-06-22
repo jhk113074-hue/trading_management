@@ -15,6 +15,27 @@ import { previewFile } from '../components/FilePreviewModal';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
+  if (!pkgNo) return '0';
+  const trimmed = pkgNo.trim();
+  const rangeMatch = trimmed.match(/^(\d+)\s*[-~]\s*(\d+)$/);
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1], 10);
+    const end = parseInt(rangeMatch[2], 10);
+    if (end >= start) {
+      return String(end - start + 1);
+    }
+  }
+  if (trimmed.includes(',')) {
+    const parts = trimmed.split(',').map(p => p.trim()).filter(Boolean);
+    return String(parts.length);
+  }
+  if (/^\d+$/.test(trimmed)) {
+    return '1';
+  }
+  return '1';
+};
+
 const steps = ["PO접수", "소싱발주", "수출관리", "정산마감", "변경이력(Log)"] as const;
 
 export const OrderDetail: React.FC = () => {
@@ -158,7 +179,7 @@ export const OrderDetail: React.FC = () => {
     else if (shapeVal === 'triangle') shapeSymbol = '△';
     else shapeSymbol = '◇';
 
-    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : ${pageNo} / ${totalCount}\n${originVal}`;
+    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPKG NO. : ${pageNo} / ${totalCount}\n${originVal}`;
   };
 
   // Sync common shipping mark defaults with order details once when order is first loaded
@@ -299,8 +320,9 @@ export const OrderDetail: React.FC = () => {
       skipNextDirtyCheck.current = false;
       return;
     }
+    if (!order) return; // Prevent setting dirty state if order has been deleted
     isDirtyRef.current = true;
-  }, [basicForm, orderItems, forwardersList, commonShippingMark]);
+  }, [basicForm, orderItems, forwardersList, commonShippingMark, order]);
 
   const handleNavigation = async (path: string) => {
     if (isDirtyRef.current) {
@@ -334,7 +356,7 @@ export const OrderDetail: React.FC = () => {
     const docRef = doc(db, 'companies', COMPANY_ID, 'orders', id);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
-        const data = docSnap.data() as Order;
+        const data = { id: docSnap.id, ...docSnap.data() } as Order;
         skipNextDirtyCheck.current = true;
         setOrder(data);
         if ((data as any).po_issued_documents) {
@@ -2051,70 +2073,6 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  // Shipping Mark Print handler
-  const handlePrintShippingMark = (supplierName: string) => {
-    if (!order) return;
-    const isYS = order.issuingCompany === 'YS';
-
-    const printHtml = `
-      <html>
-        <head>
-          <title>SHIPPING MARK - ${supplierName}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
-            body { font-family: 'Outfit', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 95vh; margin: 0; padding: 20px; box-sizing: border-box; }
-            .no-print { display: block; position: fixed; top: 15px; right: 15px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; z-index: 9999; }
-            @media print {
-              .no-print { display: none !important; }
-            }
-            .mark-container { border: 8px solid #000; padding: 40px 60px; width: 90%; max-width: 700px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 24px; position: relative; }
-            
-            .diamond-wrapper { position: relative; width: 350px; height: 180px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
-            .diamond { position: absolute; top: 0; left: 50%; transform: translateX(-50%) rotate(45deg); width: 180px; height: 180px; border: 4px solid #1e3a8a; }
-            .diamond-text { font-size: 44px; font-weight: 900; color: #1e3a8a; letter-spacing: 2px; z-index: 5; text-transform: uppercase; }
-
-            .info-block { font-size: 26px; font-weight: 700; color: #000; line-height: 1.5; text-transform: uppercase; }
-            .info-label { color: #4b5563; font-size: 20px; font-weight: 500; display: block; margin-bottom: 2px; }
-          </style>
-        </head>
-        <body>
-          <button class="no-print" onclick="window.print()">인쇄 / PDF 저장</button>
-          
-          <div class="mark-container">
-            <div class="diamond-wrapper">
-              <div class="diamond"></div>
-              <div class="diamond-text">${isYS ? 'YS ACC' : 'YSACC'}</div>
-            </div>
-            
-            <div style="border-top: 3px solid #000; width: 100%; margin: 10px 0;"></div>
-
-            <div class="info-block">
-              <span class="info-label">Destination Port</span>
-              JEBEL ALI, UAE
-            </div>
-
-            <div class="info-block">
-              <span class="info-label">Origin Country</span>
-              MADE IN KOREA
-            </div>
-
-            <div class="info-block" style="margin-top: 10px;">
-              <span class="info-label">Package Tracking</span>
-              PO NO: ${getFormattedPoId(order.id, order.issuingCompany)}<br/>
-              SUPPLIER: ${supplierName}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(printHtml);
-      win.document.close();
-    }
-  };
-
   // CI automated print handler
   const handlePrintCI = () => {
     if (!order) return;
@@ -2411,10 +2369,28 @@ export const OrderDetail: React.FC = () => {
                         <td rowspan="${itList.length + 1}" style="font-size: 8.5px; font-weight: 700; vertical-align: top;">
                           <strong>CONTAINER NO:</strong><br/>${c.containerNo}<br/>
                           <strong>SEAL NO:</strong><br/>${c.sealNo}
-                          ${it.shippingMark ? `<br/><br/>${it.shippingMark}` : ''}
+                          ${(() => {
+                            const uniquePkgNos = Array.from(new Set(itList.map((x: any) => x.pkgNo || '1')));
+                            const shapeVal = (order as any).commonShippingMark?.shape || 'circle';
+                            const compVal = (order as any).commonShippingMark?.company || 'YSACC';
+                            const portVal = (order as any).commonShippingMark?.port || order.portOfDischarge || '';
+                            const countryVal = (order as any).commonShippingMark?.country || order.destinationCountry || '';
+                            const originVal = (order as any).commonShippingMark?.origin || 'MADE IN KOREA';
+                            
+                            let shapeSymbol = '◯';
+                            if (shapeVal === 'circle') shapeSymbol = '◯';
+                            else if (shapeVal === 'square') shapeSymbol = '▢';
+                            else if (shapeVal === 'triangle') shapeSymbol = '△';
+                            else shapeSymbol = '◇';
+
+                            return uniquePkgNos.map(pNo => {
+                              const markStr = `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : ${pNo} / ${grandPkg}\n${originVal}`;
+                              return `<pre style="margin-top: 10px; border-top: 1px dashed #000; padding-top: 6px; font-family: monospace; font-size: 8px; line-height: 1.25; font-weight: bold;">${markStr}</pre>`;
+                            }).join('');
+                          })()}
                         </td>
                       ` : ''}
-                      <td>${it.description}</td>
+                      <td style="white-space: pre-wrap;">${it.description}</td>
                       <td class="center">${it.pkgNo || ''}</td>
                       <td class="center">${it.pkg || ''}</td>
                       <td class="right">${Number(it.netWeight || 0).toLocaleString()}</td>
@@ -4187,14 +4163,13 @@ export const OrderDetail: React.FC = () => {
                       {/* 회사/바이어 약자 */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>회사/고객 약자</span>
-                        <select 
+                        <input 
+                          type="text" 
+                          placeholder="약자 입력 (예: YSACC)" 
                           value={commonShippingMark.company}
                           onChange={(e) => setCommonShippingMark(prev => ({ ...prev, company: e.target.value }))}
                           style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        >
-                          <option value="YSACC">YSACC</option>
-                          <option value={order.customer?.split(' ')[0] || 'CUSTOMER'}>고객사 약칭 ({order.customer?.split(' ')[0] || 'CUSTOMER'})</option>
-                        </select>
+                        />
                       </div>
 
                       {/* 도착 포트 */}
@@ -4488,12 +4463,11 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '12%' }}>PKG NO.</th>
                                   <th style={{ padding: '6px', textAlign: 'left', width: '28%' }}>Description of Goods (품명 및 사양)</th>
                                   <th style={{ padding: '6px', textAlign: 'left', width: '16%' }}>Manufacturer (제조사)</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG No.</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>Net Wt (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>Gross Wt (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>NET WT (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>CBM</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>동작</th>
                                 </tr>
@@ -4502,34 +4476,33 @@ export const OrderDetail: React.FC = () => {
                                 {(c.items || []).map((it: any, itIdx: number) => (
                                   <tr key={itIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '5px' }}>
-                                      <input type="text" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }} value={it.description || ''} onChange={e => {
+                                      <input type="text" placeholder="예: 1-5 또는 1" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkgNo || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].description = val;
+                                        nextContainers[cIdx].items[itIdx].pkgNo = val;
+                                        nextContainers[cIdx].items[itIdx].pkg = calculatePkgFromPkgNo(val);
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <textarea
+                                        rows={2}
+                                        disabled={!isEditing}
+                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', resize: 'vertical', boxSizing: 'border-box' }}
+                                        value={it.description || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].description = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       <input type="text" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }} value={it.supplier || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].supplier = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="text" placeholder="예: 1-5 또는 1" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkgNo || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].pkgNo = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
-                                    </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkg || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].pkg = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
@@ -4550,12 +4523,54 @@ export const OrderDetail: React.FC = () => {
                                       }} />
                                     </td>
                                     <td style={{ padding: '5px' }}>
-                                      <input type="number" step="0.01" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.cbm || ''} onChange={e => {
-                                        const val = e.target.value;
-                                        const nextContainers = [...basicForm.packingList.containers];
-                                        nextContainers[cIdx].items[itIdx].cbm = val;
-                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                      }} />
+                                      <input
+                                        type="text"
+                                        step="0.01"
+                                        disabled={!isEditing}
+                                        placeholder="예: =1.1*1.2*1.3"
+                                        value={it.cbm || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].cbm = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            const raw = (e.target as HTMLInputElement).value;
+                                            if (raw.startsWith('=')) {
+                                              try {
+                                                const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
+                                                // eslint-disable-next-line no-new-func
+                                                const result = Function('"use strict"; return (' + expr + ')')();
+                                                if (typeof result === 'number' && isFinite(result)) {
+                                                  const rounded = parseFloat(result.toFixed(4));
+                                                  const nextContainers = [...basicForm.packingList.containers];
+                                                  nextContainers[cIdx].items[itIdx].cbm = rounded;
+                                                  setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                                }
+                                              } catch {}
+                                            }
+                                          }
+                                        }}
+                                        onBlur={e => {
+                                          const raw = e.target.value;
+                                          if (raw.startsWith('=')) {
+                                            try {
+                                              const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
+                                              // eslint-disable-next-line no-new-func
+                                              const result = Function('"use strict"; return (' + expr + ')')();
+                                              if (typeof result === 'number' && isFinite(result)) {
+                                                const rounded = parseFloat(result.toFixed(4));
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].cbm = rounded;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }
+                                            } catch {}
+                                          }
+                                        }}
+                                        style={{ padding: '4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }}
+                                      />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'center' }}>
                                       <button
@@ -4642,6 +4657,14 @@ export const OrderDetail: React.FC = () => {
                         >
                           초기화
                         </button>
+                        <button
+                          type="button"
+                          disabled={!isEditing}
+                          onClick={() => handleSaveBasic(true)}
+                          style={{ padding: '6px 12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                        >
+                          💾 패킹리스트 저장
+                        </button>
                       </div>
                     </div>
                   )}
@@ -4675,21 +4698,24 @@ export const OrderDetail: React.FC = () => {
                       // Auto-pull items from the master packing list if not edited yet
                       let packingItemsList = repData.packingItems || [];
                       if (packingItemsList.length === 0 && basicForm.packingList?.containers) {
+                        let matchingItems: any[] = [];
                         basicForm.packingList.containers.forEach((container: any) => {
-                          const matchingContainerItems = (container.items || []).filter((it: any) => 
+                          const itemsForSupplier = (container.items || []).filter((it: any) => 
                             (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
                           );
-                          const totalContainersCount = basicForm.packingList.containers.length;
-                          matchingContainerItems.forEach((it: any) => {
-                            packingItemsList.push({
-                              marks: getDefaultShippingMark(it.pkgNo || '1', String(totalContainersCount)),
-                              descOfGoods: it.description || '',
-                              qty: Number(it.pkg) || 0,
-                              packageType: 'PL',
-                              netWeight: Number(it.netWeight) || 0,
-                              grossWeight: Number(it.grossWeight) || 0,
-                              measurement: it.cbm ? `${it.cbm} CBM` : ''
-                            });
+                          matchingItems = [...matchingItems, ...itemsForSupplier];
+                        });
+
+                        const totalCount = matchingItems.length;
+                        matchingItems.forEach((it: any, idx: number) => {
+                          packingItemsList.push({
+                            marks: getDefaultShippingMark(String(idx + 1), String(totalCount)),
+                            descOfGoods: it.description || '',
+                            qty: Number(it.pkg) || 0,
+                            packageType: 'PL',
+                            netWeight: Number(it.netWeight) || 0,
+                            grossWeight: Number(it.grossWeight) || 0,
+                            measurement: it.cbm ? `${it.cbm} CBM` : ''
                           });
                         });
                       }
@@ -5036,6 +5062,574 @@ export const OrderDetail: React.FC = () => {
                         }
                       };
 
+                      const handleIssueAndSaveArrivalReport = async () => {
+                        const isYS = order.issuingCompany === 'YS';
+                        let defaultConsignee = isYS 
+                          ? `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한` 
+                          : `(주)와이에스에이씨씨(YSACC CO., LTD.)\n서울 강남구 테헤란로 419, 16층\nTEL: 010-4494-1028\n담당자: 김주한`;
+
+                        try {
+                          const compDoc = await getDoc(doc(db, "companies", "YSACC", "my_companies", isYS ? "YS" : "YSACC"));
+                          if (compDoc.exists()) {
+                            const data = compDoc.data();
+                            const compName = data.nameKo || data.name || (isYS ? '영성에이씨씨(YS ACC)' : '(주)와이에스에이씨씨(YSACC CO., LTD.)');
+                            const address = data.addressKo || (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
+                            const phone = data.phone || '010-4494-1028';
+                            const manager = data.manager || '김주한';
+                            defaultConsignee = `${compName}\n${address}\nTEL: ${phone}\n담당자: ${manager}`;
+                          }
+                        } catch (e) {
+                          console.error("Failed to load company info", e);
+                        }
+
+                        let finalConsignee = repData.consignee || defaultConsignee;
+                        if (finalConsignee.includes('서울 강남구 테헤란로 419') || finalConsignee.includes('경기 김포시 양촌읍 듬박로 89')) {
+                          finalConsignee = defaultConsignee;
+                        }
+
+                        let finalCfsAddress = basicForm.cfsContactInfo || basicForm.cfsAddress || '';
+                        if (repData.cfsAddress && repData.cfsAddress !== 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13') {
+                           finalCfsAddress = repData.cfsAddress;
+                        }
+                        if (basicForm.cfsContactInfo) {
+                           finalCfsAddress = basicForm.cfsContactInfo;
+                        }
+                        if (!finalCfsAddress) {
+                           finalCfsAddress = 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
+                        }
+
+                        const rep = {
+                          bookingNo: basicForm.vesselBooking || '',
+                          remarks: 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
+                          notifyParty: 'SAME AS ABOVE',
+                          ...repData,
+                          portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',
+                          finalDestination: basicForm.portOfDischarge || repData.finalDestination || '',
+                          carrier: basicForm.vesselBooking || repData.carrier || '',
+                          sailingOnOrAbout: basicForm.etd || repData.sailingOnOrAbout || '',
+                          cfsEta: basicForm.cfsEntryDate || repData.cfsEta || '',
+                          consignee: finalConsignee,
+                          cfsAddress: finalCfsAddress,
+                          packingItems: packingItemsList
+                        };
+
+                        const totalQty = packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0);
+                        const totalNetWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.netWeight || 0), 0);
+                        const totalGrossWeight = packingItemsList.reduce((sum: number, it: any) => sum + (it.grossWeight || 0), 0);
+
+                        const renderShippingMarkCellHtml = (marksText: string) => {
+                          if (!marksText) return '';
+                          const lines = marksText.split('\n');
+                          const shapeSymbol = lines[0] || '';
+                          const comp = lines[1] || '';
+                          const portCountry = lines[2] || '';
+                          const pltNo = lines[3] || '';
+                          const origin = lines[4] || '';
+
+                          let shapeSvg = '';
+                          if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
+                            shapeSvg = `<svg width="60" height="60" style="display: block; margin: 0 auto;"><circle cx="30" cy="30" r="26" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
+                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><rect x="4" y="4" width="57" height="37" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
+                            shapeSvg = `<svg width="65" height="60" style="display: block; margin: 0 auto;"><polygon points="32,4 4,56 61,56" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="68%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
+                            shapeSvg = `<svg width="65" height="45" style="display: block; margin: 0 auto;"><polygon points="32,4 60,22 32,40 4,22" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="54%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+                          } else {
+                            return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
+                          }
+
+                          return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto;">
+                            ${shapeSvg}
+                            <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
+                              <div>${portCountry}</div>
+                              <div style="margin: 2px 0;">${pltNo}</div>
+                              <div>${origin}</div>
+                            </div>
+                          </div>`;
+                        };
+
+                        const printHtml = `
+                          <html>
+                            <head>
+                              <title>도착보고 - ${poNum}</title>
+                              <style>
+                                @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+                                body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; color: #000; font-size: 11.5px; line-height: 1.4; }
+                                .no-print { display: none !important; }
+                                .header-container { display: grid; grid-template-columns: 2fr 1fr; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 15px; align-items: end; }
+                                .title-korean { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; color: #000; }
+                                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                                .info-table td { border: 1px solid #000; padding: 5px 8px; font-size: 11px; vertical-align: top; }
+                                .desc-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                                .desc-table th, .desc-table td { border: 1px solid #000; padding: 6px; font-size: 11px; vertical-align: middle; }
+                                .desc-table th { background: #f8fafc; font-weight: bold; text-align: center; }
+                                .desc-table td.right { text-align: right; }
+                                .desc-table td.center { text-align: center; }
+                                .total-row td { background: #f1f5f9; font-weight: bold; border-top: 2px double #000; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header-container">
+                                <div class="title-korean">도착 보고서 (Arrival Report)</div>
+                                <div style="text-align: right; font-size: 11px; font-weight: bold; line-height: 1.5;">
+                                  <strong>Doc No:</strong> ${poNum}<br/>
+                                  <strong>Date:</strong> ${new Date().toISOString().split('T')[0]}
+                                </div>
+                              </div>
+
+                              <table class="info-table">
+                                <tr>
+                                  <td style="width: 50%;">
+                                    <strong>1) Shipper</strong><br/>
+                                    ${(rep.shipper || supplierName).replace(/\n/g, '<br/>')}<br/>
+                                    ${items[0]?.supplierContact || ''}
+                                  </td>
+                                  <td style="width: 50%;">
+                                    <strong>8) Booking No.</strong><br/>
+                                    <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">${rep.bookingNo || '-'}</span>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td>
+                                    <strong>2) Consignee</strong><br/>
+                                    ${rep.consignee.replace(/\n/g, '<br/>')}
+                                  </td>
+                                  <td>
+                                    <strong>9) Remarks</strong><br/>
+                                    <span style="color: #4b5563; font-weight: 600;">${(rep.remarks || `ORIGIN : MADE IN KOREA<br/><span style="color: #ef4444;">입고일: 연도-월-일 오전 10시까지</span>`).replace(/\n/g, '<br/>')}</span>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td>
+                                    <strong>3) Notify Party</strong><br/>
+                                    ${rep.notifyParty || 'SAME AS ABOVE'}
+                                  </td>
+                                  <td style="text-align: center; vertical-align: middle;">
+                                    <strong>입고지</strong><br/>
+                                    <strong>${(rep.cfsAddress || `CMK LOGISTICS / 김경태 주임 / T.055-543-7200<br/>경남 창원시 진해구 신항8로 13`).replace(/\n/g, '<br/>')}</strong>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                                      <div>
+                                        <strong>4) Port of Loading</strong><br/>
+                                        ${rep.portOfLoading || 'BUSAN PORT, SOUTH KOREA'}
+                                      </div>
+                                      <div>
+                                        <strong>5) Final Destination</strong><br/>
+                                        ${rep.finalDestination || 'HAMAD PORT, QATAR'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td rowspan="2" style="vertical-align: middle; text-align: center; font-size: 12px; font-weight: bold; background: #fffbeb;">
+                                    위 제품 상차시 내용물 및 포장에<br/>
+                                    파손이 없고 적절한 방법으로<br/>
+                                    운송하였음을 확인합니다.<br/><br/>
+                                    기사님 성함 : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (서명)<br/><br/>
+                                    기사님 연락처 : <br/><br/>
+                                    차 넘 버 : 
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+                                      <div>
+                                        <strong>6) Carrier</strong><br/>
+                                        ${rep.carrier || 'HMM HANUL 022W'}
+                                      </div>
+                                      <div>
+                                        <strong>7) sailing on or about</strong><br/>
+                                        ${rep.sailingOnOrAbout || '2025-12-31'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              </table>
+
+                              <table class="desc-table">
+                                <thead>
+                                  <tr>
+                                    <th style="width: 15%">10) Marks</th>
+                                    <th>11) Description of Goods</th>
+                                    <th style="width: 10%">12) Qty</th>
+                                    <th style="width: 10%">13) Package</th>
+                                    <th style="width: 15%" colspan="2">14) Weight (kg)</th>
+                                    <th style="width: 15%">16) Measurement</th>
+                                  </tr>
+                                  <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th style="font-size: 9px; width: 7.5%">Net</th>
+                                    <th style="font-size: 9px; width: 7.5%">Gross</th>
+                                    <th></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${packingItemsList.map((it: any) => `
+                                    <tr>
+                                      <td class="center" style="font-size: 10px; line-height: 1.3; font-weight: bold;">
+                                        ${renderShippingMarkCellHtml(it.marks)}
+                                      </td>
+                                      <td style="font-size: 11px; line-height: 1.5;">
+                                        ${(it.descOfGoods || '').replace(/\n/g, '<br/>')}
+                                      </td>
+                                      <td class="center" style="font-weight: bold;">${(it.qty || 0).toLocaleString()}</td>
+                                      <td class="center">${it.packageType || 'PL'}</td>
+                                      <td class="right">${it.netWeight ? it.netWeight.toLocaleString() : '-'}</td>
+                                      <td class="right">${it.grossWeight ? it.grossWeight.toLocaleString() : '-'}</td>
+                                      <td class="center">${it.measurement || '-'}</td>
+                                    </tr>
+                                  `).join('')}
+                                  <tr>
+                                    <td style="border-top: none; border-bottom: none; height: 50px;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                    <td style="border-top: none; border-bottom: none;"></td>
+                                  </tr>
+                                  <tr class="total-row">
+                                    <td class="center">TOTAL</td>
+                                    <td></td>
+                                    <td class="center">${totalQty.toLocaleString()}</td>
+                                    <td class="center"></td>
+                                    <td class="right">${totalNetWeight ? totalNetWeight.toLocaleString() : '-'}</td>
+                                    <td class="right">${totalGrossWeight ? totalGrossWeight.toLocaleString() : '-'}</td>
+                                    <td></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </body>
+                          </html>
+                        `;
+
+                        const confirmed = window.confirm(`도착보고서를 발행 및 클라우드(문서함)에 저장하시겠습니까?\n\nPO번호: ${poNum}\n거래처: ${supplierName}`);
+                        if (!confirmed) return;
+
+                        try {
+                          const iframe = document.createElement('iframe');
+                          iframe.style.position = 'fixed';
+                          iframe.style.top = '0';
+                          iframe.style.left = '0';
+                          iframe.style.width = '820px';
+                          iframe.style.height = '1200px';
+                          iframe.style.border = '0';
+                          iframe.style.zIndex = '-9999';
+                          iframe.style.visibility = 'hidden';
+                          document.body.appendChild(iframe);
+
+                          const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+                          if (!iframeDoc) throw new Error('Failed to access sandbox iframe context');
+
+                          iframeDoc.open();
+                          iframeDoc.write(printHtml);
+                          iframeDoc.close();
+
+                          await new Promise(resolve => setTimeout(resolve, 800));
+
+                          const printBody = iframeDoc.body;
+                          const canvas = await html2canvas(printBody, {
+                            scale: 2,
+                            useCORS: true,
+                            allowTaint: true,
+                            logging: false,
+                            width: 800,
+                            height: printBody.scrollHeight,
+                            windowWidth: 800,
+                            windowHeight: printBody.scrollHeight
+                          });
+
+                          document.body.removeChild(iframe);
+
+                          const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                          const pdf = new jsPDF({
+                            orientation: 'p',
+                            unit: 'pt',
+                            format: 'a4'
+                          });
+
+                          const imgWidth = 595.28;
+                          const pageHeight = 841.89;
+                          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                          let heightLeft = imgHeight;
+                          let position = 0;
+
+                          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                          heightLeft -= pageHeight;
+
+                          let pageCount = 1;
+                          while (heightLeft >= 100) {
+                            position = - (pageHeight * pageCount);
+                            pdf.addPage();
+                            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                            pageCount++;
+                          }
+
+                          const pdfBlob = pdf.output('blob');
+
+                          const currentIssuedDocs = (order as any)?.po_issued_documents || [];
+                          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('도착보고서')).length + 1;
+                          const safeFileName = `도착보고서_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+                          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
+
+                          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
+                          const downloadURL = await getDownloadURL(snapshot.ref);
+
+                          const newDoc = {
+                            id: new Date().getTime().toString(),
+                            po_number: poNum,
+                            supplier_name: supplierName,
+                            version: version,
+                            fileName: safeFileName,
+                            fileUrl: downloadURL,
+                            issuedAt: new Date().toISOString(),
+                            issuedBy: auth.currentUser?.displayName || 'System',
+                            totalAmount: 0,
+                            status: 'active'
+                          };
+
+                          const updatedDocs = currentIssuedDocs.map((doc: any) => {
+                            if (doc.po_number === poNum && doc.fileName.startsWith('도착보고서')) {
+                              return { ...doc, status: 'superseded' };
+                            }
+                            return doc;
+                          });
+                          updatedDocs.push(newDoc);
+
+                          const currentLogs = (order as any).history_logs || [];
+                          const newLog = {
+                            timestamp: new Date().toISOString(),
+                            actionType: 'arrival_report_issue',
+                            user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+                            description: `공급업체 "${supplierName}" 도착보고서 발행완료 (버전 v${version}, 파일명: ${safeFileName})`
+                          };
+                          const nextHistoryLogs = [newLog, ...currentLogs];
+
+                          const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
+                          await updateDoc(docRef, {
+                            po_issued_documents: updatedDocs,
+                            history_logs: nextHistoryLogs
+                          });
+
+                          alert('✅ 도착보고서가 성공적으로 발행 및 클라우드에 저장되었습니다.');
+                          setIssuedDocs(updatedDocs);
+
+                        } catch (err: any) {
+                          console.error(err);
+                          alert('도착보고서 발행 중 오류가 발생했습니다: ' + err.message);
+                        }
+                      };
+
+                      const handleIssueAndSaveShippingMarks = async () => {
+                        const shapeVal = commonShippingMark.shape;
+                        const compVal = commonShippingMark.company;
+                        const portVal = commonShippingMark.port;
+                        const countryVal = commonShippingMark.country;
+                        const originVal = commonShippingMark.origin;
+                        const startVal = 1;
+                        const totalVal = packingItemsList.length;
+
+                        let htmlContent = '<html>' +
+                          '<head>' +
+                            '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
+                            '<style>' +
+                              '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
+                              '@page { size: A4 portrait; margin: 0; }' +
+                              'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
+                              '.page {' +
+                                'width: 210mm;' +
+                                'height: 297mm;' +
+                                'box-sizing: border-box;' +
+                                'padding: 15mm;' +
+                                'display: flex;' +
+                                'align-items: center;' +
+                                'justify-content: center;' +
+                                'page-break-after: always;' +
+                              '}' +
+                              '.outer-border {' +
+                                'border: 10px solid #000;' +
+                                'width: 100%;' +
+                                'height: 100%;' +
+                                'box-sizing: border-box;' +
+                                'display: flex;' +
+                                'flex-direction: column;' +
+                                'align-items: center;' +
+                                'justify-content: center;' +
+                                'padding: 40px;' +
+                              '}' +
+                              '.shape-container {' +
+                                'display: flex;' +
+                                'align-items: center;' +
+                                'justify-content: center;' +
+                                'margin-bottom: 40px;' +
+                              '}' +
+                              '.info-container {' +
+                                'display: flex;' +
+                                'flex-direction: column;' +
+                                'justify-content: center;' +
+                                'align-items: center;' +
+                                'text-align: center;' +
+                              '}' +
+                              '.info-text1 {' +
+                                'font-size: 38px;' +
+                                'font-weight: 900;' +
+                                'margin: 15px 0;' +
+                                'text-transform: uppercase;' +
+                                'color: #000;' +
+                                'letter-spacing: 0.5px;' +
+                              '}' +
+                              '.info-text2 {' +
+                                'font-size: 42px;' +
+                                'font-weight: 900;' +
+                                'margin: 15px 0;' +
+                                'text-transform: uppercase;' +
+                                'color: #000;' +
+                                'letter-spacing: 0.5px;' +
+                              '}' +
+                            '</style>' +
+                          '</head>' +
+                          '<body>';
+
+                        for (let i = startVal; i <= totalVal; i++) {
+                          let shapeSvg = '';
+                          if (shapeVal === 'circle') {
+                            shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                          } else if (shapeVal === 'square') {
+                            shapeSvg = '<svg viewBox="0 0 450 300" style="width: 85%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                          } else if (shapeVal === 'triangle') {
+                            shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                          } else { // diamond
+                            shapeSvg = '<svg viewBox="0 0 560 280" style="width: 100%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
+                          }
+
+                          htmlContent += '<div class="page">' +
+                            '<div class="outer-border">' +
+                              '<div class="shape-container">' + shapeSvg + '</div>' +
+                              '<div class="info-container">' +
+                                '<div class="info-text1">' + portVal + ', ' + countryVal + '</div>' +
+                                '<div class="info-text2">PKG NO. : ' + i + '/' + totalVal + '</div>' +
+                                '<div class="info-text1">' + originVal + '</div>' +
+                              '</div>' +
+                            '</div>' +
+                          '</div>';
+                        }
+
+                        htmlContent += '</body></html>';
+
+                        const confirmed = window.confirm(`쉬핑마크 라벨을 발행 및 클라우드(문서함)에 저장하시겠습니까?\n\nPO번호: ${poNum}\n거래처: ${supplierName}`);
+                        if (!confirmed) return;
+
+                        try {
+                          const iframe = document.createElement('iframe');
+                          iframe.style.position = 'fixed';
+                          iframe.style.top = '0';
+                          iframe.style.left = '0';
+                          iframe.style.width = '793px';
+                          iframe.style.height = '1122px';
+                          iframe.style.border = '0';
+                          iframe.style.zIndex = '-9999';
+                          iframe.style.visibility = 'hidden';
+                          document.body.appendChild(iframe);
+
+                          const iframeDoc = iframe.contentWindow?.document || iframe.contentDocument;
+                          if (!iframeDoc) throw new Error('Failed to access sandbox iframe context');
+
+                          iframeDoc.open();
+                          iframeDoc.write(htmlContent);
+                          iframeDoc.close();
+
+                          await new Promise(resolve => setTimeout(resolve, 800));
+
+                          const pages = iframeDoc.body.querySelectorAll('.page');
+                          const pdf = new jsPDF({
+                            orientation: 'p',
+                            unit: 'pt',
+                            format: 'a4'
+                          });
+
+                          for (let i = 0; i < pages.length; i++) {
+                            const pageEl = pages[i] as HTMLElement;
+                            const canvas = await html2canvas(pageEl, {
+                              scale: 2,
+                              useCORS: true,
+                              allowTaint: true,
+                              logging: false,
+                              width: pageEl.offsetWidth,
+                              height: pageEl.offsetHeight,
+                              windowWidth: pageEl.offsetWidth,
+                              windowHeight: pageEl.offsetHeight
+                            });
+
+                            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                            if (i > 0) {
+                              pdf.addPage();
+                            }
+                            pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+                          }
+
+                          document.body.removeChild(iframe);
+
+                          const pdfBlob = pdf.output('blob');
+
+                          const currentIssuedDocs = (order as any)?.po_issued_documents || [];
+                          const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum && d.fileName.startsWith('쉬핑마크라벨')).length + 1;
+                          const safeFileName = `쉬핑마크라벨_${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+                          const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
+
+                          const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
+                          const downloadURL = await getDownloadURL(snapshot.ref);
+
+                          const newDoc = {
+                            id: new Date().getTime().toString(),
+                            po_number: poNum,
+                            supplier_name: supplierName,
+                            version: version,
+                            fileName: safeFileName,
+                            fileUrl: downloadURL,
+                            issuedAt: new Date().toISOString(),
+                            issuedBy: auth.currentUser?.displayName || 'System',
+                            totalAmount: 0,
+                            status: 'active'
+                          };
+
+                          const updatedDocs = currentIssuedDocs.map((doc: any) => {
+                            if (doc.po_number === poNum && doc.fileName.startsWith('쉬핑마크라벨')) {
+                              return { ...doc, status: 'superseded' };
+                            }
+                            return doc;
+                          });
+                          updatedDocs.push(newDoc);
+
+                          const currentLogs = (order as any).history_logs || [];
+                          const newLog = {
+                            timestamp: new Date().toISOString(),
+                            actionType: 'shipping_mark_issue',
+                            user: auth.currentUser?.displayName || auth.currentUser?.email || 'System',
+                            description: `공급업체 "${supplierName}" 쉬핑마크 라벨 발행완료 (버전 v${version}, 파일명: ${safeFileName})`
+                          };
+                          const nextHistoryLogs = [newLog, ...currentLogs];
+
+                          const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order?.id!);
+                          await updateDoc(docRef, {
+                            po_issued_documents: updatedDocs,
+                            history_logs: nextHistoryLogs
+                          });
+
+                          alert('✅ 쉬핑마크 라벨이 성공적으로 발행 및 클라우드에 저장되었습니다.');
+                          setIssuedDocs(updatedDocs);
+
+                        } catch (err: any) {
+                          console.error(err);
+                          alert('쉬핑마크 라벨 발행 중 오류가 발생했습니다: ' + err.message);
+                        }
+                      };
+
                       return (
                         <div key={supplierName} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.03)', marginBottom: '16px' }}>
                           {/* Card Header */}
@@ -5070,10 +5664,16 @@ export const OrderDetail: React.FC = () => {
                                 🖨️ 인쇄 / PDF
                               </button>
                               <button 
-                                onClick={() => handlePrintShippingMark(supplierName)}
-                                style={{ padding: '5px 10px', background: '#ec4899', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                onClick={handleIssueAndSaveArrivalReport}
+                                style={{ padding: '5px 10px', background: '#d97706', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                               >
-                                🏷️ 쉬핑마크 출력
+                                📥 도착보고서 발행 및 저장
+                              </button>
+                              <button 
+                                onClick={handleIssueAndSaveShippingMarks}
+                                style={{ padding: '5px 10px', background: '#059669', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                              >
+                                📥 쉬핑마크 라벨 발행 및 저장
                               </button>
                             </div>
                           </div>
@@ -5096,177 +5696,15 @@ export const OrderDetail: React.FC = () => {
                               <tbody>
                                 {packingItemsList.map((it: any, itemIdx: number) => (
                                   <tr key={itemIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    {itemIdx === 0 && (
-                                      <td rowSpan={packingItemsList.length} style={{ padding: '5px', verticalAlign: 'top', borderRight: '1px solid #e2e8f0' }}>
-                                        <div style={{ padding: '6px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10.5px' }}>
-                                          <div style={{ fontWeight: 'bold', color: '#1e3a8a', marginBottom: '6px', fontSize: '10px' }}>⚙️ 쉬핑마크 생성기</div>
-                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            {/* 수량 설정 */}
-                                            <div style={{ display: 'flex', gap: '4px' }}>
-                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                <span style={{ fontSize: '8px', color: '#64748b' }}>시작 번호</span>
-                                                <input 
-                                                  id={`sm-start-${supplierName}`}
-                                                  type="number" 
-                                                  defaultValue="1"
-                                                  style={{ width: '100%', padding: '2px 4px', fontSize: '9.5px', border: '1px solid #cbd5e1', borderRadius: '3px' }}
-                                                />
-                                              </div>
-                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                <span style={{ fontSize: '8px', color: '#64748b' }}>총 PLT 수량</span>
-                                                <input 
-                                                  id={`sm-total-${supplierName}`}
-                                                  type="number" 
-                                                  defaultValue={packingItemsList.reduce((sum: number, it: any) => sum + (it.qty || 0), 0) || "5"}
-                                                  style={{ width: '100%', padding: '2px 4px', fontSize: '9.5px', border: '1px solid #cbd5e1', borderRadius: '3px' }}
-                                                />
-                                              </div>
-                                            </div>
-
-                                            {isEditing && (
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const shapeVal = commonShippingMark.shape;
-                                                  const compVal = commonShippingMark.company;
-                                                  const portVal = commonShippingMark.port;
-                                                  const countryVal = commonShippingMark.country;
-                                                  const originVal = commonShippingMark.origin;
-                                                  const totalVal = (document.getElementById(`sm-total-${supplierName}`) as HTMLInputElement)?.value || '5';
-                                                  
-                                                  let shapeSymbol = '◯';
-                                                  if (shapeVal === 'circle') shapeSymbol = '◯';
-                                                  else if (shapeVal === 'square') shapeSymbol = '▢';
-                                                  else if (shapeVal === 'triangle') shapeSymbol = '△';
-                                                  else shapeSymbol = '◇';
-
-                                                  const formattedMark = `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : 1 / ${totalVal}\n${originVal}`;
-                                                  packingItemsList.forEach((_, idx) => {
-                                                    updateArrivalReportItem(idx, 'marks', formattedMark);
-                                                  });
-                                                }}
-                                                style={{ marginTop: '2px', padding: '3px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', cursor: 'pointer', fontSize: '9.5px', textAlign: 'center' }}
-                                              >
-                                                ⚡ 테이블에 마크 적용
-                                              </button>
-                                            )}
-
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                const shapeVal = commonShippingMark.shape;
-                                                const compVal = commonShippingMark.company;
-                                                const portVal = commonShippingMark.port;
-                                                const countryVal = commonShippingMark.country;
-                                                const originVal = commonShippingMark.origin;
-                                                const startVal = parseInt((document.getElementById(`sm-start-${supplierName}`) as HTMLInputElement)?.value || '1', 10);
-                                                const totalVal = parseInt((document.getElementById(`sm-total-${supplierName}`) as HTMLInputElement)?.value || '1', 10);
-                                                
-                                                // Open window for print
-                                                const printWin = window.open('', '_blank', 'width=800,height=900,resizable=yes,scrollbars=yes');
-                                                if (!printWin) return;
-                                                
-                                                let htmlContent = '<html>' +
-                                                  '<head>' +
-                                                    '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
-                                                    '<style>' +
-                                                      '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
-                                                      '@page { size: A4 portrait; margin: 0; }' +
-                                                      'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
-                                                      '.page {' +
-                                                        'width: 210mm;' +
-                                                        'height: 297mm;' +
-                                                        'box-sizing: border-box;' +
-                                                        'padding: 15mm;' +
-                                                        'display: flex;' +
-                                                        'align-items: center;' +
-                                                        'justify-content: center;' +
-                                                        'page-break-after: always;' +
-                                                      '}' +
-                                                      '.outer-border {' +
-                                                        'border: 10px solid #000;' +
-                                                        'width: 100%;' +
-                                                        'height: 100%;' +
-                                                        'box-sizing: border-box;' +
-                                                        'display: flex;' +
-                                                        'flex-direction: column;' +
-                                                        'align-items: center;' +
-                                                        'justify-content: center;' +
-                                                        'padding: 40px;' +
-                                                      '}' +
-                                                      '.shape-container {' +
-                                                        'display: flex;' +
-                                                        'align-items: center;' +
-                                                        'justify-content: center;' +
-                                                        'margin-bottom: 40px;' +
-                                                      '}' +
-                                                      '.info-container {' +
-                                                        'display: flex;' +
-                                                        'flex-direction: column;' +
-                                                        'justify-content: center;' +
-                                                        'align-items: center;' +
-                                                        'text-align: center;' +
-                                                      '}' +
-                                                      '.info-text1 {' +
-                                                        'font-size: 38px;' +
-                                                        'font-weight: 900;' +
-                                                        'margin: 15px 0;' +
-                                                        'text-transform: uppercase;' +
-                                                        'color: #000;' +
-                                                        'letter-spacing: 0.5px;' +
-                                                      '}' +
-                                                      '.info-text2 {' +
-                                                        'font-size: 42px;' +
-                                                        'font-weight: 900;' +
-                                                        'margin: 15px 0;' +
-                                                        'text-transform: uppercase;' +
-                                                        'color: #000;' +
-                                                        'letter-spacing: 0.5px;' +
-                                                      '}' +
-                                                      '@media print {' +
-                                                        'body { -webkit-print-color-adjust: exact; }' +
-                                                      '}' +
-                                                    '</style>' +
-                                                  '</head>' +
-                                                  '<body onload="window.print()">';
-
-                                                for (let i = startVal; i <= totalVal; i++) {
-                                                  let shapeSvg = '';
-                                                  if (shapeVal === 'circle') {
-                                                    shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                                                  } else if (shapeVal === 'square') {
-                                                    shapeSvg = '<svg viewBox="0 0 450 300" style="width: 85%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                                                  } else if (shapeVal === 'triangle') {
-                                                    shapeSvg = '<svg viewBox="0 0 450 350" style="width: 85%; height: auto; max-height: 35vh; display: block; margin: 0 auto;"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                                                  } else { // diamond
-                                                    shapeSvg = '<svg viewBox="0 0 560 280" style="width: 100%; height: auto; max-height: 30vh; display: block; margin: 0 auto;"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">' + compVal + '</text></svg>';
-                                                  }
-
-                                                  htmlContent += '<div class="page">' +
-                                                    '<div class="outer-border">' +
-                                                      '<div class="shape-container">' + shapeSvg + '</div>' +
-                                                      '<div class="info-container">' +
-                                                        '<div class="info-text1">' + portVal + ', ' + countryVal + '</div>' +
-                                                        '<div class="info-text2">PALLET NO. : ' + i + '/' + totalVal + '</div>' +
-                                                        '<div class="info-text1">' + originVal + '</div>' +
-                                                      '</div>' +
-                                                    '</div>' +
-                                                  '</div>';
-                                                }
-
-                                                htmlContent += '</body></html>';
-                                                
-                                                printWin.document.write(htmlContent);
-                                                printWin.document.close();
-                                              }}
-                                              style={{ marginTop: '2px', padding: '3px', background: '#059669', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', cursor: 'pointer', fontSize: '9.5px', textAlign: 'center' }}
-                                            >
-                                              🖨️ PLT 쉬핑마크 라벨 인쇄
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </td>
-                                    )}
+                                    <td style={{ padding: '5px' }}>
+                                      <textarea
+                                        rows={3}
+                                        disabled={!isEditing}
+                                        value={it.marks || ''}
+                                        onChange={e => updateArrivalReportItem(itemIdx, 'marks', e.target.value)}
+                                        style={{ width: '95%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                      />
+                                    </td>
                                     <td style={{ padding: '5px' }}>
                                       <textarea
                                         rows={2}
@@ -5317,8 +5755,37 @@ export const OrderDetail: React.FC = () => {
                                         type="text"
                                         disabled={!isEditing}
                                         value={it.measurement || ''}
+                                        placeholder="예: =1.1*1.2*1.3"
                                         onChange={e => updateArrivalReportItem(itemIdx, 'measurement', e.target.value)}
-                                        style={{ width: '90%', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px' }}
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            const raw = (e.target as HTMLInputElement).value;
+                                            if (raw.startsWith('=')) {
+                                              try {
+                                                const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
+                                                // eslint-disable-next-line no-new-func
+                                                const result = Function('"use strict"; return (' + expr + ')')();
+                                                if (typeof result === 'number' && isFinite(result)) {
+                                                  updateArrivalReportItem(itemIdx, 'measurement', parseFloat(result.toFixed(4)) + ' CBM');
+                                                }
+                                              } catch {}
+                                            }
+                                          }
+                                        }}
+                                        onBlur={e => {
+                                          const raw = e.target.value;
+                                          if (raw.startsWith('=')) {
+                                            try {
+                                              const expr = raw.slice(1).replace(/[^0-9+\-*/().]/g, '');
+                                              // eslint-disable-next-line no-new-func
+                                              const result = Function('"use strict"; return (' + expr + ')')();
+                                              if (typeof result === 'number' && isFinite(result)) {
+                                                updateArrivalReportItem(itemIdx, 'measurement', parseFloat(result.toFixed(4)) + ' CBM');
+                                              }
+                                            } catch {}
+                                          }
+                                        }}
+                                        style={{ width: '90%', padding: '4px', border: `1px solid ${(it.measurement||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '11.5px' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'center' }}>

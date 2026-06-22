@@ -393,7 +393,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         customerAddress: quotations.find(q => q.id === formData.quotationId)?.customerAddress || '',
         portOfLoading: quotations.find(q => q.id === formData.quotationId)?.departurePort || '',
         portOfDischarge: quotations.find(q => q.id === formData.quotationId)?.destinationPort || '',
-        destinationCountry: quotations.find(q => q.id === formData.quotationId)?.destinationPort || ''
+        destinationCountry: ''
       };
 
       // 1. Save to orders collection
