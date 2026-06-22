@@ -4155,6 +4155,78 @@ export const OrderDetail: React.FC = () => {
                     주문 정보를 기반으로 패킹리스트를 자동으로 생성하거나, 직접 컨테이너 및 품목 정보를 수정/추가(수동 작성)할 수 있습니다.
                   </div>
 
+                  {/* 공통 쉬핑마크 설정 */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                      {/* 도형 선택 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도형 선택</span>
+                        <select 
+                          value={commonShippingMark.shape}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, shape: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        >
+                          <option value="circle">◯ 원형 (Circle)</option>
+                          <option value="square">▢ 사각형 (Square)</option>
+                          <option value="triangle">△ 삼각형 (Triangle)</option>
+                          <option value="diamond">◇ 다이아몬드 (Diamond)</option>
+                        </select>
+                      </div>
+
+                      {/* 회사/바이어 약자 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>회사/고객 약자</span>
+                        <select 
+                          value={commonShippingMark.company}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, company: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        >
+                          <option value="YSACC">YSACC</option>
+                          <option value={order.customer?.split(' ')[0] || 'CUSTOMER'}>고객사 약칭 ({order.customer?.split(' ')[0] || 'CUSTOMER'})</option>
+                        </select>
+                      </div>
+
+                      {/* 도착 포트 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 포트</span>
+                        <input 
+                          type="text" 
+                          placeholder="도착 포트 (예: DOHA)" 
+                          value={commonShippingMark.port}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, port: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+
+                      {/* 국가 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 국가</span>
+                        <input 
+                          type="text" 
+                          placeholder="국가 (예: QATAR)" 
+                          value={commonShippingMark.country}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, country: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+
+                      {/* 원산지 */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>원산지</span>
+                        <input 
+                          type="text" 
+                          placeholder="원산지" 
+                          value={commonShippingMark.origin}
+                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, origin: e.target.value }))}
+                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {basicForm.packingList && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       {/* Header values edit fields */}
@@ -4512,78 +4584,6 @@ export const OrderDetail: React.FC = () => {
                     <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚚 2) 도착보고 작성 및 쉬핑마크 (제조사별 상세 정보 및 패킹리스트 연동)</h4>
                     <div style={{ fontSize: '12.5px', color: '#4b5563' }}>
                       도착보고 상세내역(패킹 및 화물정보)을 제조사별로 아래 테이블에서 즉시 수정하고 인쇄/PDF 저장 또는 이메일 발송이 가능합니다. (공통 정보는 패킹리스트의 마스터 데이터를 사용하며, 각 제조사별 패킹리스트 아이템이 실시간 연동됩니다.)
-                    </div>
-                  </div>
-
-                  {/* 공통 쉬핑마크 설정 */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      ⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-                      {/* 도형 선택 */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도형 선택</span>
-                        <select 
-                          value={commonShippingMark.shape}
-                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, shape: e.target.value }))}
-                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        >
-                          <option value="circle">◯ 원형 (Circle)</option>
-                          <option value="square">▢ 사각형 (Square)</option>
-                          <option value="triangle">△ 삼각형 (Triangle)</option>
-                          <option value="diamond">◇ 다이아몬드 (Diamond)</option>
-                        </select>
-                      </div>
-
-                      {/* 회사/바이어 약자 */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>회사/고객 약자</span>
-                        <select 
-                          value={commonShippingMark.company}
-                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, company: e.target.value }))}
-                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        >
-                          <option value="YSACC">YSACC</option>
-                          <option value={order.customer?.split(' ')[0] || 'CUSTOMER'}>고객사 약칭 ({order.customer?.split(' ')[0] || 'CUSTOMER'})</option>
-                        </select>
-                      </div>
-
-                      {/* 도착 포트 */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 포트</span>
-                        <input 
-                          type="text" 
-                          placeholder="도착 포트 (예: DOHA)" 
-                          value={commonShippingMark.port}
-                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, port: e.target.value }))}
-                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        />
-                      </div>
-
-                      {/* 국가 */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>도착 국가</span>
-                        <input 
-                          type="text" 
-                          placeholder="국가 (예: QATAR)" 
-                          value={commonShippingMark.country}
-                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, country: e.target.value }))}
-                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        />
-                      </div>
-
-                      {/* 원산지 */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>원산지</span>
-                        <input 
-                          type="text" 
-                          placeholder="원산지" 
-                          value={commonShippingMark.origin}
-                          onChange={(e) => setCommonShippingMark(prev => ({ ...prev, origin: e.target.value }))}
-                          style={{ padding: '6px', fontSize: '11.5px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', outline: 'none' }}
-                        />
-                      </div>
                     </div>
                   </div>
 
