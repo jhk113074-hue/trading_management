@@ -161,9 +161,10 @@ export const OrderDetail: React.FC = () => {
     return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : 1 / ${total}\n${originVal}`;
   };
 
-  // Sync common shipping mark defaults with order details
+  // Sync common shipping mark defaults with order details once when order is first loaded
+  const hasInitializedCommonShippingMark = useRef(false);
   useEffect(() => {
-    if (order) {
+    if (order && !hasInitializedCommonShippingMark.current) {
       setCommonShippingMark(prev => ({
         shape: (order as any).commonShippingMark?.shape || prev.shape || 'circle',
         company: (order as any).commonShippingMark?.company || prev.company || 'YSACC',
@@ -171,6 +172,7 @@ export const OrderDetail: React.FC = () => {
         country: (order as any).commonShippingMark?.country || prev.country || order.destinationCountry || '',
         origin: (order as any).commonShippingMark?.origin || prev.origin || 'MADE IN KOREA'
       }));
+      hasInitializedCommonShippingMark.current = true;
     }
   }, [order]);
 
