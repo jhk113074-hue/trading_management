@@ -171,20 +171,61 @@ export const Products: React.FC = () => {
   useEffect(() => {
     const cleanupDuplicates = async () => {
       if (products.length === 0) return;
-      const toDelete = products.filter(p => p.id.includes('_copied_') || /^p\d+$/.test(p.id));
-      if (toDelete.length > 0) {
-        for (const p of toDelete) {
+
+      // 1. First delete explicit legacy formats: _copied_ or lowercase IDs
+      const explicitLegacy = products.filter(p => p.id.includes('_copied_') || /^p\d+$/.test(p.id));
+      if (explicitLegacy.length > 0) {
+        for (const p of explicitLegacy) {
           try {
             await deleteDoc(doc(db, "companies", COMPANY_ID, "products", p.id));
-            console.log('Auto-cleaned up duplicate document:', p.id);
+            console.log('Deleted legacy duplicate doc ID:', p.id);
           } catch (err) {
-            console.error('Failed to auto-clean duplicate:', p.id, err);
+            console.error('Failed to delete legacy doc ID:', p.id, err);
+          }
+        }
+        return;
+      }
+
+      // 2. Group products by productCode (case-insensitive)
+      const groups: Record<string, typeof products> = {};
+      products.forEach(p => {
+        const code = (p.productCode || p.id || '').trim().toUpperCase();
+        if (code) {
+          if (!groups[code]) groups[code] = [];
+          groups[code].push(p);
+        }
+      });
+
+      // 3. For each group with duplicates, keep the best one and delete the rest
+      for (const [code, list] of Object.entries(groups)) {
+        if (list.length > 1) {
+          console.log(`Found duplicate productCode [${code}]:`, list.map(p => p.id));
+          
+          list.sort((a, b) => {
+            const aMatches = a.id.toUpperCase() === code ? 1 : 0;
+            const bMatches = b.id.toUpperCase() === code ? 1 : 0;
+            if (aMatches !== bMatches) return bMatches - aMatches;
+            
+            const aTime = a.createdAt?.seconds || 0;
+            const bTime = b.createdAt?.seconds || 0;
+            return aTime - bTime;
+          });
+
+          const toDelete = list.slice(1);
+          for (const p of toDelete) {
+            try {
+              await deleteDoc(doc(db, "companies", COMPANY_ID, "products", p.id));
+              console.log(`Deleted redundant duplicate product doc [${p.id}] for code [${code}]`);
+            } catch (err) {
+              console.error(`Failed to delete redundant product doc [${p.id}]:`, err);
+            }
           }
         }
       }
     };
     cleanupDuplicates();
   }, [products]);
+
 
   const categories = useMemo(() => {
     const large = [...new Set(products.map(p => p.categoryLarge).filter(Boolean))].sort();
