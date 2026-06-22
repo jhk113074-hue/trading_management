@@ -729,7 +729,7 @@ export const OrderDetail: React.FC = () => {
         forwarderConfirmed: basicForm.forwarderConfirmed,
         cargoReadyDate: basicForm.cargoReadyDate,
         cfsEntryDate: basicForm.cfsEntryDate,
-        cfsContactInfo: basicForm.cfsAddress || '',
+        cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
         etd: basicForm.etd,
