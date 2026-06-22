@@ -458,7 +458,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   // Recalculate Totals when items or extras change
   useEffect(() => {
     let subUsd = 0;
-    items.forEach(it => { subUsd += (it.lineTotalUsd || 0); });
+    items.forEach(it => { subUsd += ((it.salePriceUsd || 0) * (it.quantity || 0)); });
     
     let fTotal = 0;
     formData.freightCharges?.forEach(f => {
@@ -1022,7 +1022,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const revData: PIRevision = {
         version,
         revisionReason: isRevision ? revisionReason : (initialPI ? 'Edited active version' : 'Initial creation'),
-        items,
+        items: items.map(item => ({
+          ...item,
+          lineTotalUsd: (item.salePriceUsd || 0) * (item.quantity || 0)
+        })),
         exchangeRate: formData.exchangeRate,
         remarks: formData.remarks,
         customerAddress: formData.customerAddress,
@@ -1047,7 +1050,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (rawCode.startsWith('[') && rawCode.includes(']')) {
           rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
         }
-        await setDoc(itemRef, sanitizeForFirestore({ ...item, productCode: rawCode, id: itemRef.id }));
+        const lineTotal = (item.salePriceUsd || 0) * (item.quantity || 0);
+        await setDoc(itemRef, sanitizeForFirestore({ 
+          ...item, 
+          productCode: rawCode, 
+          lineTotalUsd: lineTotal, 
+          id: itemRef.id 
+        }));
 
         // Update product master with the latest purchase price and date
         const prod = products.find(p => p.productCode === rawCode);
@@ -1880,7 +1889,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       </div>
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
-                      ${(it.lineTotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${((it.salePriceUsd || 0) * (it.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#3b82f6' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
