@@ -229,9 +229,18 @@ export const Products: React.FC = () => {
 
   const categories = useMemo(() => {
     const large = [...new Set(products.map(p => p.categoryLarge).filter(Boolean))].sort();
-    const medium = [...new Set(products.map(p => p.categoryMedium).filter(Boolean))].sort();
+    const filteredProductsForMedium = catLargeFilter 
+      ? products.filter(p => p.categoryLarge === catLargeFilter)
+      : products;
+    const medium = [...new Set(filteredProductsForMedium.map(p => p.categoryMedium).filter(Boolean))].sort();
     return { large, medium };
-  }, [products]);
+  }, [products, catLargeFilter]);
+
+  useEffect(() => {
+    if (catMediumFilter && !categories.medium.includes(catMediumFilter)) {
+      setCatMediumFilter('');
+    }
+  }, [categories.medium, catMediumFilter]);
 
   const uniqueSuppliers = useMemo(() => {
     return [...new Set(products.map(p => p.supplierName).filter(Boolean))].sort();

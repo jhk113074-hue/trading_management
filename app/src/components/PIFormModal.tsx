@@ -1667,7 +1667,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               {products.map(p => {
                                 const displayName = p.nameEn || p.nameKo || '';
                                 return (
-                                  <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                  <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
                                     [{p.productCode}] {displayName}
                                   </option>
                                 );

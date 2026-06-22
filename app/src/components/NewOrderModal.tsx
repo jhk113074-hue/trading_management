@@ -723,7 +723,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                               {products.map(p => {
                                 const displayName = p.nameEn || p.nameKo || '';
                                 return (
-                                  <option key={p.productCode} value={`[${p.productCode}] ${displayName}`}>
+                                  <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
                                     [{p.productCode}] {displayName}
                                   </option>
                                 );

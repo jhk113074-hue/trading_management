@@ -247,7 +247,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
               ) : (
                 filteredProducts.map((p) => (
                   <tr
-                    key={p.productCode}
+                    key={p.id}
                     onDoubleClick={() => onSelect(p)}
                     style={{
                       borderBottom: '1px solid #f1f5f9',
