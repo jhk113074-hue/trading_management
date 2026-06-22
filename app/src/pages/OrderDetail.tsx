@@ -2684,7 +2684,7 @@ export const OrderDetail: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>발주행/도 (목적국가)</span>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>도착지 (목적국가)</span>
               <input type="text" value={basicForm.destinationCountry} onChange={e => setBasicForm(prev => ({ ...prev, destinationCountry: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="목적국가" />
             </div>
 
