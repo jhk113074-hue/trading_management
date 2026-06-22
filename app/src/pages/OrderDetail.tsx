@@ -453,24 +453,29 @@ export const OrderDetail: React.FC = () => {
                 })
               }
             ];
+            const shipperAddr = (data.issuingCompany || 'YSACC') === 'YS'
+              ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028`
+              : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`;
+            // Build applicant text: customer name + address if available
+            const applicantText = data.customerAddress
+              ? `${data.customer || ''}\n${data.customerAddress}`
+              : (data.customer || '');
             return {
-              shipper: (data.issuingCompany || 'YSACC') === 'YS' 
-                ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028` 
-                : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`,
-              applicant: data.customer || '',
-              notifyParty: data.customer || '',
-              pol: data.cfsContactInfo || '',
-              pod: data.cfsAddress || '',
+              shipper: shipperAddr,
+              applicant: applicantText,
+              notifyParty: applicantText,
+              pol: data.portOfLoading || '',
+              pod: data.portOfDischarge || '',
               vesselName: data.vesselBooking || '',
               sailingDate: data.etd || '',
               paymentTerms: data.paymentTerms || '',
               deliveryTerms: data.incoterms || '',
               remarks: data.remark || '',
-              invoiceNo: data.ciNumber || '',
-              invoiceDate: data.ciPlSentDate || new Date().toISOString().split('T')[0],
+              invoiceNo: data.ciNumber || data.piNumber || '',
+              invoiceDate: data.ciPlSentDate || data.piDate || new Date().toISOString().split('T')[0],
               lcNo: data.lcNo || '',
-              lcDate: data.bankSubmissionDate || '',
-              lcIssuingBank: '',
+              lcDate: data.lcIssuingDate || data.bankSubmissionDate || '',
+              lcIssuingBank: data.lcIssuingBank || '',
               containers: defaultContainers
             };
           })(),
