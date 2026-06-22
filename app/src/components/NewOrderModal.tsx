@@ -44,6 +44,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     quotationId: initialQuotationId || '',
     customerId: '',
     customerName: '',
+    customerAddress: '',
+    contactPerson: '',
     manager: currentUser,
     incoterms: 'FOB' as any,
     paymentTerms: '',
@@ -52,7 +54,17 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     remark: '',
     status: '주문' as const,
     exchangeRate: 1400,
-    issuingCompany: 'YSACC' as 'YSACC' | 'YS'
+    issuingCompany: 'YSACC' as 'YSACC' | 'YS',
+    // PI-derived shipping fields
+    departurePort: '',
+    destinationPort: '',
+    packagingSpec: '',
+    shippingMethod: '',
+    deliveryTerm: '',
+    origin: '',
+    yourRef: '',
+    piDate: '',
+    validUntilDate: ''
   });
 
   const [items, setItems] = useState<Partial<OrderItem>[]>([
@@ -129,10 +141,23 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           updated.customerId = selectedQuote.customerId;
           const selectedCust = customers.find(c => c.id === selectedQuote.customerId);
           updated.customerName = selectedQuote.customerName || (selectedCust ? selectedCust.name : '');
+          updated.customerAddress = selectedQuote.customerAddress || '';
+          updated.contactPerson = selectedQuote.contactPerson || '';
           updated.incoterms = selectedQuote.incoterms as any || prev.incoterms;
           updated.paymentTerms = selectedQuote.paymentTerms || prev.paymentTerms;
           updated.exchangeRate = selectedQuote.exchangeRate || prev.exchangeRate;
           updated.issuingCompany = selectedQuote.issuingCompany || prev.issuingCompany;
+          // Additional PI shipping info
+          updated.departurePort = selectedQuote.departurePort || '';
+          updated.destinationPort = selectedQuote.destinationPort || '';
+          updated.packagingSpec = selectedQuote.packagingSpec || '';
+          updated.shippingMethod = selectedQuote.shippingMethod || '';
+          updated.deliveryTerm = selectedQuote.deliveryTerm || '';
+          updated.origin = selectedQuote.origin || '';
+          updated.yourRef = selectedQuote.yourRef || '';
+          updated.piDate = selectedQuote.piDate || '';
+          updated.validUntilDate = selectedQuote.validUntilDate || '';
+          updated.remark = prev.remark || selectedQuote.remarks || '';
         }
       }
       return updated;
@@ -388,12 +413,20 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         forwarderFreightAmount: forwarders[0] ? (forwarders[0].amountUsd || forwarders[0].amountKrw || 0) : 0,
         forwarderFreightCurrency: (forwarders[0] ? (forwarders[0].amountUsd ? 'USD' : 'KRW') : 'KRW') as any,
         
-        // fields copied from selected PI to prevent data loss in PO접수 step
+        // fields copied from selected PI
         piNumber: formData.quotationId || '',
-        customerAddress: quotations.find(q => q.id === formData.quotationId)?.customerAddress || '',
-        portOfLoading: quotations.find(q => q.id === formData.quotationId)?.departurePort || '',
-        portOfDischarge: quotations.find(q => q.id === formData.quotationId)?.destinationPort || '',
-        destinationCountry: ''
+        customerAddress: formData.customerAddress || '',
+        contactPerson: formData.contactPerson || '',
+        portOfLoading: formData.departurePort || '',
+        portOfDischarge: formData.destinationPort || '',
+        destinationCountry: '',
+        packagingSpec: formData.packagingSpec || '',
+        shippingMethod: formData.shippingMethod || '',
+        deliveryTerm: formData.deliveryTerm || '',
+        origin: formData.origin || '',
+        yourRef: formData.yourRef || '',
+        piDate: formData.piDate || '',
+        validUntilDate: formData.validUntilDate || ''
       };
 
       // 1. Save to orders collection
@@ -633,6 +666,59 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <input type="text" value={formData.status} disabled style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px', background: '#f3f4f6' }} />
             </div>
           </div>
+
+          {/* PI-derived shipping/shipping info — auto-filled from selected PI */}
+          {formData.quotationId && (
+            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '10px 14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#0369a1', marginBottom: '8px' }}>📋 PI에서 가져온 정보 (자동입력)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>출발항 (Port of Loading)</label>
+                  <input type="text" value={formData.departurePort} onChange={e => handleFormDataChange('departurePort', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>도착항 (Destination Port)</label>
+                  <input type="text" value={formData.destinationPort} onChange={e => handleFormDataChange('destinationPort', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>운송방법 (Shipping)</label>
+                  <input type="text" value={formData.shippingMethod} onChange={e => handleFormDataChange('shippingMethod', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>포장 사양 (Packing Spec.)</label>
+                  <input type="text" value={formData.packagingSpec} onChange={e => handleFormDataChange('packagingSpec', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>납기 조건 (Delivery Term)</label>
+                  <input type="text" value={formData.deliveryTerm} onChange={e => handleFormDataChange('deliveryTerm', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>원산지 (Origin)</label>
+                  <input type="text" value={formData.origin} onChange={e => handleFormDataChange('origin', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 담당자 (Contact)</label>
+                  <input type="text" value={formData.contactPerson} onChange={e => handleFormDataChange('contactPerson', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>Your Ref (고객 PO Ref)</label>
+                  <input type="text" value={formData.yourRef} onChange={e => handleFormDataChange('yourRef', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 발행일</label>
+                  <input type="text" value={formData.piDate} readOnly style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#f8fafc', color: '#475569' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 유효기한</label>
+                  <input type="text" value={formData.validUntilDate} readOnly style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#f8fafc', color: '#475569' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 주소 (Customer Address)</label>
+                  <input type="text" value={formData.customerAddress} onChange={e => handleFormDataChange('customerAddress', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #bae6fd', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Items Section */}
           <div style={{ marginTop: '4px' }}>

@@ -70,6 +70,7 @@ export interface Order {
   // 주문 기본정보 및 L/C 거래 상세
   piNumber?: string; // PI 번호
   customerAddress?: string; // 고객주소
+  contactPerson?: string; // PI 담당자
   portOfLoading?: string; // 출발항 (POL)
   portOfDischarge?: string; // 도착항 (POD)
   destinationCountry?: string; // 목적국가 (발주행/도)
@@ -77,6 +78,14 @@ export interface Order {
   lcIssuingDate?: string; // L/C 개설일자
   lcDescription?: string; // L/C 물품설명/상세 (Description)
   lcRemark?: string; // L/C 중요사항 (Remark)
+  // PI shipping fields
+  packagingSpec?: string; // 포장 사양
+  shippingMethod?: string; // 운송방법
+  deliveryTerm?: string; // 납기 조건
+  origin?: string; // 원산지
+  yourRef?: string; // 고객 PO Reference
+  piDate?: string; // PI 발행일
+  validUntilDate?: string; // PI 유효기한
   
   // New progress tracking fields
   ciNumber?: string; // CI번호 확정
