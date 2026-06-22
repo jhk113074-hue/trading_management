@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, terminate, clearIndexedDbPersistence } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Product } from '../types/product';
 import { ProductModal } from '../components/ProductModal';
@@ -296,6 +296,19 @@ export const Products: React.FC = () => {
     }
   };
 
+  const handleClearCache = async () => {
+    try {
+      setLoading(true);
+      await terminate(db);
+      await clearIndexedDbPersistence(db);
+      alert("✅ 로컬 캐시가 성공적으로 초기화되었습니다. 페이지를 새로고침합니다.");
+      window.location.reload();
+    } catch (err: any) {
+      alert("캐시 초기화 실패: " + err.message);
+      window.location.reload();
+    }
+  };
+
   const getSortIcon = (key: keyof Product) => {
     if (sortKey !== key) return "⇅";
     return sortDir === 1 ? "▲" : "▼";
@@ -329,6 +342,12 @@ export const Products: React.FC = () => {
             style={{ display: 'none' }} 
             onChange={importExcel} 
           />
+          <button 
+            onClick={handleClearCache}
+            style={{ backgroundColor: '#fff', border: '1px solid #ef4444', color: '#ef4444', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+          >
+            🔄 캐시 초기화
+          </button>
           <button 
             onClick={() => { setEditingProdId(null); setIsCopyMode(false); setIsModalOpen(true); }}
             style={{ backgroundColor: '#2563eb', color: 'white', padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
@@ -410,7 +429,10 @@ export const Products: React.FC = () => {
 
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
-                    <td style={{ padding: '6px 8px' }}><strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong></td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong>
+                      <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>ID: {p.id}</div>
+                    </td>
                     <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{p.nameKo || '-'}</div>
                       <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{p.nameEn || '-'}</div>
