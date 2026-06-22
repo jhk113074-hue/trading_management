@@ -1077,34 +1077,42 @@ export const OrderDetail: React.FC = () => {
 
   const renderShippingMarkCellHtml = (marksText: string) => {
     if (!marksText) return '';
-    const lines = marksText.split('\n');
-    const shapeSymbol = lines[0] || '';
-    const comp = lines[1] || '';
-    const portCountry = lines[2] || '';
-    const pltNo = lines[3] || '';
-    const origin = lines[4] || '';
+    const lines = marksText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return '';
 
-    let shapeSvg = '';
-    if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
-      shapeSvg = `<svg width="70" height="70" style="display: block; margin: 0 auto;"><circle cx="35" cy="35" r="30" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-    } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
-      shapeSvg = `<svg width="75" height="55" style="display: block; margin: 0 auto;"><rect x="5" y="5" width="65" height="45" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="14" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-    } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
-      shapeSvg = `<svg width="75" height="70" style="display: block; margin: 0 auto;"><polygon points="37,5 5,65 70,65" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="68%" font-size="13" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
-    } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆') || shapeSymbol.includes('◇')) {
-      shapeSvg = `<svg width="75" height="55" style="display: block; margin: 0 auto;"><polygon points="37,5 70,27 37,50 5,27" stroke="black" stroke-width="3.5" fill="none" /><text x="50%" y="54%" font-size="12" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+    const firstLine = lines[0];
+    const isShape = firstLine.includes('◯') || firstLine.includes('Circle') || firstLine.includes('원형') ||
+                    firstLine.includes('▢') || firstLine.includes('Square') || firstLine.includes('사각형') || firstLine.includes('[') ||
+                    firstLine.includes('△') || firstLine.includes('Triangle') || firstLine.includes('삼각형') || firstLine.includes('▲') ||
+                    firstLine.includes('◇') || firstLine.includes('Diamond') || firstLine.includes('다이아몬드') || firstLine.includes('◆');
+
+    if (isShape && lines.length > 1) {
+      const shapeSymbol = firstLine;
+      const comp = lines[1];
+      const remainingLines = lines.slice(2);
+
+      let shapeHtml = '';
+      if (shapeSymbol.includes('◯') || shapeSymbol.includes('Circle') || shapeSymbol.includes('원형')) {
+        shapeHtml = `<div style="width: 50px; height: 50px; border: 2.5px solid black; border-radius: 50%; margin: 5px auto; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: bold; white-space: nowrap; box-sizing: border-box;">${comp}</div>`;
+      } else if (shapeSymbol.includes('▢') || shapeSymbol.includes('Square') || shapeSymbol.includes('사각형') || shapeSymbol.includes('[')) {
+        shapeHtml = `<div style="width: 55px; height: 40px; border: 2.5px solid black; margin: 5px auto; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: bold; white-space: nowrap; box-sizing: border-box;">${comp}</div>`;
+      } else if (shapeSymbol.includes('△') || shapeSymbol.includes('Triangle') || shapeSymbol.includes('삼각형') || shapeSymbol.includes('▲')) {
+        shapeHtml = `<svg width="65" height="55" style="display: block; margin: 0 auto; box-sizing: border-box;"><polygon points="32,4 4,51 61,51" stroke="black" stroke-width="2.5" fill="none" /><text x="50%" y="65%" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black">${comp}</text></svg>`;
+      } else if (shapeSymbol.includes('◇') || shapeSymbol.includes('Diamond') || shapeSymbol.includes('다이아몬드') || shapeSymbol.includes('◆')) {
+        shapeHtml = `<div style="width: 38px; height: 38px; border: 2.5px solid black; transform: rotate(45deg); margin: 10px auto; display: flex; align-items: center; justify-content: center; box-sizing: border-box;"><div style="transform: rotate(-45deg); font-size: 11px; font-weight: bold; white-space: nowrap; text-align: center; width: 100%;">${comp}</div></div>`;
+      }
+
+      const extraLinesHtml = remainingLines.map(line => `<div>${line}</div>`).join('');
+
+      return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; margin: 0 auto; text-align: center;">
+        ${shapeHtml}
+        <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
+          ${extraLinesHtml}
+        </div>
+      </div>`;
     } else {
-      return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left;">${marksText.replace(/\n/g, '<br/>')}</div>`;
+      return `<div style="border: 1px solid #000; padding: 4px; display: inline-block; font-size: 9.5px; line-height: 1.2; text-align: left; white-space: pre-line;">${marksText}</div>`;
     }
-
-    return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2;">
-      ${shapeSvg}
-      <div style="font-size: 8.5px; font-weight: bold; text-align: center; text-transform: uppercase;">
-        <div>${portCountry}</div>
-        <div style="margin: 2px 0;">${pltNo}</div>
-        <div>${origin}</div>
-      </div>
-    </div>`;
   };
 
   const handleSaveSupplierPoDetails = async (supplierName: string) => {
@@ -4826,25 +4834,26 @@ export const OrderDetail: React.FC = () => {
                             packageType: 'PL',
                             netWeight: Number(it.netWeight) || 0,
                             grossWeight: Number(it.grossWeight) || 0,
-                            measurement: it.cbm ? `${it.cbm} CBM` : ''
-                          });
-                        });
-                      }
+                                        measurement: it.cbm ? `${it.cbm} CBM` : ''
+                                      });
+                                    });
+                                  }
 
-                      // If still empty, default to item descriptions
-                      if (packingItemsList.length === 0) {
-                        const itemDesc = items.map(it => `P#${order.custPo || '1'}. ${it.name}`).join(' / ');
-                        const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
-                        packingItemsList = [{
-                          marks: getDefaultShippingMark(),
-                          descOfGoods: itemDesc || '',
-                          qty: totalQty || 1,
-                          packageType: 'PL',
-                          netWeight: 0,
-                          grossWeight: 0,
-                          measurement: ''
-                        }];
-                      }
+                                  // If still empty, default to item descriptions
+                                  if (packingItemsList.length === 0) {
+                                    const itemDesc = items.map(it => `P#${order.custPo || '1'}. ${it.name}`).join(' / ');
+                                    const totalQty = items.reduce((sum, it) => sum + (it.qty || 0), 0);
+                                    packingItemsList = [{
+                                      marks: getDefaultShippingMark(),
+                                      descOfGoods: itemDesc || '',
+                                      qty: totalQty || 1,
+                                      packageType: 'PL',
+                                      netWeight: 0,
+                                      grossWeight: 0,
+                                      measurement: ''
+                                    }];
+                                  }
+
 
                       const updateArrivalReportItem = (itemIdx: number, field: string, val: any) => {
                         const nextItems = [...packingItemsList];
@@ -4896,6 +4905,7 @@ export const OrderDetail: React.FC = () => {
 
                       const handleSaveArrivalReportInline = async () => {
                         try {
+                          await handleSaveBasic(false);
                           const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
                           await setDoc(orderRef, { 
                             supplierArrivalReports: order.supplierArrivalReports || {}, 
@@ -4912,6 +4922,12 @@ export const OrderDetail: React.FC = () => {
                         const win = window.open('', '_blank', 'width=900,height=800,resizable=yes,scrollbars=yes');
                         if (win) {
                           win.document.write("<html><body><div style='text-align:center; padding: 50px; font-family: sans-serif;'>데이터를 불러오는 중입니다...</div></body></html>");
+                        }
+
+                        try {
+                          await handleSaveBasic(false);
+                        } catch (err) {
+                          console.error("Auto-save before print failed:", err);
                         }
 
                         const isYS = order.issuingCompany === 'YS';
@@ -5174,6 +5190,11 @@ export const OrderDetail: React.FC = () => {
                       };
 
                       const handleIssueAndSaveArrivalReport = async () => {
+                        try {
+                          await handleSaveBasic(false);
+                        } catch (err) {
+                          console.error("Auto-save before issue failed:", err);
+                        }
                         const isYS = order.issuingCompany === 'YS';
                         let defaultConsignee = isYS 
                           ? `영성에이씨씨(YS ACC)\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028\n담당자: 김주한` 
@@ -5538,6 +5559,11 @@ export const OrderDetail: React.FC = () => {
                       };
 
                       const handleIssueAndSaveShippingMarks = async () => {
+                        try {
+                          await handleSaveBasic(false);
+                        } catch (err) {
+                          console.error("Auto-save before marks issue failed:", err);
+                        }
                         const shapeVal = commonShippingMark.shape;
                         const compVal = commonShippingMark.company;
                         const portVal = commonShippingMark.port;
