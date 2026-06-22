@@ -168,6 +168,24 @@ export const Products: React.FC = () => {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    const cleanupDuplicates = async () => {
+      if (products.length === 0) return;
+      const toDelete = products.filter(p => p.id.includes('_copied_') || /^p\d+$/.test(p.id));
+      if (toDelete.length > 0) {
+        for (const p of toDelete) {
+          try {
+            await deleteDoc(doc(db, "companies", COMPANY_ID, "products", p.id));
+            console.log('Auto-cleaned up duplicate document:', p.id);
+          } catch (err) {
+            console.error('Failed to auto-clean duplicate:', p.id, err);
+          }
+        }
+      }
+    };
+    cleanupDuplicates();
+  }, [products]);
+
   const categories = useMemo(() => {
     const large = [...new Set(products.map(p => p.categoryLarge).filter(Boolean))].sort();
     const medium = [...new Set(products.map(p => p.categoryMedium).filter(Boolean))].sort();
