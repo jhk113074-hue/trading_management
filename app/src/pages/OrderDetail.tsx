@@ -2572,6 +2572,9 @@ export const OrderDetail: React.FC = () => {
     if (!window.confirm("⚠️ 이 발주서(PO)를 영구 삭제하고 발주를 취소하시겠습니까?\n연결된 Proforma Invoice(PI)의 상태가 다시 'PO확정' 대기 상태로 되돌아갑니다.")) return;
     
     try {
+      // Prevent dirty check auto-save from running after deletion
+      isDirtyRef.current = false;
+
       // 1. Delete PO document
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await deleteDoc(orderRef);
@@ -2583,7 +2586,7 @@ export const OrderDetail: React.FC = () => {
       }
       
       alert("✅ 발주서(PO)가 취소 및 삭제되었으며, PI 상태가 복원되었습니다.");
-      handleNavigation('/orders');
+      navigate('/orders');
     } catch (e: any) {
       alert("❌ 발주 취소 중 오류 발생: " + e.message);
     }
