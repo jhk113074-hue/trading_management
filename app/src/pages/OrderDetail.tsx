@@ -145,7 +145,7 @@ export const OrderDetail: React.FC = () => {
     origin: 'MADE IN KOREA'
   });
 
-  const getDefaultShippingMark = (total = '1') => {
+  const getDefaultShippingMark = (pageNo = '1', totalCount = '1') => {
     const shapeVal = commonShippingMark.shape;
     const compVal = commonShippingMark.company;
     const portVal = commonShippingMark.port;
@@ -158,7 +158,7 @@ export const OrderDetail: React.FC = () => {
     else if (shapeVal === 'triangle') shapeSymbol = '△';
     else shapeSymbol = '◇';
 
-    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : 1 / ${total}\n${originVal}`;
+    return `${shapeSymbol}\n${compVal}\n${portVal}, ${countryVal}\nPALLET NO. : ${pageNo} / ${totalCount}\n${originVal}`;
   };
 
   // Sync common shipping mark defaults with order details once when order is first loaded
@@ -418,15 +418,16 @@ export const OrderDetail: React.FC = () => {
                   const netWeight = Math.round(it.qty || 0);
                   const grossWeight = Math.round(netWeight * 1.02);
                   const cbm = Number(((netWeight / 1000) * 1.5).toFixed(2));
-                  return {
-                    shippingMark: '',
-                    description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
-                    supplier: it.supplier || 'General Supplier',
-                    pkg: '1',
-                    netWeight: String(netWeight),
-                    grossWeight: String(grossWeight),
-                    cbm: String(cbm)
-                  };
+                    return {
+                      shippingMark: '',
+                      description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
+                      supplier: it.supplier || 'General Supplier',
+                      pkgNo: '',
+                      pkg: '1',
+                      netWeight: String(netWeight),
+                      grossWeight: String(grossWeight),
+                      cbm: String(cbm)
+                    };
                 })
               }
             ];
@@ -2389,6 +2390,7 @@ export const OrderDetail: React.FC = () => {
                 <tr>
                   <th style="width: 15%;">Shipping Marks</th>
                   <th>Description of Goods<br/>Quantity / Number of Packages</th>
+                  <th style="width: 8%;">PKG No.</th>
                   <th style="width: 8%;">PKG</th>
                   <th style="width: 12%;">Net Weight<br/>(Kg)</th>
                   <th style="width: 12%;">Gross Weight<br/>(Kg)</th>
@@ -2413,6 +2415,7 @@ export const OrderDetail: React.FC = () => {
                         </td>
                       ` : ''}
                       <td>${it.description}</td>
+                      <td class="center">${it.pkgNo || ''}</td>
                       <td class="center">${it.pkg || ''}</td>
                       <td class="right">${Number(it.netWeight || 0).toLocaleString()}</td>
                       <td class="right">${Number(it.grossWeight || 0).toLocaleString()}</td>
@@ -2421,6 +2424,7 @@ export const OrderDetail: React.FC = () => {
                   `).join('') + `
                     <tr style="font-weight: 800; background: #fafafa;">
                       <td>SUB TOTAL</td>
+                      <td></td>
                       <td class="center">${subTotalPkg} PKG</td>
                       <td class="right">${subTotalNW.toLocaleString()} KGS</td>
                       <td class="right">${subTotalGW.toLocaleString()} KGS</td>
@@ -2430,6 +2434,7 @@ export const OrderDetail: React.FC = () => {
                 }).join('')}
                 <tr style="font-weight: 800; background: #f3f4f6; font-size: 10px;">
                   <td colspan="2">GRAND TOTAL</td>
+                  <td></td>
                   <td class="center">${grandPkg} PKG</td>
                   <td class="right">${grandNW.toLocaleString()} KGS</td>
                   <td class="right">${grandGW.toLocaleString()} KGS</td>
@@ -4449,6 +4454,7 @@ export const OrderDetail: React.FC = () => {
                                     nextContainers[cIdx].items.push({
                                       shippingMark: '',
                                       description: '',
+                                      pkgNo: '',
                                       pkg: '0',
                                       netWeight: '0',
                                       grossWeight: '0',
@@ -4479,12 +4485,13 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '30%' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '18%' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '28%' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '16%' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG No.</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '12%' }}>Net Wt (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '12%' }}>Gross Wt (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '12%' }}>CBM</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>Net Wt (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>Gross Wt (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>CBM</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>동작</th>
                                 </tr>
                               </thead>
@@ -4504,6 +4511,14 @@ export const OrderDetail: React.FC = () => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].supplier = val;
+                                        setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                      }} />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input type="text" placeholder="예: 1-5 또는 1" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkgNo || ''} onChange={e => {
+                                        const val = e.target.value;
+                                        const nextContainers = [...basicForm.packingList.containers];
+                                        nextContainers[cIdx].items[itIdx].pkgNo = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
@@ -4557,7 +4572,7 @@ export const OrderDetail: React.FC = () => {
                                 ))}
                                 {c.items?.length === 0 && (
                                   <tr>
-                                    <td colSpan={7} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
+                                    <td colSpan={8} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
                                       등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
                                     </td>
                                   </tr>
@@ -4586,6 +4601,7 @@ export const OrderDetail: React.FC = () => {
                                     return {
                                       shippingMark: '',
                                       description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
+                                      pkgNo: '',
                                       pkg: '1',
                                       netWeight: String(netWeight),
                                       grossWeight: String(grossWeight),
@@ -4660,9 +4676,10 @@ export const OrderDetail: React.FC = () => {
                           const matchingContainerItems = (container.items || []).filter((it: any) => 
                             (it.supplier || '').trim().toLowerCase() === supplierName.trim().toLowerCase()
                           );
+                          const totalContainersCount = basicForm.packingList.containers.length;
                           matchingContainerItems.forEach((it: any) => {
                             packingItemsList.push({
-                              marks: getDefaultShippingMark(),
+                              marks: getDefaultShippingMark(it.pkgNo || '1', String(totalContainersCount)),
                               descOfGoods: it.description || '',
                               qty: Number(it.pkg) || 0,
                               packageType: 'PL',
@@ -6145,7 +6162,7 @@ export const OrderDetail: React.FC = () => {
           }}
           packingList={basicForm.packingList}
           initialData={(order.supplierArrivalReports || {})[activeArrivalReport.supplierName]}
-          defaultShippingMark={getDefaultShippingMark()}
+          defaultShippingMark={getDefaultShippingMark('1', '1')}
           onClose={() => setActiveArrivalReport(null)}
           onSave={async (reportData) => {
             try {
