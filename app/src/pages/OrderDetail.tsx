@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage, auth } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -100,6 +100,8 @@ export const OrderDetail: React.FC = () => {
     specialRemarks: [],
     generalNotes: []
   });
+
+  
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings'), (docSnap) => {
@@ -311,6 +313,91 @@ export const OrderDetail: React.FC = () => {
     lcRemark: ''
   });
 
+  const [myCompanies, setMyCompanies] = useState<any[]>([]);
+
+  const getShipperText = (issuingCompany: string) => {
+    const comp = myCompanies.find(c => c.id === issuingCompany);
+    if (comp) {
+      const name = comp.nameEn || comp.nameKo || (issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.');
+      const addr = comp.addressEn || comp.addressKo || (issuingCompany === 'YS' ? '경기 김포시 양촌읍 듬박로 89' : 'NO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.');
+      const tel = comp.phone ? `TEL: ${comp.phone}` : '';
+      const fax = comp.fax ? `FAX: ${comp.fax}` : '';
+      const contactLine = [tel, fax].filter(Boolean).join(', ');
+      return `${name}\n${addr}${contactLine ? `\n${contactLine}` : ''}`;
+    }
+    return issuingCompany === 'YS'
+      ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028`
+      : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`;
+  };
+
+  useEffect(() => {
+    const loadMyCompanies = async () => {
+      try {
+        const snap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'my_companies'));
+        const list = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+        setMyCompanies(list);
+      } catch (err) {
+        console.error("Failed to load my companies:", err);
+      }
+    };
+    loadMyCompanies();
+  }, []);
+
+  // 1. Auto-update packing list shipper address with company settings DB values
+  useEffect(() => {
+    if (myCompanies.length > 0 && basicForm.packingList) {
+      const isYS = (order?.issuingCompany || basicForm.issuingCompany) === 'YS';
+      const issuingCompany = isYS ? 'YS' : 'YSACC';
+      const comp = myCompanies.find(c => c.id === issuingCompany);
+      if (comp) {
+        const freshShipper = `${comp.nameEn || comp.nameKo || ''}\n${comp.addressEn || comp.addressKo || ''}\nTEL: ${comp.phone || ''}${comp.fax ? `, FAX: ${comp.fax}` : ''}`;
+        const currentShipper = basicForm.packingList.shipper || '';
+        
+        // If current shipper is empty or is one of the legacy fallbacks, update it to the fresh database values!
+        const isLegacy = !currentShipper || 
+                         currentShipper.includes('듬박로 89') || 
+                         currentShipper.includes('SEONGBONG-RO');
+                         
+        if (isLegacy && currentShipper !== freshShipper) {
+          setBasicForm(prev => {
+            if (!prev.packingList) return prev;
+            return {
+              ...prev,
+              packingList: {
+                ...prev.packingList,
+                shipper: freshShipper
+              }
+            };
+          });
+        }
+      }
+    }
+  }, [myCompanies, order?.issuingCompany, basicForm.packingList ? true : false]);
+
+  // 2. Auto-sync Vessel Name and Sailing Date with basicForm's vesselBooking and etd (출항예정일)
+  useEffect(() => {
+    if (basicForm.packingList) {
+      const currentVessel = basicForm.packingList.vesselName || '';
+      const currentSailing = basicForm.packingList.sailingDate || '';
+      const freshVessel = basicForm.vesselBooking || '';
+      const freshSailing = basicForm.etd || '';
+      
+      if (currentVessel !== freshVessel || currentSailing !== freshSailing) {
+        setBasicForm(prev => {
+          if (!prev.packingList) return prev;
+          return {
+            ...prev,
+            packingList: {
+              ...prev.packingList,
+              vesselName: freshVessel,
+              sailingDate: freshSailing
+            }
+          };
+        });
+      }
+    }
+  }, [basicForm.vesselBooking, basicForm.etd, basicForm.packingList ? true : false]);
+
   const initialLoadRef = useRef(false);
   const isDirtyRef = useRef(false);
   const skipNextDirtyCheck = useRef(true);
@@ -453,9 +540,7 @@ export const OrderDetail: React.FC = () => {
                 })
               }
             ];
-            const shipperAddr = (data.issuingCompany || 'YSACC') === 'YS'
-              ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028`
-              : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`;
+            const shipperAddr = getShipperText(data.issuingCompany || 'YSACC');
             // Build applicant text: customer name + address if available
             const applicantText = data.customerAddress
               ? `${data.customer || ''}\n${data.customerAddress}`
@@ -2122,9 +2207,18 @@ export const OrderDetail: React.FC = () => {
           <div class="info-grid">
             <div class="info-box">
               <div class="info-title">Shipper / Exporter</div>
-              <strong>${isYS ? 'YS ACC' : '(주)와이에스에이씨씨'}</strong><br/>
-              ${isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층'}<br/>
-              TEL: 010-4494-1028
+              <strong>${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? (comp.nameEn || comp.nameKo) : (isYS ? 'YS ACC' : 'YSACC CO., LTD.');
+              })()}</strong><br/>
+              ${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? (comp.addressEn || comp.addressKo).replace(/\n/g, '<br/>') : (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
+              })()}<br/>
+              TEL: ${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? comp.phone : '010-4494-1028';
+              })()}
             </div>
             <div class="info-box">
               <div class="info-title">Invoice Information</div>
@@ -2181,7 +2275,10 @@ export const OrderDetail: React.FC = () => {
 
           <div class="signature-area">
             For and on behalf of<br/>
-            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
+            ${(() => {
+              const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+              return comp ? (comp.nameEn || comp.nameKo) : (isYS ? 'YS ACC' : 'YSACC CO., LTD.');
+            })()}<br/><br/><br/>
             _______________________________<br/>
             Authorized Signature(s)
           </div>
@@ -2426,7 +2523,10 @@ export const OrderDetail: React.FC = () => {
 
             <div class="signature-area">
               Signed by<br/>
-              <span style="font-size: 15px; color: #1e3a8a; letter-spacing: 0.1em; display: block; margin: 10px 0;">${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
+              <span style="font-size: 15px; color: #1e3a8a; letter-spacing: 0.1em; display: block; margin: 10px 0;">${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? (comp.nameEn || comp.nameKo) : (isYS ? 'YS ACC' : 'YSACC CO., LTD.');
+              })()}</span>
               _______________________________<br/>
               Managing Director JU HAN, KIM
             </div>
@@ -2480,9 +2580,18 @@ export const OrderDetail: React.FC = () => {
           <div class="info-grid">
             <div class="info-box">
               <div class="info-title">Shipper / Exporter</div>
-              <strong>${isYS ? 'YS ACC' : '(주)와이에스에이씨씨'}</strong><br/>
-              ${isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층'}<br/>
-              TEL: 010-4494-1028
+              <strong>${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? (comp.nameEn || comp.nameKo) : (isYS ? 'YS ACC' : 'YSACC CO., LTD.');
+              })()}</strong><br/>
+              ${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? (comp.addressEn || comp.addressKo).replace(/\n/g, '<br/>') : (isYS ? '경기 김포시 양촌읍 듬박로 89' : '서울 강남구 테헤란로 419, 16층');
+              })()}<br/>
+              TEL: ${(() => {
+                const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+                return comp ? comp.phone : '010-4494-1028';
+              })()}
             </div>
             <div class="info-box">
               <div class="info-title">Invoice Information</div>
@@ -2533,7 +2642,10 @@ export const OrderDetail: React.FC = () => {
 
           <div class="signature-area">
             For and on behalf of<br/>
-            ${isYS ? 'YS ACC' : 'YSACC CO., LTD.'}<br/><br/><br/>
+            ${(() => {
+              const comp = myCompanies.find(c => c.id === (order.issuingCompany || 'YSACC'));
+              return comp ? (comp.nameEn || comp.nameKo) : (isYS ? 'YS ACC' : 'YSACC CO., LTD.');
+            })()}<br/><br/><br/>
             _______________________________<br/>
             Authorized Signature(s)
           </div>
@@ -4632,9 +4744,7 @@ export const OrderDetail: React.FC = () => {
                               setBasicForm(prev => ({
                                 ...prev,
                                 packingList: {
-                                  shipper: prev.issuingCompany === 'YS' 
-                                    ? `YS ACC\n경기 김포시 양촌읍 듬박로 89\nTEL: 010-4494-1028` 
-                                    : `YSACC CO., LTD.\nNO.302,180, SEONGBONG-RO, SEOWON-GU,\nCHENGJU-SI, CHUNGBUK, 28645, SOUTH KOREA.\nTEL: +82-70-4141-2927, FAX: +82-303-3444-1130`,
+                                                                    shipper: getShipperText(prev.issuingCompany || 'YSACC'),
                                   applicant: order?.customer || '',
                                   notifyParty: order?.customer || '',
                                   pol: basicForm.cfsContactInfo || '',
