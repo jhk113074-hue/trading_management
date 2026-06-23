@@ -303,7 +303,7 @@ export const OrderDetail: React.FC = () => {
     packingList: null as any,
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
-    supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; }>,
+    supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; } | Array<{ date: string; invoiceNo: string; }>>,
     supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>,
@@ -5780,52 +5780,103 @@ export const OrderDetail: React.FC = () => {
                   {/* 4) 세금계산서 발행 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                     <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 발행 정보 등록</h4>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다.</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다. (다수 발행 가능)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       {allOrderSuppliers.length === 0 ? (
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>공급업체가 없습니다.</div>
                       ) : (
                         allOrderSuppliers.map(supplier => {
-                          const details = basicForm.supplierTaxInvoiceDetails[supplier] || { date: '', invoiceNo: '' };
+                          const raw = basicForm.supplierTaxInvoiceDetails[supplier];
+                          const list: Array<{ date: string; invoiceNo: string }> = Array.isArray(raw)
+                            ? raw
+                            : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as { date: string; invoiceNo: string }] : [{ date: '', invoiceNo: '' }]);
+
                           return (
-                            <div key={supplier} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px', padding: '10px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
-                                <input
-                                  type="date"
-                                  value={details.date}
-                                  onChange={e => {
-                                    const val = e.target.value;
+                            <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '4px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newList = [...list, { date: '', invoiceNo: '' }];
                                     setBasicForm(prev => ({
                                       ...prev,
                                       supplierTaxInvoiceDetails: {
                                         ...prev.supplierTaxInvoiceDetails,
-                                        [supplier]: { ...details, date: val }
+                                        [supplier]: newList
                                       }
                                     }));
                                   }}
-                                  style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                />
+                                  style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}
+                                >
+                                  ➕ 세금계산서 추가
+                                </button>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
-                                <input
-                                  type="text"
-                                  placeholder="국세청 승인번호(발급번호)"
-                                  value={details.invoiceNo}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setBasicForm(prev => ({
-                                      ...prev,
-                                      supplierTaxInvoiceDetails: {
-                                        ...prev.supplierTaxInvoiceDetails,
-                                        [supplier]: { ...details, invoiceNo: val }
-                                      }
-                                    }));
-                                  }}
-                                  style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {list.map((details, idx) => (
+                                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '12px', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
+                                      <input
+                                        type="date"
+                                        value={details.date || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const newList = [...list];
+                                          newList[idx] = { ...newList[idx], date: val };
+                                          setBasicForm(prev => ({
+                                            ...prev,
+                                            supplierTaxInvoiceDetails: {
+                                              ...prev.supplierTaxInvoiceDetails,
+                                              [supplier]: newList
+                                            }
+                                          }));
+                                        }}
+                                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                      />
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
+                                      <input
+                                        type="text"
+                                        placeholder="국세청 승인번호(발급번호)"
+                                        value={details.invoiceNo || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const newList = [...list];
+                                          newList[idx] = { ...newList[idx], invoiceNo: val };
+                                          setBasicForm(prev => ({
+                                            ...prev,
+                                            supplierTaxInvoiceDetails: {
+                                              ...prev.supplierTaxInvoiceDetails,
+                                              [supplier]: newList
+                                            }
+                                          }));
+                                        }}
+                                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                      />
+                                    </div>
+                                    {list.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newList = list.filter((_, i) => i !== idx);
+                                          setBasicForm(prev => ({
+                                            ...prev,
+                                            supplierTaxInvoiceDetails: {
+                                              ...prev.supplierTaxInvoiceDetails,
+                                              [supplier]: newList
+                                            }
+                                          }));
+                                        }}
+                                        style={{ padding: '6px 8px', border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}
+                                        title="삭제"
+                                      >
+                                        🗑️
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           );
