@@ -5787,9 +5787,9 @@ export const OrderDetail: React.FC = () => {
                       ) : (
                         allOrderSuppliers.map(supplier => {
                           const raw = basicForm.supplierTaxInvoiceDetails[supplier];
-                          const list: Array<{ date: string; invoiceNo: string }> = Array.isArray(raw)
+                          const list: Array<{ date: string; invoiceNo: string; supplyAmount?: string; vatAmount?: string }> = Array.isArray(raw)
                             ? raw
-                            : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as { date: string; invoiceNo: string }] : [{ date: '', invoiceNo: '' }]);
+                            : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as any] : [{ date: '', invoiceNo: '' }]);
 
                           return (
                             <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -5798,7 +5798,7 @@ export const OrderDetail: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const newList = [...list, { date: '', invoiceNo: '' }];
+                                    const newList = [...list, { date: '', invoiceNo: '', supplyAmount: '', vatAmount: '' }];
                                     setBasicForm(prev => ({
                                       ...prev,
                                       supplierTaxInvoiceDetails: {
@@ -5812,71 +5812,136 @@ export const OrderDetail: React.FC = () => {
                                   ➕ 세금계산서 추가
                                 </button>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {list.map((details, idx) => (
-                                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: '12px', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
-                                      <input
-                                        type="date"
-                                        value={details.date || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const newList = [...list];
-                                          newList[idx] = { ...newList[idx], date: val };
-                                          setBasicForm(prev => ({
-                                            ...prev,
-                                            supplierTaxInvoiceDetails: {
-                                              ...prev.supplierTaxInvoiceDetails,
-                                              [supplier]: newList
-                                            }
-                                          }));
-                                        }}
-                                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                      />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {list.map((details, idx) => {
+                                  const supply = Number(details.supplyAmount) || 0;
+                                  const vat = Number(details.vatAmount) || 0;
+                                  const total = supply + vat;
+                                  return (
+                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: idx < list.length - 1 ? '12px' : '0', borderBottom: idx < list.length - 1 ? '1.5px dashed #cbd5e1' : 'none' }}>
+                                      {/* 첫 번째 줄: 발행일자, 승인번호, 삭제 */}
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr auto', gap: '12px', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
+                                          <input
+                                            type="date"
+                                            value={details.date || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const newList = [...list];
+                                              newList[idx] = { ...newList[idx], date: val };
+                                              setBasicForm(prev => ({
+                                                ...prev,
+                                                supplierTaxInvoiceDetails: {
+                                                  ...prev.supplierTaxInvoiceDetails,
+                                                  [supplier]: newList
+                                                }
+                                              }));
+                                            }}
+                                            style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                          />
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
+                                          <input
+                                            type="text"
+                                            placeholder="국세청 승인번호(발급번호)"
+                                            value={details.invoiceNo || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const newList = [...list];
+                                              newList[idx] = { ...newList[idx], invoiceNo: val };
+                                              setBasicForm(prev => ({
+                                                ...prev,
+                                                supplierTaxInvoiceDetails: {
+                                                  ...prev.supplierTaxInvoiceDetails,
+                                                  [supplier]: newList
+                                                }
+                                              }));
+                                            }}
+                                            style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                          />
+                                        </div>
+                                        {list.length > 1 ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const newList = list.filter((_, i) => i !== idx);
+                                              setBasicForm(prev => ({
+                                                ...prev,
+                                                supplierTaxInvoiceDetails: {
+                                                  ...prev.supplierTaxInvoiceDetails,
+                                                  [supplier]: newList
+                                                }
+                                              }));
+                                            }}
+                                            style={{ padding: '6px 8px', border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}
+                                            title="삭제"
+                                          >
+                                            🗑️
+                                          </button>
+                                        ) : (
+                                          <div style={{ width: '29px' }}></div>
+                                        )}
+                                      </div>
+
+                                      {/* 두 번째 줄: 공급가액, 부가세, 합계 */}
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '12px', paddingRight: '29px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>공급가액</span>
+                                          <input
+                                            type="number"
+                                            placeholder="₩ 공급가액"
+                                            value={details.supplyAmount || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const numVal = val === '' ? 0 : Number(val);
+                                              const isZeroTax = basicForm.supplierTaxTypes[supplier] === '영세';
+                                              const calculatedVat = isZeroTax ? 0 : Math.round(numVal * 0.1);
+                                              const newList = [...list];
+                                              newList[idx] = { ...newList[idx], supplyAmount: val, vatAmount: String(calculatedVat) };
+                                              setBasicForm(prev => ({
+                                                ...prev,
+                                                supplierTaxInvoiceDetails: {
+                                                  ...prev.supplierTaxInvoiceDetails,
+                                                  [supplier]: newList
+                                                }
+                                              }));
+                                            }}
+                                            style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                          />
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>부가세액</span>
+                                          <input
+                                            type="number"
+                                            placeholder="₩ 부가세"
+                                            value={details.vatAmount || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const newList = [...list];
+                                              newList[idx] = { ...newList[idx], vatAmount: val };
+                                              setBasicForm(prev => ({
+                                                ...prev,
+                                                supplierTaxInvoiceDetails: {
+                                                  ...prev.supplierTaxInvoiceDetails,
+                                                  [supplier]: newList
+                                                }
+                                              }));
+                                            }}
+                                            style={{ flex: 1, padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
+                                          />
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap' }}>합계금액</span>
+                                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textAlign: 'right', flex: 1 }}>
+                                            ₩{total.toLocaleString()}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
-                                      <input
-                                        type="text"
-                                        placeholder="국세청 승인번호(발급번호)"
-                                        value={details.invoiceNo || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const newList = [...list];
-                                          newList[idx] = { ...newList[idx], invoiceNo: val };
-                                          setBasicForm(prev => ({
-                                            ...prev,
-                                            supplierTaxInvoiceDetails: {
-                                              ...prev.supplierTaxInvoiceDetails,
-                                              [supplier]: newList
-                                            }
-                                          }));
-                                        }}
-                                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                      />
-                                    </div>
-                                    {list.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newList = list.filter((_, i) => i !== idx);
-                                          setBasicForm(prev => ({
-                                            ...prev,
-                                            supplierTaxInvoiceDetails: {
-                                              ...prev.supplierTaxInvoiceDetails,
-                                              [supplier]: newList
-                                            }
-                                          }));
-                                        }}
-                                        style={{ padding: '6px 8px', border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}
-                                        title="삭제"
-                                      >
-                                        🗑️
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           );
