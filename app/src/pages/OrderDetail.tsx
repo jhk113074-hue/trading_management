@@ -623,9 +623,7 @@ export const OrderDetail: React.FC = () => {
 
   // Switch active tab view locally
   const handleStepClick = async (stepName: typeof steps[number]) => {
-    if (isDirtyRef.current) {
-      await handleSaveBasic(false);
-    }
+    await handleSaveBasic(false);
     setActiveStep(stepName);
   };
 
@@ -2753,12 +2751,6 @@ export const OrderDetail: React.FC = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
-            onClick={() => handleSaveBasic(true)}
-            style={{ background: '#10b981', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
-          >
-            💾 변경사항 저장
-          </button>
-          <button 
             onClick={handleDeleteOrder}
             style={{ background: '#ef4444', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}
           >
@@ -3326,9 +3318,7 @@ export const OrderDetail: React.FC = () => {
                       key={tab.id}
                       type="button"
                       onClick={async () => {
-                        if (isDirtyRef.current) {
-                          await handleSaveBasic(false);
-                        }
+                        await handleSaveBasic(false);
                         setActiveSourcingTab(tab.id as any);
                       }}
                       style={{
