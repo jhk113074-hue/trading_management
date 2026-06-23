@@ -797,7 +797,7 @@ export const OrderDetail: React.FC = () => {
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
-          purchaseUnitPrice: it.purchaseUnitPrice !== undefined ? (parseFloat(it.purchaseUnitPrice as any) || 0) : undefined,
+          purchaseUnitPrice: it.purchaseUnitPrice !== undefined ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
           purchaseUnitCurrency: it.purchaseUnitCurrency || null,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
