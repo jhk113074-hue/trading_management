@@ -6425,13 +6425,19 @@ export const OrderDetail: React.FC = () => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
                 const orderAmountUsd = piData?.totalUsd || 0;
 
-                const purchaseUsd = order.items?.filter((it: OrderItem) => it.currency !== 'KRW').reduce((sum: number, it: OrderItem) => {
-                  const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
-                  return sum + (price * (it.qty || 0));
+                const purchaseUsd = order.items?.reduce((sum: number, it: OrderItem) => {
+                  const info = getSupplierPurchaseInfo(it);
+                  if (info.purchaseCurrency !== 'KRW') {
+                    return sum + (info.purchasePrice * (it.qty || 0));
+                  }
+                  return sum;
                 }, 0) || 0;
-                const purchaseKrw = order.items?.filter((it: OrderItem) => it.currency === 'KRW').reduce((sum: number, it: OrderItem) => {
-                  const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
-                  return sum + (price * (it.qty || 0));
+                const purchaseKrw = order.items?.reduce((sum: number, it: OrderItem) => {
+                  const info = getSupplierPurchaseInfo(it);
+                  if (info.purchaseCurrency === 'KRW') {
+                    return sum + (info.purchasePrice * (it.qty || 0));
+                  }
+                  return sum;
                 }, 0) || 0;
                 const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
 
