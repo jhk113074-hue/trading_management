@@ -68,8 +68,8 @@ export const OrderDetail: React.FC = () => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
     const itemCode = match ? match[1] : '-';
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-    const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
-    const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+    const originalPurchasePrice = it.unitPrice !== undefined ? it.unitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
+    const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : originalPurchasePrice;
     
     let purchaseCurrency = it.purchaseUnitCurrency;
     if (!purchaseCurrency) {
@@ -3663,8 +3663,8 @@ export const OrderDetail: React.FC = () => {
                                       const itemCode = match ? match[1] : '-';
                                       const itemName = match ? match[2] : it.name;
                                       const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                      const defaultPurchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
-                                      const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : defaultPurchasePrice;
+                                      const originalPurchasePrice = it.unitPrice !== undefined ? it.unitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
+                                      const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : originalPurchasePrice;
                                       
                                       // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.
                                       let purchaseCurrency = it.purchaseUnitCurrency;
@@ -3715,7 +3715,7 @@ export const OrderDetail: React.FC = () => {
                                           <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
                                           {/* 매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
-                                            {purchaseCurrency === 'KRW' ? '₩' : '$'}{defaultPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                            {purchaseCurrency === 'KRW' ? '₩' : '$'}{originalPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                                           </td>
                                           {/* 실매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
@@ -3742,7 +3742,7 @@ export const OrderDetail: React.FC = () => {
                                               <input
                                                 type="text"
                                                 value={(() => {
-                                                  const val = it.purchaseUnitPrice ?? defaultPurchasePrice;
+                                                  const val = it.purchaseUnitPrice ?? originalPurchasePrice;
                                                   return purchaseCurrency === 'KRW' 
                                                     ? Math.round(val).toLocaleString('ko-KR')
                                                     : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
