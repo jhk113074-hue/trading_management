@@ -68,12 +68,12 @@ export const OrderDetail: React.FC = () => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
     const itemCode = match ? match[1] : '-';
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-    const originalPurchasePrice = it.originalPurchasePrice !== undefined 
+    const originalPurchasePrice = it.originalPurchasePrice != null 
       ? it.originalPurchasePrice 
-      : (it.purchaseUnitPrice !== undefined 
+      : (it.purchaseUnitPrice != null 
          ? it.purchaseUnitPrice 
          : (matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0)));
-    const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : originalPurchasePrice;
+    const purchasePrice = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : originalPurchasePrice;
     
     let purchaseCurrency = it.purchaseUnitCurrency;
     if (!purchaseCurrency) {
@@ -804,9 +804,9 @@ export const OrderDetail: React.FC = () => {
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
-          purchaseUnitPrice: it.purchaseUnitPrice !== undefined ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
+          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
           purchaseUnitCurrency: it.purchaseUnitCurrency || null,
-          originalPurchasePrice: it.originalPurchasePrice !== undefined ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+          originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
           originalPurchaseCurrency: it.originalPurchaseCurrency || null,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
@@ -2140,7 +2140,7 @@ export const OrderDetail: React.FC = () => {
     const subject = encodeURIComponent(`[발주서] PO No: ${poNum} (${order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'})`);
     
     const itemsText = items.map(it => {
-      const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+      const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
       const currencySymbol = it.currency === 'KRW' ? '₩' : '$';
       const spec = it.grade ? ` / 규격: ${it.grade}` : '';
       return `- 품명: ${it.name}${spec} / 수량: ${it.qty?.toLocaleString()} ${it.unit} / 단가: ${currencySymbol}${price.toLocaleString()}`;
@@ -3646,7 +3646,7 @@ export const OrderDetail: React.FC = () => {
                                   ) : (
                                     items.map((it, idx) => {
                                       const { purchasePrice, purchaseCurrency, itemCode, itemName, originalPurchasePrice } = getSupplierPurchaseInfo(it);
-                                      const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice !== undefined ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
+                                      const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       return (
@@ -6500,11 +6500,11 @@ export const OrderDetail: React.FC = () => {
                 const consolidatedRevenueKrw = Math.round((revenueUsd * customsRate) + revenueKrw);
 
                 const purchaseUsd = order.items?.filter((it: OrderItem) => it.currency !== 'KRW').reduce((sum: number, it: OrderItem) => {
-                  const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                  const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
                   return sum + (price * (it.qty || 0));
                 }, 0) || 0;
                 const purchaseKrw = order.items?.filter((it: OrderItem) => it.currency === 'KRW').reduce((sum: number, it: OrderItem) => {
-                  const price = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : it.unitPrice;
+                  const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
                   return sum + (price * (it.qty || 0));
                 }, 0) || 0;
                 const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
