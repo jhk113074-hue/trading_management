@@ -625,9 +625,9 @@ export const OrderDetail: React.FC = () => {
 
   // Group items by supplier for Purchase Orders preview
   const groupedSupplierItems = useMemo(() => {
-    if (!order || !order.items) return {};
+    if (!orderItems) return {};
     const groups: Record<string, OrderItem[]> = {};
-    order.items.forEach(item => {
+    (orderItems as OrderItem[]).forEach(item => {
       const supplierName = item.supplier?.trim() || 'General Supplier';
       if (!groups[supplierName]) {
         groups[supplierName] = [];
@@ -635,7 +635,7 @@ export const OrderDetail: React.FC = () => {
       groups[supplierName].push(item);
     });
     return groups;
-  }, [order]);
+  }, [orderItems]);
 
   const allOrderSuppliers = useMemo(() => {
     if (!order) return [];
@@ -797,6 +797,8 @@ export const OrderDetail: React.FC = () => {
           qty: parseFloat(it.qty as any) || 0,
           unit: (it.unit || 'kg') as any,
           unitPrice: parseFloat(it.unitPrice as any) || 0,
+          purchaseUnitPrice: it.purchaseUnitPrice !== undefined ? (parseFloat(it.purchaseUnitPrice as any) || 0) : undefined,
+          purchaseUnitCurrency: it.purchaseUnitCurrency || null,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),
@@ -3688,15 +3690,13 @@ export const OrderDetail: React.FC = () => {
                                                 value={it.grade || ''}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
-                                                  setOrder(prev => {
-                                                    if (!prev) return prev;
-                                                    const updatedItems = prev.items.map(item => {
+                                                  setOrderItems(prev => {
+                                                    return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, grade: val };
                                                       }
                                                       return item;
                                                     });
-                                                    return { ...prev, items: updatedItems };
                                                   });
                                                 }}
                                                 style={{
@@ -3725,15 +3725,13 @@ export const OrderDetail: React.FC = () => {
                                                 disabled={!isEditing}
                                                 onChange={(e) => {
                                                   const val = e.target.value as 'KRW' | 'USD';
-                                                  setOrder(prev => {
-                                                    if (!prev) return prev;
-                                                    const updatedItems = prev.items.map(item => {
+                                                  setOrderItems(prev => {
+                                                    return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, purchaseUnitCurrency: val };
                                                       }
                                                       return item;
                                                     });
-                                                    return { ...prev, items: updatedItems };
                                                   });
                                                 }}
                                                 style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
@@ -3753,15 +3751,13 @@ export const OrderDetail: React.FC = () => {
                                                 onChange={(e) => {
                                                   const raw = e.target.value.replace(/,/g, '');
                                                   const val = parseFloat(raw) || 0;
-                                                  setOrder(prev => {
-                                                    if (!prev) return prev;
-                                                    const updatedItems = prev.items.map(item => {
+                                                  setOrderItems(prev => {
+                                                    return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, purchaseUnitPrice: val };
                                                       }
                                                       return item;
                                                     });
-                                                    return { ...prev, items: updatedItems };
                                                   });
                                                 }}
                                                 style={{
