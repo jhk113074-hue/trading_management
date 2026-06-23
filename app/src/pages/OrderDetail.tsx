@@ -6420,12 +6420,10 @@ export const OrderDetail: React.FC = () => {
 
           {/* 5. 정산마감 */}
           {activeStep === '정산마감' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {(() => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
-                const revenueUsd = piData?.totalUsd || 0;
-                const revenueKrw = piData?.totalKrw || 0;
-                const consolidatedRevenueKrw = Math.round((revenueUsd * customsRate) + revenueKrw);
+                const orderAmountUsd = piData?.totalUsd || 0;
 
                 const purchaseUsd = order.items?.filter((it: OrderItem) => it.currency !== 'KRW').reduce((sum: number, it: OrderItem) => {
                   const price = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : it.unitPrice;
@@ -6445,25 +6443,96 @@ export const OrderDetail: React.FC = () => {
                 }, 0);
 
                 const totalCostKrw = consolidatedPurchaseKrw + forwarderExpenseKrw;
-                const profitKrw = consolidatedRevenueKrw - totalCostKrw;
-                const profitMargin = consolidatedRevenueKrw > 0 ? ((profitKrw / consolidatedRevenueKrw) * 100).toFixed(2) : '0.00';
+                const totalCostUsd = customsRate > 0 ? (totalCostKrw / customsRate) : 0;
+
+                // 1. USD관점 이익 계산
+                // 실제 USD이익 = 주문받은 금액(USD) - (매입가전체+운송비실비)/수출면장환율
+                const actualUsdProfit = orderAmountUsd - totalCostUsd;
+                const usdMargin = orderAmountUsd > 0 ? (actualUsdProfit / orderAmountUsd) * 100 : 0;
+
+                // 2. KRW관점 이익 계산
+                // 실제 KRW이익 = 주문받은 금액(USD)*수출환율 - (매입가전체+운송비실비)
+                const orderAmountKrw = orderAmountUsd * customsRate;
+                const actualKrwProfit = orderAmountKrw - totalCostKrw;
+                const krwMargin = orderAmountKrw > 0 ? (actualKrwProfit / orderAmountKrw) * 100 : 0;
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                      <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 매출액 (PI)</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', marginTop: '6px' }}>₩{consolidatedRevenueKrw.toLocaleString()} KRW</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* 상단 기본정보 카드 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문 금액 (USD)</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                          ${orderAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                        </div>
                       </div>
-                      <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px', background: '#f8fafc' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 비용 (원가)</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#991b1b', marginTop: '6px' }}>₩{totalCostKrw.toLocaleString()} KRW</div>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>적용 수출면장환율</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                          ₩{customsRate.toLocaleString()} KRW
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                          {basicForm.customsExchangeRate ? '수출면장 환율 적용됨' : 'PI 환율 또는 기본 환율 적용됨'}
+                        </div>
                       </div>
-                      <div style={{ border: '1px solid #1e3a8a', borderRadius: '6px', padding: '10px', background: '#eff6ff' }}>
-                        <div style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 700 }}>예상 순이익 (마진)</div>
-                        <div style={{ fontSize: '15px', fontWeight: 900, color: '#1e3a8a', marginTop: '5px' }}>₩{profitKrw.toLocaleString()} KRW ({profitMargin}%)</div>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>환산 매출액 (KRW)</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                          ₩{Math.round(orderAmountKrw).toLocaleString()} KRW
+                        </div>
+                      </div>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 비용 (원가+운송비)</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
+                          ₩{totalCostKrw.toLocaleString()} KRW
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
+                          ${totalCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                        </div>
                       </div>
                     </div>
+
+                    {/* 하단 실제 이익 분석 카드 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '16px', marginTop: '8px' }}>
+                      {/* USD 관점 */}
+                      <div style={{ border: '1px solid #1e3a8a', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>💵 USD 관점 실제 이익</span>
+                          <span style={{ fontSize: '11px', color: '#3b82f6', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
+                          <span style={{ fontSize: '20px', fontWeight: 900, color: '#1e3a8a' }}>
+                            ${actualUsdProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                          </span>
+                          <span style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>
+                            {usdMargin.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '9.5px', color: '#60a5fa', marginTop: '10px', borderTop: '1px dashed #bfdbfe', paddingTop: '8px' }}>
+                          공식: 주문받은 금액(USD) - (매입가전체 + 운송비실비) / 수출면장환율
+                        </div>
+                      </div>
+
+                      {/* KRW 관점 */}
+                      <div style={{ border: '1px solid #065f46', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#065f46', fontWeight: 700 }}>🪙 KRW 관점 실제 이익</span>
+                          <span style={{ fontSize: '11px', color: '#10b981', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
+                          <span style={{ fontSize: '20px', fontWeight: 900, color: '#065f46' }}>
+                            ₩{Math.round(actualKrwProfit).toLocaleString()} KRW
+                          </span>
+                          <span style={{ fontSize: '20px', fontWeight: 900, color: '#059669' }}>
+                            {krwMargin.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '10px', borderTop: '1px dashed #a7f3d0', paddingTop: '8px' }}>
+                          공식: 주문받은 금액(USD) * 수출환율 - (매입가전체 + 운송비실비)
+                        </div>
+                      </div>
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '300px', marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>대금 영수 일자</span>
                       <input type="date" value={basicForm.paymentCollectedDate} onChange={e => setBasicForm(p => ({ ...p, paymentCollectedDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
