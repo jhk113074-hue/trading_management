@@ -1173,7 +1173,7 @@ export const OrderDetail: React.FC = () => {
           requestDate: supplierDetail.requestDate ?? '',
           deliveryPlace: supplierDetail.deliveryPlace ?? '',
           specialRemarks: supplierDetail.specialRemarks ?? '',
-          generalNotes: supplierDetail.generalNotes ?? ''
+          generalNotes: supplierDetail.generalNotes !== undefined ? supplierDetail.generalNotes : (poPresets.generalNotes[0] || '')
         }
       };
 
@@ -1377,6 +1377,8 @@ export const OrderDetail: React.FC = () => {
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
       generalNotesHtml = poDetails.generalNotes.replace(/\n/g, '<br/>');
+    } else if (poPresets.generalNotes && poPresets.generalNotes[0]) {
+      generalNotesHtml = poPresets.generalNotes[0].replace(/\n/g, '<br/>');
     } else {
       generalNotesHtml = `1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
 2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
@@ -1695,6 +1697,8 @@ export const OrderDetail: React.FC = () => {
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
       generalNotesHtml = poDetails.generalNotes.replace(/\n/g, '<br/>');
+    } else if (poPresets.generalNotes && poPresets.generalNotes[0]) {
+      generalNotesHtml = poPresets.generalNotes[0].replace(/\n/g, '<br/>');
     } else {
       generalNotesHtml = `1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준<br/>
 2. 결제조건: ${order.paymentTerms || '현금 선입금 후 출고 조건 결제'}`;
@@ -3598,7 +3602,7 @@ export const OrderDetail: React.FC = () => {
                                   <textarea 
                                     rows={2}
                                     placeholder={`1. 부가가치세(VAT): 일반 전자세금계산서 발행 기준\n2. 결제조건: L/C 90 days from B/L date`}
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.generalNotes ?? ''}
+                                    value={basicForm.supplierPoDetails?.[supplierName]?.generalNotes !== undefined ? basicForm.supplierPoDetails?.[supplierName]?.generalNotes : (poPresets.generalNotes[0] || '')}
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       setBasicForm(prev => {
