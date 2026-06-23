@@ -25,6 +25,8 @@ export interface OrderItem {
   unitPrice: number;
   purchaseUnitPrice?: number;
   purchaseUnitCurrency?: "USD" | "KRW";
+  originalPurchasePrice?: number;
+  originalPurchaseCurrency?: "USD" | "KRW";
   amount: number;
   currency: "USD" | "KRW";
 }

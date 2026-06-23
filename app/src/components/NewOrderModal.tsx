@@ -304,6 +304,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 unitPrice: orderPrice,
                 purchaseUnitPrice: purchasePrice,
                 purchaseUnitCurrency: purchaseCurrency,
+                originalPurchasePrice: purchasePrice,
+                originalPurchaseCurrency: purchaseCurrency,
                 amount: amt,
                 currency: itemCurrency
               };
@@ -455,6 +457,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           unitPrice: parseFloat(it.unitPrice as any) || 0,
           purchaseUnitPrice: parseFloat(it.purchaseUnitPrice as any) || 0,
           purchaseUnitCurrency: (it.purchaseUnitCurrency || 'USD') as any,
+          originalPurchasePrice: parseFloat(it.originalPurchasePrice as any) || 0,
+          originalPurchaseCurrency: (it.originalPurchaseCurrency || 'USD') as any,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),

@@ -68,12 +68,18 @@ export const OrderDetail: React.FC = () => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
     const itemCode = match ? match[1] : '-';
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-    const originalPurchasePrice = it.unitPrice !== undefined ? it.unitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
+    const originalPurchasePrice = it.originalPurchasePrice !== undefined 
+      ? it.originalPurchasePrice 
+      : (it.purchaseUnitPrice !== undefined 
+         ? it.purchaseUnitPrice 
+         : (matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0)));
     const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : originalPurchasePrice;
     
     let purchaseCurrency = it.purchaseUnitCurrency;
     if (!purchaseCurrency) {
-      if (purchasePrice > 1000) {
+      if (it.originalPurchaseCurrency) {
+        purchaseCurrency = it.originalPurchaseCurrency;
+      } else if (purchasePrice > 1000) {
         purchaseCurrency = 'KRW';
       } else if (matchedProd) {
         purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
@@ -81,7 +87,7 @@ export const OrderDetail: React.FC = () => {
         purchaseCurrency = 'USD';
       }
     }
-    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name };
+    return { purchasePrice, purchaseCurrency, itemCode, itemName: match ? match[2] : it.name, originalPurchasePrice };
   };
 
   // Editable arrays
@@ -800,6 +806,8 @@ export const OrderDetail: React.FC = () => {
           unitPrice: parseFloat(it.unitPrice as any) || 0,
           purchaseUnitPrice: it.purchaseUnitPrice !== undefined ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
           purchaseUnitCurrency: it.purchaseUnitCurrency || null,
+          originalPurchasePrice: it.originalPurchasePrice !== undefined ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+          originalPurchaseCurrency: it.originalPurchaseCurrency || null,
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),
@@ -3661,25 +3669,9 @@ export const OrderDetail: React.FC = () => {
                                     </tr>
                                   ) : (
                                     items.map((it, idx) => {
-                                      const match = it.name.match(/^\[(.*?)\]\s*(.*)$/);
-                                      const itemCode = match ? match[1] : '-';
-                                      const itemName = match ? match[2] : it.name;
-                                      const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
-                                      const originalPurchasePrice = it.unitPrice !== undefined ? it.unitPrice : (matchedProd ? (matchedProd.purchasePrice || 0) : 0);
-                                      const purchasePrice = it.purchaseUnitPrice !== undefined ? it.purchaseUnitPrice : originalPurchasePrice;
+                                      const { purchasePrice, purchaseCurrency, itemCode, itemName, originalPurchasePrice } = getSupplierPurchaseInfo(it);
+                                      const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice !== undefined ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
                                       
-                                      // Determine correct currency: use purchaseUnitCurrency if defined, otherwise fallback to KRW if price > 1000, otherwise USD.
-                                      let purchaseCurrency = it.purchaseUnitCurrency;
-                                      if (!purchaseCurrency) {
-                                        if (purchasePrice > 1000) {
-                                          purchaseCurrency = 'KRW';
-                                        } else if (matchedProd) {
-                                          purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
-                                        } else {
-                                          purchaseCurrency = 'USD';
-                                        }
-                                      }
-
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       return (
                                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -3717,7 +3709,7 @@ export const OrderDetail: React.FC = () => {
                                           <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
                                           {/* 매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
-                                            {purchaseCurrency === 'KRW' ? '₩' : '$'}{originalPurchasePrice?.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                            {origCurrency === 'KRW' ? '₩' : '$'}{originalPurchasePrice?.toLocaleString(undefined, origCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                                           </td>
                                           {/* 실매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
