@@ -1372,14 +1372,7 @@ export const OrderDetail: React.FC = () => {
     const reqDateText = poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
 
-    let specialRemarksHtml = '';
-    if (poDetails.specialRemarks) {
-      specialRemarksHtml = poDetails.specialRemarks.replace(/\n/g, '<br/>');
-    } else {
-      specialRemarksHtml = `1. 부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})<br/>
-2. 세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.<br/>
-3. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`;
-    }
+
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
@@ -1596,12 +1589,7 @@ export const OrderDetail: React.FC = () => {
             </tbody>
           </table>
 
-          <div class="notes-box">
-            <div class="notes-title">※ 특이사항:</div>
-            <div style="font-size: 10px; color: #334155; line-height: 1.5; padding-left: 4px;">
-              ${specialRemarksHtml}
-            </div>
-          </div>
+
 
           <div class="bottom-grid">
             <div class="bottom-box">
@@ -1702,14 +1690,7 @@ export const OrderDetail: React.FC = () => {
     const reqDateText = poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
 
-    let specialRemarksHtml = '';
-    if (poDetails.specialRemarks) {
-      specialRemarksHtml = poDetails.specialRemarks.replace(/\n/g, '<br/>');
-    } else {
-      specialRemarksHtml = `1. 부산항 도착도 조건 (기본 인코텀즈: ${order.incoterms || 'FOB'})<br/>
-2. 세금계산서는 ${taxType === '영세' ? '영세율 전자세금계산서' : '일반 전자세금계산서'} 발급조건입니다.<br/>
-3. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`;
-    }
+
 
     let generalNotesHtml = '';
     if (poDetails.generalNotes) {
@@ -1927,12 +1908,7 @@ export const OrderDetail: React.FC = () => {
             </tbody>
           </table>
 
-          <div class="notes-box">
-            <div class="notes-title">※ 특이사항:</div>
-            <div style="font-size: 10px; color: #334155; line-height: 1.5; padding-left: 4px;">
-              ${specialRemarksHtml}
-            </div>
-          </div>
+
 
           <div class="bottom-grid">
             <div class="bottom-box">
@@ -3564,79 +3540,7 @@ export const OrderDetail: React.FC = () => {
                                   />
                                 </div>
 
-                                {/* 특이사항 */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                                    <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>※ 특이사항 (줄바꿈 가능)</label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      <select
-                                        onChange={(e) => {
-                                          const val = e.target.value;
-                                          if (!val) return;
-                                          setBasicForm(prev => {
-                                            const current = prev.supplierPoDetails?.[supplierName] || {};
-                                            return {
-                                              ...prev,
-                                              supplierPoDetails: {
-                                                ...prev.supplierPoDetails,
-                                                [supplierName]: { ...current, specialRemarks: val }
-                                              }
-                                            };
-                                          });
-                                        }}
-                                        style={{ padding: '3px 6px', fontSize: '10.5px', border: '1px solid #cbd5e1', borderRadius: '4px', maxWidth: '200px', outline: 'none' }}
-                                      >
-                                        <option value="">📋 등록된 템플릿 선택</option>
-                                        {poPresets.specialRemarks.map((preset, pIdx) => (
-                                          <option key={pIdx} value={preset}>{preset.substring(0, 30)}...</option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.specialRemarks || '';
-                                          handleAddPoPreset('specialRemarks', currentText);
-                                        }}
-                                        style={{ padding: '3px 8px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                                      >
-                                        ➕ 신규 등록 (DB)
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLSelectElement;
-                                          if (selectEl && selectEl.value) {
-                                            handleDeletePoPreset('specialRemarks', selectEl.value);
-                                          } else {
-                                            alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
-                                          }
-                                        }}
-                                        style={{ padding: '3px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                                      >
-                                        ❌ 삭제
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <textarea 
-                                    rows={3}
-                                    placeholder={`1. 부산항 도착도 조건 (기본 인코텀즈: FOB)\n2. Shipping Mark는 출하 3일 전에 보내드릴 예정입니다.`}
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.specialRemarks ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const current = prev.supplierPoDetails?.[supplierName] || {};
-                                        return {
-                                          ...prev,
-                                          supplierPoDetails: {
-                                            ...prev.supplierPoDetails,
-                                            [supplierName]: { ...current, specialRemarks: val }
-                                          }
-                                        };
-                                      });
-                                    }}
-                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none', fontFamily: 'sans-serif' }}
-                                  />
-                                </div>
+
 
                                 {/* 일반사항 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
