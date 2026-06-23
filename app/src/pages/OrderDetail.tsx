@@ -44,6 +44,7 @@ export const OrderDetail: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
+  const [showPoDetails, setShowPoDetails] = useState(false);
   const isEditing = true;
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
@@ -2763,6 +2764,25 @@ export const OrderDetail: React.FC = () => {
             이전으로
           </button>
           <span style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b' }}>PO 상세 정보 - {getFormattedPoId(order.id, order.issuingCompany)}</span>
+          <button 
+            onClick={() => setShowPoDetails(prev => !prev)}
+            style={{ 
+              background: showPoDetails ? '#2563eb' : '#fff', 
+              border: '1px solid #cbd5e1', 
+              color: showPoDetails ? '#fff' : '#475569', 
+              padding: '6px 12px', 
+              borderRadius: '6px', 
+              fontSize: '12.5px', 
+              cursor: 'pointer', 
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.15s'
+            }}
+          >
+            📋 {showPoDetails ? 'PO상세 접기' : 'PO상세보기'}
+          </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
@@ -2808,7 +2828,8 @@ export const OrderDetail: React.FC = () => {
       </div>
 
       {/* Top Panel: PI Info & CI, Items Summary (Consolidated) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px', alignItems: 'stretch' }}>
+      {showPoDetails && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px', alignItems: 'stretch' }}>
         
         {/* Left: Consolidated Order Information */}
         <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2992,6 +3013,7 @@ export const OrderDetail: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content: Selected activeStep Input Forms */}
       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '24px', minHeight: '400px', width: '100%', boxSizing: 'border-box' }}>
