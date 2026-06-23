@@ -3691,7 +3691,7 @@ export const OrderDetail: React.FC = () => {
                                                   setOrder(prev => {
                                                     if (!prev) return prev;
                                                     const updatedItems = prev.items.map(item => {
-                                                      if (item.itemId === it.itemId) {
+                                                      if (item === it) {
                                                         return { ...item, grade: val };
                                                       }
                                                       return item;
@@ -3728,7 +3728,7 @@ export const OrderDetail: React.FC = () => {
                                                   setOrder(prev => {
                                                     if (!prev) return prev;
                                                     const updatedItems = prev.items.map(item => {
-                                                      if (item.itemId === it.itemId) {
+                                                      if (item === it) {
                                                         return { ...item, purchaseUnitCurrency: val };
                                                       }
                                                       return item;
@@ -3756,7 +3756,7 @@ export const OrderDetail: React.FC = () => {
                                                   setOrder(prev => {
                                                     if (!prev) return prev;
                                                     const updatedItems = prev.items.map(item => {
-                                                      if (item.itemId === it.itemId) {
+                                                      if (item === it) {
                                                         return { ...item, purchaseUnitPrice: val };
                                                       }
                                                       return item;
