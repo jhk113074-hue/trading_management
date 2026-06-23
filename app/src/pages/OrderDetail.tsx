@@ -1115,31 +1115,7 @@ export const OrderDetail: React.FC = () => {
     return `<img src="${imgData}" style="display: block; margin: 5px auto; width: ${w}px; height: ${h}px;" />`;
   };
 
-  const getLargeShippingMarkShapeImgHtml = (shapeVal: string, compVal: string) => {
-    const compEscaped = (compVal || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    let svg = '';
-    if (shapeVal === 'circle') {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350"><circle cx="225" cy="175" r="140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-    } else if (shapeVal === 'square') {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300"><rect x="20" y="20" width="410" height="260" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-    } else if (shapeVal === 'triangle') {
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350"><polygon points="225,25 25,325 425,325" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="68%" font-size="56" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-    } else { // diamond
-      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280"><polygon points="280,15 545,140 280,265 15,140" stroke="black" stroke-width="12" fill="none" /><text x="50%" y="54%" font-size="64" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
-    }
 
-    let imgData = '';
-    try {
-      imgData = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
-    } catch (e) {
-      console.error(e);
-    }
-    
-    const widthStyle = shapeVal === 'diamond' ? 'width: 100%;' : 'width: 85%;';
-    const maxHeightStyle = (shapeVal === 'square' || shapeVal === 'diamond') ? 'max-height: 30vh;' : 'max-height: 35vh;';
-    
-    return `<img src="${imgData}" style="${widthStyle} height: auto; ${maxHeightStyle} display: block; margin: 0 auto;" />`;
-  };
 
   const renderShippingMarkCellHtml = (marksText: string) => {
     if (!marksText) return '';
@@ -5476,59 +5452,66 @@ export const OrderDetail: React.FC = () => {
                         const startVal = 1;
                         const totalVal = packingItemsList.length;
 
+                        const getLargeShippingMarkShapeSvg = (shape: string, company: string) => {
+                          const compEscaped = (company || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                          const strokeColor = '#3b82f6'; // Clean blue color
+                          if (shape === 'circle') {
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; max-width: 100%; display: block; margin: 0 auto;"><circle cx="225" cy="175" r="140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="70" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                          } else if (shape === 'square') {
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 300" style="height: 100%; max-width: 100%; display: block; margin: 0 auto;"><rect x="20" y="20" width="410" height="260" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="70" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                          } else if (shape === 'triangle') {
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 350" style="height: 100%; max-width: 100%; display: block; margin: 0 auto;"><polygon points="225,25 25,325 425,325" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="68%" font-size="60" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                          } else { // diamond
+                            return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 280" style="height: 100%; max-width: 100%; display: block; margin: 0 auto;"><polygon points="280,15 545,140 280,265 15,140" stroke="${strokeColor}" stroke-width="14" fill="none" /><text x="50%" y="54%" font-size="80" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="black">${compEscaped}</text></svg>`;
+                          }
+                        };
+
                         let htmlContent = '<html>' +
                           '<head>' +
                             '<title>PLT Shipping Marks - ' + supplierName + '</title>' +
                             '<style>' +
                               '@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap");' +
-                              '@page { size: A4 portrait; margin: 0; }' +
+                              '@page { size: A4 landscape; margin: 0; }' +
                               'body { font-family: "Noto Sans KR", sans-serif; margin: 0; padding: 0; background: #fff; }' +
                               '.page {' +
-                                'width: 210mm;' +
-                                'height: 297mm;' +
+                                'width: 297mm;' +
+                                'height: 210mm;' +
                                 'box-sizing: border-box;' +
-                                'padding: 15mm;' +
+                                'padding: 12mm;' +
                                 'display: flex;' +
+                                'flex-direction: column;' +
                                 'align-items: center;' +
-                                'justify-content: center;' +
+                                'justify-content: space-around;' +
                                 'page-break-after: always;' +
                               '}' +
-                              '.outer-border {' +
-                                'border: 10px solid #000;' +
-                                'width: 100%;' +
-                                'height: 100%;' +
-                                'box-sizing: border-box;' +
-                                'display: flex;' +
-                                'flex-direction: column;' +
-                                'align-items: center;' +
-                                'justify-content: center;' +
-                                'padding: 40px;' +
-                              '}' +
                               '.shape-container {' +
+                                'width: 100%;' +
+                                'height: 45%;' +
                                 'display: flex;' +
                                 'align-items: center;' +
                                 'justify-content: center;' +
-                                'margin-bottom: 40px;' +
                               '}' +
                               '.info-container {' +
+                                'width: 100%;' +
+                                'height: 48%;' +
                                 'display: flex;' +
                                 'flex-direction: column;' +
-                                'justify-content: center;' +
                                 'align-items: center;' +
+                                'justify-content: center;' +
                                 'text-align: center;' +
                               '}' +
                               '.info-text1 {' +
-                                'font-size: 38px;' +
-                                'font-weight: 900;' +
-                                'margin: 15px 0;' +
+                                'font-size: 30pt;' +
+                                'font-weight: 700;' +
+                                'margin: 10px 0;' +
                                 'text-transform: uppercase;' +
                                 'color: #000;' +
                                 'letter-spacing: 0.5px;' +
                               '}' +
                               '.info-text2 {' +
-                                'font-size: 42px;' +
+                                'font-size: 36pt;' +
                                 'font-weight: 900;' +
-                                'margin: 15px 0;' +
+                                'margin: 10px 0;' +
                                 'text-transform: uppercase;' +
                                 'color: #000;' +
                                 'letter-spacing: 0.5px;' +
@@ -5538,16 +5521,14 @@ export const OrderDetail: React.FC = () => {
                           '<body>';
 
                         for (let i = startVal; i <= totalVal; i++) {
-                          const shapeHtml = getLargeShippingMarkShapeImgHtml(shapeVal, compVal);
+                          const shapeHtml = getLargeShippingMarkShapeSvg(shapeVal, compVal);
 
                           htmlContent += '<div class="page">' +
-                            '<div class="outer-border">' +
-                              '<div class="shape-container" style="width: 100%;">' + shapeHtml + '</div>' +
-                              '<div class="info-container">' +
-                                '<div class="info-text1">' + portVal + ', ' + countryVal + '</div>' +
-                                '<div class="info-text2">PKG NO. : ' + i + '/' + totalVal + '</div>' +
-                                '<div class="info-text1">' + originVal + '</div>' +
-                              '</div>' +
+                            '<div class="shape-container">' + shapeHtml + '</div>' +
+                            '<div class="info-container">' +
+                              '<div class="info-text1">' + portVal + (countryVal ? ', ' + countryVal : '') + '</div>' +
+                              '<div class="info-text2">PALLET NO. : ' + i + '/' + totalVal + '</div>' +
+                              '<div class="info-text1">' + originVal + '</div>' +
                             '</div>' +
                           '</div>';
                         }
@@ -5562,8 +5543,8 @@ export const OrderDetail: React.FC = () => {
                           iframe.style.position = 'fixed';
                           iframe.style.top = '0';
                           iframe.style.left = '0';
-                          iframe.style.width = '793px';
-                          iframe.style.height = '1122px';
+                          iframe.style.width = '1122px';
+                          iframe.style.height = '793px';
                           iframe.style.border = '0';
                           iframe.style.zIndex = '-9999';
                           iframe.style.visibility = 'hidden';
@@ -5580,7 +5561,7 @@ export const OrderDetail: React.FC = () => {
 
                           const pages = iframeDoc.body.querySelectorAll('.page');
                           const pdf = new jsPDF({
-                            orientation: 'p',
+                            orientation: 'l',
                             unit: 'pt',
                             format: 'a4'
                           });
@@ -5602,7 +5583,7 @@ export const OrderDetail: React.FC = () => {
                             if (i > 0) {
                               pdf.addPage();
                             }
-                            pdf.addImage(imgData, 'JPEG', 0, 0, 595.28, 841.89);
+                            pdf.addImage(imgData, 'JPEG', 0, 0, 841.89, 595.28);
                           }
 
                           document.body.removeChild(iframe);
