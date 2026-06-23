@@ -68,6 +68,7 @@ export interface Order {
   bankSubmissionDate?: string;
   paymentCollectedDate?: string;
   issuingCompany?: 'YSACC' | 'YS';
+  activeSourcingTab?: string;
 
   // 주문 기본정보 및 L/C 거래 상세
   piNumber?: string; // PI 번호

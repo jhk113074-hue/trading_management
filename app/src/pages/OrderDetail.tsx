@@ -591,6 +591,9 @@ export const OrderDetail: React.FC = () => {
         });
         setOrderItems(data.items || []);
         setForwardersList(data.forwarders || []);
+        if (data.activeSourcingTab) {
+          setActiveSourcingTab(data.activeSourcingTab as any);
+        }
       } else {
         setOrder(null);
       }
@@ -623,8 +626,8 @@ export const OrderDetail: React.FC = () => {
 
   // Switch active tab view locally
   const handleStepClick = async (stepName: typeof steps[number]) => {
-    await handleSaveBasic(false);
     setActiveStep(stepName);
+    await handleSaveBasic(false, undefined, stepName);
   };
 
   // Group items by supplier for Purchase Orders preview
@@ -649,7 +652,7 @@ export const OrderDetail: React.FC = () => {
   }, [groupedSupplierItems, order]);
 
   // Save details changes
-  const handleSaveBasic = async (showMsg: boolean = true) => {
+  const handleSaveBasic = async (showMsg: boolean = true, tabIdOverride?: string, stepNameOverride?: string) => {
     if (!order) return;
     try {
       const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
@@ -687,10 +690,13 @@ export const OrderDetail: React.FC = () => {
       if (order.remark !== basicForm.remark) changes.push(`비고(Remarks) 변경: "${order.remark || ''}" → "${basicForm.remark}"`);
       if (order.ciNumber !== basicForm.ciNumber) changes.push(`CI 번호 변경: "${order.ciNumber || ''}" → "${basicForm.ciNumber}"`);
       if (order.isLc !== basicForm.isLc) changes.push(`L/C거래여부 변경: "${order.isLc || ''}" → "${basicForm.isLc}"`);
-      const mappedStatus = activeStep === 'PO접수' ? '주문' : 
-                           activeStep === '소싱발주' ? '발주' :
-                           activeStep === '수출관리' ? '선적관리' :
-                           activeStep === '정산마감' ? '이익관리' : null;
+      
+      const sourcingTabToSave = tabIdOverride || activeSourcingTab;
+      const stepToSave = stepNameOverride || activeStep;
+      const mappedStatus = stepToSave === 'PO접수' ? '주문' : 
+                           stepToSave === '소싱발주' ? '발주' :
+                           stepToSave === '수출관리' ? '선적관리' :
+                           stepToSave === '정산마감' ? '이익관리' : null;
 
       if (mappedStatus && order.status !== mappedStatus) {
         changes.push(`진행단계 변경: "${order.status || ''}" → "${mappedStatus}"`);
@@ -717,7 +723,7 @@ export const OrderDetail: React.FC = () => {
 
       await setDoc(docRef, {
         history_logs: nextHistoryLogs,
-        status: activeStep === '변경이력(Log)' ? (order.status || '주문') : (mappedStatus || '주문'),
+        status: stepToSave === '변경이력(Log)' ? (order.status || '주문') : (mappedStatus || '주문'),
         piNumber: basicForm.piNumber,
         customer: basicForm.customer,
         custPo: basicForm.custPo,
@@ -774,7 +780,7 @@ export const OrderDetail: React.FC = () => {
         supplierTaxInvoice: basicForm.supplierTaxInvoice,
         supplierPurchaseCertificate: basicForm.supplierPurchaseCertificate,
         supplierTaxTypes: basicForm.supplierTaxTypes,
-        supplierTaxInvoiceDetails: basicForm.supplierTaxInvoiceDetails,
+        supplierTaxInvoiceDetails: basicForm.supplierTaxInvoiceDetails || {},
         supplierPoDetails: basicForm.supplierPoDetails,
         supplierPurchaseCertFiles: basicForm.supplierPurchaseCertFiles,
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
@@ -792,6 +798,7 @@ export const OrderDetail: React.FC = () => {
 
         packingList: basicForm.packingList || null,
         commonShippingMark: commonShippingMark,
+        activeSourcingTab: sourcingTabToSave,
         
         items: orderItems.map(it => ({
           itemId: it.itemId || '',
@@ -3318,8 +3325,8 @@ export const OrderDetail: React.FC = () => {
                       key={tab.id}
                       type="button"
                       onClick={async () => {
-                        await handleSaveBasic(false);
                         setActiveSourcingTab(tab.id as any);
+                        await handleSaveBasic(false, tab.id);
                       }}
                       style={{
                         padding: '10px 16px',

@@ -529,9 +529,26 @@ export const Orders: React.FC = () => {
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 2 */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                              <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
+                            </div>
+                            <span style={{ fontSize: '9px', color: currentStep === '소싱발주' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
+                              {(() => {
+                                const tab = (order as any).activeSourcingTab || '소싱발주';
+                                switch(tab) {
+                                  case '소싱발주': return '1) 소싱발주';
+                                  case '선적관리': return '2) 선적관리';
+                                  case '패킹리스트': return '3) 패킹리스트';
+                                  case '도착보고_쉬핑마크': return '4) 도착보고/쉬핑마크';
+                                  case 'COA_성적서': return '5) COA/성적서/파일';
+                                  case '세금계산서_결제': return '6) 세금계산서/구매확인';
+                                  case '대금결제관리': return '7) 대금결제관리';
+                                  default: return '1) 소싱발주';
+                                }
+                              })()}
+                            </span>
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 3 */}
