@@ -660,7 +660,8 @@ export const OrderDetail: React.FC = () => {
         return;
       }
 
-      const totalAmount = orderItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const totalAmount = orderItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+        + forwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
       const hasUsd = orderItems.some(it => it.currency === 'USD');
       const hasKrw = orderItems.some(it => it.currency === 'KRW');
       let orderCurrency: 'USD' | 'KRW' | 'mixed' = 'USD';
@@ -3304,7 +3305,8 @@ export const OrderDetail: React.FC = () => {
               <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
                 <span>총 발주 금액 (Grand Total):</span>
                 {(() => {
-                  const usdTotal = orderItems.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                  const usdTotal = orderItems.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0)
+                    + forwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
                   const krwTotal = orderItems.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
                   return (
                     <span style={{ color: '#dc2626' }}>

@@ -411,7 +411,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     setItems(prev => prev.filter((_, idx) => idx !== index).map((it, idx) => ({ ...it, itemId: (idx + 1).toString() })));
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const totalAmount = items.reduce((sum, item) => sum + (item.amount || 0), 0)
+    + forwarders.reduce((sum, fw) => sum + (fw.amountUsd || 0), 0);
 
   const handleSave = async () => {
     if (!formData.poId.trim()) { alert('PO 번호는 필수 항목입니다.'); return; }
@@ -1113,7 +1114,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
             <span>총 발주 금액 (Grand Total):</span>
             {(() => {
-              const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+              const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0)
+                + forwarders.reduce((sum, fw) => sum + (fw.amountUsd || 0), 0);
               const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
               return (
                 <span style={{ color: '#dc2626' }}>
