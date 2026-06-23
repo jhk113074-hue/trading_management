@@ -4652,69 +4652,7 @@ export const OrderDetail: React.FC = () => {
                         ))}
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                        <button
-                          type="button"
-                          disabled={!isEditing}
-                          onClick={() => {
-                            if (window.confirm('패킹리스트 데이터를 초기화하시겠습니까?')) {
-                              // Instead of setting to null, reset to default template mapping dynamically
-                              const defaultContainers = [
-                                {
-                                  containerNo: basicForm.containerVolumeQuantities || '',
-                                  sealNo: '',
-                                  items: orderItems.map((it, idx) => {
-                                    const netWeight = Math.round(it.qty || 0);
-                                    const grossWeight = Math.round(netWeight * 1.02);
-                                    const cbm = Number(((netWeight / 1000) * 1.5).toFixed(2));
-                                    return {
-                                      shippingMark: '',
-                                      description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
-                                      pkgNo: '',
-                                      pkg: '1',
-                                      netWeight: String(netWeight),
-                                      grossWeight: String(grossWeight),
-                                      cbm: String(cbm)
-                                    };
-                                  })
-                                }
-                              ];
-                              setBasicForm(prev => ({
-                                ...prev,
-                                packingList: {
-                                                                    shipper: getShipperText(prev.issuingCompany || 'YSACC'),
-                                  applicant: order?.customer || '',
-                                  notifyParty: order?.customer || '',
-                                  pol: basicForm.cfsContactInfo || '',
-                                  pod: basicForm.cfsAddress || '',
-                                  vesselName: basicForm.vesselBooking || '',
-                                  sailingDate: basicForm.etd || '',
-                                  paymentTerms: basicForm.paymentTerms || '',
-                                  deliveryTerms: basicForm.incoterms || '',
-                                  remarks: basicForm.remark || '',
-                                  invoiceNo: basicForm.ciNumber || '',
-                                  invoiceDate: basicForm.ciPlSentDate || new Date().toISOString().split('T')[0],
-                                  lcNo: basicForm.lcNo || '',
-                                  lcDate: basicForm.bankSubmissionDate || '',
-                                  lcIssuingBank: '',
-                                  containers: defaultContainers
-                                }
-                              }));
-                            }
-                          }}
-                          style={{ padding: '6px 12px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
-                        >
-                          초기화
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!isEditing}
-                          onClick={() => handleSaveBasic(true)}
-                          style={{ padding: '6px 12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
-                        >
-                          💾 패킹리스트 저장
-                        </button>
-                      </div>
+
                     </div>
                   )}
                 </div>
