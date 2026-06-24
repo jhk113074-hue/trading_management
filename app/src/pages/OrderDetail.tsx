@@ -36,6 +36,68 @@ const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
   return '1';
 };
 
+interface FormattedNumberInputProps {
+  value: number;
+  onChange: (val: number) => void;
+  placeholder?: string;
+  style?: React.CSSProperties;
+  disabled?: boolean;
+}
+
+const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onChange, placeholder, style, disabled }) => {
+  const formatWithCommas = (num: number) => {
+    if (!num) return '';
+    return num.toLocaleString();
+  };
+
+  const [tempValue, setTempValue] = React.useState<string>(formatWithCommas(value));
+
+  React.useEffect(() => {
+    setTempValue(formatWithCommas(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9.]/g, '');
+    const parts = raw.split('.');
+    let cleaned = raw;
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    const integerPart = parts[0];
+    const decimalPart = parts[1] !== undefined ? '.' + parts[1] : '';
+    let formatted = '';
+    if (integerPart) {
+      const parsedInt = parseFloat(integerPart);
+      if (!isNaN(parsedInt)) {
+        formatted = parsedInt.toLocaleString() + decimalPart;
+      } else {
+        formatted = decimalPart;
+      }
+    } else {
+      formatted = decimalPart;
+    }
+    setTempValue(formatted);
+    const num = parseFloat(cleaned) || 0;
+    onChange(num);
+  };
+
+  const handleBlur = () => {
+    setTempValue(formatWithCommas(value));
+  };
+
+  return (
+    <input
+      type="text"
+      value={tempValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      placeholder={placeholder}
+      style={style}
+      disabled={disabled}
+    />
+  );
+};
+
 const steps = ["PO접수", "소싱발주", "수출관리", "정산마감", "변경이력(Log)"] as const;
 
 export const OrderDetail: React.FC = () => {
@@ -46,7 +108,7 @@ export const OrderDetail: React.FC = () => {
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
   const [showPoDetails, setShowPoDetails] = useState(false);
   const isEditing = true;
-  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
+  const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
@@ -96,6 +158,297 @@ export const OrderDetail: React.FC = () => {
   const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
   console.log("[DEBUG] Rendering OrderDetail page. forwardersList:", forwardersList);
   const [activeArrivalReport, setActiveArrivalReport] = useState<{ supplierName: string; items: OrderItem[] } | null>(null);
+
+  const [uploadingReceipt, setUploadingReceipt] = useState<{ supplier: string; index: number } | null>(null);
+  const [uploadingFwReceipt, setUploadingFwReceipt] = useState<{ fwIndex: number; instIndex: number } | null>(null);
+  const [uploadingCollectReceipt, setUploadingCollectReceipt] = useState<number | null>(null);
+
+  const handleCollectReceiptUpload = async (file: File, index: number) => {
+    if (!order) return;
+    setUploadingCollectReceipt(index);
+    try {
+      const uniqueFileName = `${Date.now()}_${file.name || 'pasted_collection_receipt.png'}`;
+      const storageRef = ref(storage, `tasks/${order.id}/payments/collected/${index}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const newFile = {
+        name: file.name || `외국환거래영수증_${new Date().toLocaleDateString()}.png`,
+        url: downloadUrl,
+        size: file.size,
+        path: uploadTask.snapshot.ref.fullPath
+      };
+
+      const list = basicForm.paymentCollectedInstallments || [];
+      const updatedList = [...list];
+      if (!updatedList[index]) {
+        updatedList[index] = { date: '', amount: 0, currency: 'USD' };
+      }
+      const currentReceipts = updatedList[index].receiptFiles || [];
+      updatedList[index] = {
+        ...updatedList[index],
+        receiptFiles: [...currentReceipts, newFile]
+      };
+
+      setBasicForm(prev => ({
+        ...prev,
+        paymentCollectedInstallments: updatedList
+      }));
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        paymentCollectedInstallments: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 외국환거래영수증이 업로드 되었습니다.');
+    } catch (err: any) {
+      alert('❌ 업로드 실패: ' + err.message);
+    } finally {
+      setUploadingCollectReceipt(null);
+    }
+  };
+
+  const handleDeleteCollectReceipt = async (instIndex: number, fileIndex: number) => {
+    if (!order) return;
+    if (!window.confirm("이 영수증을 삭제하시겠습니까?")) return;
+
+    const list = basicForm.paymentCollectedInstallments || [];
+    const updatedList = [...list];
+    if (!updatedList[instIndex] || !updatedList[instIndex].receiptFiles) return;
+
+    const fileToDelete = updatedList[instIndex].receiptFiles[fileIndex];
+    const newReceipts = updatedList[instIndex].receiptFiles.filter((_, idx) => idx !== fileIndex);
+    updatedList[instIndex] = {
+      ...updatedList[instIndex],
+      receiptFiles: newReceipts
+    };
+
+    try {
+      if (fileToDelete.path) {
+        const fileRef = ref(storage, fileToDelete.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete storage file:", e));
+      }
+
+      setBasicForm(prev => ({
+        ...prev,
+        paymentCollectedInstallments: updatedList
+      }));
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        paymentCollectedInstallments: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert("✅ 삭제되었습니다.");
+    } catch (err: any) {
+      alert("❌ 삭제 실패: " + err.message);
+    }
+  };
+
+  const handleReceiptUpload = async (file: File, index: number, supplierName: string) => {
+    if (!order) return;
+    setUploadingReceipt({ supplier: supplierName, index });
+    try {
+      const uniqueFileName = `${Date.now()}_${file.name || 'pasted_receipt.png'}`;
+      const storageRef = ref(storage, `tasks/${order.id}/payments/${supplierName}/${index}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const newFile = {
+        name: file.name || `캡처영수증_${new Date().toLocaleDateString()}.png`,
+        url: downloadUrl,
+        size: file.size,
+        path: uploadTask.snapshot.ref.fullPath
+      };
+
+      const list = basicForm.supplierPaymentInstallments[supplierName] || [];
+      const updatedList = [...list];
+      if (!updatedList[index]) {
+        updatedList[index] = { date: '', amount: 0, currency: 'KRW' };
+      }
+      const currentReceipts = updatedList[index].receiptFiles || [];
+      updatedList[index] = {
+        ...updatedList[index],
+        receiptFiles: [...currentReceipts, newFile]
+      };
+
+      setBasicForm(prev => {
+        return {
+          ...prev,
+          supplierPaymentInstallments: {
+            ...prev.supplierPaymentInstallments,
+            [supplierName]: updatedList
+          }
+        };
+      });
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        supplierPaymentInstallments: {
+          ...basicForm.supplierPaymentInstallments,
+          [supplierName]: updatedList
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 입금영수증이 업로드 되었습니다.');
+    } catch (err: any) {
+      alert('❌ 업로드 실패: ' + err.message);
+    } finally {
+      setUploadingReceipt(null);
+    }
+  };
+
+  const handleDeleteReceipt = async (supplierName: string, instIndex: number, fileIndex: number) => {
+    if (!order) return;
+    if (!window.confirm("이 영수증을 삭제하시겠습니까?")) return;
+
+    const list = basicForm.supplierPaymentInstallments[supplierName] || [];
+    const updatedList = [...list];
+    if (!updatedList[instIndex] || !updatedList[instIndex].receiptFiles) return;
+
+    const fileToDelete = updatedList[instIndex].receiptFiles[fileIndex];
+    const newReceipts = updatedList[instIndex].receiptFiles.filter((_, idx) => idx !== fileIndex);
+    updatedList[instIndex] = {
+      ...updatedList[instIndex],
+      receiptFiles: newReceipts
+    };
+
+    try {
+      if (fileToDelete.path) {
+        const fileRef = ref(storage, fileToDelete.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete storage file:", e));
+      }
+
+      setBasicForm(prev => ({
+        ...prev,
+        supplierPaymentInstallments: {
+          ...prev.supplierPaymentInstallments,
+          [supplierName]: updatedList
+        }
+      }));
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        supplierPaymentInstallments: {
+          ...basicForm.supplierPaymentInstallments,
+          [supplierName]: updatedList
+        },
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert("✅ 삭제되었습니다.");
+    } catch (err: any) {
+      alert("❌ 삭제 실패: " + err.message);
+    }
+  };
+
+  const handleFwReceiptUpload = async (file: File, fwIndex: number, instIndex: number) => {
+    if (!order) return;
+    setUploadingFwReceipt({ fwIndex, instIndex });
+    try {
+      const uniqueFileName = `${Date.now()}_${file.name || 'pasted_receipt.png'}`;
+      const storageRef = ref(storage, `tasks/${order.id}/payments/forwarders/${fwIndex}/${instIndex}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const newFile = {
+        name: file.name || `캡처영수증_${new Date().toLocaleDateString()}.png`,
+        url: downloadUrl,
+        size: file.size,
+        path: uploadTask.snapshot.ref.fullPath
+      };
+
+      const updatedList = forwardersList.map((fw, idx) => {
+        if (idx !== fwIndex) return fw;
+        const instList = fw.paymentInstallments || [];
+        const updatedInstList = [...instList];
+        if (!updatedInstList[instIndex]) {
+          updatedInstList[instIndex] = { date: '', amount: 0, currency: fw.freightCurrency || 'KRW' };
+        }
+        const currentReceipts = updatedInstList[instIndex].receiptFiles || [];
+        updatedInstList[instIndex] = {
+          ...updatedInstList[instIndex],
+          receiptFiles: [...currentReceipts, newFile]
+        };
+        return {
+          ...fw,
+          paymentInstallments: updatedInstList
+        };
+      });
+
+      setForwardersList(updatedList);
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        forwarders: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 입금영수증이 업로드 되었습니다.');
+    } catch (err: any) {
+      alert('❌ 업로드 실패: ' + err.message);
+    } finally {
+      setUploadingFwReceipt(null);
+    }
+  };
+
+  const handleDeleteFwReceipt = async (fwIndex: number, instIndex: number, fileIndex: number) => {
+    if (!order) return;
+    if (!window.confirm("이 영수증을 삭제하시겠습니까?")) return;
+
+    const fw = forwardersList[fwIndex];
+    if (!fw || !fw.paymentInstallments || !fw.paymentInstallments[instIndex] || !fw.paymentInstallments[instIndex].receiptFiles) return;
+
+    const fileToDelete = fw.paymentInstallments[instIndex].receiptFiles[fileIndex];
+    const newReceipts = fw.paymentInstallments[instIndex].receiptFiles.filter((_, idx) => idx !== fileIndex);
+
+    const updatedList = forwardersList.map((f, idx) => {
+      if (idx !== fwIndex) return f;
+      const updatedInst = [...(f.paymentInstallments || [])];
+      updatedInst[instIndex] = {
+        ...updatedInst[instIndex],
+        receiptFiles: newReceipts
+      };
+      return {
+        ...f,
+        paymentInstallments: updatedInst
+      };
+    });
+
+    try {
+      if (fileToDelete.path) {
+        const fileRef = ref(storage, fileToDelete.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete storage file:", e));
+      }
+
+      setForwardersList(updatedList);
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        forwarders: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert("✅ 삭제되었습니다.");
+    } catch (err: any) {
+      alert("❌ 삭제 실패: " + err.message);
+    }
+  };
 
   // CFS related states
   const [cfsList, setCfsList] = useState<string[]>([]);
@@ -266,6 +619,7 @@ export const OrderDetail: React.FC = () => {
     cfsEntryDate: '',
     cfsContactInfo: '',
     docCutoffDate: '',
+    cargoCutoffDate: '',
     etd: '',
     eta: '',
     containerVolumeQuantities: '',
@@ -306,7 +660,8 @@ export const OrderDetail: React.FC = () => {
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; } | Array<{ date: string; invoiceNo: string; }>>,
     supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
-    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>,
+    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
+    paymentCollectedInstallments: [] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
 
     // 주문 기본정보 및 L/C 거래 상세
@@ -492,6 +847,7 @@ export const OrderDetail: React.FC = () => {
           cfsEntryDate: data.cfsEntryDate || '',
           cfsContactInfo: data.cfsContactInfo || '',
           docCutoffDate: data.docsDeadlineDate || data.docCutoffDate || '',
+          cargoCutoffDate: data.cargoCutoffDate || '',
           etd: data.etd || '',
           eta: data.eta || '',
           containerVolumeQuantities: data.containerVolumeQuantities || '',
@@ -577,6 +933,7 @@ export const OrderDetail: React.FC = () => {
           supplierPoDetails: data.supplierPoDetails || {},
           supplierPurchaseCertFiles: data.supplierPurchaseCertFiles || {},
           supplierPaymentInstallments: data.supplierPaymentInstallments || {},
+          paymentCollectedInstallments: data.paymentCollectedInstallments || [],
           bankSubmissionStatus: data.bankSubmissionStatus || '',
 
           // 주문 기본정보 및 L/C 거래 상세 로드
@@ -744,6 +1101,7 @@ export const OrderDetail: React.FC = () => {
         cfsContactInfo: basicForm.cfsContactInfo || '',
         docCutoffDate: basicForm.docCutoffDate,
         docsDeadlineDate: basicForm.docCutoffDate,
+        cargoCutoffDate: basicForm.cargoCutoffDate || '',
         etd: basicForm.etd,
         eta: basicForm.eta,
         containerVolumeQuantities: basicForm.containerVolumeQuantities,
@@ -784,6 +1142,7 @@ export const OrderDetail: React.FC = () => {
         supplierPoDetails: basicForm.supplierPoDetails,
         supplierPurchaseCertFiles: basicForm.supplierPurchaseCertFiles,
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
+        paymentCollectedInstallments: basicForm.paymentCollectedInstallments || [],
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
 
         // 주문 기본정보 및 L/C 거래 상세 저장
@@ -1003,7 +1362,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Upload document attachment file to Firebase Storage for specific fields (CI, PL, COO, BL, other)
-  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles') => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles') => {
     const files = e.target.files;
     if (!files || files.length === 0 || !order) return;
     
@@ -1218,7 +1577,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   // Delete document attachment from Storage & Firestore for specific fields
-  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles', idx: number) => {
+  const handleDeleteDoc = async (fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles', idx: number) => {
     if (!order) return;
     const fileList = order[fieldName] || [];
     const target = fileList[idx];
@@ -1242,7 +1601,7 @@ export const OrderDetail: React.FC = () => {
   // Helper render for document file attachment widgets
   const renderFileField = (
     label: string,
-    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles',
+    fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles',
     inputDocId: string
   ) => {
     const fileList = order?.[fieldName] || [];
@@ -2191,6 +2550,7 @@ export const OrderDetail: React.FC = () => {
   // CI automated print handler
   const handlePrintCI = () => {
     if (!order) return;
+    (window as any).handlePrintCI = handlePrintCI;
     const isYS = order.issuingCompany === 'YS';
     const ciNum = basicForm.ciNumber || `CI-${order.id}`;
 
@@ -3903,6 +4263,7 @@ export const OrderDetail: React.FC = () => {
                                   ...prev,
                                   cfsEntryDate: addDays(baseDate, 1),      // 1일 뒤 입고
                                   docCutoffDate: addDays(baseDate, 2),     // 2일 뒤 서류마감
+                                  cargoCutoffDate: addDays(baseDate, 3),   // 3일 뒤 Cargo 마감
                                   etd: addDays(baseDate, 4),               // 4일 뒤 출항
                                   eta: addDays(baseDate, 18)               // 14일 운송 표준 적용
                                 }));
@@ -4055,15 +4416,19 @@ export const OrderDetail: React.FC = () => {
                         })
                       )}
                     </div>
-                    {/* Vessel확정(선박명/항차)/서류마감일/ETD/ETA을 한줄로 표시 */}
-                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                    {/* Vessel확정(선박명/항차)/DOC CLS/CARGO CLS/ETD/ETA을 한줄로 표시 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Vessel 확정 (선박명/항차)</span>
                         <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: HYUNDAI TOKYO V.024E" />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>서류마감일</span>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>DOC CLS</span>
                         <input type="date" value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>CARGO CLS</span>
+                        <input type="date" value={basicForm.cargoCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, cargoCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
@@ -5767,7 +6132,7 @@ export const OrderDetail: React.FC = () => {
                       수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
                       {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
                     </div>
                   </div>
@@ -6290,54 +6655,122 @@ export const OrderDetail: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingLeft: '165px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                               {installments.map((inst, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{i + 1}차</span>
-                                  <input
-                                    type="date"
-                                    value={inst.date}
-                                    onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
-                                    style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
-                                  />
-                                  <select
-                                    value={inst.currency || (isKrw ? 'KRW' : 'USD')}
-                                    onChange={e => handleInstallmentChange(i, 'currency', e.target.value)}
-                                    style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '270px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{i + 1}차</span>
+                                    <input
+                                      type="date"
+                                      value={inst.date}
+                                      onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
+                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
+                                    />
+                                    <select
+                                      value={inst.currency || (isKrw ? 'KRW' : 'USD')}
+                                      onChange={e => handleInstallmentChange(i, 'currency', e.target.value)}
+                                      style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
+                                    >
+                                      <option value="KRW">₩</option>
+                                      <option value="USD">$</option>
+                                    </select>
+                                    <FormattedNumberInput
+                                      placeholder="지급액"
+                                      value={inst.amount || 0}
+                                      onChange={val => handleInstallmentChange(i, 'amount', val)}
+                                      style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
+                                    />
+                                    {installments.length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newList = installments.filter((_, idxToRemove) => idxToRemove !== i);
+                                          const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
+                                          const newTotalPaid = finalList.reduce((sum, item) => sum + (item.amount || 0), 0);
+                                          const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
+                                          const dates = finalList.map(item => item.date).filter(d => d);
+                                          const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
+                                          setBasicForm(prev => {
+                                            const updatedPayments = { ...prev.supplierPayments };
+                                            updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
+                                            return {
+                                              ...prev,
+                                              supplierPaymentInstallments: { ...prev.supplierPaymentInstallments, [supplier]: finalList },
+                                              supplierPayments: updatedPayments
+                                            };
+                                          });
+                                        }}
+                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                      >✕</button>
+                                    )}
+                                  </div>
+                                  <div 
+                                    style={{ 
+                                      borderTop: '1px dashed #e2e8f0', 
+                                      paddingTop: '4px', 
+                                      display: 'flex', 
+                                      flexDirection: 'column', 
+                                      gap: '4px' 
+                                    }}
+                                    onPaste={async (e) => {
+                                      const items = e.clipboardData.items;
+                                      for (let idx = 0; idx < items.length; idx++) {
+                                        if (items[idx].type.indexOf('image') !== -1) {
+                                          const file = items[idx].getAsFile();
+                                          if (file) {
+                                            e.preventDefault();
+                                            await handleReceiptUpload(file, i, supplier);
+                                          }
+                                        }
+                                      }
+                                    }}
                                   >
-                                    <option value="KRW">₩</option>
-                                    <option value="USD">$</option>
-                                  </select>
-                                  <input
-                                    type="number"
-                                    placeholder="지급액"
-                                    value={inst.amount || ''}
-                                    onChange={e => handleInstallmentChange(i, 'amount', parseFloat(e.target.value) || 0)}
-                                    style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
-                                  />
-                                  {installments.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newList = installments.filter((_, idxToRemove) => idxToRemove !== i);
-                                        const finalList = newList.length > 0 ? newList : [{ date: '', amount: 0 }];
-                                        const newTotalPaid = finalList.reduce((sum, item) => sum + (item.amount || 0), 0);
-                                        const newIsCompleted = grandTotal > 0 && newTotalPaid >= (grandTotal - (isKrw ? 0.9 : 0.009));
-                                        const dates = finalList.map(item => item.date).filter(d => d);
-                                        const lastDate = dates.length > 0 ? dates.sort().reverse()[0] : '';
-                                        setBasicForm(prev => {
-                                          const updatedPayments = { ...prev.supplierPayments };
-                                          updatedPayments[supplier] = newIsCompleted ? { status: '입금완료', date: lastDate } : { status: '미수금 발생', date: '' };
-                                          return {
-                                            ...prev,
-                                            supplierPaymentInstallments: { ...prev.supplierPaymentInstallments, [supplier]: finalList },
-                                            supplierPayments: updatedPayments
-                                          };
-                                        });
-                                      }}
-                                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
-                                    >✕</button>
-                                  )}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                      <span style={{ fontSize: '8px', color: '#94a3b8' }}>📋 포커스 후 Ctrl+V로 캡처 첨부</span>
+                                      <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', padding: '1px 4px', borderRadius: '3px', border: '1px solid #cbd5e1', fontSize: '8.5px', fontWeight: 600, color: '#475569' }}>
+                                        <span>📎 첨부</span>
+                                        <input 
+                                          type="file" 
+                                          style={{ display: 'none' }} 
+                                          onChange={(e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                              handleReceiptUpload(e.target.files[0], i, supplier);
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                    </div>
+                                    {inst.receiptFiles && inst.receiptFiles.length > 0 && (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        {inst.receiptFiles.map((file, fileIdx) => (
+                                          <div key={fileIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #e2e8f0' }}>
+                                            <span 
+                                              onClick={() => previewFile(file.url, file.name)}
+                                              style={{ fontSize: '9px', color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}
+                                              title="클릭하여 미리보기"
+                                            >
+                                              {file.name}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                              <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ fontSize: '8px', textDecoration: 'none', color: '#3b82f6', background: '#eff6ff', padding: '0 3px', borderRadius: '2px' }}>
+                                                ⬇
+                                              </a>
+                                              <button 
+                                                type="button" 
+                                                onClick={() => handleDeleteReceipt(supplier, i, fileIdx)} 
+                                                style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '2px', cursor: 'pointer', fontSize: '8px', padding: '0 3px' }}
+                                              >
+                                                ✕
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {uploadingReceipt?.supplier === supplier && uploadingReceipt?.index === i && (
+                                      <span style={{ fontSize: '8.5px', color: '#3b82f6' }}>⏳ 업로드 중...</span>
+                                    )}
+                                  </div>
                                 </div>
                               ))}
                               <button
@@ -6411,47 +6844,113 @@ export const OrderDetail: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingLeft: '165px' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                                 {installments.map((inst, instIdx) => (
-                                  <div key={instIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{instIdx + 1}차</span>
-                                    <input
-                                      type="date"
-                                      value={inst.date || ''}
-                                      onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
-                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
-                                    />
-                                    <select
-                                      value={inst.currency || fw.freightCurrency || 'KRW'}
-                                      onChange={e => handleFwInstallmentChange(instIdx, 'currency', e.target.value)}
-                                      style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
-                                    >
-                                      <option value="KRW">₩</option>
-                                      <option value="USD">$</option>
-                                    </select>
-                                    <input
-                                      type="number"
-                                      placeholder="지급액"
-                                      value={inst.amount || ''}
-                                      onChange={e => handleFwInstallmentChange(instIdx, 'amount', parseFloat(e.target.value) || 0)}
-                                      style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
-                                    />
-                                    {installments.length > 1 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const filtered = installments.filter((_, i) => i !== instIdx);
-                                          const updated = filtered.length > 0 ? filtered : [{ date: '', amount: 0 }];
-                                          setForwardersList(prev => prev.map((f, i) => {
-                                            if (i === idx) return { ...f, paymentInstallments: updated };
-                                            return f;
-                                          }));
-                                        }}
-                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                  <div key={instIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '270px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{instIdx + 1}차</span>
+                                      <input
+                                        type="date"
+                                        value={inst.date || ''}
+                                        onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
+                                        style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '11px', width: '90px', outline: 'none' }}
+                                      />
+                                      <select
+                                        value={inst.currency || fw.freightCurrency || 'KRW'}
+                                        onChange={e => handleFwInstallmentChange(instIdx, 'currency', e.target.value)}
+                                        style={{ padding: '1px 2px', border: 'none', fontSize: '11px', outline: 'none', background: 'transparent' }}
                                       >
-                                        ✕
-                                      </button>
-                                    )}
+                                        <option value="KRW">₩</option>
+                                        <option value="USD">$</option>
+                                      </select>
+                                      <FormattedNumberInput
+                                        placeholder="지급액"
+                                        value={inst.amount || 0}
+                                        onChange={val => handleFwInstallmentChange(instIdx, 'amount', val)}
+                                        style={{ padding: '1px 4px', border: 'none', fontSize: '11px', width: '80px', textAlign: 'right', outline: 'none' }}
+                                      />
+                                      {installments.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const filtered = installments.filter((_, i) => i !== instIdx);
+                                            const updated = filtered.length > 0 ? filtered : [{ date: '', amount: 0 }];
+                                            setForwardersList(prev => prev.map((f, i) => {
+                                              if (i === idx) return { ...f, paymentInstallments: updated };
+                                              return f;
+                                            }));
+                                          }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                        >✕</button>
+                                      )}
+                                    </div>
+                                    <div 
+                                      style={{ 
+                                        borderTop: '1px dashed #e2e8f0', 
+                                        paddingTop: '4px', 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        gap: '4px' 
+                                      }}
+                                      onPaste={async (e) => {
+                                        const items = e.clipboardData.items;
+                                        for (let fIdx = 0; fIdx < items.length; fIdx++) {
+                                          if (items[fIdx].type.indexOf('image') !== -1) {
+                                            const file = items[fIdx].getAsFile();
+                                            if (file) {
+                                              e.preventDefault();
+                                              await handleFwReceiptUpload(file, idx, instIdx);
+                                            }
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                        <span style={{ fontSize: '8px', color: '#94a3b8' }}>📋 포커스 후 Ctrl+V로 캡처 첨부</span>
+                                        <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', padding: '1px 4px', borderRadius: '3px', border: '1px solid #cbd5e1', fontSize: '8.5px', fontWeight: 600, color: '#475569' }}>
+                                          <span>📎 첨부</span>
+                                          <input 
+                                            type="file" 
+                                            style={{ display: 'none' }} 
+                                            onChange={(e) => {
+                                              if (e.target.files && e.target.files.length > 0) {
+                                                handleFwReceiptUpload(e.target.files[0], idx, instIdx);
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      </div>
+                                      {inst.receiptFiles && inst.receiptFiles.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                          {inst.receiptFiles.map((file, fileIdx) => (
+                                            <div key={fileIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #e2e8f0' }}>
+                                              <span 
+                                                onClick={() => previewFile(file.url, file.name)}
+                                                style={{ fontSize: '9px', color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}
+                                                title="클릭하여 미리보기"
+                                              >
+                                                {file.name}
+                                              </span>
+                                              <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                                <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ fontSize: '8px', textDecoration: 'none', color: '#3b82f6', background: '#eff6ff', padding: '0 3px', borderRadius: '2px' }}>
+                                                  ⬇
+                                                </a>
+                                                <button 
+                                                  type="button" 
+                                                  onClick={() => handleDeleteFwReceipt(idx, instIdx, fileIdx)} 
+                                                  style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '2px', cursor: 'pointer', fontSize: '8px', padding: '0 3px' }}
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {uploadingFwReceipt?.fwIndex === idx && uploadingFwReceipt?.instIndex === instIdx && (
+                                        <span style={{ fontSize: '8.5px', color: '#3b82f6' }}>⏳ 업로드 중...</span>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
                                 <button
@@ -6495,24 +6994,8 @@ export const OrderDetail: React.FC = () => {
 
 
 
-              {/* 7개의 유첨 파일 + CI/PL 자동 생성 단추 및 신규 사진 유첨 추가 */}
+              {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
               <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
-                  <button 
-                    type="button" 
-                    onClick={handlePrintCI}
-                    style={{ padding: '8px 16px', fontSize: '12.5px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    CI 자동인쇄/생성
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={handlePrintPL}
-                    style={{ padding: '8px 16px', fontSize: '12.5px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    PL 자동인쇄/생성
-                  </button>
-                </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                   {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
@@ -6698,8 +7181,233 @@ export const OrderDetail: React.FC = () => {
                       </div>
                     </div>
 
+                    {/* 수금 내역 관리 (분할 영수 지원) */}
+                    <div style={{ marginTop: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🪙 대금 수금 관리 (분할 영수)</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = basicForm.paymentCollectedInstallments || [];
+                            setBasicForm(p => ({
+                              ...p,
+                              paymentCollectedInstallments: [...current, { date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }]
+                            }));
+                          }}
+                          style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                        >
+                          ＋ 수금 내역 추가
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {(!basicForm.paymentCollectedInstallments || basicForm.paymentCollectedInstallments.length === 0) ? (
+                          <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', border: '1px dashed #cbd5e1', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                            등록된 수금 내역이 없습니다. '수금 내역 추가' 버튼을 눌러 등록해주세요.
+                          </div>
+                        ) : (
+                          basicForm.paymentCollectedInstallments.map((inst, index) => {
+                            const handleCollectFieldChange = (field: string, val: any) => {
+                              const list = [...(basicForm.paymentCollectedInstallments || [])];
+                              const updated = { ...list[index], [field]: val };
+                              
+                              // Automatically compute total = amount + fee if appropriate, or keep total as input.
+                              // Let's do: total = amount + fee as standard, but user can edit it or we calculate it.
+                              if (field === 'amount' || field === 'fee') {
+                                const amt = field === 'amount' ? val : (updated.amount || 0);
+                                const fee = field === 'fee' ? val : (updated.fee || 0);
+                                updated.total = amt + fee;
+                              }
+                              
+                              list[index] = updated;
+                              setBasicForm(p => ({ ...p, paymentCollectedInstallments: list }));
+                            };
+
+                            return (
+                              <div key={index} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>{index + 1}차 수금</span>
+                                  
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>대금영수일자</span>
+                                    <input
+                                      type="date"
+                                      value={inst.date || ''}
+                                      onChange={e => handleCollectFieldChange('date', e.target.value)}
+                                      style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '130px' }}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>통화</span>
+                                    <select
+                                      value={inst.currency || 'USD'}
+                                      onChange={e => handleCollectFieldChange('currency', e.target.value)}
+                                      style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                                    >
+                                      <option value="USD">USD ($)</option>
+                                      <option value="KRW">KRW (₩)</option>
+                                      <option value="CNY">CNY (¥)</option>
+                                      <option value="EUR">EUR (€)</option>
+                                    </select>
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>입금액</span>
+                                    <FormattedNumberInput
+                                      value={inst.amount || 0}
+                                      onChange={val => handleCollectFieldChange('amount', val)}
+                                      style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '120px', textAlign: 'right' }}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>은행수수료</span>
+                                    <FormattedNumberInput
+                                      value={inst.fee || 0}
+                                      onChange={val => handleCollectFieldChange('fee', val)}
+                                      style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100px', textAlign: 'right' }}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>총액 (입금액 + 수수료)</span>
+                                    <FormattedNumberInput
+                                      value={inst.total || 0}
+                                      onChange={val => handleCollectFieldChange('total', val)}
+                                      style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '120px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f1f5f9' }}
+                                      disabled
+                                    />
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (window.confirm(`${index + 1}차 수금 내역을 삭제하시겠습니까?`)) {
+                                        const list = (basicForm.paymentCollectedInstallments || []).filter((_, i) => i !== index);
+                                        setBasicForm(p => ({ ...p, paymentCollectedInstallments: list }));
+                                      }
+                                    }}
+                                    style={{ background: '#ef4444', border: 'none', borderRadius: '4px', padding: '6px 10px', fontSize: '11px', color: '#fff', cursor: 'pointer', alignSelf: 'flex-end' }}
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+
+                                {/* 외국환거래영수증 파일 첨부 영역 (Ctrl+V paste 지원) */}
+                                <div 
+                                  style={{ 
+                                    borderTop: '1px dashed #cbd5e1', 
+                                    paddingTop: '8px', 
+                                    marginTop: '4px',
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    gap: '6px' 
+                                  }}
+                                  onPaste={async (e) => {
+                                    const items = e.clipboardData.items;
+                                    for (let fIdx = 0; fIdx < items.length; fIdx++) {
+                                      if (items[fIdx].type.indexOf('image') !== -1) {
+                                        const file = items[fIdx].getAsFile();
+                                        if (file) {
+                                          e.preventDefault();
+                                          await handleCollectReceiptUpload(file, index);
+                                        }
+                                      }
+                                    }
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>📄 외국환거래영수증 (화면 캡처 첨부)</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '11px', color: '#64748b' }}>이 영역 클릭 후 <strong>Ctrl + V</strong> 로 화면 캡처 이미지 붙여넣기</span>
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        id={`collect-receipt-upload-${index}`}
+                                        style={{ display: 'none' }}
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            await handleCollectReceiptUpload(file, index);
+                                          }
+                                        }}
+                                      />
+                                      <label
+                                        htmlFor={`collect-receipt-upload-${index}`}
+                                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', color: '#475569', cursor: 'pointer', fontWeight: 600 }}
+                                      >
+                                        파일 선택
+                                      </label>
+                                    </div>
+                                  </div>
+
+                                  {inst.receiptFiles && inst.receiptFiles.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                                      {inst.receiptFiles.map((file, fIdx) => (
+                                        <div key={fIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '4px' }}>
+                                          <span 
+                                            onClick={() => previewFile(file.url, file.name)} 
+                                            style={{ fontSize: '11.5px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                          >
+                                            {file.name}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteCollectReceipt(index, fIdx)}
+                                            style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '12px', cursor: 'pointer', padding: '0 2px' }}
+                                          >
+                                            ✕
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {uploadingCollectReceipt === index && (
+                                    <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600 }}>⏳ 외국환거래영수증 업로드 중...</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* 수금 통화별 합계 요약 기록 */}
+                      {basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.length > 0 && (
+                        <div style={{ marginTop: '12px', padding: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', display: 'block', marginBottom: '6px' }}>📊 수금 합계 요약</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                            {['USD', 'KRW', 'CNY', 'EUR'].map(curr => {
+                              const items = (basicForm.paymentCollectedInstallments || []).filter(i => (i.currency || 'USD') === curr);
+                              if (items.length === 0) return null;
+                              const sumAmount = items.reduce((sum, i) => sum + (i.amount || 0), 0);
+                              const sumFee = items.reduce((sum, i) => sum + (i.fee || 0), 0);
+                              const sumTotal = items.reduce((sum, i) => sum + (i.total || 0), 0);
+                              const symbol = curr === 'USD' ? '$' : curr === 'KRW' ? '₩' : curr === 'CNY' ? '¥' : '€';
+
+                              return (
+                                <div key={curr} style={{ borderLeft: '3px solid #3b82f6', paddingLeft: '8px', minWidth: '150px' }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>{curr} 합계</div>
+                                  <div style={{ fontSize: '12.5px', color: '#1e293b', marginTop: '2px' }}>
+                                    입금액: <strong>{symbol}{sumAmount.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}</strong>
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                                    수수료: {symbol}{sumFee.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}
+                                  </div>
+                                  <div style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 'bold' }}>
+                                    총액: {symbol}{sumTotal.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '300px', marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>대금 영수 일자</span>
+                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>최종 대금 영수 완료일</span>
                       <input type="date" value={basicForm.paymentCollectedDate} onChange={e => setBasicForm(p => ({ ...p, paymentCollectedDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                     </div>
                   </div>

@@ -11,7 +11,7 @@ export interface ForwarderEntry {
   taxInvoiceDate?: string;
   taxInvoiceNo?: string;
   taxInvoices?: Array<{ date: string; invoiceNo: string; amount?: number }>; // 다중 세금계산서 지원
-  paymentInstallments?: Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>;
+  paymentInstallments?: Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>;
 }
 
 export interface OrderItem {
@@ -60,6 +60,7 @@ export interface Order {
   cooFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   blFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   exportDeclarationFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  coaFiles?: Array<{ name: string; url: string; size: number; path: string }>;
 
   otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   transactionFiles?: Array<{ name: string; url: string; size: number; path: string }>;
@@ -98,6 +99,7 @@ export interface Order {
   cfsEntryDate?: string; // CFS입고일
   cfsContactInfo?: string; // CFS주소 및 담당자 정보
   docCutoffDate?: string; // 서류마감일
+  cargoCutoffDate?: string; // CARGO CLS
   etd?: string; // ETD
   eta?: string; // ETA
   containerVolumeQuantities?: string; // Container Volume and quantities
@@ -134,7 +136,15 @@ export interface Order {
   supplierTaxTypes?: Record<string, '영세' | '과세'>; // 공급사별 과세구분 (영세/과세)
   supplierTaxInvoiceDetails?: Record<string, { date: string; invoiceNo: string; }>; // 공급사별 세금계산서 정보
   supplierPurchaseCertFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>; // 공급사별 구매확인서 파일
-  supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD' }>>; // 공급사별 분할 결제 정보
+  supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>; // 공급사별 분할 결제 정보
+  paymentCollectedInstallments?: Array<{
+    date: string;
+    amount: number;
+    fee?: number;
+    total?: number;
+    currency: 'KRW' | 'USD' | 'CNY' | 'EUR';
+    receiptFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  }>;
   bankSubmissionStatus?: 'Y' | 'N' | ''; // 은행 제출 여부
   forwarderFreightAmount?: number; // 포워딩 운송비 금액 (legacy)
   forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화 (legacy)
