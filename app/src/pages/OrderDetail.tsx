@@ -3784,6 +3784,30 @@ export const OrderDetail: React.FC = () => {
                                 </div>
                               </div>
                               <div style={{ display: 'flex', gap: '6px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // Add a new empty row belonging specifically to this supplier
+                                    setOrderItems(prev => [
+                                      ...prev,
+                                      {
+                                        itemId: (prev.length + 1).toString(),
+                                        name: '',
+                                        supplier: supplierName,
+                                        supplierContact: '',
+                                        grade: '',
+                                        qty: 0,
+                                        unit: 'kg',
+                                        unitPrice: 0,
+                                        amount: 0,
+                                        currency: 'USD'
+                                      }
+                                    ]);
+                                  }}
+                                  style={{ padding: '5px 10px', background: '#7c3aed', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                >
+                                  ＋ 품목 추가
+                                </button>
                                 <button 
                                   onClick={() => handlePrintSupplierPo(supplierName, items)}
                                   style={{ padding: '5px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#334155', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
@@ -3987,19 +4011,20 @@ export const OrderDetail: React.FC = () => {
                                     <th style={{ padding: '6px', textAlign: 'left', width: '90px' }}>상품코드</th>
                                     <th style={{ padding: '6px', textAlign: 'left' }}>품목명</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '120px' }}>스펙</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>수량</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>수량</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '120px' }}>매입가 (통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '150px' }}>실매입가 (통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>금액</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>부가세</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '110px' }}>합계</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}>삭제</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {items.length === 0 ? (
                                     <tr>
-                                      <td colSpan={7} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
-                                        연결된 품목이 없습니다. (원자재/OEM 등의 목적으로 추가됨)
+                                      <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontStyle: 'italic' }}>
+                                        연결된 품목이 없습니다. (상단 '＋ 품목 추가' 버튼을 눌러 추가)
                                       </td>
                                     </tr>
                                   ) : (
@@ -4008,10 +4033,38 @@ export const OrderDetail: React.FC = () => {
                                       const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
+                                      
+                                      // Find index in main orderItems array for callbacks
+                                      const itemIndexInMain = orderItems.findIndex(x => x === it);
+                                      
                                       return (
                                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                           <td style={{ padding: '6px' }}>{itemCode}</td>
-                                          <td style={{ padding: '6px' }}><strong>{itemName}</strong></td>
+                                          <td style={{ padding: '6px' }}>
+                                            {isEditing ? (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <input
+                                                  type="text"
+                                                  value={it.name || ''}
+                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'name', e.target.value)}
+                                                  placeholder="[품목코드] 검색 혹은 품목명 직접 입력"
+                                                  style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                                />
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    setSearchItemIndex(itemIndexInMain);
+                                                    setIsProductSearchOpen(true);
+                                                  }}
+                                                  style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                >
+                                                  검색
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <strong>{itemName}</strong>
+                                            )}
+                                          </td>
                                           <td style={{ padding: '6px', textAlign: 'center' }}>
                                             {isEditing ? (
                                               <input
@@ -4041,10 +4094,43 @@ export const OrderDetail: React.FC = () => {
                                               it.grade || '-'
                                             )}
                                           </td>
-                                          <td style={{ padding: '6px', textAlign: 'right' }}>{it.qty?.toLocaleString()} {it.unit}</td>
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>
+                                            {isEditing ? (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'flex-end' }}>
+                                                <input
+                                                  type="number"
+                                                  value={it.qty || 0}
+                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'qty', e.target.value)}
+                                                  style={{ width: '60px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
+                                                />
+                                                <span>{it.unit || 'kg'}</span>
+                                              </div>
+                                            ) : (
+                                              `${it.qty?.toLocaleString()} ${it.unit}`
+                                            )}
+                                          </td>
                                           {/* 매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
-                                            {origCurrency === 'KRW' ? '₩' : '$'}{originalPurchasePrice?.toLocaleString(undefined, origCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
+                                            {isEditing ? (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'flex-end' }}>
+                                                <select
+                                                  value={origCurrency}
+                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'originalPurchaseCurrency', e.target.value)}
+                                                  style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                                >
+                                                  <option value="USD">$</option>
+                                                  <option value="KRW">₩</option>
+                                                </select>
+                                                <input
+                                                  type="number"
+                                                  value={it.originalPurchasePrice || 0}
+                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'originalPurchasePrice', e.target.value)}
+                                                  style={{ width: '80px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
+                                                />
+                                              </div>
+                                            ) : (
+                                              `${origCurrency === 'KRW' ? '₩' : '$'}${originalPurchasePrice?.toLocaleString(undefined, origCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`
+                                            )}
                                           </td>
                                           {/* 실매입가 (통화/단가) */}
                                           <td style={{ padding: '6px', textAlign: 'right' }}>
@@ -4118,6 +4204,23 @@ export const OrderDetail: React.FC = () => {
                                               return `${purchaseCurrency === 'KRW' ? '₩' : '$'}${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
+                                          <td style={{ padding: '6px', textAlign: 'center' }}>
+                                            {isEditing ? (
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (window.confirm("이 품목을 삭제하시겠습니까?")) {
+                                                    setOrderItems(prev => prev.filter(x => x !== it).map((x, idx) => ({ ...x, itemId: (idx + 1).toString() })));
+                                                  }
+                                                }}
+                                                style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
+                                              >
+                                                ✕
+                                              </button>
+                                            ) : (
+                                              '-'
+                                            )}
+                                          </td>
                                         </tr>
                                       );
                                     })
@@ -4125,7 +4228,7 @@ export const OrderDetail: React.FC = () => {
                                   {/* SUBTOTAL ROW */}
                                   {items.length > 0 && (
                                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
-                                      <td colSpan={6} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
+                                      <td colSpan={7} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
                                       <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right' }}>
                                         {(() => {
                                           const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
