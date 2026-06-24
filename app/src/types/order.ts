@@ -45,6 +45,7 @@ export interface Order {
   remark: string;
   status: "주문" | "발주" | "선적관리" | "이익관리";
   items: OrderItem[];
+  sourcingItems?: OrderItem[];
   totalAmount: number;
   currency: "USD" | "KRW" | "mixed";
   exchangeRate?: number;

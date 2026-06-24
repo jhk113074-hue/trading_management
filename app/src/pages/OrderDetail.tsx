@@ -121,6 +121,7 @@ export const OrderDetail: React.FC = () => {
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
+  const [isSourcingSearch, setIsSourcingSearch] = useState(false);
 
   // Forwarder subwindow state
   const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
@@ -154,6 +155,7 @@ export const OrderDetail: React.FC = () => {
 
   // Editable arrays
   const [orderItems, setOrderItems] = useState<Partial<OrderItem>[]>([]);
+  const [sourcingItems, setSourcingItems] = useState<Partial<OrderItem>[]>([]);
   const [forwardersList, setForwardersList] = useState<ForwarderEntry[]>([]);
   const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
   console.log("[DEBUG] Rendering OrderDetail page. forwardersList:", forwardersList);
@@ -949,6 +951,7 @@ export const OrderDetail: React.FC = () => {
           lcRemark: data.lcRemark || ''
         });
         setOrderItems(data.items || []);
+        setSourcingItems(data.sourcingItems || data.items || []);
         setForwardersList(data.forwarders || []);
         if (data.activeSourcingTab) {
           setActiveSourcingTab(data.activeSourcingTab as any);
@@ -991,9 +994,9 @@ export const OrderDetail: React.FC = () => {
 
   // Group items by supplier for Purchase Orders preview
   const groupedSupplierItems = useMemo(() => {
-    if (!orderItems) return {};
+    if (!sourcingItems) return {};
     const groups: Record<string, OrderItem[]> = {};
-    (orderItems as OrderItem[]).forEach(item => {
+    (sourcingItems as OrderItem[]).forEach(item => {
       const supplierName = item.supplier?.trim() || 'General Supplier';
       if (!groups[supplierName]) {
         groups[supplierName] = [];
@@ -1001,7 +1004,7 @@ export const OrderDetail: React.FC = () => {
       groups[supplierName].push(item);
     });
     return groups;
-  }, [orderItems]);
+  }, [sourcingItems]);
 
   const allOrderSuppliers = useMemo(() => {
     if (!order) return [];
@@ -1177,6 +1180,22 @@ export const OrderDetail: React.FC = () => {
           amount: it.amount || 0,
           currency: (it.currency || 'USD') as any
         })),
+        sourcingItems: sourcingItems.map(it => ({
+          itemId: it.itemId || '',
+          name: it.name || '',
+          supplier: it.supplier || '',
+          supplierContact: it.supplierContact || '',
+          grade: it.grade || '',
+          qty: parseFloat(it.qty as any) || 0,
+          unit: (it.unit || 'kg') as any,
+          unitPrice: parseFloat(it.unitPrice as any) || 0,
+          purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
+          purchaseUnitCurrency: it.purchaseUnitCurrency || null,
+          originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+          originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+          amount: it.amount || 0,
+          currency: (it.currency || 'USD') as any
+        })),
         totalAmount,
         currency: orderCurrency,
         forwarders: forwardersList.map(fw => {
@@ -1271,6 +1290,80 @@ export const OrderDetail: React.FC = () => {
       }
       
       updated[index] = it;
+      return updated;
+    });
+  };
+
+  const handleSourcingItemChange = (index: number, field: keyof OrderItem, value: any) => {
+    setSourcingItems(prev => {
+      const updated = [...prev];
+      let it = { ...updated[index], [field]: value };
+      
+      if (field === 'name') {
+        const parsedCode = getRawProductCode(value);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        if (prod) {
+          const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+          const displayName = prod.nameEn || prod.nameKo || '';
+          
+          let buyPrice = prod.purchasePrice || 0;
+          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          const qty = it.qty || 0;
+          const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+          it = {
+            ...it,
+            name: `[${prod.productCode}] ${displayName}`,
+            supplier: prod.supplierName || '',
+            supplierContact: contactInfo || '',
+            grade: prod.spec || '',
+            unit: (prod.unit || 'kg') as any,
+            unitPrice: buyPrice,
+            currency: itemCurrency,
+            amount: amt
+          };
+        }
+      }
+
+      if (field === 'qty' || field === 'unitPrice' || field === 'currency') {
+        const qty = field === 'qty' ? parseFloat(value) || 0 : parseFloat(it.qty as any) || 0;
+        const price = field === 'unitPrice' ? parseFloat(value) || 0 : parseFloat(it.unitPrice as any) || 0;
+        const curr = field === 'currency' ? value : it.currency;
+        if (curr === 'KRW') {
+          it.amount = Math.round(qty * price);
+        } else {
+          it.amount = parseFloat((qty * price).toFixed(2));
+        }
+      }
+      
+      updated[index] = it;
+      return updated;
+    });
+  };
+
+  const handleSelectSourcingProduct = (idx: number, prod: Product) => {
+    setSourcingItems(prev => {
+      const updated = [...prev];
+      const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
+      
+      let buyPrice = prod.purchasePrice || 0;
+      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      const qty = updated[idx].qty || 0;
+      const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
+
+      const displayName = prod.nameEn || prod.nameKo || '';
+
+      updated[idx] = {
+        ...updated[idx],
+        name: `[${prod.productCode}] ${displayName}`,
+        supplier: prod.supplierName || '',
+        supplierContact: contactInfo || '',
+        grade: prod.spec || '',
+        unit: (prod.unit || 'kg') as any,
+        unitPrice: buyPrice,
+        currency: itemCurrency,
+        amount: amt
+      };
       return updated;
     });
   };
@@ -3427,6 +3520,7 @@ export const OrderDetail: React.FC = () => {
                                 type="button"
                                 onClick={() => {
                                   setSearchItemIndex(idx);
+                                  setIsSourcingSearch(false);
                                   setIsProductSearchOpen(true);
                                 }}
                                 style={{
@@ -3791,7 +3885,7 @@ export const OrderDetail: React.FC = () => {
                                   type="button"
                                   onClick={() => {
                                     // Add a new empty row belonging specifically to this supplier
-                                    setOrderItems(prev => [
+                                    setSourcingItems(prev => [
                                       ...prev,
                                       {
                                         itemId: (prev.length + 1).toString(),
@@ -4037,8 +4131,8 @@ export const OrderDetail: React.FC = () => {
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
                                       
-                                      // Find index in main orderItems array for callbacks
-                                      const itemIndexInMain = orderItems.findIndex(x => x === it);
+                                      // Find index in main sourcingItems array for callbacks
+                                      const itemIndexInMain = sourcingItems.findIndex(x => x === it);
                                       
                                       return (
                                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -4049,7 +4143,7 @@ export const OrderDetail: React.FC = () => {
                                                 <input
                                                   type="text"
                                                   value={it.name || ''}
-                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'name', e.target.value)}
+                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                   placeholder="[품목코드] 검색 혹은 품목명 직접 입력"
                                                   style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
                                                 />
@@ -4057,6 +4151,7 @@ export const OrderDetail: React.FC = () => {
                                                   type="button"
                                                   onClick={() => {
                                                     setSearchItemIndex(itemIndexInMain);
+                                                    setIsSourcingSearch(true);
                                                     setIsProductSearchOpen(true);
                                                   }}
                                                   style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
@@ -4075,7 +4170,7 @@ export const OrderDetail: React.FC = () => {
                                                 value={it.grade || ''}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
-                                                  setOrderItems(prev => {
+                                                  setSourcingItems(prev => {
                                                     return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, grade: val };
@@ -4103,7 +4198,7 @@ export const OrderDetail: React.FC = () => {
                                                 <input
                                                   type="number"
                                                   value={it.qty || 0}
-                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'qty', e.target.value)}
+                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'qty', e.target.value)}
                                                   style={{ width: '60px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
                                                 />
                                                 <span>{it.unit || 'kg'}</span>
@@ -4118,7 +4213,7 @@ export const OrderDetail: React.FC = () => {
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'flex-end' }}>
                                                 <select
                                                   value={origCurrency}
-                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'originalPurchaseCurrency', e.target.value)}
+                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'originalPurchaseCurrency', e.target.value)}
                                                   style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
                                                 >
                                                   <option value="USD">$</option>
@@ -4127,7 +4222,7 @@ export const OrderDetail: React.FC = () => {
                                                 <input
                                                   type="number"
                                                   value={it.originalPurchasePrice || 0}
-                                                  onChange={(e) => handleItemChange(itemIndexInMain, 'originalPurchasePrice', e.target.value)}
+                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'originalPurchasePrice', e.target.value)}
                                                   style={{ width: '80px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
                                                 />
                                               </div>
@@ -4143,7 +4238,7 @@ export const OrderDetail: React.FC = () => {
                                                 disabled={!isEditing}
                                                 onChange={(e) => {
                                                   const val = e.target.value as 'KRW' | 'USD';
-                                                  setOrderItems(prev => {
+                                                  setSourcingItems(prev => {
                                                     return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, purchaseUnitCurrency: val };
@@ -4169,7 +4264,7 @@ export const OrderDetail: React.FC = () => {
                                                 onChange={(e) => {
                                                   const raw = e.target.value.replace(/,/g, '');
                                                   const val = parseFloat(raw) || 0;
-                                                  setOrderItems(prev => {
+                                                  setSourcingItems(prev => {
                                                     return prev.map(item => {
                                                       if (item === it) {
                                                         return { ...item, purchaseUnitPrice: val };
@@ -4213,7 +4308,7 @@ export const OrderDetail: React.FC = () => {
                                                 type="button"
                                                 onClick={() => {
                                                   if (window.confirm("이 품목을 삭제하시겠습니까?")) {
-                                                    setOrderItems(prev => prev.filter(x => x !== it).map((x, idx) => ({ ...x, itemId: (idx + 1).toString() })));
+                                                    setSourcingItems(prev => prev.filter(x => x !== it).map((x, idx) => ({ ...x, itemId: (idx + 1).toString() })));
                                                   }
                                                 }}
                                                 style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
@@ -6264,7 +6359,7 @@ export const OrderDetail: React.FC = () => {
                             ? raw
                             : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as any] : [{ date: '', invoiceNo: '' }]);
 
-                          const supplierItems = orderItems.filter(it => (it.supplier?.trim() || 'General Supplier') === supplier);
+                          const supplierItems = sourcingItems.filter(it => (it.supplier?.trim() || 'General Supplier') === supplier);
                           const isZeroTax = basicForm.supplierTaxTypes[supplier] === '영세';
                           const customsExchangeRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
                           
@@ -7576,10 +7671,18 @@ export const OrderDetail: React.FC = () => {
       {isProductSearchOpen && searchItemIndex !== null && (
         <ProductSearchModal
           products={products}
-          onClose={() => setIsProductSearchOpen(false)}
-          onSelect={(prod) => {
-            handleSelectProduct(searchItemIndex, prod);
+          onClose={() => {
             setIsProductSearchOpen(false);
+            setIsSourcingSearch(false);
+          }}
+          onSelect={(prod) => {
+            if (isSourcingSearch) {
+              handleSelectSourcingProduct(searchItemIndex, prod);
+            } else {
+              handleSelectProduct(searchItemIndex, prod);
+            }
+            setIsProductSearchOpen(false);
+            setIsSourcingSearch(false);
           }}
         />
       )}
