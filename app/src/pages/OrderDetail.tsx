@@ -7418,11 +7418,6 @@ export const OrderDetail: React.FC = () => {
                         </div>
                       )}
                     </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '300px', marginTop: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>최종 대금 영수 완료일</span>
-                      <input type="date" value={basicForm.paymentCollectedDate} onChange={e => setBasicForm(p => ({ ...p, paymentCollectedDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                    </div>
                   </div>
                 );
               })()}
