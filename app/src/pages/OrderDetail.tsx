@@ -5961,6 +5961,23 @@ export const OrderDetail: React.FC = () => {
                                     </div>
                                   );
                                 })}
+
+                                {/* 세금계산서 합계 행 (2건 이상일 때 표시) */}
+                                {list.length >= 2 && (() => {
+                                  const totalInvoicesSupply = list.reduce((sum, item) => sum + (Number(item.supplyAmount) || 0), 0);
+                                  const totalInvoicesVat = list.reduce((sum, item) => sum + (Number(item.vatAmount) || 0), 0);
+                                  const totalInvoicesGrand = totalInvoicesSupply + totalInvoicesVat;
+                                  return (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center', marginTop: '4px', paddingTop: '8px', borderTop: '2px double #cbd5e1', color: '#1e3a8a', fontWeight: 'bold' }}>
+                                      <span style={{ fontSize: '11px', paddingLeft: '4px' }}>등록 세금계산서 합계</span>
+                                      <span></span>
+                                      <span style={{ fontSize: '12.5px', color: '#0f172a' }}>₩{totalInvoicesSupply.toLocaleString()}</span>
+                                      <span style={{ fontSize: '12.5px', color: '#0f172a' }}>₩{totalInvoicesVat.toLocaleString()}</span>
+                                      <span style={{ fontSize: '13px', textAlign: 'right', paddingRight: '12px' }}>₩{totalInvoicesGrand.toLocaleString()}</span>
+                                      <span style={{ width: '28px' }}></span>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           );
