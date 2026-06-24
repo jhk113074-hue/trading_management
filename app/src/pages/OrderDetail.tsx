@@ -661,7 +661,7 @@ export const OrderDetail: React.FC = () => {
     supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
-    paymentCollectedInstallments: [] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
+    paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
 
     // 주문 기본정보 및 L/C 거래 상세
@@ -933,7 +933,9 @@ export const OrderDetail: React.FC = () => {
           supplierPoDetails: data.supplierPoDetails || {},
           supplierPurchaseCertFiles: data.supplierPurchaseCertFiles || {},
           supplierPaymentInstallments: data.supplierPaymentInstallments || {},
-          paymentCollectedInstallments: data.paymentCollectedInstallments || [],
+          paymentCollectedInstallments: (data.paymentCollectedInstallments && data.paymentCollectedInstallments.length > 0)
+            ? data.paymentCollectedInstallments
+            : [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }],
           bankSubmissionStatus: data.bankSubmissionStatus || '',
 
           // 주문 기본정보 및 L/C 거래 상세 로드
@@ -7375,9 +7377,17 @@ export const OrderDetail: React.FC = () => {
 
                       {/* 수금 통화별 합계 요약 기록 */}
                       {basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.length > 0 && (
-                        <div style={{ marginTop: '12px', padding: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', display: 'block', marginBottom: '6px' }}>📊 수금 합계 요약</span>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                        <div style={{ marginTop: '12px', padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#166534' }}>📊 수금 및 발주금액 비교 요약 (실시간)</span>
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#166534', background: '#dcfce7', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                              PO 접수 총액: ${orderAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px dashed #bbf7d0', paddingTop: '6px' }}>
                             {['USD', 'KRW', 'CNY', 'EUR'].map(curr => {
                               const items = (basicForm.paymentCollectedInstallments || []).filter(i => (i.currency || 'USD') === curr);
                               if (items.length === 0) return null;
@@ -7386,18 +7396,21 @@ export const OrderDetail: React.FC = () => {
                               const sumTotal = items.reduce((sum, i) => sum + (i.total || 0), 0);
                               const symbol = curr === 'USD' ? '$' : curr === 'KRW' ? '₩' : curr === 'CNY' ? '¥' : '€';
 
+                              // Calculate collected progress percentage compared to PO Amount if the currency is USD.
+                              // (Since PO Amount is in USD). If non-USD, we just show totals.
+                              let progressText = '';
+                              if (curr === 'USD' && orderAmountUsd > 0) {
+                                const percent = (sumAmount / orderAmountUsd) * 100;
+                                progressText = ` (PO 대비 입금액 수금율: ${percent.toFixed(2)}%)`;
+                              }
+
                               return (
-                                <div key={curr} style={{ borderLeft: '3px solid #3b82f6', paddingLeft: '8px', minWidth: '150px' }}>
-                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>{curr} 합계</div>
-                                  <div style={{ fontSize: '12.5px', color: '#1e293b', marginTop: '2px' }}>
-                                    입금액: <strong>{symbol}{sumAmount.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}</strong>
-                                  </div>
-                                  <div style={{ fontSize: '11px', color: '#64748b' }}>
-                                    수수료: {symbol}{sumFee.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}
-                                  </div>
-                                  <div style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                                    총액: {symbol}{sumTotal.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}
-                                  </div>
+                                <div key={curr} style={{ fontSize: '12px', color: '#14532d', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                                  <span style={{ fontWeight: 800, minWidth: '60px' }}>• {curr} 합계:</span>
+                                  <span>입금액: <strong>{symbol}{sumAmount.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}</strong></span>
+                                  <span style={{ color: '#166534' }}>수수료: {symbol}{sumFee.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}</span>
+                                  <span style={{ color: '#15803d', fontWeight: 'bold' }}>총액(합계): {symbol}{sumTotal.toLocaleString(undefined, { minimumFractionDigits: curr === 'KRW' ? 0 : 2, maximumFractionDigits: curr === 'KRW' ? 0 : 2 })}</span>
+                                  {progressText && <span style={{ color: '#2563eb', fontWeight: 800 }}>{progressText}</span>}
                                 </div>
                               );
                             })}
