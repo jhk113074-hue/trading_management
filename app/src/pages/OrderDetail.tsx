@@ -7291,14 +7291,14 @@ export const OrderDetail: React.FC = () => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
                 const orderAmountUsd = piData?.totalUsd || 0;
 
-                const purchaseUsd = order.items?.reduce((sum: number, it: OrderItem) => {
+                const purchaseUsd = sourcingItems?.reduce((sum: number, it: OrderItem) => {
                   const info = getSupplierPurchaseInfo(it);
                   if (info.purchaseCurrency !== 'KRW') {
                     return sum + (info.purchasePrice * (it.qty || 0));
                   }
                   return sum;
                 }, 0) || 0;
-                const purchaseKrw = order.items?.reduce((sum: number, it: OrderItem) => {
+                const purchaseKrw = sourcingItems?.reduce((sum: number, it: OrderItem) => {
                   const info = getSupplierPurchaseInfo(it);
                   if (info.purchaseCurrency === 'KRW') {
                     return sum + (info.purchasePrice * (it.qty || 0));
