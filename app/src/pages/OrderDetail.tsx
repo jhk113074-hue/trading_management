@@ -1728,6 +1728,27 @@ export const OrderDetail: React.FC = () => {
                 handleDocUpload(fakeEvent, fieldName);
               }
             }}
+            onPaste={async e => {
+              const clipboardItems = e.clipboardData.items;
+              for (let i = 0; i < clipboardItems.length; i++) {
+                if (clipboardItems[i].type.indexOf('image') !== -1) {
+                  const file = clipboardItems[i].getAsFile();
+                  if (file) {
+                    e.preventDefault();
+                    // Generate a file name with custom timestamp to identify pasted screenshots
+                    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                    const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
+                    const renamedFile = new File(
+                      [file],
+                      `screenshot_${dateStr}_${timeStr}.png`,
+                      { type: file.type }
+                    );
+                    const fakeEvent = { target: { files: [renamedFile] } } as any;
+                    handleDocUpload(fakeEvent, fieldName);
+                  }
+                }
+              }
+            }}
             onClick={() => {
               if (uploadingField !== fieldName) {
                 document.getElementById(inputDocId)?.click();
