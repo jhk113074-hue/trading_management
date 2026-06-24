@@ -5791,10 +5791,30 @@ export const OrderDetail: React.FC = () => {
                             ? raw
                             : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as any] : [{ date: '', invoiceNo: '' }]);
 
+                          const supplierItems = orderItems.filter(it => (it.supplier?.trim() || 'General Supplier') === supplier);
+                          const isZeroTax = basicForm.supplierTaxTypes[supplier] === '영세';
+                          const customsExchangeRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
+                          
+                          const poSupplyKrw = supplierItems.reduce((sum, it) => {
+                            const info = getSupplierPurchaseInfo(it as OrderItem);
+                            const price = info.purchasePrice * (it.qty || 0);
+                            if (info.purchaseCurrency !== 'KRW') {
+                              return sum + Math.round(price * customsExchangeRate);
+                            }
+                            return sum + price;
+                          }, 0);
+                          const poVatKrw = isZeroTax ? 0 : Math.round(poSupplyKrw * 0.1);
+                          const poTotalKrw = poSupplyKrw + poVatKrw;
+
                           return (
                             <div key={supplier} style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '4px' }}>
-                                <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#334155' }}>{supplier}</span>
+                                  <span style={{ fontSize: '11px', color: '#4b5563', backgroundColor: '#f1f5f9', padding: '3px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                    📋 원가 발주액: <strong>₩{poSupplyKrw.toLocaleString()}</strong> | 부가세: <strong>₩{poVatKrw.toLocaleString()}</strong> | 합계: <strong>₩{poTotalKrw.toLocaleString()}</strong>
+                                  </span>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => {
