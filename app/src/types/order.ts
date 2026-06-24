@@ -29,6 +29,7 @@ export interface OrderItem {
   originalPurchaseCurrency?: "USD" | "KRW";
   amount: number;
   currency: "USD" | "KRW";
+  isSourcingOnly?: boolean;
 }
 
 export interface Order {

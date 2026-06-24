@@ -3382,9 +3382,11 @@ export const OrderDetail: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {orderItems.map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
+                    {orderItems.map((item, idx) => {
+                      if (item.isSourcingOnly) return null;
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
                         
                         {/* 상품코드 */}
                         <td style={{ padding: '4px 4px' }}>
@@ -3586,7 +3588,8 @@ export const OrderDetail: React.FC = () => {
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -3650,9 +3653,9 @@ export const OrderDetail: React.FC = () => {
               <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
                 <span>총 발주 금액 (Grand Total):</span>
                 {(() => {
-                  const usdTotal = orderItems.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0)
+                  const usdTotal = orderItems.filter(it => !it.isSourcingOnly && it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0)
                     + forwardersList.reduce((sum, fw) => sum + (parseFloat(fw.budgetAmountUsd as any) || 0), 0);
-                  const krwTotal = orderItems.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
+                  const krwTotal = orderItems.filter(it => !it.isSourcingOnly && it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
                   return (
                     <span style={{ color: '#dc2626' }}>
                       {usdTotal > 0 && `$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`}
