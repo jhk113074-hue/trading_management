@@ -6,6 +6,20 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Task, Visibility, Quadrant, TaskType, ScheduleType, TaskStatus, User } from '../types';
 import { validateTask } from '../utils/businessRules';
 
+// ── Dropbox 링크 자동 변환 ─────────────────────────────────────────
+const convertDropboxLink = (url: string): string => {
+  if (!url.includes('dropbox.com')) return url;
+  let converted = url.trim();
+  // dl=1 → dl=0 (직접 다운로드 → 웹 뷰어 미리보기)
+  if (converted.includes('dl=1')) {
+    converted = converted.replace('dl=1', 'dl=0');
+  } else if (!converted.includes('dl=')) {
+    // dl 파라미터 없으면 추가
+    converted += (converted.includes('?') ? '&' : '?') + 'dl=0';
+  }
+  return converted;
+};
+
 interface Props {
   initialTask?: Task;
   onClose: () => void;
@@ -35,21 +49,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [startDate, setStartDate] = useState(initialTask?.startDate || '');
   const [recurrenceEndDate, setRecurrenceEndDate] = useState(initialTask?.recurrenceEndDate || '');
 
-  const [externalFileLink, setExternalFileLink] = useState(initialTask?.externalFileLink || '');
-
-  // ── Dropbox 링크 자동 변환 ─────────────────────────────────────────
-  const convertDropboxLink = (url: string): string => {
-    if (!url.includes('dropbox.com')) return url;
-    let converted = url.trim();
-    // dl=1 → dl=0 (직접 다운로드 → 웹 뷰어 미리보기)
-    if (converted.includes('dl=1')) {
-      converted = converted.replace('dl=1', 'dl=0');
-    } else if (!converted.includes('dl=')) {
-      // dl 파라미터 없으면 추가
-      converted += (converted.includes('?') ? '&' : '?') + 'dl=0';
-    }
-    return converted;
-  };
+  const [externalFileLink, setExternalFileLink] = useState(
+    initialTask?.externalFileLink ? convertDropboxLink(initialTask.externalFileLink) : ''
+  );
   const [relatedUsers, setRelatedUsers] = useState(initialTask?.allowedUserIds?.join(', ') || '');
   
   const [users, setUsers] = useState<User[]>([]);
