@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${((item.w * item.d * item.h) / 1000000000).toFixed(3)}</td>
                     <td>${netDisp} / ${grossDisp}</td>
                     <td>${item.qty.toLocaleString()}</td>
-                    <td>${totalNetDisp} / ${totalGrossDisp}</td>
+                    <td>-</td>
                     <td>
                         <span class="tag ${item.stackable ? 'active' : ''}">${item.stackable ? '다단허용' : '다단불가'}</span>
                         <span class="tag ${item.rotation ? 'active' : ''}">${item.rotation ? '회전허용' : '회전불가'}</span>
