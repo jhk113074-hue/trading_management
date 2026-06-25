@@ -302,7 +302,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
     const defaultMethod = list.find(m => m.isDefault) || targetMethod;
     if (defaultMethod) {
-      const isPallet = defaultMethod.packageType === 'Pallet' || defaultMethod.packageType === 'Pallet(Pail)' || defaultMethod.packageType === 'Pallet(Drum)';
+      const isPallet = defaultMethod.packageType.toLowerCase().includes('pallet');
       setFormData(prev => ({
         ...prev,
         packingMethods: list,
@@ -341,7 +341,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     
     const defaultMethod = list.find(m => m.isDefault);
     if (defaultMethod) {
-      const isPallet = defaultMethod.packageType === 'Pallet' || defaultMethod.packageType === 'Pallet(Pail)' || defaultMethod.packageType === 'Pallet(Drum)';
+      const isPallet = defaultMethod.packageType.toLowerCase().includes('pallet');
       setFormData(prev => ({
         ...prev,
         packingMethods: list,
@@ -528,7 +528,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     try {
       const docId = (initialProduct && !isCopy) ? initialProduct.id : formData.productCode;
       
-      const isPallet = formData.packageType === 'Pallet' || formData.packageType === 'Pallet(Pail)' || formData.packageType === 'Pallet(Drum)';
+      const isPallet = formData.packageType?.toLowerCase().includes('pallet');
       const finalData: Partial<Product> = {
         ...formData,
         unit: (formData.unit || 'KG').toUpperCase(),
@@ -1247,7 +1247,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           </tr>
                         ) : (
                           (formData.packingMethods || []).map((m: any) => {
-                            const isPallet = m.packageType === 'Pallet' || m.packageType === 'Pallet(Pail)' || m.packageType === 'Pallet(Drum)';
+                            const isPallet = m.packageType.toLowerCase().includes('pallet');
                             const specStr = isPallet
                               ? `Pallet: ${m.palletWidth || 0}x${m.palletLength || 0}x${m.palletHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.palletWeight || 0} kg, 총중량: ${m.palletGrossWeight || 0} kg`
                               : `Single: ${m.unitWidth || 0}x${m.unitLength || 0}x${m.unitHeight || 0} mm / 순중량: ${m.unitWeight || 0} kg, 총중량: ${m.unitGrossWeight || 0} kg`;
