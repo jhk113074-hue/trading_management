@@ -55,6 +55,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [users, setUsers] = useState<User[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [reviewAssigneeId, setReviewAssigneeId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { userProfile } = useAuth();
 
@@ -114,21 +115,27 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const handleAddComment = async () => {
     if (!newComment.trim() || !initialTask?.id || !userProfile) return;
     
+    const targetReviewAssigneeId = reviewAssigneeId;
+    const targetReviewAssigneeName = targetReviewAssigneeId ? (users.find(u => u.id === targetReviewAssigneeId)?.name || '') : '';
+
     const commentObj = {
       taskId: initialTask.id,
       content: newComment,
       createdBy: userProfile.id,
       creatorName: userProfile.name,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      reviewAssigneeId: targetReviewAssigneeId || null,
+      reviewAssigneeName: targetReviewAssigneeName || null
     };
 
     // 1. 입력창 즉시 초기화
     setNewComment('');
+    setReviewAssigneeId('');
     // 2. 화면(로컬 상태)에 즉시 반영 (Optimistic UI)
     setComments(prev => [...prev, { id: 'temp-' + Date.now(), ...commentObj }]);
 
     try {
-      await addDoc(collection(db, 'taskComments'), commentObj);
+      const docRef = await addDoc(collection(db, 'taskComments'), commentObj);
       
       const taskRef = doc(db, 'tasks', initialTask.id);
       await updateDoc(taskRef, {
@@ -136,6 +143,22 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         lastCommentAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
+
+      if (targetReviewAssigneeId) {
+        await addDoc(collection(db, 'notifications'), {
+          type: 'TASK_REVIEW',
+          taskId: initialTask.id,
+          taskTitle: initialTask.title || '제목 없음',
+          commentId: docRef.id,
+          commentContent: commentObj.content,
+          senderId: userProfile.id,
+          senderName: userProfile.name,
+          receiverId: targetReviewAssigneeId,
+          receiverName: targetReviewAssigneeName,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
       
     } catch (e) {
       console.error(e);
@@ -574,7 +597,14 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
                   {comments.map(c => (
                     <div key={c.id}>
-                      <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>{c.creatorName} • {new Date(c.createdAt).toLocaleDateString()}</div>
+                      <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>
+                        {c.creatorName} • {new Date(c.createdAt).toLocaleDateString()}
+                        {c.reviewAssigneeName && (
+                          <span style={{ marginLeft: '8px', padding: '1px 6px', borderRadius: '4px', background: '#fee2e2', color: '#dc2626', fontSize: '0.65rem', fontWeight: 600 }}>
+                            📢 검토요청: {c.reviewAssigneeName}
+                          </span>
+                        )}
+                      </div>
                       <div style={{ fontSize: '0.8rem', color: '#0f172a', background: '#fff', padding: '6px 8px', borderRadius: '0 6px 6px 6px', border: '1px solid #e2e8f0', display: 'inline-block' }}>{c.content}</div>
                     </div>
                   ))}
@@ -583,6 +613,28 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }} />
                   <button onClick={handleAddComment} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
+                  <select
+                    value={reviewAssigneeId}
+                    onChange={e => setReviewAssigneeId(e.target.value)}
+                    style={{
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.72rem',
+                      outline: 'none',
+                      background: '#fff',
+                      color: '#475569',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">(지정 안함)</option>
+                    {users.filter(u => u.id !== userProfile?.id).map(u => (
+                      <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

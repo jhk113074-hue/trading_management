@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 
@@ -13,6 +13,9 @@ export const Layout: React.FC = () => {
   const { tasks, addTask } = useTasks();
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [activeNotificationTask, setActiveNotificationTask] = useState<Task | null>(null);
 
   // Drag-to-resize sidebar width states
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -64,6 +67,69 @@ export const Layout: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  React.useEffect(() => {
+    if (!userProfile?.id) return;
+    const q = query(collection(db, 'notifications'), where('receiverId', '==', userProfile.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched: any[] = [];
+      snapshot.forEach(doc => {
+        fetched.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort in memory to avoid Firebase composite index errors
+      fetched.sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      setNotifications(fetched);
+    });
+    return () => unsubscribe();
+  }, [userProfile?.id]);
+
+  const handleMarkAllAsRead = async () => {
+    const unread = notifications.filter(n => !n.isRead);
+    if (unread.length === 0) return;
+    try {
+      const batch = writeBatch(db);
+      unread.forEach(n => {
+        batch.update(doc(db, 'notifications', n.id), { isRead: true });
+      });
+      await batch.commit();
+    } catch (e) {
+      console.error("Failed to mark all as read:", e);
+    }
+  };
+
+  const handleNotificationClick = async (notif: any) => {
+    setShowNotifications(false);
+    try {
+      if (!notif.isRead) {
+        await updateDoc(doc(db, 'notifications', notif.id), { isRead: true });
+      }
+      const taskSnap = await getDoc(doc(db, 'tasks', notif.taskId));
+      if (taskSnap.exists()) {
+        setActiveNotificationTask({ id: taskSnap.id, ...taskSnap.data() } as Task);
+      } else {
+        alert('존재하지 않거나 이미 삭제된 업무입니다.');
+      }
+    } catch (e) {
+      console.error("Failed to process notification click:", e);
+      alert('업무 정보를 불러오지 못했습니다.');
+    }
+  };
+
+  const handleSaveNotificationTask = async (data: Partial<Task>) => {
+    if (activeNotificationTask) {
+      try {
+        await updateDoc(doc(db, 'tasks', activeNotificationTask.id), data);
+        setActiveNotificationTask(null);
+      } catch (e) {
+        console.error("Failed to save task:", e);
+        alert('업무 저장에 실패했습니다.');
+      }
+    }
+  };
 
   const menuItems = React.useMemo(() => {
     const groups = [
@@ -222,6 +288,146 @@ export const Layout: React.FC = () => {
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
+
+            {/* 알림 종 아이콘 및 드롭다운 */}
+            {userProfile && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '20px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s',
+                    outline: 'none',
+                    color: '#475569'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  title="알림 확인"
+                >
+                  🔔
+                  {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        right: '2px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        fontSize: '10px',
+                        width: '16px',
+                        height: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 0 2px #fff'
+                      }}
+                    >
+                      {notifications.filter(n => !n.isRead).length}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '40px',
+                      right: '0',
+                      width: '320px',
+                      background: '#fff',
+                      borderRadius: '8px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                      border: '1px solid #e2e8f0',
+                      zIndex: 1000,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      maxHeight: '400px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: '10px 12px',
+                        borderBottom: '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: '#f8fafc'
+                      }}
+                    >
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>알림</span>
+                      {notifications.filter(n => !n.isRead).length > 0 && (
+                        <button
+                          onClick={handleMarkAllAsRead}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#0d9488',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            fontWeight: 600
+                          }}
+                        >
+                          ✓ 모두 읽음 처리
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                      {notifications.length === 0 ? (
+                        <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                          새로운 알림이 없습니다.
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            style={{
+                              padding: '10px 12px',
+                              borderBottom: '1px solid #f1f5f9',
+                              cursor: 'pointer',
+                              background: n.isRead ? '#ffffff' : '#f0f9ff',
+                              transition: 'background 0.2s',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              textAlign: 'left'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = n.isRead ? '#f8fafc' : '#e0f2fe'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? '#ffffff' : '#f0f9ff'; }}
+                          >
+                            <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: n.isRead ? 400 : 600 }}>
+                              📢 <strong>{n.senderName}</strong>님이 검토를 요청했습니다.
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              업무: {n.taskTitle}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '4px 6px', borderRadius: '4px', marginTop: '4px', fontStyle: 'italic' }}>
+                              "{n.commentContent}"
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#94a3b8', alignSelf: 'flex-end', marginTop: '2px' }}>
+                              {new Date(n.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Link to="/profile" className="btn" style={{
               textDecoration: 'none',
               display: 'inline-flex',
@@ -279,6 +485,14 @@ export const Layout: React.FC = () => {
             await addTask(data as Task);
             setIsNewTaskModalOpen(false);
           }}
+        />
+      )}
+
+      {activeNotificationTask && (
+        <TaskModal
+          initialTask={activeNotificationTask}
+          onClose={() => setActiveNotificationTask(null)}
+          onSave={handleSaveNotificationTask}
         />
       )}
     </div>
