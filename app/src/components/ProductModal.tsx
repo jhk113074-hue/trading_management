@@ -1289,15 +1289,17 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       </h4>
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '14px', marginBottom: '16px' }}>
-                      <Input label="패킹 방법명 (예: Pail 단품, Pail+Pallet 등) ★" value={editingMethod.name} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, name: v }))} placeholder="패킹명을 입력해 주세요" />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '10px', alignItems: 'end' }}>
+                      {/* Row 1 */}
+                      <div style={{ gridColumn: 'span 4' }}>
+                        <Input label="패킹 방법명 (예: Pail 단품, Pail+Pallet 등) ★" value={editingMethod.name} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, name: v }))} placeholder="패킹명을 입력해 주세요" />
+                      </div>
+                      <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>포장 형태 ★</label>
                         <select 
                           value={editingMethod.packageType} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            // Default dimensions mapping
                             const defaults: Record<string, { w: number, l: number, h: number }> = {
                               'Paper Bag': { w: 400, l: 600, h: 120 },
                               'Paper Box(1.2M)': { w: 290, l: 1250, h: 290 },
@@ -1333,7 +1335,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               palletHeight: isPallet ? size.h : 0
                             }));
                           }} 
-                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {[
                             '단품', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
@@ -1345,69 +1347,70 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           ))}
                         </select>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>단위</label>
                         <select 
                           value={editingMethod.unit} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, unit: e.target.value }))} 
-                          style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                       </div>
+                      <div style={{ gridColumn: 'span 1.5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>다단 적재</label>
+                        <select 
+                          value={editingMethod.stackable} 
+                          onChange={(e) => setEditingMethod((p: any) => ({ ...p, stackable: e.target.value }))} 
+                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                        >
+                          {['Y', 'N'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ gridColumn: 'span 1.5', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>회전 허용</label>
+                        <select 
+                          value={editingMethod.rotation} 
+                          onChange={(e) => setEditingMethod((p: any) => ({ ...p, rotation: e.target.value }))} 
+                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                        >
+                          {['Y', 'N'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Row 2 */}
+                      {editingMethod.packageType !== '단품' ? (
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
+                        </div>
+                      ) : (
+                        <div style={{ gridColumn: 'span 2', padding: '10px 0', fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>단품 (적재정보 없음)</div>
+                      )}
+
+                      {!editingMethod.packageType.includes('Pallet') ? (
+                        <>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="총중량 (kg)" value={editingMethod.unitGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitGrossWeight: v }))} type="number" step="0.01" /></div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="파렛트 가로" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="파렛트 세로" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="파렛트 높이" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: v }))} type="number" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="파렛트 순중량" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: v }))} type="number" step="0.01" /></div>
+                          <div style={{ gridColumn: 'span 2' }}><Input label="파렛트 총중량" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: v }))} type="number" step="0.01" /></div>
+                        </>
+                      )}
                     </div>
 
-                    {/* Dynamic layout inside sub-form */}
-                    {editingMethod.packageType !== '단품' && (
-                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#d97706', display: 'block', marginBottom: '12px' }}>📊 적재 정보 (Packing Spec)</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                          <div style={{ gridColumn: 'span 4' }}>
-                            <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {!editingMethod.packageType.includes('Pallet') && (
-                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>📦 단품/포장별 규격 Spec</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-                          <Input label="가로 (mm)" value={editingMethod.unitWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWidth: v }))} type="number" />
-                          <Input label="세로 (mm)" value={editingMethod.unitLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitLength: v }))} type="number" />
-                          <Input label="높이 (mm)" value={editingMethod.unitHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitHeight: v }))} type="number" />
-                          <Input label="순중량 (kg)" value={editingMethod.unitWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitWeight: v }))} type="number" step="0.01" />
-                          <Input label="총중량 (kg)" value={editingMethod.unitGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, unitGrossWeight: v }))} type="number" step="0.01" />
-                        </div>
-                      </div>
-                    )}
-
-                    {editingMethod.packageType.includes('Pallet') && (
-                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '12px' }}>🪵 파렛트 적재 규격 (Pallet Spec)</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-                          <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: v }))} type="number" />
-                          <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: v }))} type="number" />
-                          <Input label="높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: v }))} type="number" />
-                          <Input label="순중량 (kg)" value={editingMethod.palletWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWeight: v }))} type="number" step="0.01" />
-                          <Input label="총중량 (kg)" value={editingMethod.palletGrossWeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletGrossWeight: v }))} type="number" step="0.01" />
-                        </div>
-                      </div>
-                    )}
-
-                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>🔄 적재 및 취급 옵션</span>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                        <Select label="다단 적재" value={editingMethod.stackable} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, stackable: v }))} options={['Y', 'N']} />
-                        <Select label="회전 허용" value={editingMethod.rotation} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, rotation: v }))} options={['Y', 'N']} />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
-                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '8px 16px', fontSize: '12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>취소</button>
-                      <button type="button" onClick={handleSavePackingMethod} style={{ padding: '8px 18px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>저장 및 적용</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '14px' }}>
+                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '6px 12px', fontSize: '12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>취소</button>
+                      <button type="button" onClick={handleSavePackingMethod} style={{ padding: '6px 14px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>저장 및 적용</button>
                     </div>
                   </div>
                 )}
