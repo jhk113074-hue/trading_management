@@ -41,12 +41,12 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const convertDropboxLink = (url: string): string => {
     if (!url.includes('dropbox.com')) return url;
     let converted = url.trim();
-    // dl=0 → dl=1 (미리보기 → 직접 다운로드)
-    if (converted.includes('dl=0')) {
-      converted = converted.replace('dl=0', 'dl=1');
+    // dl=1 → dl=0 (직접 다운로드 → 웹 뷰어 미리보기)
+    if (converted.includes('dl=1')) {
+      converted = converted.replace('dl=1', 'dl=0');
     } else if (!converted.includes('dl=')) {
       // dl 파라미터 없으면 추가
-      converted += (converted.includes('?') ? '&' : '?') + 'dl=1';
+      converted += (converted.includes('?') ? '&' : '?') + 'dl=0';
     }
     return converted;
   };
@@ -534,8 +534,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 </a>
               )}
             </div>
-            {externalFileLink && externalFileLink.includes('dropbox.com') && externalFileLink.includes('dl=1') && (
-              <div style={{ fontSize: '0.7rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>✅ Dropbox 링크가 직접 접근 형식으로 자동 변환되었습니다</div>
+            {externalFileLink && externalFileLink.includes('dropbox.com') && externalFileLink.includes('dl=0') && (
+              <div style={{ fontSize: '0.7rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>✅ Dropbox 링크가 웹 뷰어(저장 없이 보기) 형식으로 자동 변환되었습니다</div>
             )}
           </div>
 
