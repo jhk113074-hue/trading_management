@@ -503,6 +503,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.duplicateItem = (id) => {
+        const item = currentItems.find(i => i.id === id);
+        if (!item) return;
+        
+        const newItem = {
+            ...JSON.parse(JSON.stringify(item)),
+            id: generateId(),
+            name: item.name + ' (복사본)'
+        };
+        
+        const index = currentItems.findIndex(i => i.id === id);
+        if (index !== -1) {
+            currentItems.splice(index + 1, 0, newItem);
+        } else {
+            currentItems.push(newItem);
+        }
+        
+        renderItems();
+        
+        if (currentResults && currentResults.length > 0) {
+            const btnRunSimulation = document.getElementById('btn-run-simulation');
+            if (btnRunSimulation) btnRunSimulation.click();
+        }
+    };
+
     const renderItems = () => {
         itemsTbody.innerHTML = '';
         const itemsTfoot = document.getElementById('items-tfoot');
@@ -544,8 +569,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="tag ${item.rotation ? 'active' : ''}">${item.rotation ? '회전허용' : '회전불가'}</span>
                     </td>
                     <td class="actions-cell">
-                        <button class="btn btn-icon btn-sm" onclick="editItem('${item.id}')"><i data-lucide="edit-2"></i></button>
-                        <button class="btn btn-icon btn-sm" onclick="deleteItem('${item.id}')"><i data-lucide="trash-2"></i></button>
+                        <button class="btn btn-icon btn-sm" onclick="duplicateItem('${item.id}')" title="복사"><i data-lucide="copy"></i></button>
+                        <button class="btn btn-icon btn-sm" onclick="editItem('${item.id}')" title="수정"><i data-lucide="edit-2"></i></button>
+                        <button class="btn btn-icon btn-sm" onclick="deleteItem('${item.id}')" title="삭제"><i data-lucide="trash-2"></i></button>
                     </td>
                 `;
                 itemsTbody.appendChild(tr);
