@@ -1295,10 +1295,52 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>포장 형태 ★</label>
                         <select 
                           value={editingMethod.packageType} 
-                          onChange={(e) => setEditingMethod((p: any) => ({ ...p, packageType: e.target.value }))} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            // Default dimensions mapping
+                            const defaults: Record<string, { w: number, l: number, h: number }> = {
+                              'Paper Bag': { w: 400, l: 600, h: 120 },
+                              'Paper Box(1.2M)': { w: 290, l: 1250, h: 290 },
+                              'Paper Box(1.7M)': { w: 290, l: 1250, h: 290 },
+                              'Paper Box(50A)': { w: 525, l: 410, h: 380 },
+                              'Paper Box(100A)': { w: 550, l: 390, h: 490 },
+                              'Carton': { w: 1300, l: 1100, h: 720 },
+                              'Plastic Drum': { w: 590, l: 590, h: 910 },
+                              'Steel Drum': { w: 585, l: 585, h: 870 },
+                              'Wooden Pallet': { w: 1150, l: 1150, h: 100 },
+                              'Plastic Pallet': { w: 1150, l: 1150, h: 100 },
+                              'Wooden Box': { w: 1000, l: 1150, h: 800 },
+                              'Steel Pail': { w: 290, l: 290, h: 370 },
+                              'Plastic Pail': { w: 290, l: 290, h: 370 },
+                              'Jerrycan': { w: 200, l: 230, h: 370 },
+                              'Roll(3")': { w: 1050, l: 458, h: 458 },
+                              'Roll(4")': { w: 1050, l: 463, h: 463 },
+                              'Roll(6")': { w: 1050, l: 476.5, h: 476.5 },
+                              'Woven Bag': { w: 600, l: 400, h: 150 }
+                            };
+                            
+                            const isPallet = val.includes('Pallet');
+                            const size = defaults[val] || { w: 0, l: 0, h: 0 };
+                            
+                            setEditingMethod((p: any) => ({ 
+                              ...p, 
+                              packageType: val,
+                              unitWidth: isPallet ? 0 : size.w,
+                              unitLength: isPallet ? 0 : size.l,
+                              unitHeight: isPallet ? 0 : size.h,
+                              palletWidth: isPallet ? size.w : 0,
+                              palletLength: isPallet ? size.l : 0,
+                              palletHeight: isPallet ? size.h : 0
+                            }));
+                          }} 
                           style={{ padding: '9px 11px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
-                          {['단품', 'Pail', 'Drum', 'Pallet', 'Pallet(Pail)', 'Pallet(Drum)', 'BOX', 'Carton', 'IBC TANK'].map(opt => (
+                          {[
+                            '단품', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
+                            'Carton', 'Plastic Drum', 'Steel Drum', 'Wooden Pallet', 'Plastic Pallet', 'Wooden Box',
+                            'Steel Pail', 'Plastic Pail', 'Jerrycan', 'Roll(3")', 'Roll(4")', 'Roll(6")', 'Woven Bag',
+                            'Pail', 'Drum', 'Pallet', 'Pallet(Pail)', 'Pallet(Drum)', 'BOX', 'IBC TANK'
+                          ].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
@@ -1318,7 +1360,18 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     </div>
 
                     {/* Dynamic layout inside sub-form */}
-                    {(editingMethod.packageType === '단품' || editingMethod.packageType === 'BOX' || editingMethod.packageType === 'Carton' || editingMethod.packageType === 'Pail' || editingMethod.packageType === 'Drum' || editingMethod.packageType === 'IBC TANK') && (
+                    {editingMethod.packageType !== '단품' && (
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#d97706', display: 'block', marginBottom: '12px' }}>📊 적재 정보 (Packing Spec)</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                          <div style={{ gridColumn: 'span 4' }}>
+                            <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!editingMethod.packageType.includes('Pallet') && (
                       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '12px' }}>📦 단품/포장별 규격 Spec</span>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
@@ -1331,11 +1384,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       </div>
                     )}
 
-                    {(editingMethod.packageType === 'Pallet' || editingMethod.packageType === 'Pallet(Pail)' || editingMethod.packageType === 'Pallet(Drum)') && (
+                    {editingMethod.packageType.includes('Pallet') && (
                       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2', display: 'block', marginBottom: '12px' }}>🪵 파렛트 적재 규격 (Pallet Spec)</span>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                          <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
                           <Input label="가로 (mm)" value={editingMethod.palletWidth} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletWidth: v }))} type="number" />
                           <Input label="세로 (mm)" value={editingMethod.palletLength} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletLength: v }))} type="number" />
                           <Input label="높이 (mm)" value={editingMethod.palletHeight} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, palletHeight: v }))} type="number" />
