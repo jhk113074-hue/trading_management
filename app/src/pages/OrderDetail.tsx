@@ -523,7 +523,7 @@ export const OrderDetail: React.FC = () => {
 
   // Common shipping mark configuration state
   const [commonShippingMark, setCommonShippingMark] = useState({
-    shape: 'circle',
+    shape: 'diamond',
     company: 'YSACC',
     port: '',
     country: '',
@@ -551,7 +551,7 @@ export const OrderDetail: React.FC = () => {
   useEffect(() => {
     if (order && !hasInitializedCommonShippingMark.current) {
       setCommonShippingMark(prev => ({
-        shape: (order as any).commonShippingMark?.shape || prev.shape || 'circle',
+        shape: (order as any).commonShippingMark?.shape || prev.shape || 'diamond',
         company: (order as any).commonShippingMark?.company || prev.company || 'YSACC',
         port: (order as any).commonShippingMark?.port || prev.port || order.portOfDischarge || '',
         country: (order as any).commonShippingMark?.country || prev.country || order.destinationCountry || '',
@@ -2974,7 +2974,7 @@ export const OrderDetail: React.FC = () => {
                           <strong>SEAL NO:</strong><br/>${c.sealNo}
                           ${(() => {
                             const uniquePkgNos = Array.from(new Set(itList.map((x: any) => x.pkgNo || '1')));
-                            const shapeVal = (order as any).commonShippingMark?.shape || 'circle';
+                            const shapeVal = (order as any).commonShippingMark?.shape || 'diamond';
                             const compVal = (order as any).commonShippingMark?.company || 'YSACC';
                             const portVal = (order as any).commonShippingMark?.port || order.portOfDischarge || '';
                             const countryVal = (order as any).commonShippingMark?.country || order.destinationCountry || '';
