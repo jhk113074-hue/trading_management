@@ -5115,7 +5115,9 @@ export const OrderDetail: React.FC = () => {
                                       pkg: '0',
                                       netWeight: '0',
                                       grossWeight: '0',
-                                      cbm: '0'
+                                      cbm: '0',
+                                      packageType: '',
+                                      dimensions: ''
                                     });
                                     setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                   }}
@@ -5142,12 +5144,14 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '12%' }}>PKG NO.</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '28%' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '16%' }}>Manufacturer (제조사)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>NET WT (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>GROSS WT (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '10%' }}>CBM</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '10%' }}>PKG NO.</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '22%' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>포장형태</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>규격 (WxLxH)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>NET WT (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>GROSS WT (Kg)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>CBM</th>
                                   <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>동작</th>
                                 </tr>
                               </thead>
@@ -5173,6 +5177,37 @@ export const OrderDetail: React.FC = () => {
                                           const val = e.target.value;
                                           const nextContainers = [...basicForm.packingList.containers];
                                           nextContainers[cIdx].items[itIdx].description = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input
+                                        type="text"
+                                        list="package_types_datalist_detail"
+                                        disabled={!isEditing}
+                                        placeholder="예: Paper Box"
+                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '95%' }}
+                                        value={it.packageType || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].packageType = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input
+                                        type="text"
+                                        disabled={!isEditing}
+                                        placeholder="예: 550x390x490"
+                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '95%' }}
+                                        value={it.dimensions || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].dimensions = val;
                                           setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                         }}
                                       />
