@@ -595,6 +595,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const saveProject = (isSaveAs = false, silent = false) => {
+        if (window.parent !== window) {
+            return true; // Skip saving to database when in iframe
+        }
         if (!projectInput.value) {
             alert('프로젝트명을 입력해주세요.');
             projectInput.focus();
@@ -722,8 +725,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-as-project').addEventListener('click', () => saveProject(true));
 
     const btnExportPacking = document.getElementById('btn-export-packing');
-    if (window.parent !== window && btnExportPacking) {
-        btnExportPacking.classList.remove('hidden');
+    if (window.parent !== window) {
+        if (btnExportPacking) btnExportPacking.classList.remove('hidden');
+        
+        const btnLoad = document.getElementById('btn-load-project');
+        const btnSave = document.getElementById('btn-save-project');
+        const btnSaveAs = document.getElementById('btn-save-as-project');
+        if (btnLoad) btnLoad.style.display = 'none';
+        if (btnSave) btnSave.style.display = 'none';
+        if (btnSaveAs) btnSaveAs.style.display = 'none';
     }
     if (btnExportPacking) {
         btnExportPacking.addEventListener('click', () => {
