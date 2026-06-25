@@ -122,6 +122,7 @@ export const OrderDetail: React.FC = () => {
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
   const [searchItemIndex, setSearchItemIndex] = useState<number | null>(null);
   const [isSourcingSearch, setIsSourcingSearch] = useState(false);
+  const [isPackerModalOpen, setIsPackerModalOpen] = useState(false);
 
   // Forwarder subwindow state
   const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
@@ -800,6 +801,30 @@ export const OrderDetail: React.FC = () => {
     document.addEventListener('click', handleGlobalClick, true);
     return () => document.removeEventListener('click', handleGlobalClick, true);
   }); // run on every render to capture the latest handleSaveBasic closure
+
+  // Listen for Container Packer EXPORT_PACKING_LIST messages
+  useEffect(() => {
+    const handlePackerMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (data && data.type === 'EXPORT_PACKING_LIST') {
+        const receivedContainers = data.containers;
+        if (receivedContainers && Array.isArray(receivedContainers)) {
+          setBasicForm(prev => ({
+            ...prev,
+            packingList: {
+              ...prev.packingList,
+              containers: receivedContainers
+            }
+          }));
+          setIsPackerModalOpen(false);
+          alert('컨테이너 적재 시뮬레이션 결과가 패킹리스트에 반영되었습니다.');
+        }
+      }
+    };
+
+    window.addEventListener('message', handlePackerMessage);
+    return () => window.removeEventListener('message', handlePackerMessage);
+  }, []);
 
   // Load Order document
   useEffect(() => {
@@ -4775,6 +4800,13 @@ export const OrderDetail: React.FC = () => {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         type="button" 
+                        onClick={() => setIsPackerModalOpen(true)}
+                        style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🚢 3D 적재 시뮬레이션 연동
+                      </button>
+                      <button 
+                        type="button" 
                         onClick={handlePrintPL}
                         style={{ padding: '6px 12px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
@@ -7951,8 +7983,74 @@ export const OrderDetail: React.FC = () => {
           }}
         />
       )}
+      {isPackerModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '95vw', height: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)' }}>
+            <div style={{ padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a' }}>🚢 3D 컨테이너 적재 시뮬레이션 연동</span>
+              <button 
+                onClick={() => setIsPackerModalOpen(false)} 
+                style={{ padding: '4px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+              >
+                ✕ 닫기
+              </button>
+            </div>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <iframe
+                src="/container/index.html"
+                title="컨테이너 적재 프로그램"
+                onLoad={(e) => {
+                  const iframe = e.currentTarget;
+                  if (!iframe || !iframe.contentWindow) return;
 
+                  const itemsPayload = orderItems.map(item => {
+                    const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                    const itemCode = match ? match[1] : '-';
+                    const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+                    
+                    return {
+                      desc: item.name || '화물',
+                      qty: item.qty || 1,
+                      w: Number(matchedProd?.palletWidth) || 1100,
+                      d: Number(matchedProd?.palletLength) || 1100,
+                      h: Number(matchedProd?.palletHeight) || 1000,
+                      netWeight: Number(matchedProd?.palletWeight) || 0,
+                      grossWeight: Number(matchedProd?.palletGrossWeight) || 0,
+                      packageType: matchedProd?.packageType || 'Pallet'
+                    };
+                  });
 
+                  const containersPayload: Record<string, number> = {};
+                  if (basicForm.packingList?.containers) {
+                    basicForm.packingList.containers.forEach((c: any) => {
+                      const type = c.containerType || '20GP';
+                      containersPayload[type] = (containersPayload[type] || 0) + 1;
+                    });
+                  }
+                  if (Object.keys(containersPayload).length === 0) {
+                    containersPayload['20GP'] = 1;
+                  }
+
+                  iframe.contentWindow.postMessage({
+                    type: 'LOAD_PI_DATA',
+                    customer: basicForm.customer || '',
+                    piNumber: basicForm.piNumber || order?.id || '',
+                    date: basicForm.etd || new Date().toISOString().split('T')[0],
+                    containers: containersPayload,
+                    items: itemsPayload
+                  }, '*');
+                }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                }}
+                allow="clipboard-write"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -721,6 +721,65 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-project').addEventListener('click', () => saveProject(false));
     document.getElementById('btn-save-as-project').addEventListener('click', () => saveProject(true));
 
+    const btnExportPacking = document.getElementById('btn-export-packing');
+    if (window.parent !== window && btnExportPacking) {
+        btnExportPacking.classList.remove('hidden');
+    }
+    if (btnExportPacking) {
+        btnExportPacking.addEventListener('click', () => {
+            if (!currentResults || currentResults.length === 0) {
+                alert('시뮬레이션 실행 결과가 없습니다. 시뮬레이션을 먼저 실행해주세요.');
+                return;
+            }
+
+            const formattedContainers = currentResults.map((result, idx) => {
+                const itemsMap = {};
+                result.loaded.forEach(box => {
+                    const key = box.name;
+                    if (!itemsMap[key]) {
+                        itemsMap[key] = {
+                            description: box.name,
+                            supplier: box.supplier || '',
+                            qty: 0,
+                            w: box.w,
+                            d: box.d,
+                            h: box.h,
+                            netWeight: box.netWeight || 0,
+                            grossWeight: box.grossWeight || box.weight || 0
+                        };
+                    }
+                    itemsMap[key].qty++;
+                });
+
+                const items = Object.values(itemsMap).map((g, itemIdx) => {
+                    const totalQty = g.qty;
+                    const cbm = (g.w * g.d * g.h) / 1000000000 * totalQty;
+                    return {
+                        pkgNo: String(itemIdx + 1),
+                        pkg: String(totalQty),
+                        description: g.description,
+                        supplier: g.supplier,
+                        netWeight: String((g.netWeight * totalQty).toFixed(1)),
+                        grossWeight: String((g.grossWeight * totalQty).toFixed(1)),
+                        cbm: String(cbm.toFixed(3))
+                    };
+                });
+
+                return {
+                    containerNo: `CONTAINER-${idx + 1}`,
+                    sealNo: '',
+                    containerType: result.containerType,
+                    items: items
+                };
+            });
+
+            window.parent.postMessage({
+                type: 'EXPORT_PACKING_LIST',
+                containers: formattedContainers
+            }, '*');
+        });
+    }
+
     // --- Modal & History ---
     document.getElementById('btn-load-project').addEventListener('click', () => {
         renderHistory();
