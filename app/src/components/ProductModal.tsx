@@ -263,7 +263,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   }, [formData.manufacturerCode, formData.manufacturerName, suppliers]);
 
   const handleSavePackingMethod = () => {
-    if (!editingMethod.name?.trim()) { alert('패킹 방법명은 필수입니다.'); return; }
+    if (!editingMethod.name?.trim()) { alert('포장 형태는 필수입니다.'); return; }
     
     const list = [...(formData.packingMethods || [])];
     const isNew = !editingMethod.id;
@@ -1214,7 +1214,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     <button 
                       type="button" 
                       onClick={() => setEditingMethod({
-                        name: '', packageType: '단품', unit: formData.unit || 'KG', isDefault: (formData.packingMethods || []).length === 0,
+                        name: '단품', packageType: '단품', unit: formData.unit || 'KG', isDefault: (formData.packingMethods || []).length === 0,
                         unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
                         qtyPerPallet: 0, palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
                         stackable: 'Y', rotation: 'Y'
@@ -1229,7 +1229,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e8ecf0', textAlign: 'left' }}>
-                          <th style={{ padding: '8px' }}>패킹 방법명</th>
+                          <th style={{ padding: '8px' }}>포장 형태</th>
                           <th style={{ padding: '8px' }}>단위</th>
                           <th style={{ padding: '8px' }}>포장 규격 (WxLxH, 적재수량/중량, 순중량, 총중량)</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>다단 적재</th>
@@ -1291,10 +1291,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '10px', alignItems: 'end' }}>
                       {/* Row 1 */}
-                      <div style={{ gridColumn: 'span 4' }}>
-                        <Input label="패킹 방법명 (예: Pail 단품, Pail+Pallet 등) ★" value={editingMethod.name} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, name: v }))} placeholder="패킹명을 입력해 주세요" />
-                      </div>
-                      <div style={{ gridColumn: 'span 3', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ gridColumn: 'span 7', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>포장 형태 ★</label>
                         <select 
                           value={editingMethod.packageType} 
@@ -1326,6 +1323,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             
                             setEditingMethod((p: any) => ({ 
                               ...p, 
+                              name: val,
                               packageType: val,
                               unitWidth: isPallet ? 0 : size.w,
                               unitLength: isPallet ? 0 : size.l,
