@@ -980,7 +980,7 @@ export const OrderDetail: React.FC = () => {
                 
                 itemsPayload.push({
                   desc: it.description || '화물',
-                  qty: Number(it.pkg) || 1,
+                  qty: Number(it.qty) || Number(it.pkg) || 1,
                   w: w,
                   d: d,
                   h: h,
@@ -6061,7 +6061,7 @@ export const OrderDetail: React.FC = () => {
                                     
                                     itemsPayload.push({
                                       desc: it.description || '화물',
-                                      qty: Number(it.pkg) || 1,
+                                      qty: Number(it.qty) || Number(it.pkg) || 1,
                                       w: w,
                                       d: d,
                                       h: h,
@@ -9010,7 +9010,7 @@ export const OrderDetail: React.FC = () => {
                         
                         itemsPayload.push({
                           desc: it.description || '화물',
-                          qty: Number(it.pkg) || 1,
+                          qty: Number(it.qty) || Number(it.pkg) || 1,
                           w: w,
                           d: d,
                           h: h,

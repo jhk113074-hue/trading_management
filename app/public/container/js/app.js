@@ -888,6 +888,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return {
                         pkgNo: String(itemIdx + 1),
                         pkg: String(totalQty),
+                        qty: String(totalQty),
                         description: g.description,
                         supplier: g.supplier,
                         netWeight: String((g.netWeight * totalQty).toFixed(1)),
