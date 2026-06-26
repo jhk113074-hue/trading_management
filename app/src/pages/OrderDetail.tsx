@@ -802,6 +802,115 @@ export const OrderDetail: React.FC = () => {
     return () => document.removeEventListener('click', handleGlobalClick, true);
   }); // run on every render to capture the latest handleSaveBasic closure
 
+  // 3D적재 시뮬레이션 파일 보관함 핸들러 함수들
+  const handleArchiveUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const proj = JSON.parse(reader.result as string);
+        if (!proj.items || !proj.containerQuantities) {
+          alert('올바른 적재결과 JSON 파일이 아닙니다.');
+          return;
+        }
+        
+        const newPlan = {
+          id: proj.id || `plan_${Date.now()}`,
+          name: file.name,
+          savedAt: new Date().toISOString(),
+          summary: `${proj.items?.reduce((acc: number, it: any) => acc + (it.qty || 0), 0) || 0}개 품목 (${proj.containerType || '20GP'} × ${proj.containerQuantities?.[proj.containerType] || 1})`,
+          planData: proj
+        };
+
+        setBasicForm(prev => {
+          const currentPlans = prev.packingList?.archivedPlans || [];
+          const existsIdx = currentPlans.findIndex((p: any) => p.id === newPlan.id);
+          let updatedPlans = [...currentPlans];
+          if (existsIdx >= 0) {
+            updatedPlans[existsIdx] = newPlan;
+          } else {
+            updatedPlans.push(newPlan);
+          }
+          return {
+            ...prev,
+            packingList: {
+              ...prev.packingList,
+              archivedPlans: updatedPlans
+            }
+          };
+        });
+        alert('업로드한 적재 결과가 파일보관함에 보관되었습니다. 하단의 [저장] 버튼을 누르면 DB에도 최종 저장됩니다.');
+      } catch (err: any) {
+        alert('파일 파싱 중 오류가 발생했습니다: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const openArchivedPlan = (plan: any) => {
+    setBasicForm(prev => ({
+      ...prev,
+      packingList: {
+        ...prev.packingList,
+        raw3DPlan: plan.planData
+      }
+    }));
+    
+    // Save to localStorage so iframe can pick it up immediately
+    const payload = {
+      type: 'LOAD_PI_DATA',
+      customer: plan.planData.customerName || basicForm.customer || '',
+      piNumber: plan.planData.projectName || basicForm.piNumber || order?.id || '',
+      date: plan.planData.date || basicForm.etd || new Date().toISOString().split('T')[0],
+      containers: plan.planData.containerQuantities || { '20GP': 1 },
+      items: (plan.planData.items || []).map((it: any) => ({
+        desc: it.name || it.desc || '화물',
+        qty: it.qty || 1,
+        w: it.w || 1100,
+        d: it.d || 1100,
+        h: it.h || 1000,
+        netWeight: it.netWeight || 0,
+        grossWeight: it.grossWeight || 0,
+        packageType: it.packageType || 'Pallet'
+      })),
+      raw3DPlan: plan.planData
+    };
+    try {
+      localStorage.setItem('PI_SIMULATION_DATA', JSON.stringify(payload));
+    } catch (err) {
+      console.error(err);
+    }
+    setIsPackerModalOpen(true);
+  };
+
+  const downloadArchivedPlan = (plan: any) => {
+    const jsonStr = JSON.stringify(plan.planData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = plan.name;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const deleteArchivedPlan = (planId: string) => {
+    if (!confirm('이 적재 계획을 보관함에서 삭제하시겠습니까?')) return;
+    setBasicForm(prev => {
+      const currentPlans = prev.packingList?.archivedPlans || [];
+      const updatedPlans = currentPlans.filter((p: any) => p.id !== planId);
+      return {
+        ...prev,
+        packingList: {
+          ...prev.packingList,
+          archivedPlans: updatedPlans
+        }
+      };
+    });
+  };
+
   // Keep latest packing list data for handlePackerMessage event listener
   const latestPackingDataRef = useRef({ basicForm, orderItems, products, order });
   latestPackingDataRef.current = { basicForm, orderItems, products, order };
@@ -813,16 +922,40 @@ export const OrderDetail: React.FC = () => {
       if (data && data.type === 'EXPORT_PACKING_LIST') {
         const receivedContainers = data.containers;
         if (receivedContainers && Array.isArray(receivedContainers)) {
-          setBasicForm(prev => ({
-            ...prev,
-            packingList: {
-              ...prev.packingList,
-              containers: receivedContainers,
-              raw3DPlan: data.raw3DPlan || null
+          const rawPlan = data.raw3DPlan;
+          
+          const planCount = (latestPackingDataRef.current.basicForm.packingList?.archivedPlans || []).length + 1;
+          const defaultPlanName = `${latestPackingDataRef.current.basicForm.piNumber || latestPackingDataRef.current.order?.id || 'PI'}_적재계획_v${planCount}.json`;
+          
+          const newPlan = {
+            id: rawPlan?.id || `plan_${Date.now()}`,
+            name: defaultPlanName,
+            savedAt: new Date().toISOString(),
+            summary: `${rawPlan?.items?.reduce((acc: number, it: any) => acc + (it.qty || 0), 0) || 0}개 품목 (${rawPlan?.containerType || '20GP'} × ${rawPlan?.containerQuantities?.[rawPlan?.containerType] || 1})`,
+            planData: rawPlan
+          };
+
+          setBasicForm(prev => {
+            const currentPlans = prev.packingList?.archivedPlans || [];
+            const existsIdx = currentPlans.findIndex((p: any) => p.id === newPlan.id);
+            let updatedPlans = [...currentPlans];
+            if (existsIdx >= 0) {
+              updatedPlans[existsIdx] = newPlan;
+            } else {
+              updatedPlans.push(newPlan);
             }
-          }));
+            return {
+              ...prev,
+              packingList: {
+                ...prev.packingList,
+                containers: receivedContainers,
+                raw3DPlan: rawPlan || null,
+                archivedPlans: updatedPlans
+              }
+            };
+          });
           setIsPackerModalOpen(false);
-          alert('컨테이너 적재 시뮬레이션 결과가 저장되었습니다.');
+          alert('컨테이너 적재 시뮬레이션 결과가 파일보관함에 보관 및 저장되었습니다.');
         }
       } else if (data && data.type === 'IFRAME_READY') {
         if (event.source) {
@@ -5964,6 +6097,91 @@ export const OrderDetail: React.FC = () => {
                           >
                             🚢 3D적재 시뮬레이션 연동 및 적재 검토 실행
                           </button>
+                        </div>
+
+                        {/* Archived Plans File Cabinet */}
+                        <div style={{ marginTop: '20px', borderTop: '1px dashed #cbd5e1', paddingTop: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              📁 3D 적재 계획 보관함 ({(basicForm.packingList?.archivedPlans || []).length})
+                            </span>
+                            <label 
+                              htmlFor="upload-to-archive" 
+                              style={{ 
+                                fontSize: '11px', 
+                                background: '#f1f5f9', 
+                                border: '1px solid #cbd5e1', 
+                                borderRadius: '4px', 
+                                padding: '3px 8px', 
+                                cursor: 'pointer', 
+                                fontWeight: 600,
+                                color: '#475569',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              📤 파일 업로드하여 보관
+                            </label>
+                            <input 
+                              id="upload-to-archive" 
+                              type="file" 
+                              accept=".json" 
+                              onChange={handleArchiveUpload} 
+                              style={{ display: 'none' }} 
+                            />
+                          </div>
+                          
+                          {!(basicForm.packingList?.archivedPlans) || basicForm.packingList.archivedPlans.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '14px', fontSize: '11px', color: '#94a3b8', background: '#f8fafc', borderRadius: '6px', border: '1px dashed #e2e8f0' }}>
+                              보관된 적재 계획이 없습니다. 3D 시뮬레이션 화면에서 [💾 적재결과 저장] 버튼을 누르면 이곳에 자동으로 파일로 기록 보관됩니다.
+                            </div>
+                          ) : (
+                            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                                <thead>
+                                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                    <th style={{ padding: '6px 8px', color: '#64748b', fontWeight: 600 }}>파일명</th>
+                                    <th style={{ padding: '6px 8px', color: '#64748b', fontWeight: 600 }}>저장일시</th>
+                                    <th style={{ padding: '6px 8px', color: '#64748b', fontWeight: 600 }}>요약 정보</th>
+                                    <th style={{ padding: '6px 8px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>작업</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(basicForm.packingList.archivedPlans).map((plan: any, idx: number) => (
+                                    <tr key={plan.id || idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                      <td style={{ padding: '6px 8px', fontWeight: 600, color: '#0f172a' }}>{plan.name}</td>
+                                      <td style={{ padding: '6px 8px', color: '#64748b' }}>{new Date(plan.savedAt).toLocaleString('ko-KR', { hour12: false })}</td>
+                                      <td style={{ padding: '6px 8px', color: '#475569' }}>{plan.summary}</td>
+                                      <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                                        <button 
+                                          type="button" 
+                                          onClick={() => openArchivedPlan(plan)}
+                                          style={{ background: '#0284c7', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', marginRight: '4px', fontWeight: 600 }}
+                                        >
+                                          열기
+                                        </button>
+                                        <button 
+                                          type="button" 
+                                          onClick={() => downloadArchivedPlan(plan)}
+                                          style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '1px 5px', fontSize: '10px', cursor: 'pointer', marginRight: '4px', fontWeight: 600 }}
+                                        >
+                                          다운로드
+                                        </button>
+                                        <button 
+                                          type="button" 
+                                          onClick={() => deleteArchivedPlan(plan.id)}
+                                          style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer', fontWeight: 600 }}
+                                        >
+                                          삭제
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
