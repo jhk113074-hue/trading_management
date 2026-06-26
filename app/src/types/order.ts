@@ -30,6 +30,7 @@ export interface OrderItem {
   amount: number;
   currency: "USD" | "KRW";
   isSourcingOnly?: boolean;
+  selectedPackingMethodId?: string;
 }
 
 export interface Order {

@@ -4975,7 +4975,7 @@ export const OrderDetail: React.FC = () => {
 
                           // Find product packing method
                           const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-                          const matchedMethod = p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                          const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
                             packageType: '단품',
                             qtyPerPallet: 100,
                             unitWidth: p?.unitWidth || 0,
@@ -5161,7 +5161,7 @@ export const OrderDetail: React.FC = () => {
                                   const qty = item.qty || 0;
 
                                   const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
                                     packageType: '단품',
                                     qtyPerPallet: 100,
                                     unitWidth: p?.unitWidth || 0,
