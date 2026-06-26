@@ -8087,22 +8087,48 @@ export const OrderDetail: React.FC = () => {
                   const iframe = e.currentTarget;
                   if (!iframe || !iframe.contentWindow) return;
 
-                  const itemsPayload = orderItems.map(item => {
-                    const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-                    const itemCode = match ? match[1] : '-';
-                    const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
-                    
-                    return {
-                      desc: item.name || '화물',
-                      qty: item.qty || 1,
-                      w: Number(matchedProd?.palletWidth) || 1100,
-                      d: Number(matchedProd?.palletLength) || 1100,
-                      h: Number(matchedProd?.palletHeight) || 1000,
-                      netWeight: Number(matchedProd?.palletWeight) || 0,
-                      grossWeight: Number(matchedProd?.palletGrossWeight) || 0,
-                      packageType: matchedProd?.packageType || 'Pallet'
-                    };
-                  });
+                  // Map currently entered Container Packing List items
+                  const itemsPayload: any[] = [];
+                  if (basicForm.packingList?.containers) {
+                    basicForm.packingList.containers.forEach((c: any) => {
+                      (c.items || []).forEach((it: any) => {
+                        const dims = (it.dimensions || '1100x1100x1000').split('x');
+                        const w = Number(dims[0]) || 1100;
+                        const d = Number(dims[1]) || 1100;
+                        const h = Number(dims[2]) || 1000;
+                        
+                        itemsPayload.push({
+                          desc: it.description || '화물',
+                          qty: Number(it.pkg) || 1,
+                          w: w,
+                          d: d,
+                          h: h,
+                          netWeight: Number(it.netWeight) || 0,
+                          grossWeight: Number(it.grossWeight) || 0,
+                          packageType: it.packageType || 'Pallet'
+                        });
+                      });
+                    });
+                  }
+                  
+                  // Fallback to orderItems if packing list has no items yet
+                  if (itemsPayload.length === 0) {
+                    orderItems.forEach(item => {
+                      const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                      const itemCode = match ? match[1] : '-';
+                      const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+                      itemsPayload.push({
+                        desc: item.name || '화물',
+                        qty: item.qty || 1,
+                        w: Number(matchedProd?.palletWidth) || 1100,
+                        d: Number(matchedProd?.palletLength) || 1100,
+                        h: Number(matchedProd?.palletHeight) || 1000,
+                        netWeight: Number(matchedProd?.palletWeight) || 0,
+                        grossWeight: Number(matchedProd?.palletGrossWeight) || 0,
+                        packageType: matchedProd?.packageType || 'Pallet'
+                      });
+                    });
+                  }
 
                   const containersPayload: Record<string, number> = {};
                   if (basicForm.packingList?.containers) {
