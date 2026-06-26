@@ -4995,8 +4995,65 @@ export const OrderDetail: React.FC = () => {
                             <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                               <td style={{ padding: '8px', fontWeight: 'bold' }}>[{itemCode}] {itemName}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>{qty.toLocaleString()} EA</td>
-                              <td style={{ padding: '8px' }}>{matchedMethod.packageType}</td>
-                              <td style={{ padding: '8px', textAlign: 'right' }}>{qtyPerPallet} EA</td>
+                              <td style={{ padding: '8px' }}>
+                                <input
+                                  type="text"
+                                  disabled={!isEditing}
+                                  value={matchedMethod.packageType || ''}
+                                  onChange={async (e) => {
+                                    const val = e.target.value;
+                                    if (p) {
+                                      const nextMethods = [...(p.packingMethods || [])];
+                                      const defaultIdx = nextMethods.findIndex((m: any) => m.isDefault) !== -1 ? nextMethods.findIndex((m: any) => m.isDefault) : 0;
+                                      if (nextMethods[defaultIdx]) {
+                                        nextMethods[defaultIdx].packageType = val;
+                                      } else {
+                                        nextMethods[defaultIdx] = {
+                                          id: 'default_' + Math.random().toString(36).substring(2, 11),
+                                          name: 'Default',
+                                          unit: p.unit || 'EA',
+                                          isDefault: true,
+                                          packageType: val,
+                                          qtyPerPallet: 100
+                                        };
+                                      }
+                                      await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
+                                    }
+                                  }}
+                                  style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%' }}
+                                />
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                                  <input
+                                    type="number"
+                                    disabled={!isEditing}
+                                    value={qtyPerPallet}
+                                    onChange={async (e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      if (p) {
+                                        const nextMethods = [...(p.packingMethods || [])];
+                                        const defaultIdx = nextMethods.findIndex((m: any) => m.isDefault) !== -1 ? nextMethods.findIndex((m: any) => m.isDefault) : 0;
+                                        if (nextMethods[defaultIdx]) {
+                                          nextMethods[defaultIdx].qtyPerPallet = val;
+                                        } else {
+                                          nextMethods[defaultIdx] = {
+                                            id: 'default_' + Math.random().toString(36).substring(2, 11),
+                                            name: 'Default',
+                                            unit: p.unit || 'EA',
+                                            isDefault: true,
+                                            packageType: '단품',
+                                            qtyPerPallet: val
+                                          };
+                                        }
+                                        await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
+                                      }
+                                    }}
+                                    style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '70px', textAlign: 'right' }}
+                                  />
+                                  <span>EA</span>
+                                </div>
+                              </td>
                               <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>{fullPallets} PLT</td>
                               <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: residue > 0 ? '#ea580c' : '#64748b' }}>
                                 {residue.toLocaleString()} EA
