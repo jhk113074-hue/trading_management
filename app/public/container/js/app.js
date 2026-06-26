@@ -1625,18 +1625,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('message', (event) => {
         const data = event.data;
         if (data && data.type === 'LOAD_PI_DATA') {
-            console.log("Received PI Data:", data);
+            console.log("Received PI Data via postMessage:", data);
             
-            // Populate project info
-            if (data.customer) customerInput.value = data.customer;
-            if (data.piNumber) {
+            // Populate project info safely
+            if (customerInput && data.customer) customerInput.value = data.customer;
+            if (projectInput && data.piNumber) {
                 projectInput.value = data.piNumber;
                 const serialInput = document.getElementById('project-serial');
                 if (serialInput) serialInput.value = data.piNumber;
             }
-            if (data.date) dateInput.value = data.date;
+            if (dateInput && data.date) dateInput.value = data.date;
             
-            // Populate containers
+            // Populate containers safely
             if (data.containers) {
                 if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
                 if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
@@ -1646,6 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Populate items
             if (data.items && Array.isArray(data.items)) {
+                currentItems = []; // Clear to prevent double appending
                 let addedCount = 0;
                 let missingDimensionsCount = 0;
                 data.items.forEach(piItem => {

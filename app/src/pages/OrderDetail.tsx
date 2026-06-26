@@ -5861,7 +5861,83 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
                           <button
                             type="button"
-                            onClick={() => setIsPackerModalOpen(true)}
+                            onClick={() => {
+                              const itemsPayload: any[] = [];
+                              if (basicForm.packingList?.containers) {
+                                basicForm.packingList.containers.forEach((c: any) => {
+                                  (c.items || []).forEach((it: any) => {
+                                    if (!it.description && !it.pkgNo) return;
+                                    const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
+                                    const dims = cleanDims.split('x');
+                                    const w = Number(dims[0]) || 1100;
+                                    const d = Number(dims[1]) || 1100;
+                                    const h = Number(dims[2]) || 1000;
+                                    
+                                    itemsPayload.push({
+                                      desc: it.description || '화물',
+                                      qty: Number(it.pkg) || 1,
+                                      w: w,
+                                      d: d,
+                                      h: h,
+                                      netWeight: Number(it.netWeight) || 0,
+                                      grossWeight: Number(it.grossWeight) || 0,
+                                      packageType: it.packageType || 'Pallet'
+                                    });
+                                  });
+                                });
+                              }
+                              
+                              if (itemsPayload.length === 0) {
+                                orderItems.forEach((item: any) => {
+                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                  const itemCode = match ? match[1] : '-';
+                                  const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+                                  const list = matchedProd?.packingMethods || [];
+                                  const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
+                                  const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
+                                  const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
+                                  const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
+                                  
+                                  itemsPayload.push({
+                                    desc: item.name || '화물',
+                                    qty: item.qty || 1,
+                                    w: w,
+                                    d: d,
+                                    h: h,
+                                    netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
+                                    grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
+                                    packageType: item.packageType || 'Pallet'
+                                  });
+                                });
+                              }
+
+                              const containersPayload: Record<string, number> = {};
+                              if (basicForm.packingList?.containers) {
+                                basicForm.packingList.containers.forEach((c: any) => {
+                                  const type = c.containerType || '20GP';
+                                  containersPayload[type] = (containersPayload[type] || 0) + 1;
+                                });
+                              }
+                              if (Object.keys(containersPayload).length === 0) {
+                                containersPayload['20GP'] = 1;
+                              }
+
+                              const payload = {
+                                type: 'LOAD_PI_DATA',
+                                customer: basicForm.customer || '',
+                                piNumber: basicForm.piNumber || order?.id || '',
+                                date: basicForm.etd || new Date().toISOString().split('T')[0],
+                                containers: containersPayload,
+                                items: itemsPayload
+                              };
+
+                              try {
+                                localStorage.setItem('PI_SIMULATION_DATA', JSON.stringify(payload));
+                              } catch (err) {
+                                console.error('Failed to save simulation data to localStorage:', err);
+                              }
+                              setIsPackerModalOpen(true);
+                            }}
                             style={{
                               padding: '10px 24px',
                               background: '#0284c7',
