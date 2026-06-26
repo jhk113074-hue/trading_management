@@ -824,8 +824,7 @@ export const OrderDetail: React.FC = () => {
           alert('컨테이너 적재 시뮬레이션 결과가 패킹리스트에 반영되었습니다.');
         }
       } else if (data && data.type === 'IFRAME_READY') {
-        const iframe = document.querySelector('iframe[title="컨테이너 적재 프로그램"]') as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
+        if (event.source) {
           const { basicForm: latestBasicForm, orderItems: latestOrderItems, products: latestProducts, order: latestOrder } = latestPackingDataRef.current;
 
           const itemsPayload: any[] = [];
@@ -888,7 +887,7 @@ export const OrderDetail: React.FC = () => {
             containersPayload['20GP'] = 1;
           }
 
-          iframe.contentWindow.postMessage({
+          (event.source as WindowProxy).postMessage({
             type: 'LOAD_PI_DATA',
             customer: latestBasicForm.customer || '',
             piNumber: latestBasicForm.piNumber || latestOrder?.id || '',
