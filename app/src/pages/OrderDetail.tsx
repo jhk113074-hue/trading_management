@@ -937,11 +937,7 @@ export const OrderDetail: React.FC = () => {
             planData: rawPlan
           };
 
-          const shouldOverwrite = confirm(
-            '3D 적재 시뮬레이션 결과를 기존 패킹리스트(Step 2)에도 반영하여 덮어쓰시겠습니까?\n\n' +
-            '[확인]을 누르면 3D 배치 결과를 기준으로 패킹리스트 컨테이너 정보가 재구성됩니다.\n' +
-            '[취소]를 누르면 기존 패킹리스트 내용은 유지되고, 시뮬레이션 결과만 파일보관함에 보관됩니다.'
-          );
+          const shouldOverwrite = false;
 
           setBasicForm(prev => {
             const currentPlans = prev.packingList?.archivedPlans || [];
