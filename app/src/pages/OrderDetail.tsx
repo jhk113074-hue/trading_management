@@ -4957,13 +4957,15 @@ export const OrderDetail: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', background: '#fff', border: '1px solid #e2e8f0' }}>
                       <thead>
                         <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                          <th style={{ padding: '8px', textAlign: 'left', width: '25%' }}>제품코드 / 품명</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>주문 총수량</th>
-                          <th style={{ padding: '8px', textAlign: 'left', width: '15%' }}>포장 형태 (마스터)</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>PL당 적재수량</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '15%' }}>완제 팔레트수</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>남은 자투리 수량</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '15%' }}>자투리 처리 방식</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '20%' }}>제품코드 / 품명</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>주문 총수량</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '12%' }}>포장 형태 (마스터)</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>PL당 적재수량</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>순중량 (Kg)</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>총중량 (Kg)</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '10%' }}>완제 팔레트수</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>남은 자투리 수량</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '18%' }}>자투리 처리 방식</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4993,6 +4995,9 @@ export const OrderDetail: React.FC = () => {
                           const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
                           const fullPallets = Math.floor(qty / qtyPerPallet);
                           const residue = qty % qtyPerPallet;
+
+                          const netW = matchedMethod.palletWeight || (matchedMethod.unitWeight || 0) * qtyPerPallet || 0;
+                          const grossW = matchedMethod.palletGrossWeight || (matchedMethod.unitGrossWeight || 0) * qtyPerPallet || 0;
 
                           // Read custom residue treatment from state if any, default to 'independent'
                           const residueKey = `residue_${itemCode}_${idx}`;
@@ -5040,38 +5045,20 @@ export const OrderDetail: React.FC = () => {
                                   onChange={async (e) => {
                                     const val = e.target.value;
                                     if (p) {
-                                      const nextMethods = [...(p.packingMethods || [])];
-                                      const defaultIdx = nextMethods.findIndex((m: any) => m.isDefault) !== -1 ? nextMethods.findIndex((m: any) => m.isDefault) : 0;
-                                      if (nextMethods[defaultIdx]) {
-                                        nextMethods[defaultIdx].packageType = val;
-                                      } else {
-                                        nextMethods[defaultIdx] = {
-                                          id: 'default_' + Math.random().toString(36).substring(2, 11),
-                                          name: 'Default',
-                                          unit: p.unit || 'EA',
-                                          isDefault: true,
-                                          packageType: val,
-                                          qtyPerPallet: 100
-                                        };
-                                      }
+                                      const nextMethods = (p.packingMethods || []).map((m: any) => ({
+                                        ...m,
+                                        isDefault: m.packageType === val
+                                      }));
                                       await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
                                     }
                                   }}
                                   style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }}
                                 >
-                                  {[
-                                    '단품', 'Pallet', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
-                                    'Carton', 'Plastic Drum', 'Steel Drum', 'Wooden Pallet', 'Plastic Pallet', 'Wooden Box',
-                                    'Steel Pail', 'Plastic Pail', 'Jerrycan', 'Roll(3")', 'Roll(4")', 'Roll(6")', 'Woven Bag'
-                                  ].map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
+                                  {(p?.packingMethods || []).map((m: any) => (
+                                    <option key={m.id} value={m.packageType}>{m.packageType}</option>
                                   ))}
-                                  {matchedMethod.packageType && ![
-                                    '단품', 'Pallet', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
-                                    'Carton', 'Plastic Drum', 'Steel Drum', 'Wooden Pallet', 'Plastic Pallet', 'Wooden Box',
-                                    'Steel Pail', 'Plastic Pail', 'Jerrycan', 'Roll(3")', 'Roll(4")', 'Roll(6")', 'Woven Bag'
-                                  ].includes(matchedMethod.packageType) && (
-                                    <option value={matchedMethod.packageType}>{matchedMethod.packageType}</option>
+                                  {(!p?.packingMethods || p.packingMethods.length === 0) && (
+                                    <option value="단품">단품</option>
                                   )}
                                 </select>
                               </td>
@@ -5106,6 +5093,8 @@ export const OrderDetail: React.FC = () => {
                                   <span>EA</span>
                                 </div>
                               </td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{netW.toLocaleString()} Kg</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{grossW.toLocaleString()} Kg</td>
                               <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>{fullPallets} PLT</td>
                               <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: residue > 0 ? '#ea580c' : '#64748b' }}>
                                 {residue.toLocaleString()} EA
