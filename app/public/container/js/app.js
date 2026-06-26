@@ -781,13 +781,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             d: box.d,
                             h: box.h,
                             netWeight: box.netWeight || 0,
-                            grossWeight: box.grossWeight || box.weight || 0
+                            grossWeight: box.grossWeight || box.weight || 0,
+                            packageType: box.packageType || 'Pallet'
                         };
                     }
                     itemsMap[key].qty++;
                 });
 
-                const items = Object.values(itemsMap).map((g, itemIdx) => {
+                const items = Object.values(itemsMap).map((g: any, itemIdx) => {
                     const totalQty = g.qty;
                     const cbm = (g.w * g.d * g.h) / 1000000000 * totalQty;
                     return {
@@ -797,7 +798,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         supplier: g.supplier,
                         netWeight: String((g.netWeight * totalQty).toFixed(1)),
                         grossWeight: String((g.grossWeight * totalQty).toFixed(1)),
-                        cbm: String(cbm.toFixed(3))
+                        cbm: String(cbm.toFixed(3)),
+                        packageType: g.packageType,
+                        dimensions: `${g.w}x${g.d}x${g.h}`
                     };
                 });
 
