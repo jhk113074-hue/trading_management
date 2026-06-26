@@ -4872,9 +4872,131 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* 그룹 1: 패킹 정보 요약 및 문서 기본 정보 (Packing Details & Document Header) */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                      📋 문서 기본 정보 및 거래 조건 (Document Header & Trade Terms)
+                    </h4>
+                    {basicForm.packingList && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice No</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceNo || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceNo: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice Date</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceDate || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceDate: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C No</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcNo || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcNo: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Date</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcDate || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcDate: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Loading</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pol || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pol: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Discharge</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pod || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pod: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Vessel Name</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.vesselName || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, vesselName: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Sailing Date</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.sailingDate || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, sailingDate: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Delivery Terms</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.deliveryTerms || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, deliveryTerms: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Payment Terms</span>
+                            <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.paymentTerms || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, paymentTerms: val } }));
+                            }} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Shipper / Beneficiary (수출자/지면 표시용)</span>
+                            <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.shipper || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, shipper: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Applicant (신청인 / 수하인)</span>
+                            <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.applicant || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, applicant: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Notify Party (통지처)</span>
+                            <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.notifyParty || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, notifyParty: val } }));
+                            }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Issuing Bank (개설 은행)</span>
+                            <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.lcIssuingBank || ''} onChange={e => {
+                              const val = e.target.value;
+                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcIssuingBank: val } }));
+                            }} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Remarks (특이사항)</span>
+                          <textarea rows={2} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.remarks || ''} onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, remarks: val } }));
+                          }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* 공통 쉬핑마크 설정 */}
                   <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
                       ⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)
                     </h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
@@ -4997,123 +5119,10 @@ export const OrderDetail: React.FC = () => {
 
                   {basicForm.packingList && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {/* Header values edit fields */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: '#f8fafc', padding: '14px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice No</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceNo || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceNo: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Invoice Date</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.invoiceDate || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, invoiceDate: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C No</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcNo || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcNo: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Date</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.lcDate || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcDate: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Loading</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pol || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pol: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Port of Discharge</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.pod || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, pod: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Vessel Name</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.vesselName || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, vesselName: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Sailing Date</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.sailingDate || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, sailingDate: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Delivery Terms</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.deliveryTerms || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, deliveryTerms: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Payment Terms</span>
-                          <input type="text" disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} value={basicForm.packingList.paymentTerms || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, paymentTerms: val } }));
-                          }} />
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Shipper / Beneficiary (지면 표시용)</span>
-                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.shipper || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, shipper: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Applicant (신청인 / 수하인)</span>
-                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.applicant || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, applicant: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Notify Party (통지처)</span>
-                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.notifyParty || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, notifyParty: val } }));
-                          }} />
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>L/C Issuing Bank</span>
-                          <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.lcIssuingBank || ''} onChange={e => {
-                            const val = e.target.value;
-                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, lcIssuingBank: val } }));
-                          }} />
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569' }}>Remarks</span>
-                        <textarea rows={3} disabled={!isEditing} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }} value={basicForm.packingList.remarks || ''} onChange={e => {
-                          const val = e.target.value;
-                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, remarks: val } }));
-                        }} />
-                      </div>
-
-                      {/* Containers Section */}
-                      <div style={{ borderTop: '2px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>📦 컨테이너별 패킹 목록</h5>
+                      {/* 그룹 3: 컨테이너별 패킹 목록 (Containers Section) */}
+                      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                          <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a' }}>📦 컨테이너별 패킹 실적 입력 (Container Packing Details)</h5>
                           <button
                             type="button"
                             disabled={!isEditing}
