@@ -5697,7 +5697,7 @@ export const OrderDetail: React.FC = () => {
                                               placeholder="W"
                                               disabled={!isEditing}
                                               value={width}
-                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const w = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -5711,7 +5711,7 @@ export const OrderDetail: React.FC = () => {
                                               placeholder="L"
                                               disabled={!isEditing}
                                               value={length}
-                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const l = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -5725,7 +5725,7 @@ export const OrderDetail: React.FC = () => {
                                               placeholder="H"
                                               disabled={!isEditing}
                                               value={height}
-                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const h = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
