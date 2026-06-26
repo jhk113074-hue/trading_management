@@ -4937,90 +4937,255 @@ export const OrderDetail: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-                    주문 정보를 기반으로 패킹리스트를 자동으로 생성하거나, 직접 컨테이너 및 품목 정보를 수정/추가(수동 작성)할 수 있습니다.
-                  </div>
 
-                  {/* 실시간 적재 수량 검증 체크리스트 */}
-                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      📋 품목별 적재 잔여 수량 체크리스트
+                  {/* 1단계: 제품별 팔레트화 (Palletization & Residue Control) */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13.5px', fontWeight: 800, color: '#0f766e', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
+                      📋 Step 1. 제품별 팔레트화 설정 (Palletization & Residue Options)
                     </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
-                      {orderItems.map((item, idx) => {
-                        const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-                        const itemCode = match ? match[1] : '-';
-                        const itemName = match ? match[2] : (item.name || '');
-                        const totalOrderQty = item.qty || 0;
-                        
-                        // Calculate packed qty from container items
-                        let packedQty = 0;
-                        if (basicForm.packingList?.containers) {
-                          basicForm.packingList.containers.forEach((c: any) => {
-                            (c.items || []).forEach((cIt: any) => {
-                              const cItMatch = (cIt.description || '').match(/^\[(.*?)\]\s*(.*)$/);
-                              const cItCode = cItMatch ? cItMatch[1] : '';
-                              if (cItCode === itemCode) {
-                                packedQty += Number(cIt.pkg) || 0;
-                              }
-                            });
-                          });
-                        }
-                        
-                        const remaining = totalOrderQty - packedQty;
-                        const isCompleted = remaining === 0;
-                        const isOver = remaining < 0;
+                    <p style={{ margin: '0 0 14px 0', fontSize: '11.5px', color: '#64748b', lineHeight: 1.4 }}>
+                      주문 수량을 기준으로 제품별 마스터 포장(Pallet) 규격에 따라 패킹 단위를 분할합니다. 남는 자투리 수량의 포장 처리 방식을 결정해 주세요.
+                    </p>
 
-                        return (
-                          <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.name}>
-                              [{itemCode}] {itemName}
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', marginTop: '2px' }}>
-                              <span style={{ color: '#64748b' }}>주문: <strong>{totalOrderQty}</strong> EA</span>
-                              <span style={{ color: '#0f766e' }}>포장완료: <strong>{packedQty}</strong> EA</span>
-                              <span style={{ 
-                                fontWeight: 'bold', 
-                                color: isCompleted ? '#16a34a' : isOver ? '#dc2626' : '#ea580c',
-                                background: isCompleted ? '#f0fdf4' : isOver ? '#fef2f2' : '#fff7ed',
-                                padding: '2px 6px',
-                                borderRadius: '4px'
-                              }}>
-                                {isCompleted ? '✓ 완료' : isOver ? `초과 (${Math.abs(remaining)} EA)` : `잔여 ${remaining} EA`}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', background: '#fff', border: '1px solid #e2e8f0' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '25%' }}>제품코드 / 품명</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>주문 총수량</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '15%' }}>포장 형태 (마스터)</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>PL당 적재수량</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '15%' }}>완제 팔레트수</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '10%' }}>남은 자투리 수량</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '15%' }}>자투리 처리 방식</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orderItems.map((item, idx) => {
+                          const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                          const itemCode = match ? match[1] : '-';
+                          const itemName = match ? match[2] : (item.name || '');
+                          const qty = item.qty || 0;
+
+                          // Find product packing method
+                          const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                          const matchedMethod = p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                            packageType: '단품',
+                            qtyPerPallet: 100,
+                            unitWidth: p?.unitWidth || 0,
+                            unitLength: p?.unitLength || 0,
+                            unitHeight: p?.unitHeight || 0,
+                            unitWeight: p?.unitWeight || 0,
+                            unitGrossWeight: p?.unitGrossWeight || 0,
+                            palletWidth: p?.palletWidth || 0,
+                            palletLength: p?.palletLength || 0,
+                            palletHeight: p?.palletHeight || 0,
+                            palletWeight: p?.palletWeight || 0,
+                            palletGrossWeight: p?.palletGrossWeight || 0
+                          };
+
+                          const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
+                          const fullPallets = Math.floor(qty / qtyPerPallet);
+                          const residue = qty % qtyPerPallet;
+
+                          // Read custom residue treatment from state if any, default to 'independent'
+                          const residueKey = `residue_${itemCode}_${idx}`;
+                          const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
+
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                              <td style={{ padding: '8px', fontWeight: 'bold' }}>[{itemCode}] {itemName}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{qty.toLocaleString()} EA</td>
+                              <td style={{ padding: '8px' }}>{matchedMethod.packageType}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{qtyPerPallet} EA</td>
+                              <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', color: '#0284c7' }}>{fullPallets} PLT</td>
+                              <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: residue > 0 ? '#ea580c' : '#64748b' }}>
+                                {residue.toLocaleString()} EA
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>
+                                <select
+                                  disabled={residue === 0 || !isEditing}
+                                  value={treatment}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setBasicForm(prev => {
+                                      const nextPL = { ...(prev.packingList || {}) };
+                                      (nextPL as any)[residueKey] = val;
+                                      return { ...prev, packingList: nextPL };
+                                    });
+                                  }}
+                                  style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: residue === 0 ? '#f1f5f9' : '#fff' }}
+                                >
+                                  <option value="independent">독립 팔레트 (높이조정)</option>
+                                  <option value="single">박스 단품 (손적재)</option>
+                                  <option value="mixed">혼적용 (Mixed PLT)</option>
+                                </select>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
 
-                  {/* 문서 기본 정보 및 거래 조건 카드 제거됨 */}
-
-                  {/* 공통 쉬핑마크 설정 (제거됨 - 선적관리로 이동) */}
-
+                  {/* 2단계: 완성된 팔레트의 컨테이너 적재 (Container Loading Plan) */}
                   {basicForm.packingList && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      {/* 그룹 3: 컨테이너별 패킹 목록 (Containers Section) */}
                       <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
-                          <h5 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a' }}>📦 컨테이너별 패킹 실적 입력 (Container Packing Details)</h5>
-                          <button
-                            type="button"
-                            disabled={!isEditing}
-                            onClick={() => {
-                              const newContainers = [...(basicForm.packingList.containers || [])];
-                              newContainers.push({
-                                containerNo: '',
-                                sealNo: '',
-                                items: []
-                              });
-                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
-                            }}
-                            style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
-                          >
-                            + 컨테이너 추가
-                          </button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                          <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            📦 Step 2. 컨테이너 적재 실적 및 배치 (Container Loading Plan)
+                          </h4>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // AUTO ALLOCATION LOGIC: Distribute computed pallets into containers
+                                const newContainers: any[] = [];
+                                let currentContainerItems: any[] = [];
+                                 // containerIndex removed
+
+                                orderItems.forEach((item, itemIdx) => {
+                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                  const itemCode = match ? match[1] : '-';
+                                  const itemName = match ? match[2] : (item.name || '');
+                                  const qty = item.qty || 0;
+
+                                  const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                                    packageType: '단품',
+                                    qtyPerPallet: 100,
+                                    unitWidth: p?.unitWidth || 0,
+                                    unitLength: p?.unitLength || 0,
+                                    unitHeight: p?.unitHeight || 0,
+                                    unitWeight: p?.unitWeight || 0,
+                                    unitGrossWeight: p?.unitGrossWeight || 0,
+                                    palletWidth: p?.palletWidth || 0,
+                                    palletLength: p?.palletLength || 0,
+                                    palletHeight: p?.palletHeight || 0,
+                                    palletWeight: p?.palletWeight || 0,
+                                    palletGrossWeight: p?.palletGrossWeight || 0
+                                  };
+
+                                  const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
+                                  const fullPallets = Math.floor(qty / qtyPerPallet);
+                                  const residue = qty % qtyPerPallet;
+                                  const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
+                                  const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
+                                  const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
+                                  const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+
+                                  // 1. Add full pallets
+                                  if (fullPallets > 0) {
+                                    const netW = matchedMethod.palletWeight || (matchedMethod.unitWeight || 0) * qtyPerPallet;
+                                    const grossW = matchedMethod.palletGrossWeight || (matchedMethod.unitGrossWeight || 0) * qtyPerPallet;
+                                    const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
+
+                                    currentContainerItems.push({
+                                      pkgNo: `1-${fullPallets}`,
+                                      pkg: String(fullPallets),
+                                      description: `[${itemCode}] ${itemName} (완제 Pallet)`,
+                                      packageType: matchedMethod.packageType,
+                                      dimensions: `${w}x${l}x${h}`,
+                                      supplier: item.supplier || '',
+                                      netWeight: String(Math.round(netW * fullPallets)),
+                                      grossWeight: String(Math.round(grossW * fullPallets)),
+                                      cbm: String((cbm * fullPallets).toFixed(3))
+                                    });
+                                  }
+
+                                  // 2. Add residue if exists
+                                  if (residue > 0) {
+                                    const residueKey = `residue_${itemCode}_${itemIdx}`;
+                                    const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
+
+                                    if (treatment === 'independent') {
+                                      // Height scaled down
+                                      const scale = residue / qtyPerPallet;
+                                      const scaledH = Math.max(200, Math.round(h * scale));
+                                      const netW = (matchedMethod.unitWeight || 0) * residue;
+                                      const grossW = (matchedMethod.unitGrossWeight || 0) * residue;
+                                      const cbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
+
+                                      currentContainerItems.push({
+                                        pkgNo: `${fullPallets + 1}`,
+                                        pkg: '1',
+                                        description: `[${itemCode}] ${itemName} (자투리 독립 Pallet)`,
+                                        packageType: matchedMethod.packageType,
+                                        dimensions: `${w}x${l}x${scaledH}`,
+                                        supplier: item.supplier || '',
+                                        netWeight: String(Math.round(netW)),
+                                        grossWeight: String(Math.round(grossW)),
+                                        cbm: String(cbm.toFixed(3))
+                                      });
+                                    } else if (treatment === 'single') {
+                                      // Single carton boxes hand-loaded
+                                      const singleW = matchedMethod.unitWidth || 300;
+                                      const singleL = matchedMethod.unitLength || 300;
+                                      const singleH = matchedMethod.unitHeight || 300;
+                                      const netW = (matchedMethod.unitWeight || 0) * residue;
+                                      const grossW = (matchedMethod.unitGrossWeight || 0) * residue;
+                                      const cbm = Number(((singleW * singleL * singleH) / 1000000000 * residue).toFixed(4));
+
+                                      currentContainerItems.push({
+                                        pkgNo: `${fullPallets + 1}-${fullPallets + residue}`,
+                                        pkg: String(residue),
+                                        description: `[${itemCode}] ${itemName} (자투리 단품 박스 적재)`,
+                                        packageType: '단품 박스',
+                                        dimensions: `${singleW}x${singleL}x${singleH}`,
+                                        supplier: item.supplier || '',
+                                        netWeight: String(Math.round(netW)),
+                                        grossWeight: String(Math.round(grossW)),
+                                        cbm: String(cbm.toFixed(3))
+                                      });
+                                    } else {
+                                      // Mixed Pallet template
+                                      currentContainerItems.push({
+                                        pkgNo: 'MIXED',
+                                        pkg: '1',
+                                        description: `[${itemCode}] ${itemName} (혼적 LCL Pallet 대상)`,
+                                        packageType: '혼적 Pallet',
+                                        dimensions: `${w}x${l}x${h}`,
+                                        supplier: item.supplier || '',
+                                        netWeight: String(Math.round((matchedMethod.unitWeight || 0) * residue)),
+                                        grossWeight: String(Math.round((matchedMethod.unitGrossWeight || 0) * residue)),
+                                        cbm: String(Number(((w * l * h) / 1000000000).toFixed(4)).toFixed(3))
+                                      });
+                                    }
+                                  }
+                                });
+
+                                // Allocate items to containers (e.g., maximum 20 CBM per 20FT, 45 CBM per 40FT)
+                                // Let's split logically by 컨테이너
+                                newContainers.push({
+                                  containerNo: `CONTAINER-01`,
+                                  sealNo: '',
+                                  items: currentContainerItems
+                                });
+
+                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
+                                alert('🔄 제품별 팔레트 연산결과가 컨테이너에 자동 배정되었습니다.');
+                              }}
+                              style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              ⚡ 팔레트 연산결과 자동 배정
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!isEditing}
+                              onClick={() => {
+                                const newContainers = [...(basicForm.packingList.containers || [])];
+                                newContainers.push({
+                                  containerNo: `CONTAINER-0${newContainers.length + 1}`,
+                                  sealNo: '',
+                                  items: []
+                                });
+                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
+                              }}
+                              style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                            >
+                              + 컨테이너 추가
+                            </button>
+                          </div>
                         </div>
 
                         {(basicForm.packingList.containers || []).map((c: any, cIdx: number) => (
@@ -5068,7 +5233,7 @@ export const OrderDetail: React.FC = () => {
                                   }}
                                   style={{ padding: '4px 10px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '3px', fontWeight: 'bold', fontSize: '11.5px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
                                 >
-                                  + 품목 행 추가
+                                  + 직접 품목 추가
                                 </button>
                                 <button
                                   type="button"
@@ -5376,8 +5541,6 @@ export const OrderDetail: React.FC = () => {
                           </div>
                         ))}
                       </div>
-
-
                     </div>
                   )}
                 </div>
