@@ -5270,8 +5270,62 @@ export const OrderDetail: React.FC = () => {
                                        });
                                        currentPkgNo++;
                                     }
-                                  }
+                                                                    }
                                 });
+
+                                                                // Post-process currentContainerItems to merge '혼적 Pallet' items by supplier
+                                const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
+                                const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
+
+                                const mixedBySupplier: { [key: string]: any[] } = {};
+                                mixedItems.forEach((it: any) => {
+                                  const s = it.supplier || 'DEFAULT';
+                                  if (!mixedBySupplier[s]) mixedBySupplier[s] = [];
+                                  mixedBySupplier[s].push(it);
+                                });
+
+                                const mergedMixedItems: any[] = [];
+                                Object.keys(mixedBySupplier).forEach((supplierKey: string) => {
+                                  const items = mixedBySupplier[supplierKey];
+                                  if (items.length === 0) return;
+
+                                  let totalNet = 0;
+                                  let totalGross = 0;
+                                  let totalQty = 0;
+                                  const itemDetails: string[] = [];
+
+                                  items.forEach((it: any) => {
+                                    totalNet += Number(it.netWeight) || 0;
+                                    totalGross += Number(it.grossWeight) || 0;
+                                    totalQty += Number(it.qty) || 0;
+                                    
+                                    const cleanDesc = (it.description || '').replace(/\s*\([^)]*\)/g, '').trim();
+                                    itemDetails.push(`${cleanDesc} (${Number(it.qty).toLocaleString()} EA)`);
+                                  });
+
+                                  const first = items[0];
+                                  const dimensions = first.dimensions || '1100x1100x1000';
+                                  const cbm = first.cbm || '1.210';
+
+                                  mergedMixedItems.push({
+                                    pkgNo: String(currentPkgNo),
+                                    pkg: '1',
+                                    qty: String(totalQty),
+                                    description: `[혼적] ${itemDetails.join(' / ')}`,
+                                    packageType: '혼적 Pallet',
+                                    dimensions: dimensions,
+                                    supplier: supplierKey === 'DEFAULT' ? '' : supplierKey,
+                                    netWeight: String(Math.round(totalNet)),
+                                    grossWeight: String(Math.round(totalGross)),
+                                    cbm: cbm
+                                  });
+                                  currentPkgNo++;
+                                });
+
+                                currentContainerItems = [
+                                  ...nonMixedItems,
+                                  ...mergedMixedItems
+                                ];
 
                                 // Allocate items to containers (e.g., maximum 20 CBM per 20FT, 45 CBM per 40FT)
                                 // Let's split logically by 컨테이너
@@ -5492,32 +5546,44 @@ export const OrderDetail: React.FC = () => {
                                         
                                         return (
                                           <select
-                                            disabled={!isEditing}
-                                            style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
-                                            value={it.packageType || ''}
-                                            onChange={e => {
-                                              const val = e.target.value;
-                                              const nextContainers = [...basicForm.packingList.containers];
-                                              nextContainers[cIdx].items[itIdx].packageType = val;
-                                              
-                                              // Auto-fill dimensions when selecting package type
-                                              const matchedMethod = methods_any.find((m: any) => m.packageType === val);
-                                              if (matchedMethod) {
-                                                const isPlt = val.toLowerCase().includes('pallet');
-                                                const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
-                                                const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
-                                                const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
-                                                nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
-                                              }
-                                              
-                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                            }}
-                                          >
-                                            <option value="">-- 선택 --</option>
-                                            {Array.from(new Set(methods_any.map((m: any) => m.packageType))).map((pType: any) => (
-                                              <option key={pType} value={pType}>{pType}</option>
-                                            ))}
-                                          </select>
+                                              disabled={!isEditing}
+                                              style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
+                                              value={it.packageType || ''}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].packageType = val;
+                                                
+                                                // Auto-fill dimensions when selecting package type
+                                                const matchedMethod = methods_any.find((m: any) => m.packageType === val);
+                                                if (matchedMethod) {
+                                                  const isPlt = val.toLowerCase().includes('pallet');
+                                                  const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
+                                                  const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
+                                                  const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+                                                  nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
+                                                } else if (val === '혼적 Pallet') {
+                                                  nextContainers[cIdx].items[itIdx].dimensions = '1100x1100x1000';
+                                                }
+                                                
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            >
+                                              <option value="">-- 선택 --</option>
+                                              {(() => {
+                                                const pTypeOptions = Array.from(new Set([
+                                                  ...methods_any.map((m: any) => m.packageType),
+                                                  '단품 박스',
+                                                  '혼적 Pallet'
+                                                ].filter(Boolean)));
+                                                if (it.packageType && !pTypeOptions.includes(it.packageType)) {
+                                                  pTypeOptions.push(it.packageType);
+                                                }
+                                                return pTypeOptions.map((pType: any) => (
+                                                  <option key={pType} value={pType}>{pType}</option>
+                                                ));
+                                              })()}
+                                            </select>
                                         );
                                       })()}
                                     </td>
@@ -5544,21 +5610,30 @@ export const OrderDetail: React.FC = () => {
                                         
                                         return (
                                           <select
-                                            disabled={!isEditing}
-                                            style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
-                                            value={it.dimensions || ''}
-                                            onChange={e => {
-                                              const val = e.target.value;
-                                              const nextContainers = [...basicForm.packingList.containers];
-                                              nextContainers[cIdx].items[itIdx].dimensions = val;
-                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                            }}
-                                          >
-                                            <option value="">-- 선택 --</option>
-                                            {Array.from(new Set(specs)).map((spec: any) => (
-                                              <option key={spec} value={spec}>{spec}</option>
-                                            ))}
-                                          </select>
+                                              disabled={!isEditing}
+                                              style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
+                                              value={it.dimensions || ''}
+                                              onChange={e => {
+                                                const val = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].dimensions = val;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            >
+                                              <option value="">-- 선택 --</option>
+                                              {(() => {
+                                                const specsSet = new Set(specs);
+                                                if (it.dimensions) {
+                                                  specsSet.add(it.dimensions);
+                                                }
+                                                if (it.packageType === '혼적 Pallet') {
+                                                  specsSet.add('1100x1100x1000');
+                                                }
+                                                return Array.from(specsSet).map((spec: any) => (
+                                                  <option key={spec} value={spec}>{spec}</option>
+                                                ));
+                                              })()}
+                                            </select>
                                         );
                                       })()}
                                     </td>
