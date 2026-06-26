@@ -2021,5 +2021,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.parent.postMessage({ type: 'PACKER_DRAG_END' }, '*');
             }
         });
+
+        // Notify parent that iframe is ready to receive data
+        window.parent.postMessage({ type: 'IFRAME_READY' }, '*');
     }
 });

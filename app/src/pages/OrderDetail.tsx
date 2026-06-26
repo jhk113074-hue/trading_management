@@ -802,7 +802,11 @@ export const OrderDetail: React.FC = () => {
     return () => document.removeEventListener('click', handleGlobalClick, true);
   }); // run on every render to capture the latest handleSaveBasic closure
 
-  // Listen for Container Packer EXPORT_PACKING_LIST messages
+  // Keep latest packing list data for handlePackerMessage event listener
+  const latestPackingDataRef = useRef({ basicForm, orderItems, products, order });
+  latestPackingDataRef.current = { basicForm, orderItems, products, order };
+
+  // Listen for Container Packer EXPORT_PACKING_LIST & IFRAME_READY messages
   useEffect(() => {
     const handlePackerMessage = (event: MessageEvent) => {
       const data = event.data;
@@ -818,6 +822,80 @@ export const OrderDetail: React.FC = () => {
           }));
           setIsPackerModalOpen(false);
           alert('컨테이너 적재 시뮬레이션 결과가 패킹리스트에 반영되었습니다.');
+        }
+      } else if (data && data.type === 'IFRAME_READY') {
+        const iframe = document.querySelector('iframe[title="컨테이너 적재 프로그램"]') as HTMLIFrameElement;
+        if (iframe && iframe.contentWindow) {
+          const { basicForm: latestBasicForm, orderItems: latestOrderItems, products: latestProducts, order: latestOrder } = latestPackingDataRef.current;
+
+          const itemsPayload: any[] = [];
+          if (latestBasicForm.packingList?.containers) {
+            latestBasicForm.packingList.containers.forEach((c: any) => {
+              (c.items || []).forEach((it: any) => {
+                if (!it.description && !it.pkgNo) return;
+                const cleanDims = String(it.dimensions || '1100x1100x1000').toLowerCase().replace(/\s+/g, '');
+                const dims = cleanDims.split('x');
+                const w = Number(dims[0]) || 1100;
+                const d = Number(dims[1]) || 1100;
+                const h = Number(dims[2]) || 1000;
+                
+                itemsPayload.push({
+                  desc: it.description || '화물',
+                  qty: Number(it.pkg) || 1,
+                  w: w,
+                  d: d,
+                  h: h,
+                  netWeight: Number(it.netWeight) || 0,
+                  grossWeight: Number(it.grossWeight) || 0,
+                  packageType: it.packageType || 'Pallet'
+                });
+              });
+            });
+          }
+          
+          if (itemsPayload.length === 0) {
+            latestOrderItems.forEach((item: any) => {
+              const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+              const itemCode = match ? match[1] : '-';
+              const matchedProd = latestProducts.find(p => p.productCode === itemCode || p.id === itemCode || p.id === item.itemId);
+              const list = matchedProd?.packingMethods || [];
+              const isPlt = (item.packageType || '').toLowerCase().includes('pallet');
+              const w = Number(isPlt ? (list[0]?.palletWidth || matchedProd?.palletWidth) : matchedProd?.unitWidth) || 1100;
+              const d = Number(isPlt ? (list[0]?.palletLength || matchedProd?.palletLength) : matchedProd?.unitLength) || 1100;
+              const h = Number(isPlt ? (list[0]?.palletHeight || matchedProd?.palletHeight) : matchedProd?.unitHeight) || 1000;
+              
+              itemsPayload.push({
+                desc: item.name || '화물',
+                qty: item.qty || 1,
+                w: w,
+                d: d,
+                h: h,
+                netWeight: Number(item.netWeight || matchedProd?.palletWeight || 0),
+                grossWeight: Number(item.grossWeight || matchedProd?.palletGrossWeight || 0),
+                packageType: item.packageType || 'Pallet'
+              });
+            });
+          }
+
+          const containersPayload: Record<string, number> = {};
+          if (latestBasicForm.packingList?.containers) {
+            latestBasicForm.packingList.containers.forEach((c: any) => {
+              const type = c.containerType || '20GP';
+              containersPayload[type] = (containersPayload[type] || 0) + 1;
+            });
+          }
+          if (Object.keys(containersPayload).length === 0) {
+            containersPayload['20GP'] = 1;
+          }
+
+          iframe.contentWindow.postMessage({
+            type: 'LOAD_PI_DATA',
+            customer: latestBasicForm.customer || '',
+            piNumber: latestBasicForm.piNumber || latestOrder?.id || '',
+            date: latestBasicForm.etd || new Date().toISOString().split('T')[0],
+            containers: containersPayload,
+            items: itemsPayload
+          }, '*');
         }
       }
     };
@@ -4930,13 +5008,6 @@ export const OrderDetail: React.FC = () => {
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         type="button" 
-                        onClick={() => setIsPackerModalOpen(true)}
-                        style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        🚢 3D 적재 시뮬레이션 연동
-                      </button>
-                      <button 
-                        type="button" 
                         onClick={handlePrintPL}
                         style={{ padding: '6px 12px', fontSize: '12px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
@@ -5145,7 +5216,7 @@ export const OrderDetail: React.FC = () => {
                       <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                           <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            📦 Step 2. 컨테이너 적재 실적 및 배치 (Container Loading Plan)
+                            📦 Step 2. 패킹리스트 작성 및 검토 (자동/수동 편집 지원)
                           </h4>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button
@@ -5776,6 +5847,40 @@ export const OrderDetail: React.FC = () => {
                             </table>
                           </div>
                         ))}
+                      </div>
+
+                      {/* Step 3. 3D적재 시뮬레이션 연동 */}
+                      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.01)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
+                          <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            🚚 Step 3. 3D적재 시뮬레이션 연동
+                          </h4>
+                        </div>
+                        <p style={{ margin: '0 0 14px 0', fontSize: '11.5px', color: '#64748b', lineHeight: 1.4 }}>
+                          Step 2에서 배정 완료된 패킹리스트 아이템들을 3D 적재 시뮬레이션 프로그램으로 연동하여 최적의 적재율을 검증하고, 배치 결과를 패킹리스트에 가져올 수 있습니다.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0' }}>
+                          <button
+                            type="button"
+                            onClick={() => setIsPackerModalOpen(true)}
+                            style={{
+                              padding: '10px 24px',
+                              background: '#0284c7',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontWeight: 'bold',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(2, 132, 199, 0.2)'
+                            }}
+                          >
+                            🚢 3D적재 시뮬레이션 연동 및 적재 검토 실행
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
