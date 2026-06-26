@@ -559,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkAllEl) checkAllEl.checked = false;
 
         if (currentItems.length === 0) {
-            itemsTbody.innerHTML = '<tr class="empty-row"><td colspan="9">등록된 화물이 없습니다.</td></tr>';
+            itemsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>';
             if(itemsTfoot) itemsTfoot.classList.add('hidden');
         } else {
             if(itemsTfoot) itemsTfoot.classList.remove('hidden');
@@ -587,7 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${((item.w * item.d * item.h) / 1000000000).toFixed(3)}</td>
                     <td>${netDisp} / ${grossDisp}</td>
                     <td>${item.qty.toLocaleString()}</td>
-                    <td>-</td>
                     <td>
                         <span class="tag ${item.stackable ? 'active' : ''}">${item.stackable ? '다단허용' : '다단불가'}</span>
                         <span class="tag ${item.rotation ? 'active' : ''}">${item.rotation ? '회전허용' : '회전불가'}</span>
