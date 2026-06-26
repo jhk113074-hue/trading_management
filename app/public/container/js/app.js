@@ -812,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     itemsMap[key].qty++;
                 });
 
-                const items = Object.values(itemsMap).map((g: any, itemIdx) => {
+                const items = Object.values(itemsMap).map((g, itemIdx) => {
                     const totalQty = g.qty;
                     const cbm = (g.w * g.d * g.h) / 1000000000 * totalQty;
                     return {
