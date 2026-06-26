@@ -847,18 +847,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 1. JSON 파일로 다운로드
+            // 1. 시뮬레이션 결과 데이터 추출
             const data = getProjectData();
-            const jsonStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            const safeCust = (data.customerName || 'customer').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
-            const safeProj = (data.projectName || 'project').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
-            link.href = url;
-            link.download = `${safeCust}_${safeProj}_3D적재결과.json`;
-            link.click();
-            URL.revokeObjectURL(url);
 
             // 2. 부모 창으로 데이터 연동 전달 (패킹리스트 자동 반영)
             const formattedContainers = currentResults.map((result, idx) => {
