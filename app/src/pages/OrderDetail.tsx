@@ -5231,18 +5231,73 @@ export const OrderDetail: React.FC = () => {
                                       }} />
                                     </td>
                                     <td style={{ padding: '5px' }}>
-                                      <textarea
-                                        rows={2}
-                                        disabled={!isEditing}
-                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', resize: 'vertical', boxSizing: 'border-box' }}
-                                        value={it.description || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].description = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
+                                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                          <input
+                                            type="text"
+                                            disabled={!isEditing}
+                                            placeholder="[상품코드] 상품명 또는 사양 직접 입력"
+                                            list={`packing_products_datalist_${cIdx}_${itIdx}`}
+                                            style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '100%', boxSizing: 'border-box' }}
+                                            value={it.description || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].description = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                          />
+                                        </div>
+                                        <datalist id={`packing_products_datalist_${cIdx}_${itIdx}`}>
+                                          {products.map(p => {
+                                            const displayName = p.nameEn || p.nameKo || '';
+                                            return (
+                                              <option key={p.id} value={`[${p.productCode}] ${displayName}`}>
+                                                [{p.productCode}] {displayName}
+                                              </option>
+                                            );
+                                          })}
+                                        </datalist>
+                                        {(() => {
+                                          const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                          const itemCode = match ? match[1] : '-';
+                                          const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                          return (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                if (p) {
+                                                  setEditingProd(p);
+                                                  setIsProdModalOpen(true);
+                                                } else {
+                                                  alert('먼저 등록된 상품 ([상품코드]로 시작하는 형태)을 선택해주세요.');
+                                                }
+                                              }}
+                                              disabled={!p}
+                                              title="선택된 상품 수정 및 패킹방법 설정"
+                                              style={{
+                                                background: p ? '#fef08a' : '#f1f5f9',
+                                                border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
+                                                color: p ? '#a16207' : '#94a3b8',
+                                                borderRadius: '4px',
+                                                padding: '2px 4px',
+                                                cursor: p ? 'pointer' : 'not-allowed',
+                                                fontSize: '11px',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                height: '32px',
+                                                width: '32px',
+                                                boxSizing: 'border-box',
+                                                flexShrink: 0
+                                              }}
+                                            >
+                                              ✏️
+                                            </button>
+                                          );
+                                        })()}
+                                      </div>
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       {(() => {
