@@ -1,0 +1,28 @@
+{
+  "id": "PI-YS-2026-SU-07-3d-plan",
+  "customerName": "Steelworks Engineering Sdn Bhd",
+  "projectName": "PI-YS-2026-SU-07",
+  "date": "2026-06-22",
+  "serial": "PI-YS-2026-SU-07",
+  "containerType": "20GP",
+  "containerQuantities": {
+    "20GP": 1,
+    "20RF": 0,
+    "40GP": 0,
+    "40HC": 0
+  },
+  "items": [
+    {
+      "name": "[P0172] FRP Manhole 1x1 Panel(HY) (완제 Pallet)",
+      "w": 1150,
+      "d": 1150,
+      "h": 2000,
+      "qty": 10,
+      "netWeight": 434,
+      "grossWeight": 449,
+      "packageType": "Wooden Pallet"
+    }
+  ],
+  "results": [],
+  "updatedAt": "2026-06-26T22:18:00.000Z"
+}

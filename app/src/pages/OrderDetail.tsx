@@ -817,11 +817,12 @@ export const OrderDetail: React.FC = () => {
             ...prev,
             packingList: {
               ...prev.packingList,
-              containers: receivedContainers
+              containers: receivedContainers,
+              raw3DPlan: data.raw3DPlan || null
             }
           }));
           setIsPackerModalOpen(false);
-          alert('컨테이너 적재 시뮬레이션 결과가 패킹리스트에 반영되었습니다.');
+          alert('컨테이너 적재 시뮬레이션 결과가 저장되었습니다.');
         }
       } else if (data && data.type === 'IFRAME_READY') {
         if (event.source) {
@@ -893,7 +894,8 @@ export const OrderDetail: React.FC = () => {
             piNumber: latestBasicForm.piNumber || latestOrder?.id || '',
             date: latestBasicForm.etd || new Date().toISOString().split('T')[0],
             containers: containersPayload,
-            items: itemsPayload
+            items: itemsPayload,
+            raw3DPlan: latestBasicForm.packingList?.raw3DPlan || null
           }, '*');
         }
       }

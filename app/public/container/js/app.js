@@ -775,8 +775,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-save-as-project').addEventListener('click', () => saveProject(true));
 
     const btnExportPacking = document.getElementById('btn-export-packing');
+    const btnImportFile = document.getElementById('btn-import-file');
+    const inputImportFile = document.getElementById('input-import-file');
+
     if (window.parent !== window) {
         if (btnExportPacking) btnExportPacking.classList.remove('hidden');
+        if (btnImportFile) btnImportFile.classList.remove('hidden');
         
         const btnLoad = document.getElementById('btn-load-project');
         const btnSave = document.getElementById('btn-save-project');
@@ -785,6 +789,58 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnSave) btnSave.style.display = 'none';
         if (btnSaveAs) btnSaveAs.style.display = 'none';
     }
+
+    // 파일 불러오기 버튼 핸들러
+    if (btnImportFile && inputImportFile) {
+        btnImportFile.addEventListener('click', () => {
+            inputImportFile.click();
+        });
+
+        inputImportFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const proj = JSON.parse(event.target.result);
+                    if (!proj.items || !proj.containerQuantities) {
+                        alert('올바른 적재결과 JSON 파일이 아닙니다.');
+                        return;
+                    }
+
+                    currentProjectId = proj.id;
+                    customerInput.value = proj.customerName || '';
+                    projectInput.value = proj.projectName || '';
+                    dateInput.value = proj.date || '';
+                    serialInput.value = proj.serial || '';
+                    
+                    setSelectedContainer(proj.containerType || '20GP', proj.containerQuantities);
+                    currentItems = proj.items || [];
+                    currentResults = proj.results || (proj.result ? [proj.result] : []);
+                    currentResultIndex = 0;
+                    
+                    exitEditMode();
+                    renderItems();
+                    if (typeof renderContainerTabs === 'function') renderContainerTabs();
+                    renderSimulationResult();
+                    
+                    // 파일 불러온 뒤 시뮬레이션 자동 재실행
+                    if (currentItems.length > 0) {
+                        const btnRunSim = document.getElementById('btn-run-simulation');
+                        if (btnRunSim) btnRunSim.click();
+                    }
+                    alert('적재결과 JSON 파일이 성공적으로 로드되었습니다.');
+                } catch (err) {
+                    alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            // Reset value to allow loading same file again
+            inputImportFile.value = '';
+        });
+    }
+
     if (btnExportPacking) {
         btnExportPacking.addEventListener('click', () => {
             if (!currentResults || currentResults.length === 0) {
@@ -792,6 +848,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            // 1. JSON 파일로 다운로드
+            const data = getProjectData();
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const safeCust = (data.customerName || 'customer').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+            const safeProj = (data.projectName || 'project').replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
+            link.href = url;
+            link.download = `${safeCust}_${safeProj}_3D적재결과.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            // 2. 부모 창으로 데이터 연동 전달 (패킹리스트 자동 반영)
             const formattedContainers = currentResults.map((result, idx) => {
                 const itemsMap = {};
                 result.loaded.forEach(box => {
@@ -838,7 +908,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             window.parent.postMessage({
                 type: 'EXPORT_PACKING_LIST',
-                containers: formattedContainers
+                containers: formattedContainers,
+                raw3DPlan: data // Send raw simulation data so parent can store it in Firestore!
             }, '*');
         });
     }
@@ -1651,6 +1722,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data && data.type === 'LOAD_PI_DATA') {
             console.log("Received PI Data via postMessage:", data);
             
+            if (data.raw3DPlan) {
+                const proj = data.raw3DPlan;
+                currentProjectId = proj.id;
+                if (customerInput) customerInput.value = proj.customerName || '';
+                if (projectInput) projectInput.value = proj.projectName || '';
+                const serialInput = document.getElementById('project-serial');
+                if (serialInput) serialInput.value = proj.serial || '';
+                if (dateInput) dateInput.value = proj.date || '';
+                
+                setSelectedContainer(proj.containerType || '20GP', proj.containerQuantities);
+                currentItems = proj.items || [];
+                currentResults = proj.results || (proj.result ? [proj.result] : []);
+                currentResultIndex = 0;
+                
+                exitEditMode();
+                renderItems();
+                if (typeof renderContainerTabs === 'function') renderContainerTabs();
+                renderSimulationResult();
+                
+                if (currentItems.length > 0) {
+                    setTimeout(() => {
+                        const runBtn = document.getElementById('btn-run-simulation');
+                        if (runBtn) runBtn.click();
+                    }, 100);
+                }
+                return;
+            }
+
             // Populate project info safely
             if (customerInput && data.customer) customerInput.value = data.customer;
             if (projectInput && data.piNumber) {
