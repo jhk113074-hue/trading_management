@@ -935,6 +935,12 @@ export const OrderDetail: React.FC = () => {
             planData: rawPlan
           };
 
+          const shouldOverwrite = confirm(
+            '3D 적재 시뮬레이션 결과를 기존 패킹리스트(Step 2)에도 반영하여 덮어쓰시겠습니까?\n\n' +
+            '[확인]을 누르면 3D 배치 결과를 기준으로 패킹리스트 컨테이너 정보가 재구성됩니다.\n' +
+            '[취소]를 누르면 기존 패킹리스트 내용은 유지되고, 시뮬레이션 결과만 파일보관함에 보관됩니다.'
+          );
+
           setBasicForm(prev => {
             const currentPlans = prev.packingList?.archivedPlans || [];
             const existsIdx = currentPlans.findIndex((p: any) => p.id === newPlan.id);
@@ -948,14 +954,14 @@ export const OrderDetail: React.FC = () => {
               ...prev,
               packingList: {
                 ...prev.packingList,
-                containers: receivedContainers,
+                containers: shouldOverwrite ? receivedContainers : (prev.packingList?.containers || []),
                 raw3DPlan: rawPlan || null,
                 archivedPlans: updatedPlans
               }
             };
           });
           setIsPackerModalOpen(false);
-          alert('컨테이너 적재 시뮬레이션 결과가 파일보관함에 보관 및 저장되었습니다.');
+          alert('컨테이너 적재 시뮬레이션 결과가 파일보관함에 보관되었습니다.');
         }
       } else if (data && data.type === 'IFRAME_READY') {
         if (event.source) {
