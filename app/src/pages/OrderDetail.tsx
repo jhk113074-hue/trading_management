@@ -5000,7 +5000,38 @@ export const OrderDetail: React.FC = () => {
 
                           return (
                             <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                              <td style={{ padding: '8px', fontWeight: 'bold' }}>[{itemCode}] {itemName}</td>
+                              <td style={{ padding: '8px', fontWeight: 'bold' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span>[{itemCode}] {itemName}</span>
+                                  {p && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingProd(p);
+                                        setIsProdModalOpen(true);
+                                      }}
+                                      title="상품 정보 및 상세 패킹방법 수정"
+                                      style={{
+                                        background: '#fef08a',
+                                        border: '1px solid #cbd5e1',
+                                        color: '#a16207',
+                                        borderRadius: '4px',
+                                        padding: '2px 4px',
+                                        cursor: 'pointer',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        height: '22px',
+                                        width: '22px'
+                                      }}
+                                    >
+                                      ✏️
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>{qty.toLocaleString()} EA</td>
                               <td style={{ padding: '8px' }}>
                                 <select
