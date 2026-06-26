@@ -1248,9 +1248,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         ) : (
                           (formData.packingMethods || []).map((m: any) => {
                             const isPallet = m.packageType.toLowerCase().includes('pallet');
-                            const specStr = isPallet
-                              ? `Pallet: ${m.palletWidth || 0}x${m.palletLength || 0}x${m.palletHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.palletWeight || 0} kg, 총중량: ${m.palletGrossWeight || 0} kg`
-                              : `Single: ${m.unitWidth || 0}x${m.unitLength || 0}x${m.unitHeight || 0} mm / 순중량: ${m.unitWeight || 0} kg, 총중량: ${m.unitGrossWeight || 0} kg`;
+                             const specStr = isPallet
+                               ? `Pallet: ${m.palletWidth || 0}x${m.palletLength || 0}x${m.palletHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.palletWeight || 0} kg, 총중량: ${m.palletGrossWeight || 0} kg`
+                               : `Single: ${m.unitWidth || 0}x${m.unitLength || 0}x${m.unitHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.unitWeight || 0} kg, 총중량: ${m.unitGrossWeight || 0} kg`;
 
                             return (
                               <tr key={m.id} style={{ borderBottom: '1px solid #e8ecf0', background: m.isDefault ? '#eff6ff' : 'transparent' }}>

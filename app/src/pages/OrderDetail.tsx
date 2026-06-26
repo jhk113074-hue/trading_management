@@ -5000,8 +5000,16 @@ export const OrderDetail: React.FC = () => {
                           const fullPallets = Math.floor(qty / qtyPerPallet);
                           const residue = qty % qtyPerPallet;
 
-                          const netW = matchedMethod.palletWeight || (matchedMethod.unitWeight || 0) * qtyPerPallet || 0;
-                          const grossW = matchedMethod.palletGrossWeight || (matchedMethod.unitGrossWeight || 0) * qtyPerPallet || 0;
+                          const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
+                          const isSingleRaw = matchedMethod.packageType === '단품';
+
+                          const netW = isPlt 
+                            ? (matchedMethod.palletWeight || 0) 
+                            : (isSingleRaw ? (matchedMethod.unitWeight || 0) * qtyPerPallet : (matchedMethod.unitWeight || 0));
+
+                          const grossW = isPlt 
+                            ? (matchedMethod.palletGrossWeight || 0) 
+                            : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * qtyPerPallet : (matchedMethod.unitGrossWeight || 0));
 
                           // Read custom residue treatment from state if any, default to 'independent'
                           const residueKey = `residue_${itemCode}_${idx}`;
@@ -5179,14 +5187,19 @@ export const OrderDetail: React.FC = () => {
                                   const fullPallets = Math.floor(qty / qtyPerPallet);
                                   const residue = qty % qtyPerPallet;
                                   const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
+                                  const isSingleRaw = matchedMethod.packageType === '단품';
                                   const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
                                   const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
                                   const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
 
                                   // 1. Add full pallets
                                   if (fullPallets > 0) {
-                                    const netW = matchedMethod.palletWeight || (matchedMethod.unitWeight || 0) * qtyPerPallet;
-                                    const grossW = matchedMethod.palletGrossWeight || (matchedMethod.unitGrossWeight || 0) * qtyPerPallet;
+                                    const netW = isPlt 
+                                      ? (matchedMethod.palletWeight || 0) 
+                                      : (isSingleRaw ? (matchedMethod.unitWeight || 0) * qtyPerPallet : (matchedMethod.unitWeight || 0));
+                                    const grossW = isPlt 
+                                      ? (matchedMethod.palletGrossWeight || 0) 
+                                      : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * qtyPerPallet : (matchedMethod.unitGrossWeight || 0));
                                     const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
 
                                     for (let f = 0; f < fullPallets; f++) {
@@ -5215,8 +5228,12 @@ export const OrderDetail: React.FC = () => {
                                       // Height scaled down
                                       const scale = residue / qtyPerPallet;
                                       const scaledH = Math.max(200, Math.round(h * scale));
-                                      const netW = (matchedMethod.unitWeight || 0) * residue;
-                                      const grossW = (matchedMethod.unitGrossWeight || 0) * residue;
+                                      const netW = isPlt
+                                        ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
+                                      const grossW = isPlt
+                                        ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
                                       const cbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
 
                                       currentContainerItems.push({
@@ -5237,8 +5254,12 @@ export const OrderDetail: React.FC = () => {
                                       const singleW = matchedMethod.unitWidth || 300;
                                       const singleL = matchedMethod.unitLength || 300;
                                       const singleH = matchedMethod.unitHeight || 300;
-                                      const netW = (matchedMethod.unitWeight || 0) * residue;
-                                      const grossW = (matchedMethod.unitGrossWeight || 0) * residue;
+                                      const netW = isPlt
+                                        ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet));
+                                      const grossW = isPlt
+                                        ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                        : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet));
                                       const cbm = Number(((singleW * singleL * singleH) / 1000000000 * residue).toFixed(4));
 
                                       currentContainerItems.push({
@@ -5264,8 +5285,12 @@ export const OrderDetail: React.FC = () => {
                                         packageType: '혼적 Pallet',
                                         dimensions: `${w}x${l}x${h}`,
                                         supplier: item.supplier || '',
-                                        netWeight: String(Math.round((matchedMethod.unitWeight || 0) * residue)),
-                                        grossWeight: String(Math.round((matchedMethod.unitGrossWeight || 0) * residue)),
+                                        netWeight: String(Math.round(isPlt
+                                          ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
+                                          : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet)))),
+                                        grossWeight: String(Math.round(isPlt
+                                          ? (matchedMethod.palletGrossWeight || 0) * (residue / qtyPerPallet)
+                                          : (isSingleRaw ? (matchedMethod.unitGrossWeight || 0) * residue : (matchedMethod.unitGrossWeight || 0) * (residue / qtyPerPallet)))),
                                         cbm: String(Number(((w * l * h) / 1000000000).toFixed(4)).toFixed(3))
                                        });
                                        currentPkgNo++;
