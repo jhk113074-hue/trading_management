@@ -5523,23 +5523,23 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG NO.</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '20%' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>수량</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>포장형태</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>Manufacturer (제조사)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>NET WT (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>GROSS WT (Kg)</th>
-                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>CBM</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '10%' }}>동작</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '10%', whiteSpace: 'nowrap' }}>포장형태</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '8%', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {(c.items || []).map((it: any, itIdx: number) => (
                                   <tr key={itIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="text" placeholder="예: 1-5 또는 1" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'center' }} value={it.pkgNo || ''} onChange={e => {
+                                    <td style={{ padding: '2px 4px' }}>
+                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '90%', textAlign: 'center', height: '24px', boxSizing: 'border-box' }} value={it.pkgNo || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].pkgNo = val;
@@ -5547,15 +5547,15 @@ export const OrderDetail: React.FC = () => {
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                    <td style={{ padding: '2px 4px' }}>
+                                      <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                                         <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
                                           <input
                                             type="text"
                                             disabled={!isEditing}
                                             placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                             list={`packing_products_datalist_${cIdx}_${itIdx}`}
-                                            style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '100%', boxSizing: 'border-box' }}
+                                            style={{ padding: '2px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '100%', boxSizing: 'border-box', height: '24px' }}
                                             value={it.description || ''}
                                             onChange={e => {
                                               const val = e.target.value;
@@ -5597,15 +5597,15 @@ export const OrderDetail: React.FC = () => {
                                                 border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
                                                 color: p ? '#a16207' : '#94a3b8',
                                                 borderRadius: '4px',
-                                                padding: '2px 4px',
+                                                padding: '0',
                                                 cursor: p ? 'pointer' : 'not-allowed',
-                                                fontSize: '11px',
+                                                fontSize: '10px',
                                                 fontWeight: 600,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                height: '32px',
-                                                width: '32px',
+                                                height: '24px',
+                                                width: '24px',
                                                 boxSizing: 'border-box',
                                                 flexShrink: 0
                                               }}
@@ -5616,12 +5616,12 @@ export const OrderDetail: React.FC = () => {
                                         })()}
                                       </div>
                                     </td>
-                                    <td style={{ padding: '5px' }}>
+                                    <td style={{ padding: '2px 4px' }}>
                                       <input
                                         type="number"
                                         placeholder="수량"
                                         disabled={!isEditing}
-                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }}
+                                        style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }}
                                         value={it.qty || ''}
                                         onChange={e => {
                                           const val = e.target.value;
@@ -5631,7 +5631,7 @@ export const OrderDetail: React.FC = () => {
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: '5px' }}>
+                                    <td style={{ padding: '2px 4px' }}>
                                       {(() => {
                                         const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
                                         const itemCode = match ? match[1] : '-';
@@ -5642,7 +5642,7 @@ export const OrderDetail: React.FC = () => {
                                         return (
                                           <select
                                               disabled={!isEditing}
-                                              style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
+                                              style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '98%', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               value={it.packageType || ''}
                                               onChange={e => {
                                                 const val = e.target.value;
@@ -5682,9 +5682,8 @@ export const OrderDetail: React.FC = () => {
                                         );
                                       })()}
                                     </td>
-                                    <td style={{ padding: '5px' }}>
+                                    <td style={{ padding: '2px 4px' }}>
                                       {(() => {
-                                        
                                         const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
                                         const dims = cleanDims.split('x');
                                         const width = dims[0] || '';
@@ -5692,13 +5691,13 @@ export const OrderDetail: React.FC = () => {
                                         const height = dims[2] || '';
 
                                         return (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
                                             <input 
                                               type="number"
-                                              placeholder="가로"
+                                              placeholder="W"
                                               disabled={!isEditing}
                                               value={width}
-                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
+                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const w = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -5706,13 +5705,13 @@ export const OrderDetail: React.FC = () => {
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
-                                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>×</span>
+                                            <span style={{ fontSize: '9px', color: '#94a3b8' }}>×</span>
                                             <input 
                                               type="number"
-                                              placeholder="세로"
+                                              placeholder="L"
                                               disabled={!isEditing}
                                               value={length}
-                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
+                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const l = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -5720,13 +5719,13 @@ export const OrderDetail: React.FC = () => {
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
                                             />
-                                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>×</span>
+                                            <span style={{ fontSize: '9px', color: '#94a3b8' }}>×</span>
                                             <input 
                                               type="number"
-                                              placeholder="높이"
+                                              placeholder="H"
                                               disabled={!isEditing}
                                               value={height}
-                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
+                                              style={{ width: '38px', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const h = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -5738,31 +5737,31 @@ export const OrderDetail: React.FC = () => {
                                         );
                                       })()}
                                     </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="text" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }} value={it.supplier || ''} onChange={e => {
+                                    <td style={{ padding: '2px 4px' }}>
+                                      <input type="text" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '98%', height: '24px', boxSizing: 'border-box' }} value={it.supplier || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].supplier = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.netWeight || ''} onChange={e => {
+                                    <td style={{ padding: '2px 4px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }} value={it.netWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].netWeight = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '5px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }} value={it.grossWeight || ''} onChange={e => {
+                                    <td style={{ padding: '2px 4px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }} value={it.grossWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].grossWeight = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '5px' }}>
+                                    <td style={{ padding: '2px 4px' }}>
                                       <input
                                         type="text"
                                         step="0.01"
@@ -5809,41 +5808,43 @@ export const OrderDetail: React.FC = () => {
                                             } catch {}
                                           }
                                         }}
-                                        style={{ padding: '4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }}
+                                        style={{ padding: '2px 4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '11px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '5px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                      <button
-                                        type="button"
-                                        disabled={!isEditing}
-                                        onClick={() => {
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          const copiedItem = { ...nextContainers[cIdx].items[itIdx] };
-                                          nextContainers[cIdx].items.splice(itIdx + 1, 0, copiedItem);
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                        style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10.5px' }}
-                                      >
-                                        복사
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={!isEditing}
-                                        onClick={() => {
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                        style={{ padding: '2px 6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10.5px' }}
-                                      >
-                                        삭제
-                                      </button>
+                                    <td style={{ padding: '2px 4px', textAlign: 'center' }}>
+                                      <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button
+                                          type="button"
+                                          disabled={!isEditing}
+                                          onClick={() => {
+                                            const nextContainers = [...basicForm.packingList.containers];
+                                            const copiedItem = { ...nextContainers[cIdx].items[itIdx] };
+                                            nextContainers[cIdx].items.splice(itIdx + 1, 0, copiedItem);
+                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                          }}
+                                          style={{ padding: '2px 4px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                          복사
+                                        </button>
+                                        <button
+                                          type="button"
+                                          disabled={!isEditing}
+                                          onClick={() => {
+                                            const nextContainers = [...basicForm.packingList.containers];
+                                            nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
+                                            setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                          }}
+                                          style={{ padding: '2px 4px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                          삭제
+                                        </button>
+                                      </div>
                                     </td>
                                   </tr>
                                 ))}
                                 {c.items?.length === 0 && (
                                   <tr>
-                                    <td colSpan={8} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
+                                    <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
                                       등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
                                     </td>
                                   </tr>
