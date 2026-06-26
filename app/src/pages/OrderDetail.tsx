@@ -4978,6 +4978,10 @@ export const OrderDetail: React.FC = () => {
                           // Find product packing method
                           const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
                           const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                            id: 'default_single',
+                            name: '단품',
+                            unit: p?.unit || 'EA',
+                            isDefault: true,
                             packageType: '단품',
                             qtyPerPallet: 100,
                             unitWidth: p?.unitWidth || 0,
@@ -5041,13 +5045,13 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px' }}>
                                 <select
                                   disabled={!isEditing}
-                                  value={matchedMethod.packageType || '단품'}
+                                  value={matchedMethod.id || ''}
                                   onChange={async (e) => {
                                     const val = e.target.value;
                                     if (p) {
                                       const nextMethods = (p.packingMethods || []).map((m: any) => ({
                                         ...m,
-                                        isDefault: m.packageType === val
+                                        isDefault: m.id === val
                                       }));
                                       await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
                                     }
@@ -5055,10 +5059,12 @@ export const OrderDetail: React.FC = () => {
                                   style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }}
                                 >
                                   {(p?.packingMethods || []).map((m: any) => (
-                                    <option key={m.id} value={m.packageType}>{m.packageType}</option>
+                                    <option key={m.id} value={m.id}>
+                                      {m.packageType} ({m.qtyPerPallet} EA)
+                                    </option>
                                   ))}
                                   {(!p?.packingMethods || p.packingMethods.length === 0) && (
-                                    <option value="단품">단품</option>
+                                    <option value="">단품 (1 EA)</option>
                                   )}
                                 </select>
                               </td>
@@ -5151,6 +5157,10 @@ export const OrderDetail: React.FC = () => {
 
                                   const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
                                   const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                                    id: 'default_single',
+                                    name: '단품',
+                                    unit: p?.unit || 'EA',
+                                    isDefault: true,
                                     packageType: '단품',
                                     qtyPerPallet: 100,
                                     unitWidth: p?.unitWidth || 0,
