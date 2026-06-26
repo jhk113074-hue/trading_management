@@ -2847,6 +2847,7 @@ export const OrderDetail: React.FC = () => {
 
       // Calculate grand totals
       let grandPkg = 0;
+      let grandQty = 0;
       let grandNW = 0;
       let grandGW = 0;
       let grandCBM = 0;
@@ -2854,6 +2855,7 @@ export const OrderDetail: React.FC = () => {
       containers.forEach((c: any) => {
         (c.items || []).forEach((it: any) => {
           grandPkg += Number(it.pkg) || 0;
+          grandQty += Number(it.qty) || 0;
           grandNW += Number(it.netWeight) || 0;
           grandGW += Number(it.grossWeight) || 0;
           grandCBM += Number(it.cbm) || 0;
@@ -2975,7 +2977,8 @@ export const OrderDetail: React.FC = () => {
               <thead>
                 <tr>
                   <th style="width: 15%;">Shipping Marks</th>
-                  <th>Description of Goods<br/>Quantity / Number of Packages</th>
+                  <th>Description of Goods</th>
+                  <th style="width: 8%;">QTY</th>
                   <th style="width: 8%;">PKG No.</th>
                   <th style="width: 8%;">PKG</th>
                   <th style="width: 12%;">Net Weight<br/>(Kg)</th>
@@ -2987,6 +2990,7 @@ export const OrderDetail: React.FC = () => {
                 ${containers.map((c: any) => {
                   const itList = c.items || [];
                   const subTotalPkg = itList.reduce((s: number, i: any) => s + (Number(i.pkg) || 0), 0);
+                  const subTotalQty = itList.reduce((s: number, i: any) => s + (Number(i.qty) || 0), 0);
                   const subTotalNW = itList.reduce((s: number, i: any) => s + (Number(i.netWeight) || 0), 0);
                   const subTotalGW = itList.reduce((s: number, i: any) => s + (Number(i.grossWeight) || 0), 0);
                   const subTotalCBM = itList.reduce((s: number, i: any) => s + (Number(i.cbm) || 0), 0);
@@ -3019,6 +3023,7 @@ export const OrderDetail: React.FC = () => {
                         </td>
                       ` : ''}
                       <td style="white-space: pre-wrap;">${it.description}</td>
+                      <td class="right">${it.qty ? Number(it.qty).toLocaleString() : ''}</td>
                       <td class="center">${it.pkgNo || ''}</td>
                       <td class="center">${it.pkg || ''}</td>
                       <td class="right">${Number(it.netWeight || 0).toLocaleString()}</td>
@@ -3028,6 +3033,7 @@ export const OrderDetail: React.FC = () => {
                   `).join('') + `
                     <tr style="font-weight: 800; background: #fafafa;">
                       <td>SUB TOTAL</td>
+                      <td class="right">${subTotalQty.toLocaleString()}</td>
                       <td></td>
                       <td class="center">${subTotalPkg} PKG</td>
                       <td class="right">${subTotalNW.toLocaleString()} KGS</td>
@@ -3038,6 +3044,7 @@ export const OrderDetail: React.FC = () => {
                 }).join('')}
                 <tr style="font-weight: 800; background: #f3f4f6; font-size: 10px;">
                   <td colspan="2">GRAND TOTAL</td>
+                  <td class="right">${grandQty.toLocaleString()}</td>
                   <td></td>
                   <td class="center">${grandPkg} PKG</td>
                   <td class="right">${grandNW.toLocaleString()} KGS</td>
@@ -5140,6 +5147,7 @@ export const OrderDetail: React.FC = () => {
                                     currentContainerItems.push({
                                       pkgNo: `1-${fullPallets}`,
                                       pkg: String(fullPallets),
+                                      qty: String(qtyPerPallet * fullPallets),
                                       description: `[${itemCode}] ${itemName} (완제 Pallet)`,
                                       packageType: matchedMethod.packageType,
                                       dimensions: `${w}x${l}x${h}`,
@@ -5166,6 +5174,7 @@ export const OrderDetail: React.FC = () => {
                                       currentContainerItems.push({
                                         pkgNo: `${fullPallets + 1}`,
                                         pkg: '1',
+                                         qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 독립 Pallet)`,
                                         packageType: matchedMethod.packageType,
                                         dimensions: `${w}x${l}x${scaledH}`,
@@ -5186,6 +5195,7 @@ export const OrderDetail: React.FC = () => {
                                       currentContainerItems.push({
                                         pkgNo: `${fullPallets + 1}-${fullPallets + residue}`,
                                         pkg: String(residue),
+                                         qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 단품 박스 적재)`,
                                         packageType: '단품 박스',
                                         dimensions: `${singleW}x${singleL}x${singleH}`,
@@ -5199,6 +5209,7 @@ export const OrderDetail: React.FC = () => {
                                       currentContainerItems.push({
                                         pkgNo: 'MIXED',
                                         pkg: '1',
+                                         qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (혼적 LCL Pallet 대상)`,
                                         packageType: '혼적 Pallet',
                                         dimensions: `${w}x${l}x${h}`,
@@ -5280,6 +5291,7 @@ export const OrderDetail: React.FC = () => {
                                       description: '',
                                       pkgNo: '',
                                       pkg: '0',
+                                      qty: '0',
                                       netWeight: '0',
                                       grossWeight: '0',
                                       cbm: '0',
@@ -5311,15 +5323,16 @@ export const OrderDetail: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#fff' }}>
                               <thead>
                                 <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '10%' }}>PKG NO.</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '22%' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>포장형태</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '6px', textAlign: 'left', width: '12%' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>PKG NO.</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '20%' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>수량</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>포장형태</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>규격 (WxLxH)</th>
+                                  <th style={{ padding: '6px', textAlign: 'left', width: '10%' }}>Manufacturer (제조사)</th>
                                   <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>NET WT (Kg)</th>
                                   <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '6px', textAlign: 'right', width: '8%' }}>CBM</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '8%' }}>동작</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '10%' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -5402,6 +5415,21 @@ export const OrderDetail: React.FC = () => {
                                           );
                                         })()}
                                       </div>
+                                    </td>
+                                    <td style={{ padding: '5px' }}>
+                                      <input
+                                        type="number"
+                                        placeholder="수량"
+                                        disabled={!isEditing}
+                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }}
+                                        value={it.qty || ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          nextContainers[cIdx].items[itIdx].qty = val;
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                      />
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       {(() => {
