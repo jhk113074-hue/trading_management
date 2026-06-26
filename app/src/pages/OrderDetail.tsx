@@ -5151,6 +5151,7 @@ export const OrderDetail: React.FC = () => {
                                 // AUTO ALLOCATION LOGIC: Distribute computed pallets into containers
                                 const newContainers: any[] = [];
                                 let currentContainerItems: any[] = [];
+                                 let currentPkgNo = 1;
                                  // containerIndex removed
 
                                 orderItems.forEach((item, itemIdx) => {
@@ -5189,18 +5190,21 @@ export const OrderDetail: React.FC = () => {
                                     const grossW = matchedMethod.palletGrossWeight || (matchedMethod.unitGrossWeight || 0) * qtyPerPallet;
                                     const cbm = Number(((w * l * h) / 1000000000).toFixed(4));
 
-                                    currentContainerItems.push({
-                                      pkgNo: `1-${fullPallets}`,
-                                      pkg: String(fullPallets),
-                                      qty: String(qtyPerPallet * fullPallets),
-                                      description: `[${itemCode}] ${itemName} (완제 Pallet)`,
-                                      packageType: matchedMethod.packageType,
-                                      dimensions: `${w}x${l}x${h}`,
-                                      supplier: item.supplier || '',
-                                      netWeight: String(Math.round(netW * fullPallets)),
-                                      grossWeight: String(Math.round(grossW * fullPallets)),
-                                      cbm: String((cbm * fullPallets).toFixed(3))
-                                    });
+                                    for (let f = 0; f < fullPallets; f++) {
+                                      currentContainerItems.push({
+                                        pkgNo: String(currentPkgNo),
+                                        pkg: '1',
+                                        qty: String(qtyPerPallet),
+                                        description: `[${itemCode}] ${itemName} (완제 Pallet)`,
+                                        packageType: matchedMethod.packageType,
+                                        dimensions: `${w}x${l}x${h}`,
+                                        supplier: item.supplier || '',
+                                        netWeight: String(Math.round(netW)),
+                                        grossWeight: String(Math.round(grossW)),
+                                        cbm: String(cbm.toFixed(3))
+                                      });
+                                      currentPkgNo++;
+                                    }
                                   }
 
                                   // 2. Add residue if exists
@@ -5217,7 +5221,7 @@ export const OrderDetail: React.FC = () => {
                                       const cbm = Number(((w * l * scaledH) / 1000000000).toFixed(4));
 
                                       currentContainerItems.push({
-                                        pkgNo: `${fullPallets + 1}`,
+                                        pkgNo: String(currentPkgNo),
                                         pkg: '1',
                                          qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 독립 Pallet)`,
@@ -5227,7 +5231,8 @@ export const OrderDetail: React.FC = () => {
                                         netWeight: String(Math.round(netW)),
                                         grossWeight: String(Math.round(grossW)),
                                         cbm: String(cbm.toFixed(3))
-                                      });
+                                       });
+                                       currentPkgNo++;
                                     } else if (treatment === 'single') {
                                       // Single carton boxes hand-loaded
                                       const singleW = matchedMethod.unitWidth || 300;
@@ -5238,7 +5243,7 @@ export const OrderDetail: React.FC = () => {
                                       const cbm = Number(((singleW * singleL * singleH) / 1000000000 * residue).toFixed(4));
 
                                       currentContainerItems.push({
-                                        pkgNo: `${fullPallets + 1}-${fullPallets + residue}`,
+                                        pkgNo: `${currentPkgNo}-${currentPkgNo + residue - 1}`,
                                         pkg: String(residue),
                                          qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (자투리 단품 박스 적재)`,
@@ -5248,11 +5253,12 @@ export const OrderDetail: React.FC = () => {
                                         netWeight: String(Math.round(netW)),
                                         grossWeight: String(Math.round(grossW)),
                                         cbm: String(cbm.toFixed(3))
-                                      });
+                                       });
+                                       currentPkgNo += residue;
                                     } else {
                                       // Mixed Pallet template
                                       currentContainerItems.push({
-                                        pkgNo: 'MIXED',
+                                        pkgNo: String(currentPkgNo),
                                         pkg: '1',
                                          qty: String(residue),
                                         description: `[${itemCode}] ${itemName} (혼적 LCL Pallet 대상)`,
@@ -5262,7 +5268,8 @@ export const OrderDetail: React.FC = () => {
                                         netWeight: String(Math.round((matchedMethod.unitWeight || 0) * residue)),
                                         grossWeight: String(Math.round((matchedMethod.unitGrossWeight || 0) * residue)),
                                         cbm: String(Number(((w * l * h) / 1000000000).toFixed(4)).toFixed(3))
-                                      });
+                                       });
+                                       currentPkgNo++;
                                     }
                                   }
                                 });
