@@ -5983,12 +5983,50 @@ export const OrderDetail: React.FC = () => {
                                     </td>
                                   </tr>
                                 ))}
-                                {c.items?.length === 0 && (
+                                {c.items?.length === 0 ? (
                                   <tr>
                                     <td colSpan={10} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>
                                       등록된 품목이 없습니다. 우측 상단의 '+ 품목 행 추가'를 눌러 등록하세요.
                                     </td>
                                   </tr>
+                                ) : (
+                                  (() => {
+                                    const items = c.items || [];
+                                    const totalQty = items.reduce((acc: number, it: any) => acc + (Number(it.qty) || 0), 0);
+                                    const totalNetWeight = items.reduce((acc: number, it: any) => acc + (Number(it.netWeight) || 0), 0);
+                                    const totalGrossWeight = items.reduce((acc: number, it: any) => acc + (Number(it.grossWeight) || 0), 0);
+                                    const totalCbm = items.reduce((acc: number, it: any) => {
+                                      const rawVal = String(it.cbm || '');
+                                      let numericVal = 0;
+                                      if (rawVal.startsWith('=')) {
+                                        try {
+                                          const expr = rawVal.slice(1).replace(/[^0-9+\-*/().]/g, '');
+                                          const evaluated = Function('"use strict"; return (' + expr + ')')();
+                                          if (typeof evaluated === 'number' && isFinite(evaluated)) {
+                                            numericVal = evaluated;
+                                          }
+                                        } catch {}
+                                      } else {
+                                        numericVal = Number(it.cbm) || 0;
+                                      }
+                                      return acc + numericVal;
+                                    }, 0);
+
+                                    return (
+                                      <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>
+                                        <td style={{ padding: '6px 4px', textAlign: 'center', color: '#334155' }}>합계</td>
+                                        <td style={{ padding: '6px 4px', color: '#64748b' }}>-</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalQty.toLocaleString()}</td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalNetWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0f172a', paddingRight: '12px' }}>{totalGrossWeight.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                        <td style={{ padding: '6px 4px', textAlign: 'right', color: '#0369a1', paddingRight: '12px' }}>{totalCbm.toFixed(3)}</td>
+                                        <td style={{ padding: '6px 4px' }}></td>
+                                      </tr>
+                                    );
+                                  })()
                                 )}
                               </tbody>
                             </table>
