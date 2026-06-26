@@ -854,7 +854,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formattedContainers = currentResults.map((result, idx) => {
                 const itemsMap = {};
                 result.loaded.forEach(box => {
-                    const key = box.name;
+                    const key = `${box.name}|${box.w}x${box.d}x${box.h}|${box.packageType || ''}|${box.supplier || ''}`;
                     if (!itemsMap[key]) {
                         itemsMap[key] = {
                             description: box.name,

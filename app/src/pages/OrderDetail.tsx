@@ -766,6 +766,7 @@ export const OrderDetail: React.FC = () => {
   const initialLoadRef = useRef(false);
   const isDirtyRef = useRef(false);
   const skipNextDirtyCheck = useRef(true);
+  const isOpeningArchiveRef = useRef(false);
 
   useEffect(() => {
     if (skipNextDirtyCheck.current) {
@@ -850,6 +851,7 @@ export const OrderDetail: React.FC = () => {
   };
 
   const openArchivedPlan = (plan: any) => {
+    isOpeningArchiveRef.current = true;
     setBasicForm(prev => ({
       ...prev,
       packingList: {
@@ -964,6 +966,10 @@ export const OrderDetail: React.FC = () => {
           alert('컨테이너 적재 시뮬레이션 결과가 파일보관함에 보관되었습니다.');
         }
       } else if (data && data.type === 'IFRAME_READY') {
+        if (isOpeningArchiveRef.current) {
+          isOpeningArchiveRef.current = false;
+          return;
+        }
         if (event.source) {
           const { basicForm: latestBasicForm, orderItems: latestOrderItems, products: latestProducts, order: latestOrder } = latestPackingDataRef.current;
 
