@@ -1,4 +1,28 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Safe Storage Wrappers to prevent SecurityErrors in iframes ---
+    const safeLocalStorage = {
+        getItem: (key) => {
+            try { return localStorage.getItem(key); } catch (e) { return null; }
+        },
+        setItem: (key, val) => {
+            try { localStorage.setItem(key, val); } catch (e) {}
+        },
+        removeItem: (key) => {
+            try { localStorage.removeItem(key); } catch (e) {}
+        }
+    };
+    const safeSessionStorage = {
+        getItem: (key) => {
+            try { return sessionStorage.getItem(key); } catch (e) { return null; }
+        },
+        setItem: (key, val) => {
+            try { sessionStorage.setItem(key, val); } catch (e) {}
+        },
+        removeItem: (key) => {
+            try { sessionStorage.removeItem(key); } catch (e) {}
+        }
+    };
+
     // --- Login System ---
     const loginOverlay = document.getElementById('login-overlay');
     const mainApp = document.getElementById('main-app');
@@ -10,13 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 로그인 화면을 무조건 자동 우회합니다.
     if (loginOverlay) loginOverlay.style.display = 'none';
     if (mainApp) mainApp.classList.remove('hidden');
-    sessionStorage.setItem('ysacc_logged_in', 'true');
+    safeSessionStorage.setItem('ysacc_logged_in', 'true');
 
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
             const pwd = loginPassword.value;
             if (pwd === 'admin' || pwd === 'ysacc1234' || pwd === '1234') {
-                sessionStorage.setItem('ysacc_logged_in', 'true');
+                safeSessionStorage.setItem('ysacc_logged_in', 'true');
                 loginOverlay.style.display = 'none';
                 mainApp.classList.remove('hidden');
                 loginError.classList.add('hidden');
@@ -1568,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Firebase Realtime Listener & Migration
     if (window.db) {
         // Migrate existing local presets to Firebase
-        const localPresets = JSON.parse(localStorage.getItem('antigravity_presets') || '[]');
+        const localPresets = JSON.parse(safeLocalStorage.getItem('antigravity_presets') || '[]');
         if (localPresets.length > 0) {
             const batch = window.db.batch();
             localPresets.forEach(preset => {
@@ -1578,7 +1602,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 batch.set(docRef, preset);
             });
             batch.commit().then(() => {
-                localStorage.removeItem('antigravity_presets');
+                safeLocalStorage.removeItem('antigravity_presets');
                 console.log('Local presets migrated to Firebase');
             }).catch(e => console.error("Presets migration error:", e));
         }
@@ -1594,7 +1618,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Migrate existing local projects to Firebase
-        const localProjects = JSON.parse(localStorage.getItem('loading_projects') || '[]');
+        const localProjects = JSON.parse(safeLocalStorage.getItem('loading_projects') || '[]');
         if (localProjects.length > 0) {
             const batch = window.db.batch();
             localProjects.forEach(proj => {
@@ -1602,7 +1626,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 batch.set(docRef, proj);
             });
             batch.commit().then(() => {
-                localStorage.removeItem('loading_projects');
+                safeLocalStorage.removeItem('loading_projects');
                 alert('이전에 저장했던 데이터를 성공적으로 클라우드에 복원(이동)했습니다!\n[프로젝트 열기]를 눌러 확인해보세요.');
             }).catch(e => console.error("Migration error:", e));
         }
@@ -1949,7 +1973,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Load PI Simulation Data from localStorage (Integration) ---
     const loadPiSimulationData = () => {
         try {
-            const rawData = localStorage.getItem('PI_SIMULATION_DATA');
+            const rawData = safeLocalStorage.getItem('PI_SIMULATION_DATA');
             if (rawData) {
                 const data = JSON.parse(rawData);
                 if (data && data.type === 'LOAD_PI_DATA') {
@@ -1979,11 +2003,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     // Remove item to prevent re-triggering on fresh load
-                    localStorage.removeItem('PI_SIMULATION_DATA');
+                    safeLocalStorage.removeItem('PI_SIMULATION_DATA');
                 }
             }
         } catch (e) {
-            console.error("Failed to load PI simulation data from localStorage:", e);
+            console.error("Failed to load PI simulation data from safeLocalStorage:", e);
         }
     };
 
