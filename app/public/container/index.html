@@ -17,23 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Login Overlay -->
-    <div id="login-overlay" class="login-backdrop">
-        <div class="login-card">
-            <div class="login-header">
-                <img src="img/logo.png" alt="YSACC Logo" style="max-height: 80px; margin-bottom: 10px;" onerror="this.style.display='none';">
-                <h1 style="font-size: 1.25rem;">YSACC Container Loading Plan program</h1>
-                <p>직원 전용 시스템입니다</p>
-            </div>
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <input type="password" id="login-password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
-                <p id="login-error" class="text-danger hidden" style="font-size: 0.8rem; margin-top: 0.5rem; text-align: center;">비밀번호가 일치하지 않습니다.</p>
-            </div>
-            <button id="btn-login" class="btn btn-primary full-width">로그인</button>
-        </div>
-    </div>
-
-    <div class="app-container hidden" id="main-app">
+    <div class="app-container" id="main-app">
         <!-- Header -->
         <header class="app-header">
             <div class="header-logo">
