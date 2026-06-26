@@ -5684,51 +5684,57 @@ export const OrderDetail: React.FC = () => {
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       {(() => {
-                                        const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
-                                        const itemCode = match ? match[1] : '-';
-                                        const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-                                        const list = p?.packingMethods || [];
-                                        const methods_any: any = list.length > 0 ? list : [{ id: 'default_single', packageType: '단품', name: '단품', unitWidth: p?.unitWidth||0, unitLength: p?.unitLength||0, unitHeight: p?.unitHeight||0 }];
                                         
-                                        // Filter methods matching currently selected packageType if any
-                                        const filteredMethods = it.packageType 
-                                          ? methods_any.filter((m: any) => m.packageType === it.packageType)
-                                          : methods_any;
-                                          
-                                        const specs = filteredMethods.map((m: any) => {
-                                          const isPlt = m.packageType.toLowerCase().includes('pallet');
-                                          const w = isPlt ? (m.palletWidth || 0) : (m.unitWidth || 0);
-                                          const l = isPlt ? (m.palletLength || 0) : (m.unitLength || 0);
-                                          const h = isPlt ? (m.palletHeight || 0) : (m.unitHeight || 0);
-                                          return `${w}x${l}x${h}`;
-                                        });
-                                        
+                                        const cleanDims = (it.dimensions || '0x0x0').toLowerCase().replace(/\s+/g, '');
+                                        const dims = cleanDims.split('x');
+                                        const width = dims[0] || '';
+                                        const length = dims[1] || '';
+                                        const height = dims[2] || '';
+
                                         return (
-                                          <select
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                            <input 
+                                              type="number"
+                                              placeholder="가로"
                                               disabled={!isEditing}
-                                              style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
-                                              value={it.dimensions || ''}
+                                              value={width}
+                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
                                               onChange={e => {
-                                                const val = e.target.value;
+                                                const w = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
-                                                nextContainers[cIdx].items[itIdx].dimensions = val;
+                                                nextContainers[cIdx].items[itIdx].dimensions = `${w || '0'}x${length || '0'}x${height || '0'}`;
                                                 setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                               }}
-                                            >
-                                              <option value="">-- 선택 --</option>
-                                              {(() => {
-                                                const specsSet = new Set(specs);
-                                                if (it.dimensions) {
-                                                  specsSet.add(it.dimensions);
-                                                }
-                                                if (it.packageType === '혼적 Pallet') {
-                                                  specsSet.add('1100x1100x1000');
-                                                }
-                                                return Array.from(specsSet).map((spec: any) => (
-                                                  <option key={spec} value={spec}>{spec}</option>
-                                                ));
-                                              })()}
-                                            </select>
+                                            />
+                                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>×</span>
+                                            <input 
+                                              type="number"
+                                              placeholder="세로"
+                                              disabled={!isEditing}
+                                              value={length}
+                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
+                                              onChange={e => {
+                                                const l = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].dimensions = `${width || '0'}x${l || '0'}x${height || '0'}`;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            />
+                                            <span style={{ fontSize: '10px', color: '#94a3b8' }}>×</span>
+                                            <input 
+                                              type="number"
+                                              placeholder="높이"
+                                              disabled={!isEditing}
+                                              value={height}
+                                              style={{ width: '42px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'center', outline: 'none' }}
+                                              onChange={e => {
+                                                const h = e.target.value;
+                                                const nextContainers = [...basicForm.packingList.containers];
+                                                nextContainers[cIdx].items[itIdx].dimensions = `${width || '0'}x${length || '0'}x${h || '0'}`;
+                                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                              }}
+                                            />
+                                          </div>
                                         );
                                       })()}
                                     </td>
