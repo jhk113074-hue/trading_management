@@ -5708,6 +5708,45 @@ export const OrderDetail: React.FC = () => {
                       
                       // Auto-pull items from the master packing list if not edited yet
                       let packingItemsList = repData.packingItems || [];
+
+                      // Clean up existing/loaded packing items
+                      if (packingItemsList.length > 0) {
+                        let mutated = false;
+                        const nextList = packingItemsList.map((it: any) => {
+                          let desc = it.descOfGoods || '';
+                          if (/\((완제|자투리|혼적|독립|단품)[^)]*\)/.test(desc) || (it.qty && !desc.includes(String(it.qty)))) {
+                            desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+                            
+                            let matchedQty = '';
+                            if (basicForm.packingList?.containers) {
+                              for (const container of basicForm.packingList.containers) {
+                                const found = (container.items || []).find((cIt: any) => 
+                                  desc.includes(cIt.itemCode || '') || (cIt.itemName && desc.includes(cIt.itemName))
+                                );
+                                if (found && found.qty) {
+                                  matchedQty = found.qty;
+                                  break;
+                                }
+                              }
+                            }
+                            
+                            const actualQty = matchedQty || '';
+                            if (actualQty && !desc.includes(String(actualQty))) {
+                              desc = `${desc} ${actualQty} EA`.replace(/\s+/g, ' ');
+                            }
+                            
+                            if (desc !== it.descOfGoods) {
+                              mutated = true;
+                              return { ...it, descOfGoods: desc };
+                            }
+                          }
+                          return it;
+                        });
+                        if (mutated) {
+                          packingItemsList = nextList;
+                        }
+                      }
+
                       if (packingItemsList.length === 0 && basicForm.packingList?.containers) {
                         let matchingItems: any[] = [];
                         basicForm.packingList.containers.forEach((container: any) => {
@@ -5719,17 +5758,24 @@ export const OrderDetail: React.FC = () => {
 
                         const totalCount = matchingItems.length;
                         matchingItems.forEach((it: any, idx: number) => {
+                          let desc = it.description || '';
+                          desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+                          
+                          if (it.qty && !desc.includes(String(it.qty))) {
+                            desc = `${desc} ${it.qty} EA`.replace(/\s+/g, ' ');
+                          }
+
                           packingItemsList.push({
                             marks: getDefaultShippingMark(String(idx + 1), String(totalCount)),
-                            descOfGoods: it.description || '',
+                            descOfGoods: desc,
                             qty: Number(it.pkg) || 0,
                             packageType: 'PL',
                             netWeight: Number(it.netWeight) || 0,
                             grossWeight: Number(it.grossWeight) || 0,
-                                        measurement: it.cbm ? `${it.cbm} CBM` : ''
-                                      });
-                                    });
-                                  }
+                            measurement: it.cbm ? `${it.cbm} CBM` : ''
+                          });
+                        });
+                      }
 
                                   // If still empty, default to item descriptions
                                   if (packingItemsList.length === 0) {

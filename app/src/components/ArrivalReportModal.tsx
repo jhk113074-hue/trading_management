@@ -160,7 +160,31 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
   // Packing Items setup
   useEffect(() => {
     if (initialData?.packingItems && initialData.packingItems.length > 0) {
-      setPackingItems(initialData.packingItems);
+      const nextList = initialData.packingItems.map((it: any) => {
+        let desc = it.descOfGoods || '';
+        if (/\((완제|자투리|혼적|독립|단품)[^)]*\)/.test(desc)) {
+          desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          
+          let matchedQty = '';
+          if (packingList?.containers) {
+            for (const container of packingList.containers) {
+              const found = (container.items || []).find((cIt: any) => 
+                desc.includes(cIt.itemCode || '') || (cIt.itemName && desc.includes(cIt.itemName))
+              );
+              if (found && found.qty) {
+                matchedQty = found.qty;
+                break;
+              }
+            }
+          }
+          if (matchedQty && !desc.includes(String(matchedQty))) {
+            desc = `${desc} ${matchedQty} EA`.replace(/\s+/g, ' ');
+          }
+          return { ...it, descOfGoods: desc };
+        }
+        return it;
+      });
+      setPackingItems(nextList);
     } else if (packingList && packingList.containers) {
       // Find matching items mapped to this manufacturer/supplierName from the packing list containers
       const matchedItems: PackingItem[] = [];
@@ -170,9 +194,15 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         );
         
         matchingContainerItems.forEach((it: any) => {
+          let desc = it.description || '';
+          desc = desc.replace(/\s*\([^)]*(Pallet|적재|대상|단품|혼적)[^)]*\)/g, '').trim();
+          if (it.qty && !desc.includes(String(it.qty))) {
+            desc = `${desc} ${it.qty} EA`.replace(/\s+/g, ' ');
+          }
+
           matchedItems.push({
             marks: defaultShippingMark,
-            descOfGoods: it.description || '',
+            descOfGoods: desc,
             qty: Number(it.pkg) || 0,
             packageType: 'PL',
             netWeight: Number(it.netWeight) || 0,
