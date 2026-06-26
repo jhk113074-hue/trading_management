@@ -5182,35 +5182,84 @@ export const OrderDetail: React.FC = () => {
                                       />
                                     </td>
                                     <td style={{ padding: '5px' }}>
-                                      <input
-                                        type="text"
-                                        list="package_types_datalist_detail"
-                                        disabled={!isEditing}
-                                        placeholder="예: Paper Box"
-                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '95%' }}
-                                        value={it.packageType || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].packageType = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
+                                      {(() => {
+                                        const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                        const itemCode = match ? match[1] : '-';
+                                        const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                        const list = p?.packingMethods || [];
+                                        const methods_any: any = list.length > 0 ? list : [{ id: 'default_single', packageType: '단품', name: '단품', unitWidth: p?.unitWidth||0, unitLength: p?.unitLength||0, unitHeight: p?.unitHeight||0 }];
+                                        
+                                        return (
+                                          <select
+                                            disabled={!isEditing}
+                                            style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
+                                            value={it.packageType || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].packageType = val;
+                                              
+                                              // Auto-fill dimensions when selecting package type
+                                              const matchedMethod = methods_any.find((m: any) => m.packageType === val);
+                                              if (matchedMethod) {
+                                                const isPlt = val.toLowerCase().includes('pallet');
+                                                const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
+                                                const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
+                                                const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+                                                nextContainers[cIdx].items[itIdx].dimensions = `${w}x${l}x${h}`;
+                                              }
+                                              
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                          >
+                                            <option value="">-- 선택 --</option>
+                                            {Array.from(new Set(methods_any.map((m: any) => m.packageType))).map((pType: any) => (
+                                              <option key={pType} value={pType}>{pType}</option>
+                                            ))}
+                                          </select>
+                                        );
+                                      })()}
                                     </td>
                                     <td style={{ padding: '5px' }}>
-                                      <input
-                                        type="text"
-                                        disabled={!isEditing}
-                                        placeholder="예: 550x390x490"
-                                        style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '95%' }}
-                                        value={it.dimensions || ''}
-                                        onChange={e => {
-                                          const val = e.target.value;
-                                          const nextContainers = [...basicForm.packingList.containers];
-                                          nextContainers[cIdx].items[itIdx].dimensions = val;
-                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
-                                        }}
-                                      />
+                                      {(() => {
+                                        const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                        const itemCode = match ? match[1] : '-';
+                                        const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
+                                        const list = p?.packingMethods || [];
+                                        const methods_any: any = list.length > 0 ? list : [{ id: 'default_single', packageType: '단품', name: '단품', unitWidth: p?.unitWidth||0, unitLength: p?.unitLength||0, unitHeight: p?.unitHeight||0 }];
+                                        
+                                        // Filter methods matching currently selected packageType if any
+                                        const filteredMethods = it.packageType 
+                                          ? methods_any.filter((m: any) => m.packageType === it.packageType)
+                                          : methods_any;
+                                          
+                                        const specs = filteredMethods.map((m: any) => {
+                                          const isPlt = m.packageType.toLowerCase().includes('pallet');
+                                          const w = isPlt ? (m.palletWidth || 0) : (m.unitWidth || 0);
+                                          const l = isPlt ? (m.palletLength || 0) : (m.unitLength || 0);
+                                          const h = isPlt ? (m.palletHeight || 0) : (m.unitHeight || 0);
+                                          return `${w}x${l}x${h}`;
+                                        });
+                                        
+                                        return (
+                                          <select
+                                            disabled={!isEditing}
+                                            style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%', outline: 'none' }}
+                                            value={it.dimensions || ''}
+                                            onChange={e => {
+                                              const val = e.target.value;
+                                              const nextContainers = [...basicForm.packingList.containers];
+                                              nextContainers[cIdx].items[itIdx].dimensions = val;
+                                              setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                            }}
+                                          >
+                                            <option value="">-- 선택 --</option>
+                                            {Array.from(new Set(specs)).map((spec: any) => (
+                                              <option key={spec} value={spec}>{spec}</option>
+                                            ))}
+                                          </select>
+                                        );
+                                      })()}
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       <input type="text" disabled={!isEditing} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }} value={it.supplier || ''} onChange={e => {
