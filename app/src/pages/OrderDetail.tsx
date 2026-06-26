@@ -5003,10 +5003,9 @@ export const OrderDetail: React.FC = () => {
                               <td style={{ padding: '8px', fontWeight: 'bold' }}>[{itemCode}] {itemName}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>{qty.toLocaleString()} EA</td>
                               <td style={{ padding: '8px' }}>
-                                <input
-                                  type="text"
+                                <select
                                   disabled={!isEditing}
-                                  value={matchedMethod.packageType || ''}
+                                  value={matchedMethod.packageType || '단품'}
                                   onChange={async (e) => {
                                     const val = e.target.value;
                                     if (p) {
@@ -5027,8 +5026,23 @@ export const OrderDetail: React.FC = () => {
                                       await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
                                     }
                                   }}
-                                  style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '90%' }}
-                                />
+                                  style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '98%' }}
+                                >
+                                  {[
+                                    '단품', 'Pallet', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
+                                    'Carton', 'Plastic Drum', 'Steel Drum', 'Wooden Pallet', 'Plastic Pallet', 'Wooden Box',
+                                    'Steel Pail', 'Plastic Pail', 'Jerrycan', 'Roll(3")', 'Roll(4")', 'Roll(6")', 'Woven Bag'
+                                  ].map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                  {matchedMethod.packageType && ![
+                                    '단품', 'Pallet', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
+                                    'Carton', 'Plastic Drum', 'Steel Drum', 'Wooden Pallet', 'Plastic Pallet', 'Wooden Box',
+                                    'Steel Pail', 'Plastic Pail', 'Jerrycan', 'Roll(3")', 'Roll(4")', 'Roll(6")', 'Woven Bag'
+                                  ].includes(matchedMethod.packageType) && (
+                                    <option value={matchedMethod.packageType}>{matchedMethod.packageType}</option>
+                                  )}
+                                </select>
                               </td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
