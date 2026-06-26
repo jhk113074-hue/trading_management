@@ -4818,6 +4818,60 @@ export const OrderDetail: React.FC = () => {
                     주문 정보를 기반으로 패킹리스트를 자동으로 생성하거나, 직접 컨테이너 및 품목 정보를 수정/추가(수동 작성)할 수 있습니다.
                   </div>
 
+                  {/* 실시간 적재 수량 검증 체크리스트 */}
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 품목별 적재 잔여 수량 체크리스트
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+                      {orderItems.map((item, idx) => {
+                        const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                        const itemCode = match ? match[1] : '-';
+                        const itemName = match ? match[2] : (item.name || '');
+                        const totalOrderQty = item.qty || 0;
+                        
+                        // Calculate packed qty from container items
+                        let packedQty = 0;
+                        if (basicForm.packingList?.containers) {
+                          basicForm.packingList.containers.forEach((c: any) => {
+                            (c.items || []).forEach((cIt: any) => {
+                              const cItMatch = (cIt.description || '').match(/^\[(.*?)\]\s*(.*)$/);
+                              const cItCode = cItMatch ? cItMatch[1] : '';
+                              if (cItCode === itemCode) {
+                                packedQty += Number(cIt.pkg) || 0;
+                              }
+                            });
+                          });
+                        }
+                        
+                        const remaining = totalOrderQty - packedQty;
+                        const isCompleted = remaining === 0;
+                        const isOver = remaining < 0;
+
+                        return (
+                          <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '12px', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.name}>
+                              [{itemCode}] {itemName}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', marginTop: '2px' }}>
+                              <span style={{ color: '#64748b' }}>주문: <strong>{totalOrderQty}</strong> EA</span>
+                              <span style={{ color: '#0f766e' }}>포장완료: <strong>{packedQty}</strong> EA</span>
+                              <span style={{ 
+                                fontWeight: 'bold', 
+                                color: isCompleted ? '#16a34a' : isOver ? '#dc2626' : '#ea580c',
+                                background: isCompleted ? '#f0fdf4' : isOver ? '#fef2f2' : '#fff7ed',
+                                padding: '2px 6px',
+                                borderRadius: '4px'
+                              }}>
+                                {isCompleted ? '✓ 완료' : isOver ? `초과 (${Math.abs(remaining)} EA)` : `잔여 ${remaining} EA`}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* 공통 쉬핑마크 설정 */}
                   <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
                     <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -5335,7 +5389,20 @@ export const OrderDetail: React.FC = () => {
                                         style={{ padding: '4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '11.5px', width: '90%', textAlign: 'right' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '5px', textAlign: 'center' }}>
+                                    <td style={{ padding: '5px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                      <button
+                                        type="button"
+                                        disabled={!isEditing}
+                                        onClick={() => {
+                                          const nextContainers = [...basicForm.packingList.containers];
+                                          const copiedItem = { ...nextContainers[cIdx].items[itIdx] };
+                                          nextContainers[cIdx].items.splice(itIdx + 1, 0, copiedItem);
+                                          setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+                                        }}
+                                        style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10.5px' }}
+                                      >
+                                        복사
+                                      </button>
                                       <button
                                         type="button"
                                         disabled={!isEditing}
@@ -5344,7 +5411,7 @@ export const OrderDetail: React.FC = () => {
                                           nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
                                           setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                         }}
-                                        style={{ padding: '2px 6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                                        style={{ padding: '2px 6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '10.5px' }}
                                       >
                                         삭제
                                       </button>
