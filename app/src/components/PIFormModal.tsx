@@ -1081,7 +1081,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               };
               
               const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
-              currentHistory.push(newHistoryItem);
+              const isDuplicate = currentHistory.some(h => 
+                h.validFrom === newHistoryItem.validFrom &&
+                h.price === newHistoryItem.price &&
+                h.currency === newHistoryItem.currency &&
+                h.minQty === newHistoryItem.minQty &&
+                h.remarks === newHistoryItem.remarks
+              );
+              if (!isDuplicate) {
+                currentHistory.push(newHistoryItem);
+              }
 
               await setDoc(prodRef, {
                 purchasePrice: finalPrice,
@@ -1242,7 +1251,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 remarks: `Updated from PI ${piNum}`
               };
               const currentHistory = Array.isArray(prod.purchasePrices) ? [...prod.purchasePrices] : [];
-              currentHistory.push(newHistoryItem);
+              const isDuplicate = currentHistory.some(h => 
+                h.validFrom === newHistoryItem.validFrom &&
+                h.price === newHistoryItem.price &&
+                h.currency === newHistoryItem.currency &&
+                h.minQty === newHistoryItem.minQty &&
+                h.remarks === newHistoryItem.remarks
+              );
+              if (!isDuplicate) {
+                currentHistory.push(newHistoryItem);
+              }
               await setDoc(prodRef, {
                 purchasePrice: finalPrice,
                 currency: finalCurrency,
