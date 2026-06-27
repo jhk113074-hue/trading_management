@@ -3508,6 +3508,85 @@ export const OrderDetail: React.FC = () => {
         </div>
       </div>
 
+      {/* 마일스톤 대시보드 */}
+      {(() => {
+        const checklist = [
+          { label: '인코텀즈/결제조건 확인', completed: !!(basicForm.incoterms && basicForm.paymentTerms) },
+          { label: 'L/C 정보 기입', completed: basicForm.isLc === 'Y' ? !!basicForm.lcNo : true },
+          { label: '모든 품목 공급업체 배정', completed: orderItems.length > 0 && orderItems.every(it => it.supplier) },
+          { label: '공급사 발주서 발행', completed: !!(issuedDocs && issuedDocs.length > 0) },
+          { label: '공급사 납기일 확정', completed: !!basicForm.cargoReadyDate },
+          { label: '포워딩/운송사 지정', completed: forwardersList.length > 0 },
+          { label: 'Vessel(선박명) 지정', completed: !!basicForm.vesselBooking },
+          { label: '작업장소 및 입고일 지정', completed: !!(basicForm.containerWorkspaceType && basicForm.cfsEntryDate) },
+          { label: 'CI/PL 유첨 등록', completed: basicForm.ciPlStatus === 'Y' || !!(order.ciFiles && order.ciFiles.length > 0) },
+          { label: '수출면장 파일 업로드', completed: !!(basicForm.exportDeclarationNo && order.exportDeclarationFiles && order.exportDeclarationFiles.length > 0) },
+          { label: '컨테이너 작업 사진 등록', completed: !!(order.containerWorkFiles && order.containerWorkFiles.length > 0) },
+          { label: '공급사 세금계산서 승인번호 기입', completed: (() => {
+              if (!basicForm.supplierTaxInvoiceDetails) return false;
+              const keys = Object.keys(basicForm.supplierTaxInvoiceDetails);
+              if (keys.length === 0) return false;
+              return keys.some(key => {
+                const detail = basicForm.supplierTaxInvoiceDetails[key];
+                if (!detail) return false;
+                if (Array.isArray(detail)) {
+                  return detail.some(d => !!d.invoiceNo);
+                }
+                return !!(detail as any).invoiceNo;
+              });
+            })()
+          },
+          { label: '대금 수금 내역 등록', completed: !!(basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.length > 0 && (basicForm.paymentCollectedInstallments[0].amount || 0) > 0) }
+        ];
+
+        const totalItems = checklist.length;
+        const completedItems = checklist.filter(item => item.completed).length;
+        const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+        return (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🚩 마일스톤 대시보드 (오더 진행 진척율)
+              </span>
+              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#2563eb' }}>
+                {completedItems} / {totalItems} 개 완료 ({percent}%)
+              </span>
+            </div>
+            
+            {/* Progress Bar */}
+            <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: `${percent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)', borderRadius: '4px', transition: 'width 0.3s ease-in-out' }} />
+            </div>
+
+            {/* 완료/대기 항목 태그 리스트 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {completedItems > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#047857', marginRight: '4px' }}>[완료]</span>
+                  {checklist.filter(item => item.completed).map((item, idx) => (
+                    <span key={idx} style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#d1fae5', color: '#065f46', fontSize: '10px', fontWeight: 600 }}>
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {completedItems < totalItems && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563', marginRight: '4px' }}>[대기]</span>
+                  {checklist.filter(item => !item.completed).map((item, idx) => (
+                    <span key={idx} style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#f3f4f6', color: '#374151', fontSize: '10px', fontWeight: 600 }}>
+                      {item.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tab Menu */}
       <div style={{ display: 'flex', gap: '6px', padding: '4px 0', borderBottom: '1px solid #e2e8f0' }}>
         {steps.map((step) => {
