@@ -25,6 +25,7 @@
                 <h1 style="font-size: 1.25rem;">YSACC Container Loading Plan program</h1>
             </div>
             <div class="header-actions">
+                <button id="btn-edit-project-info" class="btn btn-outline" title="프로젝트 정보"><i data-lucide="file-text"></i> 프로젝트 정보</button>
                 <button id="btn-load-project" class="btn btn-outline" title="프로젝트 불러오기"><i data-lucide="folder-open"></i> 프로젝트 열기</button>
                 <button id="btn-save-project" class="btn btn-primary" title="현재 프로젝트 저장"><i data-lucide="save"></i> 저장</button>
                 <button id="btn-save-as-project" class="btn btn-outline" title="다른 이름으로 저장"><i data-lucide="copy"></i> 새 프로젝트로 저장</button>
@@ -34,239 +35,64 @@
             </div>
         </header>
 
+        <!-- Full-width Summary Stats Bar -->
+        <div id="app-summary-bar" class="card" style="margin-bottom: 12px; padding: 12px 20px; flex-direction: row; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+            <!-- Left Side: Container volume rate progress -->
+            <div style="flex: 2; display: flex; align-items: center; gap: 15px; min-width: 280px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">컨테이너 용적률</span>
+                    <span style="font-size: 1.5rem; font-weight: 700; color: #2563eb;" id="summary-volume-rate">0.00%</span>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; position: relative;">
+                        <div id="summary-volume-progress" style="width: 0%; height: 100%; background: #2563eb; border-radius: 5px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
+                        <span id="summary-volume-used">0.00 / 0.00 CBM</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Middle Left: Weight utilization progress -->
+            <div style="flex: 2; display: flex; align-items: center; gap: 15px; min-width: 280px; border-left: 1px solid #e2e8f0; padding-left: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">중량 사용률</span>
+                    <span style="font-size: 1.1rem; font-weight: 700; color: #475569;" id="summary-weight-rate">0.00%</span>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; position: relative;">
+                        <div id="summary-weight-progress" style="width: 0%; height: 100%; background: #64748b; border-radius: 3px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
+                        <span id="summary-weight-used">0 / 0 kg</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side: Stats Summary & Status Badge -->
+            <div style="display: flex; align-items: center; gap: 25px; border-left: 1px solid #e2e8f0; padding-left: 20px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 수량</div>
+                    <strong style="font-size: 1.25rem; color: #0f172a;" id="summary-total-qty">0</strong>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 부피</div>
+                    <strong style="font-size: 1.25rem; color: #0f172a;"><span id="summary-total-volume">0.000</span> <span style="font-size: 0.75rem; color: #64748b;">CBM</span></strong>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 중량</div>
+                    <strong style="font-size: 1.25rem; color: #0f172a;"><span id="summary-total-weight">0</span> <span style="font-size: 0.75rem; color: #64748b;">kg</span></strong>
+                </div>
+                <div id="summary-status-badge" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-size: 0.8rem; font-weight: 600; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="help-circle" style="width: 16px; height: 16px; color: #64748b;"></i> 적재 대기중
+                </div>
+            </div>
+        </div>
+
         <main class="dashboard">
-            <!-- Left Column: Inputs -->
-            <aside class="sidebar">
-                <section class="card project-info">
-                    <h2><i data-lucide="file-text"></i> 프로젝트 정보</h2>
-                    <div class="form-group">
-                        <label for="customer-name">고객사명</label>
-                        <input type="text" id="customer-name" placeholder="고객사명 입력">
-                    </div>
-                    <div class="form-group">
-                        <label for="project-name">프로젝트명</label>
-                        <input type="text" id="project-name" placeholder="프로젝트명 입력">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="project-date">일자</label>
-                            <input type="date" id="project-date">
-                        </div>
-                        <div class="form-group">
-                            <label for="project-serial">일련번호</label>
-                            <input type="text" id="project-serial" placeholder="예: PRJ-2026-001">
-                        </div>
-                    </div>
-                </section>
-
-                <section class="card container-select">
-                    <h2><i data-lucide="box"></i> 컨테이너 수량 설정</h2>
-                    <div class="container-qty-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div class="form-group">
-                            <label style="font-size: 0.8rem;">20GP (일반 20ft)</label>
-                            <input type="number" id="qty-20GP" min="0" value="1" class="container-qty-input" data-type="20GP">
-                        </div>
-                        <div class="form-group">
-                            <label style="font-size: 0.8rem;">20RF (냉동 20ft)</label>
-                            <input type="number" id="qty-20RF" min="0" value="0" class="container-qty-input" data-type="20RF">
-                        </div>
-                        <div class="form-group">
-                            <label style="font-size: 0.8rem;">40GP (일반 40ft)</label>
-                            <input type="number" id="qty-40GP" min="0" value="0" class="container-qty-input" data-type="40GP">
-                        </div>
-                        <div class="form-group">
-                            <label style="font-size: 0.8rem;">40HC (하이큐빅)</label>
-                            <input type="number" id="qty-40HC" min="0" value="0" class="container-qty-input" data-type="40HC">
-                        </div>
-                    </div>
-                </section>
-
-                <section class="card item-form">
-                    <h2><i data-lucide="layers"></i> 화물(팔레트) 추가</h2>
-                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
-                        <!-- Product Selection Section -->
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 화물명</label>
-                                <div style="display: flex; gap: 4px;">
-                                    <button type="button" id="btn-search-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="상품 검색"><i data-lucide="search" style="width:15px; height:15px;"></i></button>
-                                    <button type="button" id="btn-add-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 상품 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
-                                    <button type="button" id="btn-edit-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 상품 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
-                                </div>
-                            </div>
-                            
-                            <!-- Display Selected Product (Wider Display Area) -->
-                            <div style="display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.85rem; min-height: 48px; justify-content: center; cursor: pointer;" onclick="document.getElementById('btn-search-product').click()">
-                                <input type="hidden" id="product-select">
-                                <div id="product-info-display" style="font-weight: 600; color: #1e293b;">-- 상품을 검색하여 선택해 주세요 --</div>
-                                <div id="product-code-display" style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">상품코드: 미지정</div>
-                            </div>
-                        </div>
-
-                        <!-- Packing Method Section -->
-                        <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 포장 형태</label>
-                                <div style="display: flex; gap: 4px;">
-                                    <button type="button" id="btn-add-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 포장방법 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
-                                    <button type="button" id="btn-edit-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
-                                    <button type="button" id="btn-delete-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2" style="width:15px; height:15px;"></i></button>
-                                </div>
-                            </div>
-                            <select id="packing-select" style="width: 100%; height: 36px; font-size: 0.85rem;">
-                                <option value="">-- 포장방법 선택 --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <form id="add-item-form">
-                        <input type="hidden" id="edit-item-id" value="">
-                        <!-- Hidden duplicate form-row containing redundant inputs to preserve logic compatibility -->
-                        <div class="form-row" style="display: none;">
-                            <div class="form-group" style="flex: 2;">
-                                <label for="item-name">화물명</label>
-                                <input type="text" id="item-name" required placeholder="예: A형 팔레트">
-                            </div>
-                            <div class="form-group" style="flex: 1;">
-                                <label for="item-package-type">포장 형태</label>
-                                <select id="item-package-type">
-                                    <option value="Pallet">Pallet</option>
-                                    <option value="Wooden Box">Wooden Box</option>
-                                    <option value="Carton">Carton Box</option>
-                                    <option value="Drum">Drum</option>
-                                    <option value="Pail">Pail</option>
-                                    <option value="IBC">IBC</option>
-                                    <option value="Other">기타</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="item-content-details">혼적/내용물 상세 (선택)</label>
-                            <textarea id="item-content-details" placeholder="예: A제품 박스 10개 + B제품 페일 2개 혼적"></textarea>
-                        </div>
-                        <div class="form-row triplet">
-                            <div class="form-group">
-                                <label for="item-w">가로 (mm)</label>
-                                <input type="number" id="item-w" required min="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="item-d">세로 (mm)</label>
-                                <input type="number" id="item-d" required min="1">
-                            </div>
-                            <div class="form-group">
-                                <label for="item-h">높이 (mm)</label>
-                                <input type="number" id="item-h" required min="1">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="item-net-weight">순중량 (Net wt, kg)</label>
-                                <input type="number" id="item-net-weight" required min="0" step="0.1">
-                            </div>
-                            <div class="form-group">
-                                <label for="item-gross-weight">총중량 (Gross wt, kg)</label>
-                                <input type="number" id="item-gross-weight" required min="0.1" step="0.1">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group" style="flex: 0 0 50%;">
-                                <label for="item-qty">수량</label>
-                                <input type="number" id="item-qty" required min="1">
-                            </div>
-                        </div>
-                        <div class="form-row switch-row">
-                            <div class="switch-group">
-                                <label class="switch">
-                                    <input type="checkbox" id="item-stackable" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>다단 적재 허용</span>
-                            </div>
-                            <div class="switch-group">
-                                <label class="switch">
-                                    <input type="checkbox" id="item-rotation" checked>
-                                    <span class="slider round"></span>
-                                </label>
-                                <span>회전 허용 (수평)</span>
-                            </div>
-                        </div>
-                        <div class="form-actions" style="display:flex; flex-direction:column; gap:10px;">
-                            <div style="display:flex; gap:10px; width: 100%;">
-                                <button type="button" id="btn-cancel-edit" class="btn btn-secondary hidden" style="flex:1;">취소</button>
-                                <button type="submit" id="btn-submit-item" class="btn btn-primary" style="flex:2;">리스트에 추가</button>
-                            </div>
-                            <button type="button" id="btn-save-as-packing" class="btn btn-outline full-width" style="border-color: #2563eb; color: #2563eb; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="save" style="width: 16px; height: 16px;"></i> ⭐ 현재 입력을 이 상품의 포장방법으로 추가</button>
-                        </div>
-                    </form>
-                </section>
-            </aside>
-
-            <!-- Right Column: Results -->
+            <!-- Left Column: Simulation View -->
             <section class="main-content">
-                <div class="summary-cards">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i data-lucide="hash"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-label">총 수량</span>
-                            <span class="stat-value" id="total-qty">0</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i data-lucide="weight"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-label">총 중량 (Net / Gross)</span>
-                            <span class="stat-value"><span id="total-net-weight">0</span> / <span id="total-gross-weight">0</span> kg</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon"><i data-lucide="box-select"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-label">총 부피 (CBM)</span>
-                            <span class="stat-value"><span id="total-volume">0.000</span></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card items-table-card">
-                    <div class="card-header">
-                        <h2><i data-lucide="list"></i> 적재 품목 리스트</h2>
-                        <div class="header-actions">
-                            <button class="btn btn-primary btn-sm" id="btn-merge-selected" title="선택한 화물들을 하나의 파렛트로 병합"><i data-lucide="shrink"></i> 선택 합치기</button>
-                            <button class="btn btn-outline btn-sm" id="btn-download-template" title="엑셀 업로드 양식 다운로드"><i data-lucide="download"></i> 양식 받기</button>
-                            <label for="excel-upload" class="btn btn-secondary btn-sm" style="cursor: pointer; margin: 0;"><i data-lucide="upload"></i> 엑셀 업로드</label>
-                            <input type="file" id="excel-upload" accept=".xlsx, .xls" style="display: none;">
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-items"></th>
-                                    <th>화물명 (포장 형태)</th>
-                                    <th>크기 (W×D×H)</th>
-                                    <th>CBM</th>
-                                    <th>단위 중량(Net/Gross)</th>
-                                    <th>수량</th>
-                                    <th>옵션</th>
-                                    <th>작업</th>
-                                </tr>
-                            </thead>
-                            <tbody id="items-tbody">
-                                <!-- Dynamic rows go here -->
-                                <tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>
-                            </tbody>
-                            <tfoot id="items-tfoot" class="hidden">
-                                <tr style="background-color: rgba(255, 255, 255, 0.05); font-weight: bold;">
-                                    <td colspan="4" style="text-align: right;">전체 총계:</td>
-                                    <td id="table-total-weight" style="text-align: right; padding-right: 10px;">0 / 0</td>
-                                    <td id="table-total-qty" style="text-align: right; padding-right: 10px;">0</td>
-                                    <td colspan="2"></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="results-layout">
+                <div class="results-layout" style="margin-top: 0;">
                     <div class="card" id="export-area">
                         <div class="card-header">
                             <h2><i data-lucide="truck"></i> 적재 시뮬레이션 결과</h2>
@@ -278,7 +104,7 @@
                         
                         <!-- Multi-container tabs -->
                         <div id="multi-container-tabs" class="container-tabs hidden"></div>
-
+ 
                         <div class="result-placeholder" id="simulation-result">
                             <i data-lucide="cuboid"></i>
                             <p>화물을 추가하고 시뮬레이션을 실행하면 여기에 결과가 표시됩니다.</p>
@@ -293,9 +119,9 @@
                             <!-- 2D View -->
                             <div id="viz-2d-wrapper">
                                 <div class="viz-tabs">
-                                    <button class="viz-tab active" data-view="top">위 (Top View)</button>
-                                    <button class="viz-tab" data-view="right_side">오른쪽 옆 (Right Side)</button>
-                                    <button class="viz-tab" data-view="left_side">왼쪽 옆 (Left Side)</button>
+                                    <button class="viz-tab active" data-view="top">Top</button>
+                                    <button class="viz-tab" data-view="right_side">Right</button>
+                                    <button class="viz-tab" data-view="left_side">Left</button>
                                 </div>
                                 <div class="canvas-wrapper">
                                     <canvas id="viz-canvas"></canvas>
@@ -360,10 +186,254 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Right Column: Sidebar -->
+            <aside class="sidebar">
+                <!-- Container Quantity Select Block -->
+                <section class="card container-select" style="padding: 12px; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <h2 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;">
+                            <i data-lucide="box" style="width: 16px; height: 16px;"></i> 컨테이너
+                        </h2>
+                        <span style="font-size: 0.75rem; color: #64748b;">대수별 +/- 로 조정</span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <!-- 20GP -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">20GP</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="20GP" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-20GP" min="0" value="1" readonly class="container-qty-input" data-type="20GP" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="20GP" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">일반 20ft</span>
+                        </div>
+                        
+                        <!-- 20RF -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">20RF</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="20RF" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-20RF" min="0" value="0" readonly class="container-qty-input" data-type="20RF" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="20RF" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">냉동 20ft</span>
+                        </div>
+                        
+                        <!-- 40GP -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">40GP</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="40GP" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-40GP" min="0" value="0" readonly class="container-qty-input" data-type="40GP" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="40GP" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">일반 40ft</span>
+                        </div>
+                        
+                        <!-- 40HC -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">40HC</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="40HC" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-40HC" min="0" value="0" readonly class="container-qty-input" data-type="40HC" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="40HC" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">하이큐빅</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sidebar Cargo List Block -->
+                <section class="card cargo-list-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h2 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="list"></i> 화물 목록 <span id="cargo-list-badge" style="background: #2563eb; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 600;">0</span>
+                        </h2>
+                    </div>
+                    
+                    <div id="cargo-list-cards-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding-right: 2px;">
+                        <!-- Dynamic cargo cards go here -->
+                        <div style="text-align: center; padding: 30px 10px; color: #64748b; font-size: 0.85rem;">등록된 화물이 없습니다.</div>
+                    </div>
+                    
+                    <button type="button" id="btn-open-cargo-modal" class="btn btn-outline" style="width: 100%; border: 1px dashed #2563eb; color: #2563eb; font-weight: 600; padding: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="plus" style="width: 16px; height: 16px;"></i> 화물 추가</button>
+                </section>
+            </aside>
         </main>
     </div>
 
     <!-- Modals -->
+    <!-- Cargo Form Modal -->
+    <div id="cargo-form-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 500px; width: 95%;">
+            <div class="modal-header">
+                <h2 id="cargo-modal-title"><i data-lucide="layers"></i> 화물(팔레트) 추가</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-cargo-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
+                    <!-- Product Selection Section -->
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 화물명</label>
+                            <div style="display: flex; gap: 4px;">
+                                <button type="button" id="btn-search-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="상품 검색"><i data-lucide="search" style="width:15px; height:15px;"></i></button>
+                                <button type="button" id="btn-add-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 상품 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
+                                <button type="button" id="btn-edit-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 상품 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
+                            </div>
+                        </div>
+                        
+                        <!-- Display Selected Product (Wider Display Area) -->
+                        <div style="display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.85rem; min-height: 48px; justify-content: center; cursor: pointer;" onclick="document.getElementById('btn-search-product').click()">
+                            <input type="hidden" id="product-select">
+                            <div id="product-info-display" style="font-weight: 600; color: #1e293b;">-- 상품을 검색하여 선택해 주세요 --</div>
+                            <div id="product-code-display" style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">상품코드: 미지정</div>
+                        </div>
+                    </div>
+
+                    <!-- Packing Method Section -->
+                    <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 포장 형태</label>
+                            <div style="display: flex; gap: 4px;">
+                                <button type="button" id="btn-add-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 포장방법 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
+                                <button type="button" id="btn-edit-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
+                                <button type="button" id="btn-delete-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2" style="width:15px; height:15px;"></i></button>
+                            </div>
+                        </div>
+                        <select id="packing-select" style="width: 100%; height: 36px; font-size: 0.85rem;">
+                            <option value="">-- 포장방법 선택 --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <form id="add-item-form">
+                    <input type="hidden" id="edit-item-id" value="">
+                    <!-- Hidden duplicate form-row containing redundant inputs to preserve logic compatibility -->
+                    <div class="form-row" style="display: none;">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="item-name">화물명</label>
+                            <input type="text" id="item-name" required placeholder="예: A형 팔레트">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="item-package-type">포장 형태</label>
+                            <select id="item-package-type">
+                                <option value="Pallet">Pallet</option>
+                                <option value="Wooden Box">Wooden Box</option>
+                                <option value="Carton">Carton Box</option>
+                                <option value="Drum">Drum</option>
+                                <option value="Pail">Pail</option>
+                                <option value="IBC">IBC</option>
+                                <option value="Other">기타</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="item-content-details">혼적/내용물 상세 (선택)</label>
+                        <textarea id="item-content-details" placeholder="예: A제품 박스 10개 + B제품 페일 2개 혼적"></textarea>
+                    </div>
+                    <div class="form-row triplet">
+                        <div class="form-group">
+                            <label for="item-w">가로 (mm)</label>
+                            <input type="number" id="item-w" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="item-d">세로 (mm)</label>
+                            <input type="number" id="item-d" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="item-h">높이 (mm)</label>
+                            <input type="number" id="item-h" required min="1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="item-net-weight">순중량 (Net wt, kg)</label>
+                            <input type="number" id="item-net-weight" required min="0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="item-gross-weight">총중량 (Gross wt, kg)</label>
+                            <input type="number" id="item-gross-weight" required min="0.1" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 0 0 50%;">
+                            <label for="item-qty">수량</label>
+                            <input type="number" id="item-qty" required min="1">
+                        </div>
+                    </div>
+                    <div class="form-row switch-row">
+                        <div class="switch-group">
+                            <label class="switch">
+                                <input type="checkbox" id="item-stackable" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>다단 적재 허용</span>
+                        </div>
+                        <div class="switch-group">
+                            <label class="switch">
+                                <input type="checkbox" id="item-rotation" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>회전 허용 (수평)</span>
+                        </div>
+                    </div>
+                    <div class="form-actions" style="display:flex; flex-direction:column; gap:10px; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                        <div style="display:flex; gap:10px; width: 100%;">
+                            <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="flex:1;">취소</button>
+                            <button type="submit" id="btn-submit-item" class="btn btn-primary" style="flex:2;">확용</button>
+                        </div>
+                        <button type="button" id="btn-save-as-packing" class="btn btn-outline full-width" style="border-color: #2563eb; color: #2563eb; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="save" style="width: 16px; height: 16px;"></i> ⭐ 현재 입력을 이 상품의 포장방법으로 추가</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Info Modal -->
+    <div id="project-info-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 400px; width: 95%;">
+            <div class="modal-header">
+                <h2><i data-lucide="file-text"></i> 프로젝트 정보 수정</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-project-info-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="form-group">
+                    <label for="customer-name">고객사명</label>
+                    <input type="text" id="customer-name" placeholder="고객사명 입력">
+                </div>
+                <div class="form-group">
+                    <label for="project-name">프로젝트명</label>
+                    <input type="text" id="project-name" placeholder="프로젝트명 입력">
+                </div>
+                <div class="form-row" style="margin-bottom: 12px;">
+                    <div class="form-group">
+                        <label for="project-date">일자</label>
+                        <input type="date" id="project-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="project-serial">일련번호</label>
+                        <input type="text" id="project-serial" placeholder="예: PRJ-2026-001">
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                    <button type="button" id="btn-save-project-info" class="btn btn-primary" style="width: 100%;">저장 완료</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Standard Modals -->
     <div id="project-modal" class="modal-backdrop hidden">
         <div class="modal">
             <div class="modal-header">

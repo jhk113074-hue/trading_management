@@ -1021,6 +1021,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('item-rotation').checked = true;
         presetSelect.value = '';
         
+        hideModal('cargo-form-modal');
         renderItems();
     });
 
@@ -1031,8 +1032,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const exitEditMode = () => {
         editItemId.value = '';
-        btnSubmitItem.textContent = '리스트에 추가';
-        btnCancelEdit.classList.add('hidden');
+        if (btnSubmitItem) btnSubmitItem.textContent = '확용';
+        if (btnCancelEdit) btnCancelEdit.classList.add('hidden');
+        hideModal('cargo-form-modal');
     };
 
     window.editItem = (id) => {
@@ -1052,8 +1054,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('item-stackable').checked = item.stackable;
         document.getElementById('item-rotation').checked = item.rotation;
 
-        btnSubmitItem.textContent = '수정 완료';
-        btnCancelEdit.classList.remove('hidden');
+        if (btnSubmitItem) btnSubmitItem.textContent = '수정 완료';
+        if (btnCancelEdit) btnCancelEdit.classList.remove('hidden');
+
+        // Set editing title & show modal
+        const cargoModalTitle = document.getElementById('cargo-modal-title');
+        if (cargoModalTitle) cargoModalTitle.innerHTML = '<i data-lucide="edit-3"></i> 화물(팔레트) 수정';
+        showModal('cargo-form-modal');
+        if (window.lucide) window.lucide.createIcons();
     };
 
     window.deleteItem = (id) => {
@@ -1089,54 +1097,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const cargoListCardsContainer = document.getElementById('cargo-list-cards-container');
+
+    const getContainerCapacities = () => {
+        const CONTAINERS = {
+            '20GP': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
+            '20RF': { l: 5444, w: 2290, h: 2276, maxWeight: 27000 },
+            '40GP': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 },
+            '40HC': { l: 12032, w: 2352, h: 2698, maxWeight: 28800 }
+        };
+        let totalVol = 0;
+        let totalWeight = 0;
+        
+        ['20GP', '20RF', '40GP', '40HC'].forEach(type => {
+            const qtyInput = document.getElementById(`qty-${type}`);
+            const qty = qtyInput ? parseInt(qtyInput.value, 10) || 0 : 0;
+            if (qty > 0) {
+                const c = CONTAINERS[type];
+                const vol = (c.l * c.w * c.h) / 1000000000;
+                totalVol += vol * qty;
+                totalWeight += c.maxWeight * qty;
+            }
+        });
+        return { volume: totalVol, weight: totalWeight };
+    };
+
+    const updateSummaryStatusBadge = () => {
+        const summaryStatusBadge = document.getElementById('summary-status-badge');
+        if (!summaryStatusBadge) return;
+
+        if (currentResults.length === 0) {
+            summaryStatusBadge.innerHTML = `<i data-lucide="help-circle" style="width: 16px; height: 16px; color: #64748b;"></i> 적재 대기중`;
+            summaryStatusBadge.style.background = '#f1f5f9';
+            summaryStatusBadge.style.borderColor = '#cbd5e1';
+            summaryStatusBadge.style.color = '#475569';
+        } else {
+            const lastResult = currentResults[currentResults.length - 1];
+            const hasUnloaded = lastResult && lastResult.unloaded && lastResult.unloaded.length > 0;
+            if (hasUnloaded) {
+                const count = lastResult.unloaded.length;
+                summaryStatusBadge.innerHTML = `<i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: #ef4444;"></i> 미적재 ${count}건 발생`;
+                summaryStatusBadge.style.background = '#fef2f2';
+                summaryStatusBadge.style.borderColor = '#fca5a5';
+                summaryStatusBadge.style.color = '#b91c1c';
+            } else {
+                summaryStatusBadge.innerHTML = `<i data-lucide="check-circle-2" style="width: 16px; height: 16px; color: #10b981;"></i> 전량 적재 완료`;
+                summaryStatusBadge.style.background = '#ecfdf5';
+                summaryStatusBadge.style.borderColor = '#a7f3d0';
+                summaryStatusBadge.style.color = '#047857';
+            }
+        }
+        if (window.lucide) window.lucide.createIcons();
+    };
+
     const renderItems = () => {
-        itemsTbody.innerHTML = '';
-        const itemsTfoot = document.getElementById('items-tfoot');
-        const checkAllEl = document.getElementById('check-all-items');
-        if (checkAllEl) checkAllEl.checked = false;
+        if (!cargoListCardsContainer) return;
+        cargoListCardsContainer.innerHTML = '';
+        
+        const badge = document.getElementById('cargo-list-badge');
+        if (badge) badge.textContent = currentItems.length.toLocaleString();
 
         if (currentItems.length === 0) {
-            itemsTbody.innerHTML = '<tr class="empty-row"><td colspan="8">등록된 화물이 없습니다.</td></tr>';
-            if(itemsTfoot) itemsTfoot.classList.add('hidden');
+            cargoListCardsContainer.innerHTML = '<div style="text-align: center; padding: 30px 10px; color: #64748b; font-size: 0.85rem;">등록된 화물이 없습니다.</div>';
         } else {
-            if(itemsTfoot) itemsTfoot.classList.remove('hidden');
             currentItems.forEach(item => {
                 const nwUse = item.netWeight !== undefined ? item.netWeight : 0;
                 const gwUse = item.grossWeight !== undefined ? item.grossWeight : item.weight;
                 
                 const netDisp = nwUse ? nwUse.toLocaleString() : '-';
                 const grossDisp = gwUse ? gwUse.toLocaleString() : '-';
-                const totalNetDisp = nwUse ? (nwUse * item.qty).toLocaleString() : '-';
-                const totalGrossDisp = gwUse ? (gwUse * item.qty).toLocaleString() : '-';
+                const itemVol = ((item.w * item.d * item.h) / 1000000000) * item.qty;
 
-                const pkgTypeDisp = item.packageType ? ` <span style="color:var(--text-secondary); font-size:0.85rem;">(${item.packageType})</span>` : '';
-                const detailsDisp = item.contentDetails ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; white-space: pre-wrap;">${item.contentDetails}</div>` : '';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="text-align: center;">
-                        <input type="checkbox" class="item-checkbox" data-id="${item.id}">
-                    </td>
-                    <td>
-                        <strong>${item.name}</strong>${pkgTypeDisp}
-                        ${detailsDisp}
-                    </td>
-                    <td>${item.w} × ${item.d} × ${item.h}</td>
-                    <td>${((item.w * item.d * item.h) / 1000000000).toFixed(3)}</td>
-                    <td>${netDisp} / ${grossDisp}</td>
-                    <td>${item.qty.toLocaleString()}</td>
-                    <td>
-                        <span class="tag ${item.stackable ? 'active' : ''}">${item.stackable ? '다단허용' : '다단불가'}</span>
-                        <span class="tag ${item.rotation ? 'active' : ''}">${item.rotation ? '회전허용' : '회전불가'}</span>
-                    </td>
-                    <td class="actions-cell">
-                        <button class="btn btn-icon btn-sm" onclick="duplicateItem('${item.id}')" title="복사"><i data-lucide="copy"></i></button>
-                        <button class="btn btn-icon btn-sm" onclick="editItem('${item.id}')" title="수정"><i data-lucide="edit-2"></i></button>
-                        <button class="btn btn-icon btn-sm" onclick="deleteItem('${item.id}')" title="삭제"><i data-lucide="trash-2"></i></button>
-                    </td>
+                const card = document.createElement('div');
+                card.className = 'cargo-card';
+                card.innerHTML = `
+                    <div class="cargo-card-header">
+                        <span class="cargo-card-title">${item.name}</span>
+                        <div class="cargo-card-actions">
+                            <button type="button" class="cargo-card-action-btn" onclick="duplicateItem('${item.id}')" title="복사"><i data-lucide="copy" style="width:14px; height:14px;"></i></button>
+                            <button type="button" class="cargo-card-action-btn" onclick="editItem('${item.id}')" title="수정"><i data-lucide="edit-2" style="width:14px; height:14px;"></i></button>
+                            <button type="button" class="cargo-card-action-btn delete" onclick="deleteItem('${item.id}')" title="삭제"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
+                        </div>
+                    </div>
+                    <div class="cargo-card-meta">
+                        <div>포장: ${item.packageType || 'Pallet'}</div>
+                        <div>규격: ${item.w} × ${item.d} × ${item.h} mm</div>
+                        <div>중량: ${netDisp} / ${grossDisp} kg</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 6px;">
+                        <div class="cargo-card-badges">
+                            <span class="cargo-card-badge ${item.stackable ? 'success' : 'info'}">${item.stackable ? '다단적재' : '다단불가'}</span>
+                            <span class="cargo-card-badge ${item.rotation ? 'success' : 'info'}">${item.rotation ? '회전허용' : '회전불가'}</span>
+                        </div>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: #2563eb;">${itemVol.toFixed(3)} CBM</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 2px;">
+                        <span>수량: <strong>${item.qty}</strong> 개</span>
+                    </div>
                 `;
-                itemsTbody.appendChild(tr);
+                cargoListCardsContainer.appendChild(card);
             });
-            lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
         }
         updateStats();
     };
@@ -1153,15 +1214,32 @@ document.addEventListener('DOMContentLoaded', () => {
             volume += itemVol;
         });
 
-        if (totalQtyEl) totalQtyEl.textContent = qty.toLocaleString();
-        if (totalNetWeightEl) totalNetWeightEl.textContent = netWeight.toLocaleString();
-        if (totalGrossWeightEl) totalGrossWeightEl.textContent = grossWeight.toLocaleString();
-        if (totalVolumeEl) totalVolumeEl.textContent = volume.toFixed(3);
+        const caps = getContainerCapacities();
+        const volumeRate = caps.volume > 0 ? (volume / caps.volume) * 100 : 0;
+        const weightRate = caps.weight > 0 ? (grossWeight / caps.weight) * 100 : 0;
+
+        const summaryVolumeRate = document.getElementById('summary-volume-rate');
+        const summaryVolumeProgress = document.getElementById('summary-volume-progress');
+        const summaryVolumeUsed = document.getElementById('summary-volume-used');
+        const summaryWeightRate = document.getElementById('summary-weight-rate');
+        const summaryWeightProgress = document.getElementById('summary-weight-progress');
+        const summaryWeightUsed = document.getElementById('summary-weight-used');
+        const summaryTotalQty = document.getElementById('summary-total-qty');
+        const summaryTotalVolume = document.getElementById('summary-total-volume');
+        const summaryTotalWeight = document.getElementById('summary-total-weight');
+
+        if (summaryVolumeRate) summaryVolumeRate.textContent = `${volumeRate.toFixed(2)}%`;
+        if (summaryVolumeProgress) summaryVolumeProgress.style.width = `${Math.min(volumeRate, 100)}%`;
+        if (summaryVolumeUsed) summaryVolumeUsed.textContent = `${volume.toFixed(2)} / ${caps.volume.toFixed(2)} CBM`;
+        if (summaryWeightRate) summaryWeightRate.textContent = `${weightRate.toFixed(2)}%`;
+        if (summaryWeightProgress) summaryWeightProgress.style.width = `${Math.min(weightRate, 100)}%`;
+        if (summaryWeightUsed) summaryWeightUsed.textContent = `${grossWeight.toLocaleString()} / ${caps.weight.toLocaleString()} kg`;
         
-        const tableTotalQty = document.getElementById('table-total-qty');
-        const tableTotalWeight = document.getElementById('table-total-weight');
-        if (tableTotalQty) tableTotalQty.textContent = qty.toLocaleString();
-        if (tableTotalWeight) tableTotalWeight.textContent = `${netWeight.toLocaleString()} / ${grossWeight.toLocaleString()}`;
+        if (summaryTotalQty) summaryTotalQty.textContent = qty.toLocaleString();
+        if (summaryTotalVolume) summaryTotalVolume.textContent = volume.toFixed(3);
+        if (summaryTotalWeight) summaryTotalWeight.textContent = grossWeight.toLocaleString();
+
+        updateSummaryStatusBadge();
     };
 
     // --- Project Management ---
@@ -2571,6 +2649,86 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 150);
         });
     }
+
+    const initRestructuredModals = () => {
+        const cargoFormModal = document.getElementById('cargo-form-modal');
+        const btnOpenCargoModal = document.getElementById('btn-open-cargo-modal');
+        const btnCloseCargoModal = document.getElementById('btn-close-cargo-modal');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const cargoModalTitle = document.getElementById('cargo-modal-title');
+        
+        if (btnOpenCargoModal) {
+            btnOpenCargoModal.addEventListener('click', () => {
+                if (cargoModalTitle) cargoModalTitle.innerHTML = '<i data-lucide="layers"></i> 화물(팔레트) 추가';
+                const addForm = document.getElementById('add-item-form');
+                if (addForm) addForm.reset();
+                document.getElementById('edit-item-id').value = '';
+                
+                const infoDisplay = document.getElementById('product-info-display');
+                const codeDisplay = document.getElementById('product-code-display');
+                if (infoDisplay) infoDisplay.textContent = '-- 상품을 검색하여 선택해 주세요 --';
+                if (codeDisplay) codeDisplay.textContent = '상품코드: 미지정';
+                if (productSelect) productSelect.value = '';
+                if (packingSelect) packingSelect.innerHTML = '<option value="">-- 포장방법 선택 --</option>';
+                
+                if (btnCancelEdit) btnCancelEdit.classList.add('hidden');
+                
+                showModal('cargo-form-modal');
+                if (window.lucide) window.lucide.createIcons();
+            });
+        }
+        
+        if (btnCloseCargoModal) {
+            btnCloseCargoModal.addEventListener('click', () => hideModal('cargo-form-modal'));
+        }
+        if (btnCancelEdit) {
+            btnCancelEdit.addEventListener('click', () => hideModal('cargo-form-modal'));
+        }
+
+        const projectInfoModal = document.getElementById('project-info-modal');
+        const btnEditProjectInfo = document.getElementById('btn-edit-project-info');
+        const btnCloseProjectInfoModal = document.getElementById('btn-close-project-info-modal');
+        const btnSaveProjectInfo = document.getElementById('btn-save-project-info');
+        
+        if (btnEditProjectInfo) {
+            btnEditProjectInfo.addEventListener('click', () => {
+                showModal('project-info-modal');
+            });
+        }
+        if (btnCloseProjectInfoModal) {
+            btnCloseProjectInfoModal.addEventListener('click', () => hideModal('project-info-modal'));
+        }
+        if (btnSaveProjectInfo) {
+            btnSaveProjectInfo.addEventListener('click', () => {
+                hideModal('project-info-modal');
+                saveProject(false, true);
+            });
+        }
+
+        document.querySelectorAll('.btn-qty-inc').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                const input = document.getElementById(`qty-${type}`);
+                if (input) {
+                    input.value = (parseInt(input.value, 10) || 0) + 1;
+                    input.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-qty-dec').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                const input = document.getElementById(`qty-${type}`);
+                if (input && parseInt(input.value, 10) > 0) {
+                    input.value = (parseInt(input.value, 10) || 0) - 1;
+                    input.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+    };
+
+    initRestructuredModals();
 
     // --- Load PI Simulation Data from localStorage (Integration) ---
     const loadPiSimulationData = () => {

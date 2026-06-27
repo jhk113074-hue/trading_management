@@ -76,7 +76,7 @@ h2 { font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: cente
 
 .dashboard {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 1fr 360px;
     gap: 0.75rem;
     align-items: start;
 }
@@ -675,5 +675,88 @@ input:checked + .slider:before { transform: translateX(16px); }
     background-color: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+}
+
+/* Cargo Cards and Summary Elements */
+.cargo-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+.cargo-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #cbd5e1;
+}
+.cargo-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.cargo-card-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    max-width: 80%;
+    word-break: break-all;
+}
+.cargo-card-actions {
+    display: flex;
+    gap: 2px;
+}
+.cargo-card-action-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: #64748b;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.cargo-card-action-btn:hover {
+    background: #f1f5f9;
+    color: var(--text-primary);
+}
+.cargo-card-action-btn.delete:hover {
+    color: var(--danger-color);
+    background: #fef2f2;
+}
+.cargo-card-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.cargo-card-badges {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 2px;
+}
+.cargo-card-badge {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+.cargo-card-badge.info {
+    background: #f1f5f9;
+    color: #475569;
+}
+.cargo-card-badge.success {
+    background: #ecfdf5;
+    color: #047857;
+}
+.cargo-card-badge.warning {
+    background: #fffbeb;
+    color: #b45309;
 }
 
