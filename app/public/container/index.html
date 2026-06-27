@@ -112,12 +112,12 @@
                         
                         <div id="visualization-container" class="hidden">
                             <div class="viz-mode-toggle">
-                                <button class="btn btn-outline btn-sm active" id="btn-mode-2d"><i data-lucide="layout"></i> 2D 도면</button>
-                                <button class="btn btn-outline btn-sm" id="btn-mode-3d"><i data-lucide="box"></i> 3D 뷰어</button>
+                                <button class="btn btn-outline btn-sm" id="btn-mode-2d"><i data-lucide="layout"></i> 2D 도면</button>
+                                <button class="btn btn-outline btn-sm active" id="btn-mode-3d"><i data-lucide="box"></i> 3D 뷰어</button>
                             </div>
                             
                             <!-- 2D View -->
-                            <div id="viz-2d-wrapper">
+                            <div id="viz-2d-wrapper" class="hidden">
                                 <div class="viz-tabs">
                                     <button class="viz-tab active" data-view="top">Top</button>
                                     <button class="viz-tab" data-view="right_side">Right</button>
@@ -129,7 +129,7 @@
                             </div>
                             
                             <!-- 3D View -->
-                            <div id="viz-3d-wrapper" class="hidden">
+                            <div id="viz-3d-wrapper">
                                 <div class="viz-toolbar">
                                     <button class="btn btn-icon btn-sm" data-cam="iso" title="등각 투영(Iso)">Iso</button>
                                     <button class="btn btn-icon btn-sm" data-cam="top" title="위(Top)">Top</button>

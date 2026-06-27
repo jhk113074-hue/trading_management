@@ -1754,19 +1754,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
 
-                <div class="card" style="padding: 1rem; background: rgba(255,255,255,0.02);">
-                    <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem;">잔여 공간 분석</h4>
-                    <p style="font-size: 0.85rem; margin-bottom: 0.25rem;">
-                        <span style="color: var(--text-secondary);">이론적 총 잔여 부피:</span> <strong>${m.remainingVolume.toFixed(2)} CBM</strong>
-                    </p>
-                    <p style="font-size: 0.85rem; margin-bottom: 0.25rem;">
-                        <span style="color: var(--text-secondary);">가장 큰 단일 연속 빈 공간:</span> <strong>${m.maxContinuousVolume.toFixed(2)} CBM</strong>
-                    </p>
-                    <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">
-                        <span style="color: var(--text-secondary);">빈 공간 조각 개수:</span> <strong>${m.fragmentedCount}개</strong>
-                    </p>
-                    <div style="background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--primary-color); padding: 0.5rem; font-size: 0.8rem; color: var(--text-secondary);">
-                        <strong>참고:</strong> 위 잔여 부피는 빈 공간의 단순 합계입니다. 조각(Fragment)된 형태일 수 있으므로 실제 사용 가능한 빈 공간과 다를 수 있습니다.
+                <div class="card" style="padding: 0.75rem; background: rgba(255,255,255,0.02); line-height: 1.4;">
+                    <div style="font-size: 0.85rem; display: flex; justify-content: space-between; flex-wrap: wrap;">
+                        <span>이론적 잔여 부피: <strong>${m.remainingVolume.toFixed(2)} CBM</strong> (연속 공간: ${m.maxContinuousVolume.toFixed(2)} CBM / 조각: ${m.fragmentedCount}개)</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
+                        ⚠️ 실제 사용 가능 공간은 빈 공간의 조각(Fragment) 형태에 따라 다를 수 있습니다.
                     </div>
                 </div>
 
