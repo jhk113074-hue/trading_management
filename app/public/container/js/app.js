@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Presets Management ---
     // --- Product & Packing Method DB Management ---
     const productSelect = document.getElementById('product-select');
+    const productDisplay = document.getElementById('product-display');
     const packingSelect = document.getElementById('packing-select');
     let dbProducts = [];
 
@@ -152,20 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderProductSelect = () => {
         if (!productSelect) return;
         const currentSelectedId = productSelect.value;
-        productSelect.innerHTML = '<option value="">-- 상품 선택 --</option>';
-        dbProducts.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = `${p.nameKo || p.nameEn} (${p.productCode || p.id})`;
-            productSelect.appendChild(opt);
-        });
+        
         if (currentSelectedId && dbProducts.some(p => p.id === currentSelectedId)) {
-            productSelect.value = currentSelectedId;
+            const selectedProduct = dbProducts.find(p => p.id === currentSelectedId);
+            if (productDisplay) {
+                productDisplay.value = `${selectedProduct.nameKo || selectedProduct.nameEn} (${selectedProduct.productCode || selectedProduct.id})`;
+            }
         } else {
             productSelect.value = "";
+            if (productDisplay) {
+                productDisplay.value = "";
+            }
             if (packingSelect) {
                 packingSelect.innerHTML = '<option value="">-- 포장방법 선택 --</option>';
             }
+        }
+        
+        if (typeof renderSearchModalTable === 'function') {
+            renderSearchModalTable();
         }
     };
 
@@ -350,6 +355,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById(modalId);
         if (modal) modal.classList.add('hidden');
     };
+
+
+    // --- Product Search Subwindow Modal ---
+    const productSearchModal = document.getElementById('product-search-modal');
+    const btnSearchProduct = document.getElementById('btn-search-product');
+    const btnCloseProductSearchModal = document.getElementById('btn-close-product-search-modal');
+    const dbProductSearchInput = document.getElementById('db-product-search-input');
+    const dbProductSearchTbody = document.getElementById('db-product-search-tbody');
+
+    const renderSearchModalTable = () => {
+        if (!dbProductSearchTbody) return;
+        const query = (dbProductSearchInput ? dbProductSearchInput.value : '').toLowerCase().trim();
+        
+        const filtered = dbProducts.filter(p => {
+            const nameKo = (p.nameKo || '').toLowerCase();
+            const nameEn = (p.nameEn || '').toLowerCase();
+            const code = (p.productCode || '').toLowerCase();
+            return nameKo.includes(query) || nameEn.includes(query) || code.includes(query);
+        });
+
+        dbProductSearchTbody.innerHTML = '';
+        if (filtered.length === 0) {
+            dbProductSearchTbody.innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 15px;">검색 결과가 없습니다.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        filtered.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            
+            tr.addEventListener('click', () => {
+                selectProductFromSearch(p.id);
+            });
+
+            tr.innerHTML = `
+                <td><strong>${p.productCode || p.id}</strong></td>
+                <td>
+                    <div style="font-weight: 600;">${p.nameKo}</div>
+                    ${p.nameEn ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">${p.nameEn}</div>` : ''}
+                </td>
+                <td>${p.unit || 'KG'}</td>
+                <td style="text-align: center;">
+                    <button type="button" class="btn btn-primary btn-sm" style="padding: 2px 8px; font-size: 0.75rem;">선택</button>
+                </td>
+            `;
+            dbProductSearchTbody.appendChild(tr);
+        });
+    };
+
+    const selectProductFromSearch = (productId) => {
+        if (!productSelect) return;
+        productSelect.value = productId;
+        renderProductSelect();
+        productSelect.dispatchEvent(new Event('change'));
+        hideModal('product-search-modal');
+    };
+
+    if (btnSearchProduct) {
+        btnSearchProduct.addEventListener('click', () => {
+            if (dbProductSearchInput) dbProductSearchInput.value = '';
+            renderSearchModalTable();
+            showModal('product-search-modal');
+            if (dbProductSearchInput) dbProductSearchInput.focus();
+        });
+    }
+
+    if (btnCloseProductSearchModal) {
+        btnCloseProductSearchModal.addEventListener('click', () => {
+            hideModal('product-search-modal');
+        });
+    }
+
+    if (dbProductSearchInput) {
+        dbProductSearchInput.addEventListener('input', () => {
+            renderSearchModalTable();
+        });
+    }
 
     // Product Modals & Handlers
     const btnAddProduct = document.getElementById('btn-add-product');

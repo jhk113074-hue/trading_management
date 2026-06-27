@@ -86,9 +86,11 @@
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 10px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
                         <div style="display: flex; gap: 8px; align-items: center;">
                             <label style="width: 70px; font-weight: 600; font-size: 0.8rem;">상품 선택</label>
-                            <select id="product-select" style="flex: 1;">
-                                <option value="">-- 상품 선택 --</option>
-                            </select>
+                            <div style="flex: 1; display: flex; gap: 4px; align-items: center; position: relative;">
+                                <input type="text" id="product-display" readonly placeholder="-- 상품 검색/선택 --" style="flex: 1; cursor: pointer; background: #fff;" onclick="document.getElementById('btn-search-product').click()">
+                                <input type="hidden" id="product-select">
+                                <button type="button" id="btn-search-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="상품 검색"><i data-lucide="search"></i></button>
+                            </div>
                             <button type="button" id="btn-add-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="새 상품 추가"><i data-lucide="plus"></i></button>
                             <button type="button" id="btn-edit-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 수정"><i data-lucide="edit-3"></i></button>
                             <button type="button" id="btn-delete-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 삭제"><i data-lucide="trash-2"></i></button>
@@ -498,6 +500,36 @@
         </div>
     </div>
 
+
+    <!-- Product Search Modal -->
+    <div id="product-search-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2><i data-lucide="search"></i> 상품 DB 검색</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-product-search-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <input type="text" id="db-product-search-input" placeholder="상품명 또는 상품코드로 검색하세요..." style="width: 100%; height: 38px; padding: 0 10px; font-size: 0.9rem;">
+                </div>
+                <div style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <table class="data-table" style="font-size: 0.85rem; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>상품코드</th>
+                                <th>상품명 (국문)</th>
+                                <th>단위</th>
+                                <th style="text-align: center; width: 80px;">선택</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-product-search-tbody">
+                            <!-- JS will populate -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Product Edit/Add Modal -->
     <div id="db-product-modal" class="modal-backdrop hidden">
