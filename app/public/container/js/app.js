@@ -1147,6 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getContainerCapacities = () => {
         const CONTAINERS = {
+            'LCL': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
             '20GP': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
             '20RF': { l: 5444, w: 2290, h: 2276, maxWeight: 27000 },
             '40GP': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 },
@@ -1155,7 +1156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalVol = 0;
         let totalWeight = 0;
         
-        ['20GP', '20RF', '40GP', '40HC'].forEach(type => {
+        ['LCL', '20GP', '20RF', '40GP', '40HC'].forEach(type => {
             const qtyInput = document.getElementById(`qty-${type}`);
             const qty = qtyInput ? parseInt(qtyInput.value, 10) || 0 : 0;
             if (qty > 0) {
@@ -2388,6 +2389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Populate containers safely
             if (data.containers) {
+                if (document.getElementById('qty-LCL')) document.getElementById('qty-LCL').value = data.containers['LCL'] || 0;
                 if (document.getElementById('qty-20GP')) document.getElementById('qty-20GP').value = data.containers['20GP'] || 0;
                 if (document.getElementById('qty-20RF')) document.getElementById('qty-20RF').value = data.containers['20RF'] || 0;
                 if (document.getElementById('qty-40GP')) document.getElementById('qty-40GP').value = data.containers['40GP'] || 0;

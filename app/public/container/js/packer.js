@@ -1,6 +1,7 @@
 const Packer = (function() {
     
     const CONTAINERS = {
+        'LCL': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
         '20GP': { l: 5898, w: 2352, h: 2393, maxWeight: 28200 },
         '20RF': { l: 5444, w: 2290, h: 2276, maxWeight: 27000 },
         '40GP': { l: 12032, w: 2352, h: 2393, maxWeight: 28800 },

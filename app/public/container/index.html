@@ -175,6 +175,7 @@
                             <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
                             <div style="display: flex; gap: 8px;">
                                 <select id="unloaded-add-type" style="flex: 1;">
+                                    <option value="LCL">LCL (소량 화물)</option>
                                     <option value="20GP">20GP (일반 20ft)</option>
                                     <option value="20RF">20RF (냉동 20ft)</option>
                                     <option value="40GP">40GP (일반 40ft)</option>
@@ -199,6 +200,19 @@
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <!-- LCL -->
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 0.85rem; color: #1e293b;">LCL</strong>
+                                <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #f8fafc; height: 24px;">
+                                    <button type="button" class="btn-qty-dec" data-type="LCL" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">-</button>
+                                    <input type="number" id="qty-LCL" min="0" value="0" readonly class="container-qty-input" data-type="LCL" style="width: 24px; text-align: center; border: none; background: none; font-size: 0.85rem; font-weight: 600; color: #0f172a; padding: 0;">
+                                    <button type="button" class="btn-qty-inc" data-type="LCL" style="border: none; background: none; width: 22px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #64748b;">+</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; color: #64748b;">소량 화물</span>
+                        </div>
+
                         <!-- 20GP -->
                         <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; background: #fff;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
