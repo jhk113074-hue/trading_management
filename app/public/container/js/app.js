@@ -1799,6 +1799,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update 3D Viewer if available
             if (window.Viewer3D) {
                 window.Viewer3D.update(currentResult, itemColors);
+                setTimeout(() => window.Viewer3D.resize(), 50);
             }
             
             // Render Packing List
