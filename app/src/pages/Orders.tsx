@@ -460,7 +460,17 @@ export const Orders: React.FC = () => {
         ) : processedOrders.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>등록된 주문 정보가 없습니다.</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <>
+            {/* 단계 색상 범례 (Color Legend) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: '#475569' }}>💡 단계 색상 안내:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#10b981', fontSize: '14px' }}>●</span> 완료됨</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#2563eb', fontSize: '14px' }}>●</span> 진행중 (정상)</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#f59e0b', fontSize: '14px' }}>●</span> 조치 필요 (주의/대기)</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#cbd5e1', fontSize: '14px' }}>●</span> 미시작</div>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
@@ -478,6 +488,20 @@ export const Orders: React.FC = () => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const orderAmount = pi?.totalUsd || order.totalAmount || 0;
                   const currentStep = mapStatusToStep(order.status || '');
+
+                  const stages = ['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'] as const;
+                  const currIdx = stages.indexOf(currentStep as any);
+                  const getStageColor = (stageName: typeof stages[number]) => {
+                    const stageIdx = stages.indexOf(stageName);
+                    if (stageIdx < currIdx) return '#10b981'; // Completed
+                    if (stageIdx === currIdx) {
+                      if (order.nextAction.level === 'RED' || order.nextAction.level === 'ORANGE') {
+                        return '#f59e0b'; // Warning/Pending
+                      }
+                      return '#2563eb'; // Active
+                    }
+                    return '#cbd5e1'; // Scheduled
+                  };
 
                   // Urgent color styling
                   const levelColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
@@ -523,14 +547,14 @@ export const Orders: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           {/* Circle 1 */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '수주정보' || currentStep === '소싱/발주' || currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ color: getStageColor('수주정보'), fontSize: '14px' }}>●</span>
                             <span style={{ fontSize: '11px', fontWeight: currentStep === '수주정보' ? 700 : 500, color: currentStep === '수주정보' ? '#1e293b' : '#64748b' }}>수주정보</span>
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 2 */}
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: currentStep === '소싱/발주' || currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                              <span style={{ color: getStageColor('소싱/발주'), fontSize: '14px' }}>●</span>
                               <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱/발주' ? 700 : 500, color: currentStep === '소싱/발주' ? '#1e293b' : '#64748b' }}>소싱/발주</span>
                             </div>
                             <span style={{ fontSize: '9px', color: currentStep === '소싱/발주' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
@@ -548,7 +572,7 @@ export const Orders: React.FC = () => {
                           {/* Circle 3 */}
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                              <span style={{ color: getStageColor('물류/선적'), fontSize: '14px' }}>●</span>
                               <span style={{ fontSize: '11px', fontWeight: currentStep === '물류/선적' ? 700 : 500, color: currentStep === '물류/선적' ? '#1e293b' : '#64748b' }}>물류/선적</span>
                             </div>
                             <span style={{ fontSize: '9px', color: currentStep === '물류/선적' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
@@ -566,13 +590,13 @@ export const Orders: React.FC = () => {
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 4 */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ color: getStageColor('서류관리'), fontSize: '14px' }}>●</span>
                             <span style={{ fontSize: '11px', fontWeight: currentStep === '서류관리' ? 700 : 500, color: currentStep === '서류관리' ? '#1e293b' : '#64748b' }}>서류관리</span>
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 5 */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ color: getStageColor('정산/결제'), fontSize: '14px' }}>●</span>
                             <span style={{ fontSize: '11px', fontWeight: currentStep === '정산/결제' ? 700 : 500, color: currentStep === '정산/결제' ? '#1e293b' : '#64748b' }}>정산/결제</span>
                           </div>
                         </div>
@@ -604,6 +628,7 @@ export const Orders: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </>
         )}
       </div>
 
