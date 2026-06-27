@@ -19,6 +19,7 @@ export const ProformaInvoices: React.FC = () => {
   const [weekOffset, setWeekOffset] = useState(0);
 
   const [filterCustomer, setFilterCustomer] = useState('');
+  const [filterIssuer, setFilterIssuer] = useState('All');
   const [filterPiNum, setFilterPiNum] = useState('');
 
   const getWeekRange = (offset: number) => {
@@ -183,6 +184,7 @@ export const ProformaInvoices: React.FC = () => {
       }
 
       if (filterCustomer && p.customerId !== filterCustomer) return false;
+      if (filterIssuer !== 'All' && p.issuingCompany !== filterIssuer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
       return true;
     });
@@ -205,7 +207,7 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterPiNum, sortKey, sortDir]);
+  }, [pis, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
 
   const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
     if (sortKey === key) {
@@ -531,6 +533,20 @@ export const ProformaInvoices: React.FC = () => {
           {Object.entries(customers).map(([id, c]) => (
             <option key={id} value={id}>{c.name}</option>
           ))}
+        </select>
+        
+        <select 
+          value={filterIssuer} 
+          onChange={e => setFilterIssuer(e.target.value)} 
+          style={{ 
+            padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', 
+            minWidth: '140px', fontSize: '15px', fontWeight: 600, color: '#1e293b', 
+            outline: 'none', background: '#fff' 
+          }}
+        >
+          <option value="All">🏢 전체 ISSUER</option>
+          <option value="YSACC">YSACC</option>
+          <option value="YS">영성ACC</option>
         </select>
         
         <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '220px', fontSize: '15px', outline: 'none' }} />
