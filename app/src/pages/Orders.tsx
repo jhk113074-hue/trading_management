@@ -478,7 +478,7 @@ export const Orders: React.FC = () => {
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>주문번호</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>수주사</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주사</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>발주액</th>
+                  <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textAlign: 'right' }}>발주액</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textAlign: 'center' }}>단계</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px' }}>다음단계</th>
                 </tr>
@@ -595,7 +595,7 @@ export const Orders: React.FC = () => {
                       <td style={{ padding: '14px 16px', color: '#334155', fontWeight: 600 }}>{order.customer}</td>
 
                       {/* 발주액 */}
-                      <td style={{ padding: '14px 16px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '14px 16.5px', paddingRight: '24px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', textAlign: 'right' }}>
                         ${orderAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
@@ -672,7 +672,7 @@ export const Orders: React.FC = () => {
                 {processedOrders.length > 0 && (
                   <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold', borderTop: '2.5px solid #cbd5e1' }}>
                     <td colSpan={4} style={{ padding: '14px 16px', color: '#475569', textAlign: 'right', fontSize: '13px' }}>합계</td>
-                    <td style={{ padding: '14px 16px', color: '#0f172a', whiteSpace: 'nowrap', fontSize: '13px' }}>
+                    <td style={{ padding: '14px 16.5px', paddingRight: '24px', color: '#0f172a', whiteSpace: 'nowrap', fontSize: '13px', textAlign: 'right' }}>
                       ${processedOrders.reduce((sum, order) => {
                         const pi = quotations.find(q => q.id === order.quotationId);
                         return sum + (pi?.totalUsd || order.totalAmount || 0);
