@@ -127,84 +127,89 @@ document.addEventListener('DOMContentLoaded', () => {
     const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
 
     // --- Presets Management ---
-    const presetSelect = document.getElementById('preset-select');
-    const btnDeletePreset = document.getElementById('btn-delete-preset');
-    const btnSavePreset = document.getElementById('btn-save-preset');
-    let presets = [];
+    // --- Product & Packing Method DB Management ---
+    const productSelect = document.getElementById('product-select');
+    const packingSelect = document.getElementById('packing-select');
+    let dbProducts = [];
 
-    const renderPresets = () => {
-        presetSelect.innerHTML = '<option value="">-- 자주 쓰는 화물 불러오기 --</option>';
-        presets.sort((a,b) => {
-            if(a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
-            return (a.name || '').localeCompare(b.name || '');
-        }).forEach((p) => {
+    const loadDbProducts = () => {
+        if (!window.db) return;
+        window.db.collection("companies").doc("YSACC").collection("products")
+            .onSnapshot((querySnapshot) => {
+                dbProducts = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    dbProducts.push(data);
+                });
+                dbProducts.sort((a, b) => (a.nameKo || '').localeCompare(b.nameKo || ''));
+                renderProductSelect();
+            }, (error) => {
+                console.error("Firestore products fetch error:", error);
+            });
+    };
+
+    const renderProductSelect = () => {
+        if (!productSelect) return;
+        const currentSelectedId = productSelect.value;
+        productSelect.innerHTML = '<option value="">-- 상품 선택 --</option>';
+        dbProducts.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.id;
-            opt.textContent = `${p.name} (${p.w}x${p.d}x${p.h}, Net:${p.netWeight}kg, Gross:${p.grossWeight}kg)`;
-            presetSelect.appendChild(opt);
+            opt.textContent = `${p.nameKo || p.nameEn} (${p.productCode || p.id})`;
+            productSelect.appendChild(opt);
+        });
+        if (currentSelectedId && dbProducts.some(p => p.id === currentSelectedId)) {
+            productSelect.value = currentSelectedId;
+        } else {
+            productSelect.value = "";
+            if (packingSelect) {
+                packingSelect.innerHTML = '<option value="">-- 포장방법 선택 --</option>';
+            }
+        }
+    };
+
+    const renderPackingSelect = () => {
+        if (!productSelect || !packingSelect) return;
+        const productId = productSelect.value;
+        packingSelect.innerHTML = '<option value="">-- 포장방법 선택 --</option>';
+        if (!productId) return;
+        
+        const product = dbProducts.find(p => p.id === productId);
+        if (!product || !product.packingMethods) return;
+        
+        product.packingMethods.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            const w = m.palletWidth || m.unitWidth || 0;
+            const d = m.palletLength || m.unitLength || 0;
+            const h = m.palletHeight || m.unitHeight || 0;
+            const net = m.palletWeight || m.unitWeight || 0;
+            const gross = m.palletGrossWeight || m.unitGrossWeight || 0;
+            
+            opt.textContent = `${m.name} [${m.packageType}] (${w}x${d}x${h}, Net:${net}kg, Gross:${gross}kg)`;
+            packingSelect.appendChild(opt);
         });
     };
 
-    if (btnSavePreset) {
-        btnSavePreset.addEventListener('click', () => {
-            const name = document.getElementById('item-name').value.trim();
-            const packageType = document.getElementById('item-package-type').value;
-            const contentDetails = document.getElementById('item-content-details').value.trim();
-            const w = parseFloat(document.getElementById('item-w').value);
-            const d = parseFloat(document.getElementById('item-d').value);
-            const h = parseFloat(document.getElementById('item-h').value);
-            const netWeight = parseFloat(document.getElementById('item-net-weight').value);
-            const grossWeight = parseFloat(document.getElementById('item-gross-weight').value);
-            const qty = parseInt(document.getElementById('item-qty').value, 10);
-            const stackable = document.getElementById('item-stackable').checked;
-            const rotation = document.getElementById('item-rotation').checked;
+    const clearItemInputs = () => {
+        document.getElementById('item-name').value = '';
+        document.getElementById('item-package-type').value = 'Pallet';
+        document.getElementById('item-content-details').value = '';
+        document.getElementById('item-w').value = '';
+        document.getElementById('item-d').value = '';
+        document.getElementById('item-h').value = '';
+        document.getElementById('item-net-weight').value = '';
+        document.getElementById('item-gross-weight').value = '';
+        document.getElementById('item-qty').value = '';
+        document.getElementById('item-stackable').checked = true;
+        document.getElementById('item-rotation').checked = true;
+    };
 
-            if (!name || isNaN(w) || isNaN(d) || isNaN(h) || isNaN(netWeight) || isNaN(grossWeight)) {
-                alert('자주 쓰는 화물로 저장하려면 모든 화물 정보를 올바르게 입력해주세요.');
-                return;
-            }
-
-            const preset = { 
-                id: generateId(),
-                name, packageType, contentDetails, w, d, h, netWeight, grossWeight, 
-                qty: isNaN(qty) ? 1 : qty, stackable, rotation,
-                createdAt: new Date().toISOString()
-            };
-
-            if (window.db) {
-                window.db.collection('presets').doc(preset.id).set(preset).then(() => {
-                    alert(`'${name}' 화물이 자주 쓰는 화물에 저장되었습니다.`);
-                }).catch(e => {
-                    console.error("Error saving preset:", e);
-                    alert("저장 중 오류가 발생했습니다.");
-                });
-            } else {
-                presets.push(preset);
-                renderPresets();
-                alert(`'${name}' 화물이 자주 쓰는 화물에 저장되었습니다.`);
-            }
-        });
-    }
-
-    if (btnDeletePreset) {
-        btnDeletePreset.addEventListener('click', () => {
-            const id = presetSelect.value;
-            if (!id) {
-                alert('삭제할 화물을 선택해주세요.');
-                return;
-            }
-            if (confirm('선택한 자주 쓰는 화물을 삭제하시겠습니까?')) {
-                if (window.db) {
-                    window.db.collection('presets').doc(id).delete().then(() => {
-                        // success
-                    }).catch(e => console.error("Error deleting preset:", e));
-                } else {
-                    presets = presets.filter(p => p.id !== id);
-                    renderPresets();
-                }
-            }
-        });
-    }
+    // Keep preset variables as dummies to avoid reference errors elsewhere in app.js
+    const presetSelect = productSelect;
+    let presets = [];
+    const renderPresets = () => {};
 
     if (presetExcelUploadInput) {
         presetExcelUploadInput.addEventListener('change', (e) => {
@@ -282,28 +287,351 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (presetSelect) {
-        presetSelect.addEventListener('change', () => {
-            const id = presetSelect.value;
-            if (!id) return;
-            const p = presets.find(item => item.id === id);
-            if (!p) return;
-            document.getElementById('item-name').value = p.name;
-            document.getElementById('item-package-type').value = p.packageType || 'Pallet';
-            document.getElementById('item-content-details').value = p.contentDetails || '';
-            document.getElementById('item-w').value = p.w;
-            document.getElementById('item-d').value = p.d;
-            document.getElementById('item-h').value = p.h;
-            document.getElementById('item-net-weight').value = p.netWeight || p.weight || 0;
-            document.getElementById('item-gross-weight').value = p.grossWeight || p.weight || 0;
-            document.getElementById('item-qty').value = p.qty || 1;
-            document.getElementById('item-stackable').checked = p.stackable !== undefined ? p.stackable : true;
-            document.getElementById('item-rotation').checked = p.rotation !== undefined ? p.rotation : true;
+    if (productSelect) {
+        productSelect.addEventListener('change', () => {
+            renderPackingSelect();
+            const productId = productSelect.value;
+            if (productId) {
+                const product = dbProducts.find(p => p.id === productId);
+                if (product && product.packingMethods) {
+                    const defaultMethod = product.packingMethods.find(m => m.isDefault);
+                    if (defaultMethod) {
+                        packingSelect.value = defaultMethod.id;
+                        packingSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            } else {
+                clearItemInputs();
+            }
         });
     }
 
-    // Initialize presets
-    renderPresets();
+    if (packingSelect) {
+        packingSelect.addEventListener('change', () => {
+            const productId = productSelect.value;
+            const methodId = packingSelect.value;
+            if (!productId || !methodId) {
+                clearItemInputs();
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product || !product.packingMethods) return;
+            const m = product.packingMethods.find(item => item.id === methodId);
+            if (!m) return;
+
+            document.getElementById('item-name').value = `${product.nameKo} (${m.name})`;
+            document.getElementById('item-package-type').value = m.packageType || 'Pallet';
+            document.getElementById('item-content-details').value = `${product.nameKo} / ${product.productCode || ''}`;
+            
+            const w = m.palletWidth || m.unitWidth || 0;
+            const d = m.palletLength || m.unitLength || 0;
+            const h = m.palletHeight || m.unitHeight || 0;
+            const net = m.palletWeight || m.unitWeight || 0;
+            const gross = m.palletGrossWeight || m.unitGrossWeight || 0;
+
+            document.getElementById('item-w').value = w;
+            document.getElementById('item-d').value = d;
+            document.getElementById('item-h').value = h;
+            document.getElementById('item-net-weight').value = net;
+            document.getElementById('item-gross-weight').value = gross;
+            document.getElementById('item-qty').value = 1;
+            document.getElementById('item-stackable').checked = (m.stackable !== 'N');
+            document.getElementById('item-rotation').checked = (m.rotation !== 'N');
+        });
+    }
+
+    // Modal Helper functions
+    const showModal = (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.remove('hidden');
+    };
+
+    const hideModal = (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.classList.add('hidden');
+    };
+
+    // Product Modals & Handlers
+    const btnAddProduct = document.getElementById('btn-add-product');
+    const btnEditProduct = document.getElementById('btn-edit-product');
+    const btnDeleteProduct = document.getElementById('btn-delete-product');
+    const dbProductModal = document.getElementById('db-product-modal');
+    const dbProductForm = document.getElementById('db-product-form');
+    const btnCloseDbProductModal = document.getElementById('btn-close-db-product-modal');
+    const btnCancelDbProduct = document.getElementById('btn-cancel-db-product');
+
+    if (btnAddProduct) {
+        btnAddProduct.addEventListener('click', () => {
+            document.getElementById('db-product-modal-title').innerHTML = '<i data-lucide="plus-circle"></i> 상품 추가';
+            dbProductForm.reset();
+            document.getElementById('db-product-id').value = '';
+            showModal('db-product-modal');
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (btnEditProduct) {
+        btnEditProduct.addEventListener('click', () => {
+            const productId = productSelect.value;
+            if (!productId) {
+                alert('수정할 상품을 선택해주세요.');
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            document.getElementById('db-product-modal-title').innerHTML = '<i data-lucide="edit-3"></i> 상품 수정';
+            document.getElementById('db-product-id').value = product.id;
+            document.getElementById('db-product-name-ko').value = product.nameKo || '';
+            document.getElementById('db-product-name-en').value = product.nameEn || '';
+            document.getElementById('db-product-code').value = product.productCode || '';
+            document.getElementById('db-product-unit').value = product.unit || 'KG';
+            showModal('db-product-modal');
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (btnDeleteProduct) {
+        btnDeleteProduct.addEventListener('click', () => {
+            const productId = productSelect.value;
+            if (!productId) {
+                alert('삭제할 상품을 선택해주세요.');
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            if (confirm(`'${product.nameKo}' 상품을 삭제하시겠습니까? 관련 포장 정보도 함께 제거됩니다.`)) {
+                window.db.collection('companies').doc('YSACC').collection('products').doc(productId).delete()
+                    .then(() => {
+                        alert('상품이 삭제되었습니다.');
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('삭제 중 오류가 발생했습니다.');
+                    });
+            }
+        });
+    }
+
+    if (btnCloseDbProductModal) btnCloseDbProductModal.addEventListener('click', () => hideModal('db-product-modal'));
+    if (btnCancelDbProduct) btnCancelDbProduct.addEventListener('click', () => hideModal('db-product-modal'));
+
+    if (dbProductForm) {
+        dbProductForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('db-product-id').value;
+            const nameKo = document.getElementById('db-product-name-ko').value.trim();
+            const nameEn = document.getElementById('db-product-name-en').value.trim();
+            const productCode = document.getElementById('db-product-code').value.trim();
+            const unit = document.getElementById('db-product-unit').value.trim();
+
+            if (!nameKo || !productCode) {
+                alert('필수 값을 채워주세요.');
+                return;
+            }
+
+            const ref = window.db.collection('companies').doc('YSACC').collection('products');
+            if (id) {
+                ref.doc(id).update({
+                    nameKo, nameEn, productCode, unit
+                }).then(() => {
+                    hideModal('db-product-modal');
+                }).catch(err => {
+                    console.error(err);
+                    alert('저장 중 오류 발생: ' + err.message);
+                });
+            } else {
+                ref.doc(productCode).set({
+                    nameKo, nameEn, productCode, unit,
+                    packingMethods: [],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    hideModal('db-product-modal');
+                    setTimeout(() => {
+                        productSelect.value = productCode;
+                        productSelect.dispatchEvent(new Event('change'));
+                    }, 500);
+                }).catch(err => {
+                    console.error(err);
+                    alert('저장 중 오류 발생: ' + err.message);
+                });
+            }
+        });
+    }
+
+    // Packing Method Modals & Handlers
+    const btnAddPacking = document.getElementById('btn-add-packing');
+    const btnEditPacking = document.getElementById('btn-edit-packing');
+    const btnDeletePacking = document.getElementById('btn-delete-packing');
+    const dbPackingModal = document.getElementById('db-packing-modal');
+    const dbPackingForm = document.getElementById('db-packing-form');
+    const btnCloseDbPackingModal = document.getElementById('btn-close-db-packing-modal');
+    const btnCancelDbPacking = document.getElementById('btn-cancel-db-packing');
+
+    if (btnAddPacking) {
+        btnAddPacking.addEventListener('click', () => {
+            const productId = productSelect.value;
+            if (!productId) {
+                alert('상품을 먼저 선택해주세요.');
+                return;
+            }
+            document.getElementById('db-packing-modal-title').innerHTML = '<i data-lucide="plus-circle"></i> 포장 방법 추가';
+            dbPackingForm.reset();
+            document.getElementById('db-packing-id').value = '';
+            document.getElementById('db-packing-stackable').checked = true;
+            document.getElementById('db-packing-rotation').checked = true;
+            document.getElementById('db-packing-is-default').checked = false;
+            showModal('db-packing-modal');
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (btnEditPacking) {
+        btnEditPacking.addEventListener('click', () => {
+            const productId = productSelect.value;
+            const methodId = packingSelect.value;
+            if (!productId || !methodId) {
+                alert('수정할 포장 방법을 선택해주세요.');
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product || !product.packingMethods) return;
+            const m = product.packingMethods.find(item => item.id === methodId);
+            if (!m) return;
+
+            document.getElementById('db-packing-modal-title').innerHTML = '<i data-lucide="edit-3"></i> 포장 방법 수정';
+            document.getElementById('db-packing-id').value = m.id;
+            document.getElementById('db-packing-name').value = m.name || '';
+            document.getElementById('db-packing-type').value = m.packageType || 'Pallet';
+            document.getElementById('db-packing-is-default').checked = !!m.isDefault;
+            
+            const w = m.palletWidth || m.unitWidth || '';
+            const d = m.palletLength || m.unitLength || '';
+            const h = m.palletHeight || m.unitHeight || '';
+            const net = m.palletWeight || m.unitWeight || '';
+            const gross = m.palletGrossWeight || m.unitGrossWeight || '';
+
+            document.getElementById('db-packing-w').value = w;
+            document.getElementById('db-packing-l').value = d;
+            document.getElementById('db-packing-h').value = h;
+            document.getElementById('db-packing-net').value = net;
+            document.getElementById('db-packing-gross').value = gross;
+            document.getElementById('db-packing-stackable').checked = (m.stackable !== 'N');
+            document.getElementById('db-packing-rotation').checked = (m.rotation !== 'N');
+            
+            showModal('db-packing-modal');
+            if (window.lucide) window.lucide.createIcons();
+        });
+    }
+
+    if (btnDeletePacking) {
+        btnDeletePacking.addEventListener('click', () => {
+            const productId = productSelect.value;
+            const methodId = packingSelect.value;
+            if (!productId || !methodId) {
+                alert('삭제할 포장 방법을 선택해주세요.');
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product || !product.packingMethods) return;
+            const m = product.packingMethods.find(item => item.id === methodId);
+            if (!m) return;
+
+            if (confirm(`'${m.name}' 포장 방법을 삭제하시겠습니까?`)) {
+                const nextMethods = product.packingMethods.filter(item => item.id !== methodId);
+                window.db.collection('companies').doc('YSACC').collection('products').doc(productId).update({
+                    packingMethods: nextMethods
+                }).then(() => {
+                    alert('포장 방법이 삭제되었습니다.');
+                }).catch(err => {
+                    console.error(err);
+                    alert('삭제 중 오류가 발생했습니다.');
+                });
+            }
+        });
+    }
+
+    if (btnCloseDbPackingModal) btnCloseDbPackingModal.addEventListener('click', () => hideModal('db-packing-modal'));
+    if (btnCancelDbPacking) btnCancelDbPacking.addEventListener('click', () => hideModal('db-packing-modal'));
+
+    if (dbPackingForm) {
+        dbPackingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const productId = productSelect.value;
+            if (!productId) return;
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            const id = document.getElementById('db-packing-id').value || generateId();
+            const name = document.getElementById('db-packing-name').value.trim();
+            const packageType = document.getElementById('db-packing-type').value;
+            const isDefault = document.getElementById('db-packing-is-default').checked;
+            const w = parseFloat(document.getElementById('db-packing-w').value);
+            const d = parseFloat(document.getElementById('db-packing-l').value);
+            const h = parseFloat(document.getElementById('db-packing-h').value);
+            const net = parseFloat(document.getElementById('db-packing-net').value);
+            const gross = parseFloat(document.getElementById('db-packing-gross').value);
+            const stackable = document.getElementById('db-packing-stackable').checked ? 'Y' : 'N';
+            const rotation = document.getElementById('db-packing-rotation').checked ? 'Y' : 'N';
+
+            if (!name || isNaN(w) || isNaN(d) || isNaN(h) || isNaN(net) || isNaN(gross)) {
+                alert('필수 값을 모두 올바르게 채워주세요.');
+                return;
+            }
+
+            const newMethod = {
+                id,
+                name,
+                packageType,
+                unit: product.unit || 'KG',
+                isDefault,
+                stackable,
+                rotation,
+                palletWidth: w,
+                palletLength: d,
+                palletHeight: h,
+                palletWeight: net,
+                palletGrossWeight: gross,
+                unitWidth: w,
+                unitLength: d,
+                unitHeight: h,
+                unitWeight: net,
+                unitGrossWeight: gross
+            };
+
+            let nextMethods = [...(product.packingMethods || [])];
+            const existingIndex = nextMethods.findIndex(item => item.id === id);
+            
+            if (existingIndex > -1) {
+                nextMethods[existingIndex] = newMethod;
+            } else {
+                nextMethods.push(newMethod);
+            }
+
+            if (isDefault) {
+                nextMethods = nextMethods.map(item => {
+                    if (item.id !== id) {
+                        return { ...item, isDefault: false };
+                    }
+                    return item;
+                });
+            }
+
+            window.db.collection('companies').doc('YSACC').collection('products').doc(productId).update({
+                packingMethods: nextMethods
+            }).then(() => {
+                hideModal('db-packing-modal');
+                setTimeout(() => {
+                    packingSelect.value = id;
+                    packingSelect.dispatchEvent(new Event('change'));
+                }, 500);
+            }).catch(err => {
+                console.error(err);
+                alert('저장 중 오류 발생: ' + err.message);
+            });
+        });
+    }
 
     const getSelectedContainers = () => {
         let containers = [];
@@ -1652,31 +1980,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Firebase Realtime Listener & Migration
     if (window.db) {
-        // Migrate existing local presets to Firebase
-        const localPresets = JSON.parse(safeLocalStorage.getItem('antigravity_presets') || '[]');
-        if (localPresets.length > 0) {
-            const batch = window.db.batch();
-            localPresets.forEach(preset => {
-                preset.id = preset.id || generateId();
-                preset.createdAt = preset.createdAt || new Date().toISOString();
-                const docRef = window.db.collection('presets').doc(preset.id);
-                batch.set(docRef, preset);
-            });
-            batch.commit().then(() => {
-                safeLocalStorage.removeItem('antigravity_presets');
-                console.log('Local presets migrated to Firebase');
-            }).catch(e => console.error("Presets migration error:", e));
-        }
-
-        window.db.collection("presets").onSnapshot((querySnapshot) => {
-            presets = [];
-            querySnapshot.forEach((doc) => {
-                presets.push(doc.data());
-            });
-            renderPresets();
-        }, (error) => {
-            console.error("Firebase presets fetch error:", error);
-        });
+        loadDbProducts();
 
         // Migrate existing local projects to Firebase
         const localProjects = JSON.parse(safeLocalStorage.getItem('loading_projects') || '[]');

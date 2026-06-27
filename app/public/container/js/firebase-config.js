@@ -1,11 +1,11 @@
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAQqhOPbu5om2Zg5OEWTHk1BMmuOuI7YWA",
-  authDomain: "container-packer-1a187.firebaseapp.com",
-  projectId: "container-packer-1a187",
-  storageBucket: "container-packer-1a187.firebasestorage.app",
-  messagingSenderId: "856160400299",
-  appId: "1:856160400299:web:adedddfad878b33dbb98ee"
+  apiKey: "AIzaSyB6w0sak_vV3AwW6iSypq2XfRJmt-LBWPw",
+  authDomain: "tradingmanagement-c1cf4.firebaseapp.com",
+  projectId: "tradingmanagement-c1cf4",
+  storageBucket: "tradingmanagement-c1cf4.firebasestorage.app",
+  messagingSenderId: "1033735327012",
+  appId: "1:1033735327012:web:b0d235d08ef2f8856cf7b1"
 };
 
 // Initialize Firebase using compat libraries (loaded via CDN)

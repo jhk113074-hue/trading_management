@@ -83,14 +83,25 @@
 
                 <section class="card item-form">
                     <h2><i data-lucide="layers"></i> 화물(팔레트) 추가</h2>
-                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                        <select id="preset-select" style="flex: 1;">
-                            <option value="">-- 자주 쓰는 화물 불러오기 --</option>
-                        </select>
-                        <button type="button" id="btn-download-preset-template" class="btn btn-outline" style="padding: 0 10px;" title="즐겨찾기 엑셀 양식 다운로드"><i data-lucide="download"></i></button>
-                        <label for="preset-excel-upload" class="btn btn-outline" style="padding: 0 10px; margin: 0; cursor: pointer;" title="엑셀에서 즐겨찾기 목록 일괄 불러오기"><i data-lucide="file-spreadsheet"></i></label>
-                        <input type="file" id="preset-excel-upload" accept=".xlsx, .xls" style="display: none;">
-                        <button type="button" id="btn-delete-preset" class="btn btn-outline" style="padding: 0 10px;" title="선택된 즐겨찾기 삭제"><i data-lucide="trash-2"></i></button>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 10px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="width: 70px; font-weight: 600; font-size: 0.8rem;">상품 선택</label>
+                            <select id="product-select" style="flex: 1;">
+                                <option value="">-- 상품 선택 --</option>
+                            </select>
+                            <button type="button" id="btn-add-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="새 상품 추가"><i data-lucide="plus"></i></button>
+                            <button type="button" id="btn-edit-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 수정"><i data-lucide="edit-3"></i></button>
+                            <button type="button" id="btn-delete-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 삭제"><i data-lucide="trash-2"></i></button>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <label style="width: 70px; font-weight: 600; font-size: 0.8rem;">포장 방법</label>
+                            <select id="packing-select" style="flex: 1;">
+                                <option value="">-- 포장방법 선택 --</option>
+                            </select>
+                            <button type="button" id="btn-add-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="새 포장방법 추가"><i data-lucide="plus"></i></button>
+                            <button type="button" id="btn-edit-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 포장방법 수정"><i data-lucide="edit-3"></i></button>
+                            <button type="button" id="btn-delete-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2"></i></button>
+                        </div>
                     </div>
                     <form id="add-item-form">
                         <input type="hidden" id="edit-item-id" value="">
@@ -167,7 +178,7 @@
                                 <button type="button" id="btn-cancel-edit" class="btn btn-secondary hidden" style="flex:1;">취소</button>
                                 <button type="submit" id="btn-submit-item" class="btn btn-primary" style="flex:2;">리스트에 추가</button>
                             </div>
-                            <button type="button" id="btn-save-preset" class="btn btn-outline full-width">⭐ 현재 입력값을 즐겨찾기로 저장</button>
+                            <button type="button" id="btn-save-preset" class="btn btn-outline full-width hidden">⭐ 현재 입력값을 즐겨찾기로 저장</button>
                         </div>
                     </form>
                 </section>
@@ -481,6 +492,130 @@
                     <div class="form-actions" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
                         <button type="button" id="btn-cancel-merge" class="btn btn-secondary" style="flex:1;">취소</button>
                         <button type="submit" class="btn btn-primary" style="flex:2;">병합하여 리스트에 추가</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Product Edit/Add Modal -->
+    <div id="db-product-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2 id="db-product-modal-title"><i data-lucide="plus-circle"></i> 상품 추가/수정</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-db-product-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="db-product-form">
+                    <input type="hidden" id="db-product-id">
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="db-product-name-ko">상품명 (국문) *</label>
+                        <input type="text" id="db-product-name-ko" required placeholder="예: 유리섬유 직물 (파이버글라스)">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="db-product-name-en">상품명 (영문)</label>
+                        <input type="text" id="db-product-name-en" placeholder="예: E-Glass Fiber Woven Roving">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="db-product-code">상품코드 *</label>
+                        <input type="text" id="db-product-code" required placeholder="예: PROD-FG-EWR600">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="db-product-unit">기본 단위</label>
+                        <input type="text" id="db-product-unit" placeholder="예: KG, EA, Roll" value="KG">
+                    </div>
+                    <div class="form-actions" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <button type="button" id="btn-cancel-db-product" class="btn btn-secondary" style="flex:1;">취소</button>
+                        <button type="submit" class="btn btn-primary" style="flex:2;">저장</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Packing Method Edit/Add Modal -->
+    <div id="db-packing-modal" class="modal-backdrop hidden">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 id="db-packing-modal-title"><i data-lucide="plus-circle"></i> 포장 방법 추가/수정</h2>
+                <button type="button" class="btn-close-modal" id="btn-close-db-packing-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="db-packing-form">
+                    <input type="hidden" id="db-packing-id">
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label for="db-packing-name">포장명 *</label>
+                        <input type="text" id="db-packing-name" required placeholder="예: Pallet 적재, Pail 단품">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0.75rem;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="db-packing-type">포장 형태 *</label>
+                            <select id="db-packing-type" required>
+                                <option value="Pallet">Pallet</option>
+                                <option value="Wooden Box">Wooden Box</option>
+                                <option value="Carton">Carton Box</option>
+                                <option value="Drum">Drum</option>
+                                <option value="Pail">Pail</option>
+                                <option value="IBC">IBC</option>
+                                <option value="Other">기타</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="db-packing-is-default" style="display: flex; align-items: center; gap: 6px; margin-top: 24px; cursor: pointer; font-size: 0.85rem;">
+                                <input type="checkbox" id="db-packing-is-default" style="width: auto; margin-right: 4px;"> 기본 포장방법
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; margin-bottom: 10px; background-color: var(--bg-secondary);">
+                        <div style="font-weight: 600; font-size: 0.85rem; color: #2563eb; margin-bottom: 8px;">📦 규격 정보 (가로/세로/높이는 mm 단위)</div>
+                        <div class="form-row triplet" style="margin-bottom: 0.5rem;">
+                            <div class="form-group">
+                                <label for="db-packing-w">가로 (Width, mm)</label>
+                                <input type="number" id="db-packing-w" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="db-packing-l">세로 (Length, mm)</label>
+                                <input type="number" id="db-packing-l" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="db-packing-h">높이 (Height, mm)</label>
+                                <input type="number" id="db-packing-h" required min="1">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-bottom: 0.5rem;">
+                            <div class="form-group">
+                                <label for="db-packing-net">순중량 (Net wt, kg)</label>
+                                <input type="number" id="db-packing-net" required min="0" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="db-packing-gross">총중량 (Gross wt, kg)</label>
+                                <input type="number" id="db-packing-gross" required min="0.1" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row switch-row" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                        <div class="switch-group" style="display: flex; align-items: center; gap: 8px;">
+                            <label class="switch">
+                                <input type="checkbox" id="db-packing-stackable" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>다단 적재 허용</span>
+                        </div>
+                        <div class="switch-group" style="display: flex; align-items: center; gap: 8px;">
+                            <label class="switch">
+                                <input type="checkbox" id="db-packing-rotation" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>회전 허용 (수평)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                        <button type="button" id="btn-cancel-db-packing" class="btn btn-secondary" style="flex:1;">취소</button>
+                        <button type="submit" class="btn btn-primary" style="flex:2;">저장</button>
                     </div>
                 </form>
             </div>
