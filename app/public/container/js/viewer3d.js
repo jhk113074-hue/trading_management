@@ -68,7 +68,7 @@ class Viewer3D {
         const width = this.container.clientWidth;
         // Keep a 4:3 or 16:9 aspect ratio if height isn't constrained, or just match container
         // Since container height is 0 initially, let's force a height based on width
-        const height = width * 0.6; 
+        const height = width * 0.42; 
         this.container.style.height = height + 'px';
         
         this.renderer.setSize(width, height);

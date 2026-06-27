@@ -528,7 +528,8 @@ input:checked + .slider:before { transform: translateX(16px); }
 }
 .canvas-wrapper {
     width: 100%;
-    margin-top: 1rem;
+    max-width: 70%;
+    margin: 1rem auto 0 auto;
     background: #f8fafc;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
