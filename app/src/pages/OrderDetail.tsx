@@ -8685,6 +8685,40 @@ export const OrderDetail: React.FC = () => {
                             );
                           })
                         )}
+
+                        {/* 대금 수금 합계 (Total Row) */}
+                        {basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.length > 0 && (() => {
+                          const totalDeposit = basicForm.paymentCollectedInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const totalFee = basicForm.paymentCollectedInstallments.reduce((sum, inst) => sum + (inst.fee || 0), 0);
+                          const totalConsolidated = basicForm.paymentCollectedInstallments.reduce((sum, inst) => sum + (inst.total || 0), 0);
+
+                          return (
+                            <div style={{ border: '2px solid #2563eb', borderRadius: '8px', padding: '12px', background: '#eff6ff', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginTop: '10px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#2563eb', minWidth: '60px' }}>🧮 합계</span>
+                              
+                              <div style={{ display: 'flex', gap: '20px', marginLeft: 'auto' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '10.5px', color: '#64748b' }}>총 입금액 합계</span>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                                    {totalDeposit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '10.5px', color: '#64748b' }}>총 은행수수료 합계</span>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                                    {totalFee.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '10.5px', color: '#64748b' }}>총 수금총액 합계</span>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#2563eb' }}>
+                                    {totalConsolidated.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       {/* 수금 통화별 합계 요약 기록 */}
