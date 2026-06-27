@@ -461,8 +461,8 @@ export const Orders: React.FC = () => {
           <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>등록된 주문 정보가 없습니다.</div>
         ) : (
           <>
-            {/* 단계 색상 범례 (Color Legend) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
+            {/* 단계 색상 범례 (Color Legend) - 오른쪽 정렬 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 700, color: '#475569' }}>💡 단계 색상 안내:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#10b981', fontSize: '14px' }}>●</span> 완료됨</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#2563eb', fontSize: '14px' }}>●</span> 진행중 (정상)</div>
