@@ -1219,7 +1219,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.className = 'cargo-card';
                 card.innerHTML = `
                     <div class="cargo-card-header">
-                        <span class="cargo-card-title">${item.name}</span>
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden;">
+                            <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; margin: 0;">
+                            <span class="cargo-card-title" style="flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${item.name}</span>
+                        </div>
                         <div class="cargo-card-actions">
                             <button type="button" class="cargo-card-action-btn" onclick="duplicateItem('${item.id}')" title="복사"><i data-lucide="copy" style="width:14px; height:14px;"></i></button>
                             <button type="button" class="cargo-card-action-btn" onclick="editItem('${item.id}')" title="수정"><i data-lucide="edit-2" style="width:14px; height:14px;"></i></button>
