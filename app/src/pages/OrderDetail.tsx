@@ -98,6 +98,17 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
   );
 };
 
+const toCommaString = (val: string | number | undefined): string => {
+  if (val === undefined || val === null || val === '') return '';
+  const clean = String(val).replace(/[^0-9]/g, '');
+  if (!clean) return '';
+  return Number(clean).toLocaleString();
+};
+
+const fromCommaString = (val: string): number => {
+  return Number(val.replace(/[^0-9]/g, '')) || 0;
+};
+
 const steps = ["수주정보", "소싱/발주", "물류/선적", "서류관리", "정산/결제", "변경이력"] as const;
 
 export const OrderDetail: React.FC = () => {
@@ -7731,16 +7742,19 @@ export const OrderDetail: React.FC = () => {
 
                                       {/* 공급가액 */}
                                       <input
-                                        type="number"
+                                        type="text"
                                         placeholder="₩ 공급가액"
-                                        value={details.supplyAmount || ''}
+                                        value={toCommaString(details.supplyAmount)}
                                         onChange={e => {
-                                          const val = e.target.value;
-                                          const numVal = val === '' ? 0 : Number(val);
+                                          const valNum = fromCommaString(e.target.value);
                                           const isZeroTax = basicForm.supplierTaxTypes[supplier] === '영세';
-                                          const calculatedVat = isZeroTax ? 0 : Math.round(numVal * 0.1);
+                                          const calculatedVat = isZeroTax ? 0 : Math.round(valNum * 0.1);
                                           const newList = [...list];
-                                          newList[idx] = { ...newList[idx], supplyAmount: val, vatAmount: String(calculatedVat) };
+                                          newList[idx] = { 
+                                            ...newList[idx], 
+                                            supplyAmount: String(valNum), 
+                                            vatAmount: String(calculatedVat) 
+                                          };
                                           setBasicForm(prev => ({
                                             ...prev,
                                             supplierTaxInvoiceDetails: {
@@ -7749,18 +7763,18 @@ export const OrderDetail: React.FC = () => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
                                       />
 
                                       {/* 부가세 */}
                                       <input
-                                        type="number"
+                                        type="text"
                                         placeholder="₩ 부가세"
-                                        value={details.vatAmount || ''}
+                                        value={toCommaString(details.vatAmount)}
                                         onChange={e => {
-                                          const val = e.target.value;
+                                          const valNum = fromCommaString(e.target.value);
                                           const newList = [...list];
-                                          newList[idx] = { ...newList[idx], vatAmount: val };
+                                          newList[idx] = { ...newList[idx], vatAmount: String(valNum) };
                                           setBasicForm(prev => ({
                                             ...prev,
                                             supplierTaxInvoiceDetails: {
@@ -7769,7 +7783,7 @@ export const OrderDetail: React.FC = () => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
                                       />
 
                                       {/* 합계금액 */}
@@ -8013,13 +8027,13 @@ export const OrderDetail: React.FC = () => {
                                       />
                                       {/* 공급가액 */}
                                       <input
-                                        type="number"
+                                        type="text"
                                         placeholder="₩ 공급가액"
-                                        value={displaySupplyVal || ''}
+                                        value={toCommaString(displaySupplyVal)}
                                         onChange={e => {
-                                          const val = parseFloat(e.target.value) || 0;
-                                          const newList = [...taxInvoices];
+                                          const val = fromCommaString(e.target.value);
                                           const autoVat = Math.round(val * 0.1);
+                                          const newList = [...taxInvoices];
                                           newList[invIdx].supplyValue = val;
                                           newList[invIdx].vat = autoVat;
                                           newList[invIdx].amount = val + autoVat;
@@ -8029,11 +8043,11 @@ export const OrderDetail: React.FC = () => {
                                       />
                                       {/* 부가세액 */}
                                       <input
-                                        type="number"
+                                        type="text"
                                         placeholder="₩ 부가세"
-                                        value={displayVat || ''}
+                                        value={toCommaString(displayVat)}
                                         onChange={e => {
-                                          const val = parseFloat(e.target.value) || 0;
+                                          const val = fromCommaString(e.target.value);
                                           const newList = [...taxInvoices];
                                           const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : (newList[invIdx].amount || 0);
                                           newList[invIdx].vat = val;
