@@ -1068,14 +1068,21 @@ export const OrderDetail: React.FC = () => {
         if (!initialLoadRef.current) {
           const params = new URLSearchParams(window.location.search);
           const urlStep = params.get('step');
-          if (urlStep && steps.includes(urlStep as any)) {
-            setActiveStep(urlStep as any);
+          if (urlStep) {
+            let targetStep = "수주정보";
+            if (urlStep === 'PO접수' || urlStep === '수주정보') targetStep = '수주정보';
+            else if (urlStep === '소싱발주' || urlStep === '소싱/발주') targetStep = '소싱/발주';
+            else if (urlStep === '물류/선적') targetStep = '물류/선적';
+            else if (urlStep === '수출관리' || urlStep === '서류관리') targetStep = '서류관리';
+            else if (urlStep === '정산마감' || urlStep === '정산/결제') targetStep = '정산/결제';
+            else if (urlStep === '변경이력(Log)' || urlStep === '변경이력') targetStep = '변경이력';
+            setActiveStep(targetStep as any);
           } else if (data.status) {
             const mappedStatus = 
-              data.status === '주문' ? 'PO접수' :
-              data.status === '발주' ? '소싱발주' :
-              data.status === '선적관리' ? '수출관리' :
-              data.status === '이익관리' ? '정산마감' : 'PO접수';
+              data.status === '주문' ? '수주정보' :
+              data.status === '발주' ? '소싱/발주' :
+              data.status === '선적관리' ? '물류/선적' :
+              data.status === '이익관리' ? '정산/결제' : '수주정보';
             setActiveStep(mappedStatus as any);
           }
           initialLoadRef.current = true;
@@ -1306,10 +1313,11 @@ export const OrderDetail: React.FC = () => {
       
       const sourcingTabToSave = tabIdOverride || activeSourcingTab;
       const stepToSave = stepNameOverride || activeStep;
-      const mappedStatus = stepToSave === 'PO접수' ? '주문' : 
-                           stepToSave === '소싱발주' ? '발주' :
-                           stepToSave === '수출관리' ? '선적관리' :
-                           stepToSave === '정산마감' ? '이익관리' : null;
+      const mappedStatus = stepToSave === '수주정보' ? '주문' : 
+                           stepToSave === '소싱/발주' ? '발주' :
+                           stepToSave === '물류/선적' ? '선적관리' :
+                           stepToSave === '서류관리' ? '선적관리' :
+                           stepToSave === '정산/결제' ? '이익관리' : null;
 
       if (mappedStatus && order.status !== mappedStatus) {
         changes.push(`진행단계 변경: "${order.status || ''}" → "${mappedStatus}"`);

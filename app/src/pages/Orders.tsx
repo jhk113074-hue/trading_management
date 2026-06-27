@@ -99,7 +99,7 @@ export const Orders: React.FC = () => {
         return { text: '거래조건(인코텀즈/결제조건) 확인 필요', level: 'WHITE', step: '수주정보' };
       }
       // Default
-      return { text: '소싱 발주 단계로 진행 필요', level: 'WHITE', step: '수주정보' };
+      return { text: '소싱/발주 단계로 진행 필요', level: 'WHITE', step: '수주정보' };
     }
 
     // 2. 소싱/발주
@@ -121,7 +121,7 @@ export const Orders: React.FC = () => {
         }
       }
 
-      return { text: '물류/선적 단계로 진행 필요', level: 'WHITE', step: '물류/선적' };
+      return { text: '물류/선적 단계로 진행 필요', level: 'WHITE', step: '소싱/발주' };
     }
 
     // 3. 물류/선적
@@ -487,7 +487,7 @@ export const Orders: React.FC = () => {
                   return (
                     <tr 
                       key={order.id}
-                      onClick={() => navigate(`/orders/${order.id}?step=PO접수`)}
+                      onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
                       style={{
                         borderBottom: '1px solid #f1f5f9',
                         cursor: 'pointer', transition: 'background-color 0.15s'
