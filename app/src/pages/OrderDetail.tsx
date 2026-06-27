@@ -961,6 +961,10 @@ export const OrderDetail: React.FC = () => {
           setIsPackerModalOpen(false);
           alert('컨테이너 적재 시뮬레이션 결과가 파일보관함에 보관되었습니다.');
         }
+      } else if (data && data.type === 'REQUEST_PRODUCT_SEARCH') {
+        (window as any).activePackerWindow = event.source;
+        setSearchItemIndex(-999);
+        setIsProductSearchOpen(true);
       } else if (data && data.type === 'IFRAME_READY') {
         if (isOpeningArchiveRef.current) {
           isOpeningArchiveRef.current = false;
@@ -8724,7 +8728,14 @@ export const OrderDetail: React.FC = () => {
             setIsSourcingSearch(false);
           }}
           onSelect={(prod) => {
-            if (isSourcingSearch) {
+            if (searchItemIndex === -999) {
+              if ((window as any).activePackerWindow) {
+                (window as any).activePackerWindow.postMessage({
+                  type: 'SELECT_PRODUCT_RESPONSE',
+                  product: prod
+                }, '*');
+              }
+            } else if (isSourcingSearch) {
               handleSelectSourcingProduct(searchItemIndex, prod);
             } else {
               handleSelectProduct(searchItemIndex, prod);

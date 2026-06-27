@@ -470,10 +470,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnSearchProduct) {
         btnSearchProduct.addEventListener('click', () => {
-            if (dbProductSearchInput) dbProductSearchInput.value = '';
-            renderSearchModalTable();
-            showModal('product-search-modal');
-            if (dbProductSearchInput) dbProductSearchInput.focus();
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'REQUEST_PRODUCT_SEARCH' }, '*');
+            } else {
+                if (dbProductSearchInput) dbProductSearchInput.value = '';
+                renderSearchModalTable();
+                showModal('product-search-modal');
+                if (dbProductSearchInput) dbProductSearchInput.focus();
+            }
         });
     }
 
@@ -2397,6 +2401,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('불러올 수 있는 화물이 없습니다.');
                 }
                 renderItems();
+            }
+        } else if (data && data.type === 'SELECT_PRODUCT_RESPONSE') {
+            console.log("Received selected product from parent:", data.product);
+            const p = data.product;
+            if (p) {
+                const exists = dbProducts.find(item => item.id === p.id || item.productCode === p.productCode);
+                if (!exists) {
+                    dbProducts.push(p);
+                }
+                if (productSelect) {
+                    let opt = productSelect.querySelector(`option[value="${p.id}"]`);
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.nameKo || p.nameEn || p.id;
+                        productSelect.appendChild(opt);
+                    }
+                    productSelect.value = p.id;
+                    renderProductSelect();
+                    productSelect.dispatchEvent(new Event('change'));
+                }
             }
         }
     });
