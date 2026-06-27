@@ -1058,6 +1058,48 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('item-stackable').checked = item.stackable;
         document.getElementById('item-rotation').checked = item.rotation;
 
+        // Auto-populate visible product displays & packing select in the UI
+        let matchedProductId = '';
+        const codeMatch = (item.name || '').match(/^\[(.*?)\]/);
+        if (codeMatch) {
+            const productCode = codeMatch[1];
+            const prod = dbProducts.find(p => p.productCode === productCode || p.id === productCode);
+            if (prod) {
+                matchedProductId = prod.id;
+            }
+        }
+        if (!matchedProductId) {
+            const prod = dbProducts.find(p => p.nameKo === item.name || p.nameEn === item.name);
+            if (prod) {
+                matchedProductId = prod.id;
+            }
+        }
+
+        if (matchedProductId) {
+            const productSelect = document.getElementById('product-select');
+            if (productSelect) {
+                productSelect.value = matchedProductId;
+                renderProductSelect();
+                renderPackingSelect();
+                
+                const product = dbProducts.find(p => p.id === matchedProductId);
+                if (product && product.packingMethods) {
+                    const method = product.packingMethods.find(m => 
+                        (m.palletWidth === item.w && m.palletLength === item.d && m.palletHeight === item.h) ||
+                        m.methodName === item.packageType
+                    );
+                    if (method) {
+                        const packingSelect = document.getElementById('packing-select');
+                        if (packingSelect) packingSelect.value = method.id || method.methodName || '';
+                    }
+                }
+            }
+        } else {
+            const productSelect = document.getElementById('product-select');
+            if (productSelect) productSelect.value = '';
+            renderProductSelect();
+        }
+
         if (btnSubmitItem) btnSubmitItem.textContent = '수정 완료';
         if (btnCancelEdit) btnCancelEdit.classList.remove('hidden');
 
