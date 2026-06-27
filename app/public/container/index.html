@@ -107,7 +107,47 @@
                 </div>
             </section>
 
-            <!-- Right Column: Sidebar -->
+            <!-- Column 2: Simulation Actions, Stats, and Unloaded Items (Middle Column) -->
+            <section class="middle-content" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <!-- Sidebar Simulation Actions & Stats Summary -->
+                <section class="sidebar-sim-summary" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button type="button" class="btn btn-secondary" id="btn-print-preview" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="printer"></i> 인쇄 미리보기</button>
+                        <button type="button" class="btn btn-primary" id="btn-run-simulation" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="play"></i> 시뮬레이션 실행</button>
+                    </div>
+
+                    <!-- Dynamic Simulation Summary Widgets Container -->
+                    <div id="sidebar-stats-container" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- JS will dynamically inject the stats cards here -->
+                    </div>
+                </section>
+
+                <!-- Unloaded Items Card -->
+                <div class="card unloaded-items" style="margin-top: 0;">
+                    <div class="card-header" style="padding: 10px 12px; margin-bottom: 0;">
+                        <h2 style="font-size: 0.9rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;"><i data-lucide="package-x"></i> 미적재 화물</h2>
+                    </div>
+                    <ul class="unloaded-list" id="unloaded-list" style="padding: 8px; font-size: 0.8rem; list-style: none;">
+                        <li class="empty-list">시뮬레이션 결과가 없습니다.</li>
+                    </ul>
+                    
+                    <div id="unloaded-add-container-ui" class="hidden" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding: 8px;">
+                        <h3 style="font-size: 0.8rem; margin-bottom: 6px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
+                        <div style="display: flex; gap: 6px;">
+                            <select id="unloaded-add-type" style="flex: 1; height: 28px; font-size: 0.8rem; padding: 2px 6px;">
+                                <option value="LCL">LCL (소량 화물)</option>
+                                <option value="20GP">20GP (일반 20ft)</option>
+                                <option value="20RF">20RF (냉동 20ft)</option>
+                                <option value="40GP">40GP (일반 40ft)</option>
+                                <option value="40HC">40HC (하이큐빅)</option>
+                            </select>
+                            <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm" style="height: 28px; padding: 0 10px; font-size: 0.8rem;"><i data-lucide="plus"></i> 추가</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column 3: Container Inputs & Cargo List (Right Column) -->
             <aside class="sidebar">
                 <!-- Container Quantity Select Block -->
                 <section class="card container-select" style="padding: 12px; gap: 8px;">
@@ -201,43 +241,6 @@
                     
                     <button type="button" id="btn-open-cargo-modal" class="btn btn-outline" style="width: 100%; border: 1px dashed #2563eb; color: #2563eb; font-weight: 600; padding: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="plus" style="width: 16px; height: 16px;"></i> 화물 추가</button>
                 </section>
-
-                <!-- Sidebar Simulation Actions & Stats Summary -->
-                <section class="sidebar-sim-summary" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <div style="display: flex; gap: 8px; width: 100%;">
-                        <button type="button" class="btn btn-secondary" id="btn-print-preview" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="printer"></i> 인쇄 미리보기</button>
-                        <button type="button" class="btn btn-primary" id="btn-run-simulation" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="play"></i> 시뮬레이션 실행</button>
-                    </div>
-
-                    <!-- Dynamic Simulation Summary Widgets Container -->
-                    <div id="sidebar-stats-container" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
-                        <!-- JS will dynamically inject the stats cards here -->
-                    </div>
-                </section>
-
-                <!-- Unloaded Items Card (Moved to Sidebar) -->
-                <div class="card unloaded-items" style="margin-top: 10px;">
-                    <div class="card-header" style="padding: 10px 12px; margin-bottom: 0;">
-                        <h2 style="font-size: 0.9rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;"><i data-lucide="package-x"></i> 미적재 화물</h2>
-                    </div>
-                    <ul class="unloaded-list" id="unloaded-list" style="padding: 8px; font-size: 0.8rem; list-style: none;">
-                        <li class="empty-list">시뮬레이션 결과가 없습니다.</li>
-                    </ul>
-                    
-                    <div id="unloaded-add-container-ui" class="hidden" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding: 8px;">
-                        <h3 style="font-size: 0.8rem; margin-bottom: 6px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
-                        <div style="display: flex; gap: 6px;">
-                            <select id="unloaded-add-type" style="flex: 1; height: 28px; font-size: 0.8rem; padding: 2px 6px;">
-                                <option value="LCL">LCL (소량 화물)</option>
-                                <option value="20GP">20GP (일반 20ft)</option>
-                                <option value="20RF">20RF (냉동 20ft)</option>
-                                <option value="40GP">40GP (일반 40ft)</option>
-                                <option value="40HC">40HC (하이큐빅)</option>
-                            </select>
-                            <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm" style="height: 28px; padding: 0 10px; font-size: 0.8rem;"><i data-lucide="plus"></i> 추가</button>
-                        </div>
-                    </div>
-                </div>
             </aside>
         </main>
     </div>
