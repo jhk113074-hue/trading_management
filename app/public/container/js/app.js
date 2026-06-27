@@ -320,13 +320,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (productSelect) {
         productSelect.addEventListener('change', () => {
+            console.log("productSelect changed. Current value:", productSelect.value);
             renderPackingSelect();
             const productId = productSelect.value;
             if (productId) {
                 const product = dbProducts.find(p => p.id === productId);
-                if (product && product.packingMethods) {
-                    const defaultMethod = product.packingMethods.find(m => m.isDefault);
+                console.log("Found product:", product);
+                if (product && product.packingMethods && product.packingMethods.length > 0) {
+                    const defaultMethod = product.packingMethods.find(m => m.isDefault) || product.packingMethods[0];
                     if (defaultMethod) {
+                        console.log("Auto-selecting method:", defaultMethod.id);
                         packingSelect.value = defaultMethod.id;
                         packingSelect.dispatchEvent(new Event('change'));
                     }
@@ -339,35 +342,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (packingSelect) {
         packingSelect.addEventListener('change', () => {
+            console.log("packingSelect changed. Current value:", packingSelect.value);
             const productId = productSelect.value;
             const methodId = packingSelect.value;
+            console.log("productId:", productId, "methodId:", methodId);
             if (!productId || !methodId) {
                 clearItemInputs();
                 return;
             }
             const product = dbProducts.find(p => p.id === productId);
+            console.log("Product for packing select:", product);
             if (!product || !product.packingMethods) return;
             const m = product.packingMethods.find(item => item.id === methodId);
+            console.log("Packing method found:", m);
             if (!m) return;
 
-            document.getElementById('item-name').value = `${product.nameKo} (${m.name})`;
-            document.getElementById('item-package-type').value = m.packageType || 'Pallet';
-            document.getElementById('item-content-details').value = `${product.nameKo} / ${product.productCode || ''}`;
-            
-            const w = m.palletWidth || m.unitWidth || 0;
-            const d = m.palletLength || m.unitLength || 0;
-            const h = m.palletHeight || m.unitHeight || 0;
-            const net = m.palletWeight || m.unitWeight || 0;
-            const gross = m.palletGrossWeight || m.unitGrossWeight || 0;
+            try {
+                const nameInput = document.getElementById('item-name');
+                const typeSelect = document.getElementById('item-package-type');
+                const detailsTextarea = document.getElementById('item-content-details');
+                
+                if (nameInput) nameInput.value = `${product.nameKo} (${m.name})`;
+                if (typeSelect) typeSelect.value = m.packageType || 'Pallet';
+                if (detailsTextarea) detailsTextarea.value = `${product.nameKo} / ${product.productCode || ''}`;
+                
+                const w = m.palletWidth || m.unitWidth || 0;
+                const d = m.palletLength || m.unitLength || 0;
+                const h = m.palletHeight || m.unitHeight || 0;
+                const net = m.palletWeight || m.unitWeight || 0;
+                const gross = m.palletGrossWeight || m.unitGrossWeight || 0;
 
-            document.getElementById('item-w').value = w;
-            document.getElementById('item-d').value = d;
-            document.getElementById('item-h').value = h;
-            document.getElementById('item-net-weight').value = net;
-            document.getElementById('item-gross-weight').value = gross;
-            document.getElementById('item-qty').value = 1;
-            document.getElementById('item-stackable').checked = (m.stackable !== 'N');
-            document.getElementById('item-rotation').checked = (m.rotation !== 'N');
+                const wInput = document.getElementById('item-w');
+                const dInput = document.getElementById('item-d');
+                const hInput = document.getElementById('item-h');
+                const netInput = document.getElementById('item-net-weight');
+                const grossInput = document.getElementById('item-gross-weight');
+                const qtyInput = document.getElementById('item-qty');
+                const stackableCheckbox = document.getElementById('item-stackable');
+                const rotationCheckbox = document.getElementById('item-rotation');
+
+                if (wInput) wInput.value = w;
+                if (dInput) dInput.value = d;
+                if (hInput) hInput.value = h;
+                if (netInput) netInput.value = net;
+                if (grossInput) grossInput.value = gross;
+                if (qtyInput) qtyInput.value = 1;
+                if (stackableCheckbox) stackableCheckbox.checked = (m.stackable !== 'N');
+                if (rotationCheckbox) rotationCheckbox.checked = (m.rotation !== 'N');
+                
+                console.log("Successfully populated form fields!");
+            } catch (err) {
+                console.error("Error populating form fields:", err);
+            }
         });
     }
 
