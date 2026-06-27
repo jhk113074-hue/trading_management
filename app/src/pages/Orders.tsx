@@ -11,15 +11,15 @@ import { NewOrderModal } from '../components/NewOrderModal';
 interface NextAction {
   text: string;
   level: 'RED' | 'ORANGE' | 'WHITE';
-  step: 'PO접수' | '소싱발주' | '수출관리' | '정산마감';
+  step: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력';
 }
 
-const mapStatusToStep = (st: string): 'PO접수' | '소싱발주' | '수출관리' | '정산마감' => {
-  if (st === "주문" || st === "PO접수") return "PO접수";
-  if (st === "발주" || st === "소싱발주") return "소싱발주";
-  if (st === "선적관리") return "수출관리";
-  if (st === "이익관리" || st === "정산마감") return "정산마감";
-  return "PO접수";
+const mapStatusToStep = (st: string): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' => {
+  if (st === "주문" || st === "PO접수" || st === "수주정보") return "수주정보";
+  if (st === "발주" || st === "소싱발주" || st === "소싱/발주") return "소싱/발주";
+  if (st === "선적관리" || st === "수출관리" || st === "서류관리" || st === "물류/선적") return "물류/선적";
+  if (st === "이익관리" || st === "정산마감" || st === "정산/결제") return "정산/결제";
+  return "수주정보";
 };
 
 export const Orders: React.FC = () => {
@@ -88,27 +88,27 @@ export const Orders: React.FC = () => {
   const getNextAction = (order: Order): NextAction => {
     const currentStep = mapStatusToStep(order.status || '');
 
-    // 1. PO 접수
-    if (currentStep === 'PO접수') {
+    // 1. 수주정보
+    if (currentStep === '수주정보') {
       // Condition A: L/C is used, L/C file/info discrepancy
       if (order.isLc === 'Y' && order.lcNo && order.lcNo.includes('DISCREPANCY')) {
-        return { text: 'L/C와 PI 불일치건 존재 — 확인 필요', level: 'RED', step: 'PO접수' };
+        return { text: 'L/C와 PI 불일치건 존재 — 확인 필요', level: 'RED', step: '수주정보' };
       }
       // Condition B: incoterms or paymentTerms is empty
       if (!order.incoterms || !order.paymentTerms) {
-        return { text: '거래조건(인코텀즈/결제조건) 확인 필요', level: 'WHITE', step: 'PO접수' };
+        return { text: '거래조건(인코텀즈/결제조건) 확인 필요', level: 'WHITE', step: '수주정보' };
       }
       // Default
-      return { text: '소싱 발주 단계로 진행 필요', level: 'WHITE', step: 'PO접수' };
+      return { text: '소싱 발주 단계로 진행 필요', level: 'WHITE', step: '수주정보' };
     }
 
-    // 2. 소싱 발주
-    if (currentStep === '소싱발주') {
+    // 2. 소싱/발주
+    if (currentStep === '소싱/발주') {
       // Condition A: supplier unassigned
       const hasUnassignedSupplier = order.items?.some(it => !it.supplier);
       if (hasUnassignedSupplier) {
         const count = order.items?.filter(it => !it.supplier).length || 0;
-        return { text: `품목 ${count}개 공급사 미배정`, level: 'ORANGE', step: '소싱발주' };
+        return { text: `품목 ${count}개 공급사 미배정`, level: 'ORANGE', step: '소싱/발주' };
       }
 
       // Collect suppliers
@@ -117,35 +117,33 @@ export const Orders: React.FC = () => {
       // Condition B: PO sent check
       for (const sup of suppliers) {
         if (order.supplierPoSent && order.supplierPoSent[sup] === false) {
-          return { text: `공급사 ${sup} 발주서 미발송`, level: 'ORANGE', step: '소싱발주' };
+          return { text: `공급사 ${sup} 발주서 미발송`, level: 'ORANGE', step: '소싱/발주' };
         }
       }
 
-
-
-      return { text: '수출 관리 단계로 진행 필요', level: 'WHITE', step: '수출관리' };
+      return { text: '물류/선적 단계로 진행 필요', level: 'WHITE', step: '물류/선적' };
     }
 
-    // 3. 수출 관리
-    if (currentStep === '수출관리') {
+    // 3. 물류/선적
+    if (currentStep === '물류/선적') {
       // Condition A: ETD within 3 days and documents not complete
       if (order.etd) {
         const diffTime = new Date(order.etd).getTime() - Date.now();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays <= 3 && order.ciPlStatus !== 'Y') {
-          return { text: `서류 마감 D-${diffDays > 0 ? diffDays : 0} · 포워더 확정 필요`, level: 'RED', step: '수출관리' };
+          return { text: `서류 마감 D-${diffDays > 0 ? diffDays : 0} · 포워더 확정 필요`, level: 'RED', step: '물류/선적' };
         }
       }
       // Condition B: Forwarder empty
       if (!order.forwarderConfirmed && (!order.forwarders || order.forwarders.length === 0)) {
-        return { text: '지정 포워더 미확정', level: 'WHITE', step: '수출관리' };
+        return { text: '지정 포워더 미확정', level: 'WHITE', step: '물류/선적' };
       }
 
-      return { text: '정산 마감 단계로 진행 필요', level: 'WHITE', step: '수출관리' };
+      return { text: '정산/결제 단계로 진행 필요', level: 'WHITE', step: '물류/선적' };
     }
 
-    // 4. 정산 마감
-    if (currentStep === '정산마감') {
+    // 4. 정산/결제
+    if (currentStep === '정산/결제') {
       const suppliers = Array.from(new Set(order.items?.map(it => it.supplier).filter(Boolean)));
       
       // Condition A: AP due date passed and payment uncompleted
@@ -154,26 +152,26 @@ export const Orders: React.FC = () => {
           const payInfo = order.supplierPayments[sup];
           if (payInfo && payInfo.status !== '결제완료') {
             // Assume due date passed if not paid
-            return { text: `공급사 ${sup} 대금결제 필요`, level: 'RED', step: '정산마감' };
+            return { text: `공급사 ${sup} 대금결제 필요`, level: 'RED', step: '정산/결제' };
           }
         }
       }
 
       // Condition B: AR expected date passed but received date empty
       if (order.paymentCollectedDate === undefined || order.paymentCollectedDate === '') {
-        return { text: '고객 대금 미수금 발생', level: 'RED', step: '정산마감' };
+        return { text: '고객 대금 미수금 발생', level: 'RED', step: '정산/결제' };
       }
 
       // Condition C: Tax invoice empty
       const invoicePending = suppliers.some(sup => !order.supplierTaxInvoice || order.supplierTaxInvoice[sup] !== 'Y');
       if (invoicePending) {
-        return { text: '세금계산서 발행 대기', level: 'ORANGE', step: '정산마감' };
+        return { text: '세금계산서 발행 대기', level: 'ORANGE', step: '정산/결제' };
       }
 
-      return { text: '정산 완료', level: 'WHITE', step: '정산마감' };
+      return { text: '정산 완료', level: 'WHITE', step: '정산/결제' };
     }
 
-    return { text: '오더 확인 필요', level: 'WHITE', step: 'PO접수' };
+    return { text: '오더 확인 필요', level: 'WHITE', step: '수주정보' };
   };
 
   // Get managers list for filters
@@ -359,10 +357,11 @@ export const Orders: React.FC = () => {
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', letterSpacing: '0.05em' }}>단계</label>
           <select value={stepFilter} onChange={e => setStepFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', width: '130px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', transition: 'border-color 0.2s' }}>
             <option value="All">전체</option>
-            <option value="PO접수">PO 접수</option>
-            <option value="소싱발주">소싱 발주</option>
-            <option value="수출관리">수출 관리</option>
-            <option value="정산마감">정산 마감</option>
+            <option value="수주정보">수주정보</option>
+            <option value="소싱/발주">소싱/발주</option>
+            <option value="물류/선적">물류/선적</option>
+            <option value="서류관리">서류관리</option>
+            <option value="정산/결제">정산/결제</option>
           </select>
         </div>
 
@@ -524,27 +523,22 @@ export const Orders: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                           {/* Circle 1 */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === 'PO접수' || currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === 'PO접수' ? 700 : 500, color: currentStep === 'PO접수' ? '#1e293b' : '#64748b' }}>PO접수</span>
+                            <span style={{ color: currentStep === '수주정보' || currentStep === '소싱/발주' || currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '수주정보' ? 700 : 500, color: currentStep === '수주정보' ? '#1e293b' : '#64748b' }}>수주정보</span>
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 2 */}
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: currentStep === '소싱발주' || currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                              <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱발주' ? 700 : 500, color: currentStep === '소싱발주' ? '#1e293b' : '#64748b' }}>소싱발주</span>
+                              <span style={{ color: currentStep === '소싱/발주' || currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                              <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱/발주' ? 700 : 500, color: currentStep === '소싱/발주' ? '#1e293b' : '#64748b' }}>소싱/발주</span>
                             </div>
-                            <span style={{ fontSize: '9px', color: currentStep === '소싱발주' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
+                            <span style={{ fontSize: '9px', color: currentStep === '소싱/발주' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
                               {(() => {
                                 const tab = (order as any).activeSourcingTab || '소싱발주';
                                 switch(tab) {
                                   case '소싱발주': return '1) 소싱발주';
-                                  case '선적관리': return '2) 선적관리';
-                                  case '패킹리스트': return '3) 패킹리스트';
-                                  case '도착보고_쉬핑마크': return '4) 도착보고/쉬핑마크';
-                                  case 'COA_성적서': return '5) COA/성적서/파일';
-                                  case '세금계산서_결제': return '6) 세금계산서/구매확인';
-                                  case '대금결제관리': return '7) 대금결제관리';
+                                  case 'COA_성적서': return '2) COA/성적서/파일';
                                   default: return '1) 소싱발주';
                                 }
                               })()}
@@ -552,15 +546,34 @@ export const Orders: React.FC = () => {
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 3 */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '수출관리' || currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '수출관리' ? 700 : 500, color: currentStep === '수출관리' ? '#1e293b' : '#64748b' }}>수출관리</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ color: currentStep === '물류/선적' || currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                              <span style={{ fontSize: '11px', fontWeight: currentStep === '물류/선적' ? 700 : 500, color: currentStep === '물류/선적' ? '#1e293b' : '#64748b' }}>물류/선적</span>
+                            </div>
+                            <span style={{ fontSize: '9px', color: currentStep === '물류/선적' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
+                              {(() => {
+                                const tab = (order as any).activeSourcingTab || '선적관리';
+                                switch(tab) {
+                                  case '선적관리': return '1) 선적관리';
+                                  case '패킹리스트': return '2) 패킹리스트';
+                                  case '도착보고_쉬핑마크': return '3) 도착보고';
+                                  default: return '1) 선적관리';
+                                }
+                              })()}
+                            </span>
                           </div>
                           <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
                           {/* Circle 4 */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: currentStep === '정산마감' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '정산마감' ? 700 : 500, color: currentStep === '정산마감' ? '#1e293b' : '#64748b' }}>정산마감</span>
+                            <span style={{ color: currentStep === '서류관리' || currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '서류관리' ? 700 : 500, color: currentStep === '서류관리' ? '#1e293b' : '#64748b' }}>서류관리</span>
+                          </div>
+                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
+                          {/* Circle 5 */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ color: currentStep === '정산/결제' ? '#2563eb' : '#cbd5e1', fontSize: '14px' }}>●</span>
+                            <span style={{ fontSize: '11px', fontWeight: currentStep === '정산/결제' ? 700 : 500, color: currentStep === '정산/결제' ? '#1e293b' : '#64748b' }}>정산/결제</span>
                           </div>
                         </div>
                       </td>

@@ -98,14 +98,16 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
   );
 };
 
-const steps = ["PO접수", "소싱발주", "수출관리", "정산마감", "변경이력(Log)"] as const;
+const steps = ["수주정보", "소싱/발주", "물류/선적", "서류관리", "정산/결제", "변경이력"] as const;
 
 export const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState<typeof steps[number]>("PO접수");
+  const [activeStep, setActiveStep] = useState<typeof steps[number]>("수주정보");
+  const [activeSettlementTab, setActiveSettlementTab] = useState<'세금계산서' | '대금결제' | '수금관리' | '정산현황'>('정산현황');
+  const [activeLogisticsTab, setActiveLogisticsTab] = useState<'선적관리' | '패킹리스트' | '도착보고_쉬핑마크'>('선적관리');
   const [showPoDetails, setShowPoDetails] = useState(false);
   const isEditing = true;
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
@@ -3729,7 +3731,7 @@ export const OrderDetail: React.FC = () => {
           {/* Render corresponding form/contents based on activeStep */}
 
           {/* 2. PO접수 */}
-          {activeStep === 'PO접수' && (
+          {activeStep === '수주정보' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
               {/* Items Section */}
@@ -4042,20 +4044,15 @@ export const OrderDetail: React.FC = () => {
           )}
 
           {/* 3. 소싱발주 */}
-          {activeStep === '소싱발주' && (
+          {activeStep === '소싱/발주' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 소싱발주 하위 탭 메뉴 */}
               <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '8px', marginBottom: '8px' }}>
                 {[
                   { id: '소싱발주', label: '1) 소싱발주' },
-                  { id: '선적관리', label: '2) 선적관리/쉬핑마크 작성' },
-                  { id: '패킹리스트', label: '3) 패킹 및 컨테이너로딩플랜' },
-                  { id: '도착보고_쉬핑마크', label: '4) 도착보고' },
-                  { id: 'COA_성적서', label: '5) COA/시험성적서/첨부파일관리' },
-                  { id: '세금계산서_결제', label: '6) 세금계산서/구매확인서' },
-                  { id: '대금결제관리', label: '7) 대금결제관리' }
+                  { id: 'COA_성적서', label: '2) COA/시험성적서/첨부파일관리' }
                 ].map(tab => {
-                  const isActive = activeSourcingTab === tab.id;
+                  const isActive = activeSourcingTab === tab.id || (activeSourcingTab !== 'COA_성적서' && tab.id === '소싱발주');
                   return (
                     <button
                       key={tab.id}
@@ -4083,7 +4080,10 @@ export const OrderDetail: React.FC = () => {
                   );
                 })}
               </div>
-              {activeSourcingTab === '소싱발주' && (
+
+              {/* 1) 소싱발주 */}
+              {(activeSourcingTab === '소싱발주' || (activeSourcingTab !== 'COA_성적서')) && (
+
                 <>
                   {/* 추가 발주사(원자재/OEM) 관리 UI */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
@@ -4709,10 +4709,72 @@ export const OrderDetail: React.FC = () => {
                   </div>
 
                                   </>
+              
               )}
 
-              {/* 2) 선적관리 정보 등록 */}
-              {activeSourcingTab === '선적관리' && (
+              {/* 2) COA 및 시험성적서 */}
+              {activeSourcingTab === 'COA_성적서' && (
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 COA 및 시험성적서 첨부 파일 관리</h4>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                      수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
+                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                    </div>
+                  </div>
+                </div>
+              
+              )}
+            </div>
+          )}
+
+          {/* 4. 물류/선적 */}
+          {activeStep === '물류/선적' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* 물류/선적 하위 탭 메뉴 */}
+              <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '8px', marginBottom: '8px' }}>
+                {[
+                  { id: '선적관리', label: '1) 선적관리/쉬핑마크 작성' },
+                  { id: '패킹리스트', label: '2) 패킹 및 컨테이너로딩플랜' },
+                  { id: '도착보고_쉬핑마크', label: '3) 도착보고' }
+                ].map(tab => {
+                  const isActive = activeLogisticsTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={async () => {
+                        setActiveLogisticsTab(tab.id as any);
+                        setActiveSourcingTab(tab.id as any);
+                        await handleSaveBasic(false, tab.id);
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        color: isActive ? '#2563eb' : '#64748b',
+                        background: isActive ? '#eff6ff' : 'transparent',
+                        border: 'none',
+                        borderBottom: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        borderRadius: '6px 6px 0 0',
+                        marginBottom: '-2px'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 1) 선적관리 정보 등록 */}
+              {activeLogisticsTab === '선적관리' && (
+
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚢 2) 선적관리 정보 등록</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
@@ -5144,10 +5206,12 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              
               )}
 
-              {/* 3) 패킹리스트 작성 및 검토 */}
-              {activeSourcingTab === '패킹리스트' && (
+              {/* 2) 패킹리스트 작성 및 검토 */}
+              {activeLogisticsTab === '패킹리스트' && (
+
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
                     <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📦 3) 패킹리스트 작성 및 검토 (자동/수동 편집 지원)</h4>
@@ -6237,10 +6301,12 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   )}
                 </div>
+              
               )}
 
-              {/* 4) 도착보고 및 쉬핑마크 탭 */}
-              {activeSourcingTab === '도착보고_쉬핑마크' && (
+              {/* 3) 도착보고 및 쉬핑마크 탭 */}
+              {activeLogisticsTab === '도착보고_쉬핑마크' && (
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                     <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚚 2) 도착보고 작성 및 쉬핑마크 (제조사별 상세 정보 및 패킹리스트 연동)</h4>
@@ -7376,26 +7442,94 @@ export const OrderDetail: React.FC = () => {
                     })
                   )}
                 </div>
+              
               )}
+            </div>
+          )}
 
-              {/* 3) COA 및 시험성적서 탭 */}
-              {activeSourcingTab === 'COA_성적서' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🔬 COA 및 시험성적서 첨부 파일 관리</h4>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
-                      수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
-                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
-                    </div>
-                  </div>
+          {/* 5. 서류관리 */}
+          {activeStep === '서류관리' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              {/* 수출신고번호, 수출면장 기준환율 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
+                <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 010-22-19-1234567" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
+                <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
+              </div>
+              <div />
+
+              {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
+              <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                  {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
+                  {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
+                  {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
+                  {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
                 </div>
-              )}
+              </div>
 
-              {/* 4) 세금계산서, 구매확인서, 대금결제관리 탭 */}
-              {activeSourcingTab === '세금계산서_결제' && (
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+                {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
+              </div>
+
+              {/* 컨테이너 작업 및 운송 사진 */}
+              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
+                {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
+                {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
+              </div>
+            </div>
+          )}
+
+          {/* 6. 정산/결제 */}
+          {activeStep === '정산/결제' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* 정산/결제 하위 탭 메뉴 */}
+              <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '8px', marginBottom: '8px' }}>
+                {[
+                  { id: '세금계산서', label: '1) 세금계산서' },
+                  { id: '대금결제', label: '2) 대금결제' },
+                  { id: '수금관리', label: '3) 수금관리' },
+                  { id: '정산현황', label: '4) 정산현황' }
+                ].map(tab => {
+                  const isActive = activeSettlementTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSettlementTab(tab.id as any);
+                        if (tab.id === '세금계산서') {
+                          setActiveSourcingTab('세금계산서_결제');
+                        } else if (tab.id === '대금결제') {
+                          setActiveSourcingTab('대금결제관리');
+                        }
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        color: isActive ? '#2563eb' : '#64748b',
+                        background: isActive ? '#eff6ff' : 'transparent',
+                        border: 'none',
+                        borderBottom: isActive ? '3px solid #2563eb' : '3px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        borderRadius: '6px 6px 0 0',
+                        marginBottom: '-2px'
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeSettlementTab === '세금계산서' && (
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {/* 4) 세금계산서 발행 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
@@ -7819,9 +7953,11 @@ export const OrderDetail: React.FC = () => {
                   </div>
 
                 </div>
+              
               )}
 
-              {activeSourcingTab === '대금결제관리' && (
+              {activeSettlementTab === '대금결제' && (
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {/* 7) 대금결제관리 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
@@ -8229,96 +8365,10 @@ export const OrderDetail: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              
               )}
-            </div>
-          )}
 
-          {/* 4. 수출관리 */}
-          {activeStep === '수출관리' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              {/* 수출신고번호, 수출면장 기준환율 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
-                <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 010-22-19-1234567" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
-                <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
-              </div>
-              <div />
-
-
-
-              {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
-              <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                  {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
-                  {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
-                  {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
-                  {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
-                </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
-                {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
-              </div>
-
-              {/* 컨테이너 작업 및 운송 사진 */}
-              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
-                {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
-                {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
-              </div>
-
-              {/* 선적서류 발송 및 은행제출 */}
-              <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>선적 서류 발송</span>
-                  {isEditing ? (
-                    <select value={basicForm.shippingDocsSentStatus} onChange={e => setBasicForm(p => ({ ...p, shippingDocsSentStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
-                      <option value="">선택사항</option>
-                      <option value="N">미발송</option>
-                      <option value="Y">발송완료</option>
-                    </select>
-                  ) : (
-                    <input type="text" value={basicForm.shippingDocsSentStatus === 'Y' ? '발송완료 (Y)' : '미발송 (N)'} disabled style={inputStyle(false)} />
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>발송 일자</span>
-                  <input type="date" value={basicForm.shippingDocsSentDate} onChange={e => setBasicForm(p => ({ ...p, shippingDocsSentDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>Tracking 번호</span>
-                  <input type="text" value={basicForm.shippingDocsTrackingNo} onChange={e => setBasicForm(p => ({ ...p, shippingDocsTrackingNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="DHL 등 번호" />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>은행 네고 제출</span>
-                  {isEditing ? (
-                    <select value={basicForm.bankSubmissionStatus} onChange={e => setBasicForm(p => ({ ...p, bankSubmissionStatus: e.target.value as any }))} style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}>
-                      <option value="">선택사항</option>
-                      <option value="N">미제출</option>
-                      <option value="Y">제출완료</option>
-                    </select>
-                  ) : (
-                    <input type="text" value={basicForm.bankSubmissionStatus === 'Y' ? '제출완료 (Y)' : '미제출 (N)'} disabled style={inputStyle(false)} />
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>은행 네고 제출 일자</span>
-                  <input type="date" value={basicForm.bankSubmissionDate} onChange={e => setBasicForm(p => ({ ...p, bankSubmissionDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
-                </div>
-                <div />
-              </div>
-            </div>
-          )}
-
-          {/* 5. 정산마감 */}
-          {activeStep === '정산마감' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {(() => {
+              {(activeSettlementTab === '수금관리' || activeSettlementTab === '정산현황') && (() => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
                 const orderAmountUsd = piData?.totalUsd || 0;
 
@@ -8338,7 +8388,6 @@ export const OrderDetail: React.FC = () => {
                 }, 0) || 0;
                 const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
 
-                // Sum all forwarders final actual costs (KRW + USD converted by customsRate)
                 const forwarderExpenseKrw = forwardersList.reduce((sum, fw) => {
                   const usd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                   const krw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
@@ -8348,19 +8397,17 @@ export const OrderDetail: React.FC = () => {
                 const totalCostKrw = consolidatedPurchaseKrw + forwarderExpenseKrw;
                 const totalCostUsd = customsRate > 0 ? (totalCostKrw / customsRate) : 0;
 
-                // 1. USD관점 이익 계산
-                // 실제 USD이익 = 주문받은 금액(USD) - (매입가전체+운송비실비)/수출면장환율
                 const actualUsdProfit = orderAmountUsd - totalCostUsd;
                 const usdMargin = orderAmountUsd > 0 ? (actualUsdProfit / orderAmountUsd) * 100 : 0;
 
-                // 2. KRW관점 이익 계산
-                // 실제 KRW이익 = 주문받은 금액(USD)*수출환율 - (매입가전체+운송비실비)
                 const orderAmountKrw = orderAmountUsd * customsRate;
                 const actualKrwProfit = orderAmountKrw - totalCostKrw;
                 const krwMargin = orderAmountKrw > 0 ? (actualKrwProfit / orderAmountKrw) * 100 : 0;
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {activeSettlementTab === '정산현황' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* 상단 기본정보 카드 */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
@@ -8437,7 +8484,11 @@ export const OrderDetail: React.FC = () => {
                     </div>
 
                     {/* 수금 내역 관리 (분할 영수 지원) */}
-                    <div style={{ marginTop: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '16px' }}>
+                    </div>
+                    )}
+
+                    {activeSettlementTab === '수금관리' && (
+                      <div style={{ marginTop: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🪙 대금 수금 관리 (분할 영수)</span>
                         <button
@@ -8671,6 +8722,7 @@ export const OrderDetail: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    )}
                   </div>
                 );
               })()}
@@ -8678,7 +8730,7 @@ export const OrderDetail: React.FC = () => {
           )}
 
           {/* 5. 변경이력(Log) */}
-          {activeStep === '변경이력(Log)' && (
+          {activeStep === '변경이력' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                 <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>📋 오더 변경 및 액션 이력 로그</h4>
