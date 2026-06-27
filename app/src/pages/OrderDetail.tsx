@@ -7970,87 +7970,84 @@ export const OrderDetail: React.FC = () => {
                                   ＋ 계산서 추가
                                 </button>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {/* 테이블 헤더 (1줄 레이아웃용) */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
+                                  <span style={{ paddingLeft: '4px' }}>발행일자</span>
+                                  <span>승인번호</span>
+                                  <span>공급가액</span>
+                                  <span>부가세액</span>
+                                  <span style={{ textAlign: 'right', paddingRight: '12px' }}>합계금액</span>
+                                  <span style={{ width: '28px' }}></span>
+                                </div>
+
                                 {taxInvoices.map((inv, invIdx) => {
                                   const displaySupplyVal = inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0);
                                   const displayVat = inv.vat !== undefined ? inv.vat : 0;
                                   const displayTotal = inv.amount || (displaySupplyVal + displayVat);
 
                                   return (
-                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '70px 1.2fr 1.5fr 1.2fr 1.2fr 2fr 24px', gap: '12px', alignItems: 'center', background: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px dashed #d8b4fe' }}>
-                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#581c87' }}>{invIdx + 1}차 계산서</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>발행일자</span>
-                                        <input
-                                          type="date"
-                                          title="계산서 발행일자"
-                                          value={inv.date || ''}
-                                          onChange={e => {
-                                            const newList = [...taxInvoices];
-                                            newList[invIdx].date = e.target.value;
-                                            setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
-                                          }}
-                                          style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                        />
+                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center' }}>
+                                      {/* 발행일자 */}
+                                      <input
+                                        type="date"
+                                        value={inv.date || ''}
+                                        onChange={e => {
+                                          const newList = [...taxInvoices];
+                                          newList[invIdx].date = e.target.value;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                      {/* 승인번호 */}
+                                      <input
+                                        type="text"
+                                        placeholder="국세청 승인번호"
+                                        value={inv.invoiceNo || ''}
+                                        onChange={e => {
+                                          const newList = [...taxInvoices];
+                                          newList[invIdx].invoiceNo = e.target.value;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                      {/* 공급가액 */}
+                                      <input
+                                        type="number"
+                                        placeholder="₩ 공급가액"
+                                        value={displaySupplyVal || ''}
+                                        onChange={e => {
+                                          const val = parseFloat(e.target.value) || 0;
+                                          const newList = [...taxInvoices];
+                                          const autoVat = Math.round(val * 0.1);
+                                          newList[invIdx].supplyValue = val;
+                                          newList[invIdx].vat = autoVat;
+                                          newList[invIdx].amount = val + autoVat;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                      {/* 부가세액 */}
+                                      <input
+                                        type="number"
+                                        placeholder="₩ 부가세"
+                                        value={displayVat || ''}
+                                        onChange={e => {
+                                          const val = parseFloat(e.target.value) || 0;
+                                          const newList = [...taxInvoices];
+                                          const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : (newList[invIdx].amount || 0);
+                                          newList[invIdx].vat = val;
+                                          newList[invIdx].amount = currentSupply + val;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                      {/* 합계금액 (Readonly) */}
+                                      <div style={{ padding: '6px 10px', fontSize: '12px', color: '#0f172a', textAlign: 'right', fontWeight: 'bold', paddingRight: '12px' }}>
+                                        ₩{displayTotal.toLocaleString()}
                                       </div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>공급가액</span>
-                                        <input
-                                          type="number"
-                                          placeholder="0"
-                                          value={displaySupplyVal || ''}
-                                          onChange={e => {
-                                            const val = parseFloat(e.target.value) || 0;
-                                            const newList = [...taxInvoices];
-                                            const autoVat = Math.round(val * 0.1);
-                                            newList[invIdx].supplyValue = val;
-                                            newList[invIdx].vat = autoVat;
-                                            newList[invIdx].amount = val + autoVat;
-                                            setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
-                                          }}
-                                          style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right' }}
-                                        />
-                                      </div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>부가세</span>
-                                        <input
-                                          type="number"
-                                          placeholder="0"
-                                          value={displayVat || ''}
-                                          onChange={e => {
-                                            const val = parseFloat(e.target.value) || 0;
-                                            const newList = [...taxInvoices];
-                                            const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : (newList[invIdx].amount || 0);
-                                            newList[invIdx].vat = val;
-                                            newList[invIdx].amount = currentSupply + val;
-                                            setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
-                                          }}
-                                          style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right' }}
-                                        />
-                                      </div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>합계(₩)</span>
-                                        <input
-                                          type="text"
-                                          readOnly
-                                          value={displayTotal.toLocaleString()}
-                                          style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#f1f5f9', outline: 'none', textAlign: 'right', fontWeight: 'bold' }}
-                                        />
-                                      </div>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#4b5563', whiteSpace: 'nowrap' }}>승인번호</span>
-                                        <input
-                                          type="text"
-                                          placeholder="국세청 승인번호"
-                                          value={inv.invoiceNo || ''}
-                                          onChange={e => {
-                                            const newList = [...taxInvoices];
-                                            newList[invIdx].invoiceNo = e.target.value;
-                                            setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
-                                          }}
-                                          style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none' }}
-                                        />
-                                      </div>
+                                      
+                                      {/* Delete Button */}
                                       {taxInvoices.length > 1 ? (
                                         <button
                                           type="button"
@@ -8062,7 +8059,7 @@ export const OrderDetail: React.FC = () => {
                                           style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: 0 }}
                                         >✕</button>
                                       ) : (
-                                        <span />
+                                        <span style={{ width: '28px' }} />
                                       )}
                                     </div>
                                   );
