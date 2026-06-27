@@ -1708,11 +1708,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderSimulationResult = () => {
         const currentResult = currentResults && currentResults.length > 0 ? currentResults[currentResultIndex] : null;
         
+        const sidebarStatsContainer = document.getElementById('sidebar-stats-container');
+        
         if (!currentResult) {
-            simulationResultEl.innerHTML = `
-                <i data-lucide="cuboid"></i>
-                <p>화물을 추가하고 시뮬레이션을 실행하면 여기에 결과가 표시됩니다.</p>
-            `;
+            simulationResultEl.classList.remove('hidden');
+            vizContainer.classList.add('hidden');
+            if (sidebarStatsContainer) sidebarStatsContainer.classList.add('hidden');
             unloadedListEl.innerHTML = '<li class="empty-list">시뮬레이션 결과가 없습니다.</li>';
             btnPrintPreview.classList.add('hidden');
             packingListContainer.classList.add('hidden');
@@ -1721,10 +1722,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         btnPrintPreview.classList.remove('hidden');
+        simulationResultEl.classList.add('hidden');
 
         const loadedCount = currentResult.loaded.length;
-        // Total unloaded items is generally those in the LAST result's unloaded array
-        // We can just show the unloaded items for the CURRENT result to be precise
         const unloadedCount = currentResult.unloaded.length;
         const m = currentResult.metrics;
         
@@ -1735,42 +1735,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const containerSummaryStr = Object.entries(containerCounts).map(([type, count]) => `${type} ${count}대`).join(', ');
 
-        simulationResultEl.innerHTML = `
-            <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="card" style="padding: 1rem;">
-                        <h4 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;">용적률 (부피)</h4>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${m.utilizationRate.toFixed(2)}%</div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                            적재됨: ${m.loadedVolume.toFixed(2)} / 총: ${m.totalVolume.toFixed(2)} CBM
+        if (sidebarStatsContainer) {
+            sidebarStatsContainer.classList.remove('hidden');
+            sidebarStatsContainer.innerHTML = `
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="card" style="padding: 10px; margin-bottom: 0;">
+                            <h4 style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 2px;">용적률 (부피)</h4>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary-color);">${m.utilizationRate.toFixed(2)}%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                                적재됨: ${m.loadedVolume.toFixed(2)} / ${m.totalVolume.toFixed(2)} CBM
+                            </div>
+                        </div>
+                        <div class="card" style="padding: 10px; margin-bottom: 0;">
+                            <h4 style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 2px;">중량 사용률</h4>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: var(--primary-color);">${((m.loadedWeight / m.maxWeight) * 100).toFixed(2)}%</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                                적재됨: ${m.loadedWeight.toLocaleString()} / ${m.maxWeight.toLocaleString()} kg
+                            </div>
                         </div>
                     </div>
-                    <div class="card" style="padding: 1rem;">
-                        <h4 style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.5rem;">중량 사용률</h4>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">${((m.loadedWeight / m.maxWeight) * 100).toFixed(2)}%</div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                            적재됨: ${m.loadedWeight.toLocaleString()} / 총: ${m.maxWeight.toLocaleString()} kg
+
+                    <div class="card" style="padding: 8px; background: rgba(255,255,255,0.02); line-height: 1.4; margin-bottom: 0; border-color: #e2e8f0;">
+                        <div style="font-size: 0.75rem; color: #1e293b;">
+                            이론적 잔여 부피: <strong>${m.remainingVolume.toFixed(2)} CBM</strong><br/>
+                            (연속 공간: ${m.maxContinuousVolume.toFixed(2)} CBM / 조각: ${m.fragmentedCount}개)
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 4px;">
+                            ⚠️ 실제 사용 공간은 조각 형태에 따라 다를 수 있습니다.
                         </div>
                     </div>
-                </div>
 
-                <div class="card" style="padding: 0.75rem; background: rgba(255,255,255,0.02); line-height: 1.4;">
-                    <div style="font-size: 0.85rem; display: flex; justify-content: space-between; flex-wrap: wrap;">
-                        <span>이론적 잔여 부피: <strong>${m.remainingVolume.toFixed(2)} CBM</strong> (연속 공간: ${m.maxContinuousVolume.toFixed(2)} CBM / 조각: ${m.fragmentedCount}개)</span>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
-                        ⚠️ 실제 사용 가능 공간은 빈 공간의 조각(Fragment) 형태에 따라 다를 수 있습니다.
+                    <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 6px; background: #f8fafc; color: #334155; font-weight: 500;">
+                        <div style="display:flex; justify-content:space-between;"><span>총 사용 컨테이너:</span><span style="color:var(--primary-color); font-weight:700;">${containerSummaryStr}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>현재 컨테이너:</span><span style="font-weight:700; color:#0f172a;">${currentResult.container}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>적재된 팔레트:</span><span style="font-weight:700; color:#0f172a;">${loadedCount}개</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span>잔여 허용 중량:</span><span style="font-weight:700; color:#0f172a;">${m.remainingWeight.toLocaleString()} kg</span></div>
                     </div>
                 </div>
-
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
-                    <span style="color: var(--primary-color);"><strong>총 사용 컨테이너:</strong> ${containerSummaryStr}</span>
-                    <span><strong>현재 컨테이너:</strong> ${currentResult.container}</span>
-                    <span><strong>적재된 팔레트:</strong> ${loadedCount}개</span>
-                    <span><strong>잔여 허용 중량:</strong> ${m.remainingWeight.toLocaleString()} kg</span>
-                </div>
-            </div>
-        `;
+            `;
+        }
         
         unloadedListEl.innerHTML = '';
         if (currentResultIndex === currentResults.length - 1 && unloadedCount > 0) {

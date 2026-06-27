@@ -35,59 +35,6 @@
             </div>
         </header>
 
-        <!-- Full-width Summary Stats Bar -->
-        <div id="app-summary-bar" class="card" style="margin-bottom: 12px; padding: 12px 20px; flex-direction: row; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
-            <!-- Left Side: Container volume rate progress -->
-            <div style="flex: 2; display: flex; align-items: center; gap: 15px; min-width: 280px;">
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">컨테이너 용적률</span>
-                    <span style="font-size: 1.5rem; font-weight: 700; color: #2563eb;" id="summary-volume-rate">0.00%</span>
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; position: relative;">
-                        <div id="summary-volume-progress" style="width: 0%; height: 100%; background: #2563eb; border-radius: 5px; transition: width 0.3s ease;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
-                        <span id="summary-volume-used">0.00 / 0.00 CBM</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Middle Left: Weight utilization progress -->
-            <div style="flex: 2; display: flex; align-items: center; gap: 15px; min-width: 280px; border-left: 1px solid #e2e8f0; padding-left: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 500;">중량 사용률</span>
-                    <span style="font-size: 1.1rem; font-weight: 700; color: #475569;" id="summary-weight-rate">0.00%</span>
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; position: relative;">
-                        <div id="summary-weight-progress" style="width: 0%; height: 100%; background: #64748b; border-radius: 3px; transition: width 0.3s ease;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748b;">
-                        <span id="summary-weight-used">0 / 0 kg</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Right Side: Stats Summary & Status Badge -->
-            <div style="display: flex; align-items: center; gap: 25px; border-left: 1px solid #e2e8f0; padding-left: 20px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 수량</div>
-                    <strong style="font-size: 1.25rem; color: #0f172a;" id="summary-total-qty">0</strong>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 부피</div>
-                    <strong style="font-size: 1.25rem; color: #0f172a;"><span id="summary-total-volume">0.000</span> <span style="font-size: 0.75rem; color: #64748b;">CBM</span></strong>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 500; margin-bottom: 2px;">총 중량</div>
-                    <strong style="font-size: 1.25rem; color: #0f172a;"><span id="summary-total-weight">0</span> <span style="font-size: 0.75rem; color: #64748b;">kg</span></strong>
-                </div>
-                <div id="summary-status-badge" style="background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-size: 0.8rem; font-weight: 600; padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="help-circle" style="width: 16px; height: 16px; color: #64748b;"></i> 적재 대기중
-                </div>
-            </div>
-        </div>
 
         <main class="dashboard">
             <!-- Left Column: Simulation View -->
@@ -96,10 +43,6 @@
                     <div class="card" id="export-area">
                         <div class="card-header">
                             <h2><i data-lucide="truck"></i> 적재 시뮬레이션 결과</h2>
-                            <div class="header-actions">
-                                <button class="btn btn-secondary btn-sm hidden" id="btn-print-preview"><i data-lucide="printer"></i> 인쇄 미리보기</button>
-                                <button class="btn btn-primary btn-sm" id="btn-run-simulation">시뮬레이션 실행</button>
-                            </div>
                         </div>
                         
                         <!-- Multi-container tabs -->
@@ -140,49 +83,25 @@
                                 </div>
                                 <div id="container-3d"></div>
                             </div>
-                        </div>
-                        
-                        <!-- Packing List -->
-                        <div id="packing-list-container" class="hidden" style="margin-top: 2rem;">
-                            <h3>패킹 리스트 (Packing List)</h3>
-                            <div class="table-responsive">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>번호</th>
-                                            <th>화물명</th>
-                                            <th>크기(W×D×H)</th>
-                                            <th>Net Wt.</th>
-                                            <th>Gross Wt.</th>
-                                            <th>상태</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="packing-list-tbody"></tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
-
-                    <div class="card unloaded-items">
-                        <div class="card-header">
-                            <h2><i data-lucide="package-x"></i> 미적재 화물</h2>
-                        </div>
-                        <ul class="unloaded-list" id="unloaded-list">
-                            <li class="empty-list">시뮬레이션 결과가 없습니다.</li>
-                        </ul>
-                        
-                        <div id="unloaded-add-container-ui" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                            <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
-                            <div style="display: flex; gap: 8px;">
-                                <select id="unloaded-add-type" style="flex: 1;">
-                                    <option value="LCL">LCL (소량 화물)</option>
-                                    <option value="20GP">20GP (일반 20ft)</option>
-                                    <option value="20RF">20RF (냉동 20ft)</option>
-                                    <option value="40GP">40GP (일반 40ft)</option>
-                                    <option value="40HC">40HC (하이큐빅)</option>
-                                </select>
-                                <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> 추가</button>
-                            </div>
+                    
+                    <!-- Packing List -->
+                    <div id="packing-list-container" class="card hidden" style="margin-top: 1.5rem; padding: 1.25rem;">
+                        <h3 style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 700; color: #1e293b;">패킹 리스트 (Packing List)</h3>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>번호</th>
+                                        <th>화물명</th>
+                                        <th>크기(W×D×H)</th>
+                                        <th>Net Wt.</th>
+                                        <th>Gross Wt.</th>
+                                        <th>상태</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="packing-list-tbody"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -282,6 +201,43 @@
                     
                     <button type="button" id="btn-open-cargo-modal" class="btn btn-outline" style="width: 100%; border: 1px dashed #2563eb; color: #2563eb; font-weight: 600; padding: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="plus" style="width: 16px; height: 16px;"></i> 화물 추가</button>
                 </section>
+
+                <!-- Sidebar Simulation Actions & Stats Summary -->
+                <section class="sidebar-sim-summary" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button type="button" class="btn btn-secondary" id="btn-print-preview" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="printer"></i> 인쇄 미리보기</button>
+                        <button type="button" class="btn btn-primary" id="btn-run-simulation" style="flex: 1; height: 36px; font-size: 0.85rem;"><i data-lucide="play"></i> 시뮬레이션 실행</button>
+                    </div>
+
+                    <!-- Dynamic Simulation Summary Widgets Container -->
+                    <div id="sidebar-stats-container" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- JS will dynamically inject the stats cards here -->
+                    </div>
+                </section>
+
+                <!-- Unloaded Items Card (Moved to Sidebar) -->
+                <div class="card unloaded-items" style="margin-top: 10px;">
+                    <div class="card-header" style="padding: 10px 12px; margin-bottom: 0;">
+                        <h2 style="font-size: 0.9rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 4px;"><i data-lucide="package-x"></i> 미적재 화물</h2>
+                    </div>
+                    <ul class="unloaded-list" id="unloaded-list" style="padding: 8px; font-size: 0.8rem; list-style: none;">
+                        <li class="empty-list">시뮬레이션 결과가 없습니다.</li>
+                    </ul>
+                    
+                    <div id="unloaded-add-container-ui" class="hidden" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding: 8px;">
+                        <h3 style="font-size: 0.8rem; margin-bottom: 6px; color: var(--text-secondary);">컨테이너 추가하여 계속 적재하기</h3>
+                        <div style="display: flex; gap: 6px;">
+                            <select id="unloaded-add-type" style="flex: 1; height: 28px; font-size: 0.8rem; padding: 2px 6px;">
+                                <option value="LCL">LCL (소량 화물)</option>
+                                <option value="20GP">20GP (일반 20ft)</option>
+                                <option value="20RF">20RF (냉동 20ft)</option>
+                                <option value="40GP">40GP (일반 40ft)</option>
+                                <option value="40HC">40HC (하이큐빅)</option>
+                            </select>
+                            <button id="btn-add-container-unloaded" class="btn btn-primary btn-sm" style="height: 28px; padding: 0 10px; font-size: 0.8rem;"><i data-lucide="plus"></i> 추가</button>
+                        </div>
+                    </div>
+                </div>
             </aside>
         </main>
     </div>
