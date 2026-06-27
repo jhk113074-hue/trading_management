@@ -135,19 +135,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadDbProducts = () => {
         if (!window.db) return;
-        window.db.collection("companies").doc("YSACC").collection("products")
-            .onSnapshot((querySnapshot) => {
-                dbProducts = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    data.id = doc.id;
-                    dbProducts.push(data);
+        
+        const fetchProducts = () => {
+            window.db.collection("companies").doc("YSACC").collection("products")
+                .onSnapshot((querySnapshot) => {
+                    dbProducts = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        data.id = doc.id;
+                        dbProducts.push(data);
+                    });
+                    dbProducts.sort((a, b) => (a.nameKo || '').localeCompare(b.nameKo || ''));
+                    renderProductSelect();
+                }, (error) => {
+                    console.error("Firestore products fetch error:", error);
                 });
-                dbProducts.sort((a, b) => (a.nameKo || '').localeCompare(b.nameKo || ''));
-                renderProductSelect();
-            }, (error) => {
-                console.error("Firestore products fetch error:", error);
+        };
+
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    console.log("Authenticated user inside iframe:", user.uid);
+                    fetchProducts();
+                } else {
+                    console.warn("No authenticated user inside iframe yet. Trying to fetch anyway...");
+                    // Try fetching in case rules are lax locally
+                    fetchProducts();
+                }
             });
+        } else {
+            fetchProducts();
+        }
     };
 
     const renderProductSelect = () => {
