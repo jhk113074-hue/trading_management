@@ -171,16 +171,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderProductSelect = () => {
         if (!productSelect) return;
         const currentSelectedId = productSelect.value;
+        const productInfoDisplay = document.getElementById('product-info-display');
+        const productCodeDisplay = document.getElementById('product-code-display');
         
         if (currentSelectedId && dbProducts.some(p => p.id === currentSelectedId)) {
             const selectedProduct = dbProducts.find(p => p.id === currentSelectedId);
-            if (productDisplay) {
-                productDisplay.value = `${selectedProduct.nameKo || selectedProduct.nameEn} (${selectedProduct.productCode || selectedProduct.id})`;
+            if (productInfoDisplay) {
+                productInfoDisplay.textContent = selectedProduct.nameKo || selectedProduct.nameEn || '';
+            }
+            if (productCodeDisplay) {
+                productCodeDisplay.textContent = `상품코드: ${selectedProduct.productCode || selectedProduct.id}`;
             }
         } else {
             productSelect.value = "";
-            if (productDisplay) {
-                productDisplay.value = "";
+            if (productInfoDisplay) {
+                productInfoDisplay.textContent = "-- 상품을 검색하여 선택해 주세요 --";
+            }
+            if (productCodeDisplay) {
+                productCodeDisplay.textContent = "상품코드: 미지정";
             }
             if (packingSelect) {
                 packingSelect.innerHTML = '<option value="">-- 포장방법 선택 --</option>';
@@ -452,6 +460,77 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dbProductSearchInput) {
         dbProductSearchInput.addEventListener('input', () => {
             renderSearchModalTable();
+        });
+    }
+
+    const btnSaveAsPacking = document.getElementById('btn-save-as-packing');
+    if (btnSaveAsPacking) {
+        btnSaveAsPacking.addEventListener('click', () => {
+            const productId = productSelect.value;
+            if (!productId) {
+                alert('포장 방법을 추가할 상품을 먼저 검색/선택해주세요.');
+                return;
+            }
+            const product = dbProducts.find(p => p.id === productId);
+            if (!product) return;
+
+            const name = prompt('새 포장 방법의 명칭을 입력해주세요 (예: 팰릿 2단 적재):');
+            if (name === null) return;
+            const trimmedName = name.trim();
+            if (!trimmedName) {
+                alert('포장 방법 명칭은 필수입니다.');
+                return;
+            }
+
+            const packageType = document.getElementById('item-package-type').value;
+            const w = parseFloat(document.getElementById('item-w').value);
+            const d = parseFloat(document.getElementById('item-d').value);
+            const h = parseFloat(document.getElementById('item-h').value);
+            const net = parseFloat(document.getElementById('item-net-weight').value);
+            const gross = parseFloat(document.getElementById('item-gross-weight').value);
+            const stackable = document.getElementById('item-stackable').checked ? 'Y' : 'N';
+            const rotation = document.getElementById('item-rotation').checked ? 'Y' : 'N';
+
+            if (isNaN(w) || isNaN(d) || isNaN(h) || isNaN(net) || isNaN(gross)) {
+                alert('가로, 세로, 높이, 순중량, 총중량 값을 모두 올바르게 입력한 후 저장해주세요.');
+                return;
+            }
+
+            const newMethod = {
+                id: generateId(),
+                name: trimmedName,
+                packageType,
+                unit: product.unit || 'KG',
+                isDefault: false,
+                stackable,
+                rotation,
+                palletWidth: w,
+                palletLength: d,
+                palletHeight: h,
+                palletWeight: net,
+                palletGrossWeight: gross,
+                unitWidth: w,
+                unitLength: d,
+                unitHeight: h,
+                unitWeight: net,
+                unitGrossWeight: gross
+            };
+
+            const nextMethods = [...(product.packingMethods || [])];
+            nextMethods.push(newMethod);
+
+            window.db.collection('companies').doc('YSACC').collection('products').doc(productId).update({
+                packingMethods: nextMethods
+            }).then(() => {
+                alert(`'${trimmedName}' 포장 방법이 상품 DB에 추가되었습니다.`);
+                setTimeout(() => {
+                    packingSelect.value = newMethod.id;
+                    packingSelect.dispatchEvent(new Event('change'));
+                }, 500);
+            }).catch(err => {
+                console.error(err);
+                alert('저장 중 오류 발생: ' + err.message);
+            });
         });
     }
 

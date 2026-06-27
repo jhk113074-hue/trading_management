@@ -83,26 +83,40 @@
 
                 <section class="card item-form">
                     <h2><i data-lucide="layers"></i> 화물(팔레트) 추가</h2>
-                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 10px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <label style="width: 70px; font-weight: 600; font-size: 0.8rem;">상품 선택</label>
-                            <div style="flex: 1; display: flex; gap: 4px; align-items: center; position: relative;">
-                                <input type="text" id="product-display" readonly placeholder="-- 상품 검색/선택 --" style="flex: 1; cursor: pointer; background: #fff;" onclick="document.getElementById('btn-search-product').click()">
-                                <input type="hidden" id="product-select">
-                                <button type="button" id="btn-search-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="상품 검색"><i data-lucide="search"></i></button>
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-md); background-color: var(--bg-secondary);">
+                        <!-- Product Selection Section -->
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 연동 상품 정보</label>
+                                <div style="display: flex; gap: 4px;">
+                                    <button type="button" id="btn-search-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="상품 검색"><i data-lucide="search" style="width:14px; height:14px;"></i> 상품 검색</button>
+                                    <button type="button" id="btn-add-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="새 상품 추가"><i data-lucide="plus" style="width:14px; height:14px;"></i> 추가</button>
+                                    <button type="button" id="btn-edit-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 상품 수정"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> 수정</button>
+                                    <button type="button" id="btn-delete-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 상품 삭제"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> 삭제</button>
+                                </div>
                             </div>
-                            <button type="button" id="btn-add-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="새 상품 추가"><i data-lucide="plus"></i></button>
-                            <button type="button" id="btn-edit-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 수정"><i data-lucide="edit-3"></i></button>
-                            <button type="button" id="btn-delete-product" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 상품 삭제"><i data-lucide="trash-2"></i></button>
+                            
+                            <!-- Display Selected Product (Wider Display Area) -->
+                            <div style="display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; font-size: 0.85rem; min-height: 48px; justify-content: center; cursor: pointer;" onclick="document.getElementById('btn-search-product').click()">
+                                <input type="hidden" id="product-select">
+                                <div id="product-info-display" style="font-weight: 600; color: #1e293b;">-- 상품을 검색하여 선택해 주세요 --</div>
+                                <div id="product-code-display" style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">상품코드: 미지정</div>
+                            </div>
                         </div>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            <label style="width: 70px; font-weight: 600; font-size: 0.8rem;">포장 방법</label>
-                            <select id="packing-select" style="flex: 1;">
+
+                        <!-- Packing Method Section -->
+                        <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 포장 사양 선택</label>
+                                <div style="display: flex; gap: 4px;">
+                                    <button type="button" id="btn-add-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="새 포장방법 추가"><i data-lucide="plus" style="width:14px; height:14px;"></i> 추가</button>
+                                    <button type="button" id="btn-edit-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 포장방법 수정"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> 수정</button>
+                                    <button type="button" id="btn-delete-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> 삭제</button>
+                                </div>
+                            </div>
+                            <select id="packing-select" style="width: 100%; height: 36px; font-size: 0.85rem;">
                                 <option value="">-- 포장방법 선택 --</option>
                             </select>
-                            <button type="button" id="btn-add-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="새 포장방법 추가"><i data-lucide="plus"></i></button>
-                            <button type="button" id="btn-edit-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 포장방법 수정"><i data-lucide="edit-3"></i></button>
-                            <button type="button" id="btn-delete-packing" class="btn btn-outline" style="padding: 0 10px; height: 36px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2"></i></button>
                         </div>
                     </div>
                     <form id="add-item-form">
@@ -180,7 +194,7 @@
                                 <button type="button" id="btn-cancel-edit" class="btn btn-secondary hidden" style="flex:1;">취소</button>
                                 <button type="submit" id="btn-submit-item" class="btn btn-primary" style="flex:2;">리스트에 추가</button>
                             </div>
-                            <button type="button" id="btn-save-preset" class="btn btn-outline full-width hidden">⭐ 현재 입력값을 즐겨찾기로 저장</button>
+                            <button type="button" id="btn-save-as-packing" class="btn btn-outline full-width" style="border-color: #2563eb; color: #2563eb; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="save" style="width: 16px; height: 16px;"></i> ⭐ 현재 입력을 이 상품의 포장방법으로 추가</button>
                         </div>
                     </form>
                 </section>
