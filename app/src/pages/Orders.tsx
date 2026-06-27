@@ -588,6 +588,19 @@ export const Orders: React.FC = () => {
                     </tr>
                   );
                 })}
+                {processedOrders.length > 0 && (
+                  <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold', borderTop: '2.5px solid #cbd5e1' }}>
+                    <td colSpan={4} style={{ padding: '14px 16px', color: '#475569', textAlign: 'right', fontSize: '13px' }}>합계</td>
+                    <td style={{ padding: '14px 16px', color: '#0f172a', whiteSpace: 'nowrap', fontSize: '13px' }}>
+                      ${processedOrders.reduce((sum, order) => {
+                        const pi = quotations.find(q => q.id === order.quotationId);
+                        return sum + (pi?.totalUsd || order.totalAmount || 0);
+                      }, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td />
+                    <td />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
