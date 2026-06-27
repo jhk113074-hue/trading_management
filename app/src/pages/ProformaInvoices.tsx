@@ -714,6 +714,17 @@ export const ProformaInvoices: React.FC = () => {
                 );
               })
             )}
+            {filteredAndSorted.length > 0 && (
+              <tr style={{ backgroundColor: '#f8fafc', fontWeight: 'bold', borderTop: '2.5px solid #cbd5e1' }}>
+                <td colSpan={4} style={{ padding: '12px 10px', color: '#475569', textAlign: 'right', fontSize: '13px' }}>합계</td>
+                <td style={{ padding: '12px 10px', color: '#0f172a', whiteSpace: 'nowrap', fontSize: '13px', textAlign: 'right', paddingRight: '12px' }}>
+                  ${filteredAndSorted.reduce((sum, p) => sum + (p.totalUsd || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+                <td />
+                <td />
+                <td />
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
