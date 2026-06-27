@@ -41,8 +41,8 @@ h2 { font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; align-items: cente
 
 /* Layout */
 .app-container {
-    max-width: 1600px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     width: 100%;
     padding: 0.5rem;
     display: flex;
