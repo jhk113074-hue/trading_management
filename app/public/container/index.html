@@ -87,11 +87,11 @@
                         <!-- Product Selection Section -->
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 연동 상품 정보</label>
+                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 화물명 (상품 선택)</label>
                                 <div style="display: flex; gap: 4px;">
-                                    <button type="button" id="btn-search-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="상품 검색"><i data-lucide="search" style="width:14px; height:14px;"></i> 상품 검색</button>
-                                    <button type="button" id="btn-add-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="새 상품 추가"><i data-lucide="plus" style="width:14px; height:14px;"></i> 추가</button>
-                                    <button type="button" id="btn-edit-product" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 상품 수정"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> 수정</button>
+                                    <button type="button" id="btn-search-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="상품 검색"><i data-lucide="search" style="width:15px; height:15px;"></i></button>
+                                    <button type="button" id="btn-add-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 상품 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
+                                    <button type="button" id="btn-edit-product" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 상품 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
                                 </div>
                             </div>
                             
@@ -106,11 +106,11 @@
                         <!-- Packing Method Section -->
                         <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 10px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 포장 사양 선택</label>
+                                <label style="font-weight: 700; font-size: 0.85rem; color: #1e3a8a;">📦 포장 형태 (포장 사양 선택)</label>
                                 <div style="display: flex; gap: 4px;">
-                                    <button type="button" id="btn-add-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="새 포장방법 추가"><i data-lucide="plus" style="width:14px; height:14px;"></i> 추가</button>
-                                    <button type="button" id="btn-edit-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 포장방법 수정"><i data-lucide="edit-3" style="width:14px; height:14px;"></i> 수정</button>
-                                    <button type="button" id="btn-delete-packing" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> 삭제</button>
+                                    <button type="button" id="btn-add-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="새 포장방법 추가"><i data-lucide="plus" style="width:15px; height:15px;"></i></button>
+                                    <button type="button" id="btn-edit-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 수정"><i data-lucide="edit-3" style="width:15px; height:15px;"></i></button>
+                                    <button type="button" id="btn-delete-packing" class="btn btn-outline btn-sm" style="padding: 6px 10px; display: inline-flex; align-items: center; justify-content: center; height: 28px;" title="선택된 포장방법 삭제"><i data-lucide="trash-2" style="width:15px; height:15px;"></i></button>
                                 </div>
                             </div>
                             <select id="packing-select" style="width: 100%; height: 36px; font-size: 0.85rem;">
@@ -120,7 +120,8 @@
                     </div>
                     <form id="add-item-form">
                         <input type="hidden" id="edit-item-id" value="">
-                        <div class="form-row">
+                        <!-- Hidden duplicate form-row containing redundant inputs to preserve logic compatibility -->
+                        <div class="form-row" style="display: none;">
                             <div class="form-group" style="flex: 2;">
                                 <label for="item-name">화물명</label>
                                 <input type="text" id="item-name" required placeholder="예: A형 팔레트">
