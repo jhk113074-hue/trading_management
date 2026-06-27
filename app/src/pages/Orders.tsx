@@ -489,18 +489,75 @@ export const Orders: React.FC = () => {
                   const orderAmount = pi?.totalUsd || order.totalAmount || 0;
                   const currentStep = mapStatusToStep(order.status || '');
 
-                  const stages = ['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'] as const;
-                  const currIdx = stages.indexOf(currentStep as any);
-                  const getStageColor = (stageName: typeof stages[number]) => {
-                    const stageIdx = stages.indexOf(stageName);
-                    if (stageIdx < currIdx) return '#10b981'; // Completed
-                    if (stageIdx === currIdx) {
-                      if (order.nextAction.level === 'RED' || order.nextAction.level === 'ORANGE') {
-                        return '#f59e0b'; // Warning/Pending
-                      }
-                      return '#2563eb'; // Active
+                  // 5대 핵심 도메인별 진척 상태 실시간 분석
+                  const getStageColor = (stageName: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제') => {
+                    if (stageName === '수주정보') {
+                      const hasTerms = !!(order.incoterms && order.paymentTerms);
+                      const hasLcOk = order.isLc === 'Y' ? !!order.lcNo && !order.lcNo.includes('DISCREPANCY') : true;
+                      const hasLcDiscrepancy = order.isLc === 'Y' && order.lcNo && order.lcNo.includes('DISCREPANCY');
+
+                      if (hasLcDiscrepancy) return '#f59e0b'; // 🟡 조치필요
+                      if (hasTerms && hasLcOk) return '#10b981'; // 🟢 완료
+                      return '#2563eb'; // 🔵 진행중
                     }
-                    return '#cbd5e1'; // Scheduled
+
+                    if (stageName === '소싱/발주') {
+                      const orderItems = order.items || [];
+                      if (orderItems.length === 0) return '#cbd5e1'; // ⚪ 미시작
+                      
+                      const allAssigned = orderItems.every(it => it.supplier);
+                      const hasCargoDate = !!order.cargoReadyDate;
+                      const hasPoSent = order.supplierPoSent && Object.values(order.supplierPoSent).every(val => val === true);
+
+                      if (allAssigned && hasCargoDate && hasPoSent) return '#10b981'; // 🟢 완료
+                      if (allAssigned || hasCargoDate) return '#2563eb'; // 🔵 진행중
+                      return '#cbd5e1'; // ⚪ 미시작
+                    }
+
+                    if (stageName === '물류/선적') {
+                      const hasForwarders = order.forwarderConfirmed || (order.forwarders && order.forwarders.length > 0);
+                      const hasVessel = !!order.vesselBooking;
+                      const hasCfs = !!(order.containerWorkspaceType && order.cfsEntryDate);
+
+                      if (hasForwarders && hasVessel && hasCfs) return '#10b981'; // 🟢 완료
+                      if (hasForwarders || hasVessel) return '#2563eb'; // 🔵 진행중
+                      return '#cbd5e1'; // ⚪ 미시작
+                    }
+
+                    if (stageName === '서류관리') {
+                      const hasCiPl = order.ciPlStatus === 'Y' || !!(order.ciFiles && order.ciFiles.length > 0);
+                      const hasExportNo = !!(order.exportDeclarationNo && order.exportDeclarationFiles && order.exportDeclarationFiles.length > 0);
+                      const hasPhotos = !!(order.containerWorkFiles && order.containerWorkFiles.length > 0);
+
+                      if (hasCiPl && hasExportNo && hasPhotos) return '#10b981'; // 🟢 완료
+                      if (hasCiPl || hasExportNo) return '#2563eb'; // 🔵 진행중
+                      return '#cbd5e1'; // ⚪ 미시작
+                    }
+
+                    if (stageName === '정산/결제') {
+                      const hasReceipts = !!(order.paymentCollectedInstallments && order.paymentCollectedInstallments.length > 0);
+                      const isFullyCollected = order.paymentCollectedDate !== undefined && order.paymentCollectedDate !== '';
+                      
+                      // 세금계산서 등록 확인
+                      const hasTaxInvoice = (() => {
+                        const details = (order as any).supplierTaxInvoiceDetails;
+                        if (!details) return false;
+                        const keys = Object.keys(details);
+                        if (keys.length === 0) return false;
+                        return keys.some(key => {
+                          const detail = details[key];
+                          if (!detail) return false;
+                          if (Array.isArray(detail)) return detail.some((d: any) => !!d.invoiceNo);
+                          return !!(detail as any).invoiceNo;
+                        });
+                      })();
+
+                      if (isFullyCollected && hasTaxInvoice) return '#10b981'; // 🟢 완료
+                      if (hasReceipts || hasTaxInvoice) return '#2563eb'; // 🔵 진행중
+                      return '#cbd5e1'; // ⚪ 미시작
+                    }
+
+                    return '#cbd5e1';
                   };
 
                   // Urgent color styling
