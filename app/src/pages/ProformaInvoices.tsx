@@ -386,31 +386,32 @@ export const ProformaInvoices: React.FC = () => {
       {/* Filters Card */}
       <div style={{ 
         display: 'flex', 
-        gap: '16px', 
-        marginBottom: '24px', 
-        flexWrap: 'wrap', 
+        gap: '8px', 
+        marginBottom: '16px', 
+        flexWrap: 'nowrap', 
         alignItems: 'center',
         background: '#ffffff',
-        padding: '18px 24px',
-        borderRadius: '12px',
+        padding: '10px 16px',
+        borderRadius: '10px',
         border: '1px solid #e2e8f0',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'
+        boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
+        overflowX: 'auto'
       }}>
         
         {/* ── 조회 모드 Segmented Control ── */}
-        <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '3px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '6px', padding: '2px', border: '1px solid #e2e8f0', flexShrink: 0 }}>
           <button
             onClick={() => setDateMode('daily')}
             style={{
-              padding: '8px 18px',
+              padding: '6px 12px',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '4px',
               background: dateMode === 'daily' ? '#ffffff' : 'transparent',
               color: dateMode === 'daily' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '14px',
-              boxShadow: dateMode === 'daily' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              fontSize: '12.5px',
+              boxShadow: dateMode === 'daily' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
               transition: 'all 0.15s'
             }}
           >
@@ -419,15 +420,15 @@ export const ProformaInvoices: React.FC = () => {
           <button
             onClick={() => setDateMode('weekly')}
             style={{
-              padding: '8px 18px',
+              padding: '6px 12px',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '4px',
               background: dateMode === 'weekly' ? '#ffffff' : 'transparent',
               color: dateMode === 'weekly' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '14px',
-              boxShadow: dateMode === 'weekly' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              fontSize: '12.5px',
+              boxShadow: dateMode === 'weekly' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
               transition: 'all 0.15s'
             }}
           >
@@ -436,15 +437,15 @@ export const ProformaInvoices: React.FC = () => {
           <button
             onClick={() => setDateMode('range')}
             style={{
-              padding: '8px 18px',
+              padding: '6px 12px',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: '4px',
               background: dateMode === 'range' ? '#ffffff' : 'transparent',
               color: dateMode === 'range' ? '#0f172a' : '#475569',
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '14px',
-              boxShadow: dateMode === 'range' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              fontSize: '12.5px',
+              boxShadow: dateMode === 'range' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
               transition: 'all 0.15s'
             }}
           >
@@ -454,34 +455,34 @@ export const ProformaInvoices: React.FC = () => {
 
         {/* ── 상세 날짜 선택 영역 ── */}
         {dateMode === 'daily' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-            <button onClick={handlePrevDay} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569', borderRight: '1px solid #cbd5e1' }}>‹</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
+            <button onClick={handlePrevDay} style={{ padding: '6px 10px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderRight: '1px solid #cbd5e1' }}>‹</button>
             <input
               type="date"
               value={selectedDate}
               onChange={e => setSelectedDate(e.target.value)}
               style={{
-                padding: '8px 14px',
+                padding: '5px 8px',
                 border: 'none',
                 outline: 'none',
-                fontSize: '15px',
+                fontSize: '12.5px',
                 fontWeight: 700,
                 color: '#1e293b',
                 cursor: 'pointer',
                 background: '#fff'
               }}
             />
-            <button onClick={handleNextDay} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569', borderLeft: '1px solid #cbd5e1' }}>›</button>
+            <button onClick={handleNextDay} style={{ padding: '6px 10px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderLeft: '1px solid #cbd5e1' }}>›</button>
             {selectedDate !== new Date().toISOString().split('T')[0] && (
               <button
                 onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
                 style={{
-                  padding: '10px 14px',
+                  padding: '6px 10px',
                   border: 'none',
                   borderLeft: '1px solid #cbd5e1',
                   background: '#f0fdf4',
                   cursor: 'pointer',
-                  fontSize: '14px',
+                  fontSize: '12px',
                   fontWeight: 700,
                   color: '#16a34a'
                 }}
@@ -493,61 +494,61 @@ export const ProformaInvoices: React.FC = () => {
         )}
 
         {dateMode === 'weekly' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569' }}>‹</button>
-            <div style={{ padding: '10px 18px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#1d4ed8' : '#334155', fontWeight: 700, fontSize: '15px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
+            <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 10px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569' }}>‹</button>
+            <div style={{ padding: '6px 12px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#1d4ed8' : '#334155', fontWeight: 700, fontSize: '12.5px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
               📅 {formatWeekLabel(weekOffset)}
             </div>
-            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '10px 14px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '15px', fontWeight: 700, color: '#475569' }}>›</button>
+            <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 10px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569' }}>›</button>
             {weekOffset !== 0 && (
-              <button onClick={() => setWeekOffset(0)} style={{ padding: '10px 14px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+              <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
             )}
           </div>
         )}
 
         {dateMode === 'range' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
               <input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
                 style={{
-                  padding: '10px 14px',
+                  padding: '5px 8px',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '15px',
+                  fontSize: '12.5px',
                   fontWeight: 700,
                   color: '#1e293b',
                   cursor: 'pointer'
                 }}
               />
-              <span style={{ padding: '0 12px', color: '#94a3b8', fontSize: '15px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '38px', display: 'flex', alignItems: 'center' }}>~</span>
+              <span style={{ padding: '0 8px', color: '#94a3b8', fontSize: '12.5px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '28px', display: 'flex', alignItems: 'center' }}>~</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 style={{
-                  padding: '10px 14px',
+                  padding: '5px 8px',
                   border: 'none',
                   outline: 'none',
-                  fontSize: '15px',
+                  fontSize: '12.5px',
                   fontWeight: 700,
                   color: '#1e293b',
                   cursor: 'pointer'
                 }}
               />
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={() => setRangePreset('today')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>오늘</button>
-              <button onClick={() => setRangePreset('week')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번주</button>
-              <button onClick={() => setRangePreset('month')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>이번달</button>
-              <button onClick={() => setRangePreset('all')} style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}>전체</button>
+            <div style={{ display: 'flex', gap: '3px' }}>
+              <button onClick={() => setRangePreset('today')} style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>오늘</button>
+              <button onClick={() => setRangePreset('week')} style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>이번주</button>
+              <button onClick={() => setRangePreset('month')} style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>이번달</button>
+              <button onClick={() => setRangePreset('all')} style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>전체</button>
             </div>
           </div>
         )}
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', minWidth: '190px', fontSize: '15px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}>
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', minWidth: '150px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0 }}>
           <option value="">👥 전체 고객</option>
           {Object.entries(customers).map(([id, c]) => (
             <option key={id} value={id}>{c.name}</option>
@@ -558,9 +559,9 @@ export const ProformaInvoices: React.FC = () => {
           value={filterIssuer} 
           onChange={e => setFilterIssuer(e.target.value)} 
           style={{ 
-            padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', 
-            minWidth: '140px', fontSize: '15px', fontWeight: 600, color: '#1e293b', 
-            outline: 'none', background: '#fff' 
+            padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', 
+            minWidth: '125px', fontSize: '13px', fontWeight: 600, color: '#1e293b', 
+            outline: 'none', background: '#fff', flexShrink: 0
           }}
         >
           <option value="All">🏢 전체 ISSUER</option>
@@ -568,13 +569,13 @@ export const ProformaInvoices: React.FC = () => {
           <option value="YS">영성ACC</option>
         </select>
         
-        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '220px', fontSize: '15px', outline: 'none' }} />
+        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', width: '150px', fontSize: '13px', outline: 'none', flexShrink: 0 }} />
 
         {/* PI 상태 필터 */}
         <select
           value={filterPiStatus}
           onChange={e => setFilterPiStatus(e.target.value)}
-          style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', minWidth: '150px', fontSize: '15px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', cursor: 'pointer' }}
+          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', minWidth: '110px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', cursor: 'pointer', flexShrink: 0 }}
         >
           <option value="All">📋 전체 상태</option>
           <option value="협상중">협상중</option>
@@ -583,7 +584,7 @@ export const ProformaInvoices: React.FC = () => {
           <option value="만료">만료</option>
         </select>
  
-        <span style={{ marginLeft: 'auto', fontSize: '16px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '8px 16px', borderRadius: '20px' }}>
+        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>
           총 {filteredAndSorted.length}건
         </span>
       </div>
