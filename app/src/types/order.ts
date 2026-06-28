@@ -31,6 +31,7 @@ export interface OrderItem {
   currency: "USD" | "KRW";
   isSourcingOnly?: boolean;
   selectedPackingMethodId?: string;
+  hsCode?: string;
 }
 
 export interface Order {

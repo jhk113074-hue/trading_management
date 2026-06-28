@@ -15,6 +15,7 @@ export interface Product {
   productCode: string;
   nameKo: string;
   nameEn: string;
+  hsCode?: string;
   categoryLarge: string;
   categoryMedium: string;
   categorySmall: string;

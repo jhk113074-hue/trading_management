@@ -10,6 +10,7 @@ const excelMapping = [
   { header: "상품코드(ID)", key: "productCode" },
   { header: "상품명(한글)", key: "nameKo" },
   { header: "상품명(영문)", key: "nameEn" },
+  { header: "HS CODE", key: "hsCode" },
   { header: "대분류", key: "categoryLarge" },
   { header: "중분류", key: "categoryMedium" },
   { header: "소분류", key: "categorySmall" },
@@ -432,6 +433,11 @@ export const Products: React.FC = () => {
                     <td style={{ padding: '6px 8px' }}>
                       <strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong>
                       <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>ID: {p.id}</div>
+                      {p.hsCode && (
+                        <div style={{ fontSize: '10.5px', color: '#475569', backgroundColor: '#f1f5f9', padding: '1px 5px', borderRadius: '4px', display: 'inline-block', marginTop: '3px', fontWeight: 'bold' }}>
+                          HS: {p.hsCode}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '6px 8px' }}>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{p.nameKo || '-'}</div>

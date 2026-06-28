@@ -105,7 +105,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   };
 
   const [formData, setFormData] = useState<Partial<Product>>({
-    productCode: undefined, nameKo: '', nameEn: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', spec: '', imageUrl: '',
+    productCode: undefined, nameKo: '', nameEn: '', hsCode: '', categoryLarge: '', categoryMedium: '', categorySmall: '', description: '', spec: '', imageUrl: '',
     supplierName: '', supplierCode: '', supplierContact: '', supplierPhone: '', supplierEmail: '', supplierAddress: '', minOrderQty: 0,
     manufacturerName: '', manufacturerCode: '', manufacturerContact: '', manufacturerPhone: '', manufacturerEmail: '', manufacturerAddress: '',
     purchasePrice: 0, currency: 'USD', priceValidFrom: '', priceValidTo: '', discountRate: 0, freightIncluded: 'N', purchasePrices: [],
@@ -613,6 +613,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   <Input label="상품코드 (필수) ★" value={formData.productCode} onChange={(v: any) => handleChange('productCode', v)} disabled={!!initialProduct} placeholder="예: PROD-CF-001" />
                   <Input label="상품명_한글 (필수) ★" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} />
                   <Input label="상품명_영문" value={formData.nameEn} onChange={(v: any) => handleChange('nameEn', v)} />
+                  <Input label="HS CODE" value={formData.hsCode} onChange={(v: any) => handleChange('hsCode', v)} />
                   {/* 대분류 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>대분류</label>
