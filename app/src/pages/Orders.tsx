@@ -610,38 +610,73 @@ export const Orders: React.FC = () => {
                         ${orderAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* 단계 (개선된 Progress 표시) */}
+                      {/* 단계 (stageCompletion 기반 진행바) */}
                       <td style={{ padding: '10px 16px', minWidth: '220px' }}>
                         {(() => {
-                          const stages: Array<'수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제'> = ['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'];
-                          const completedCount = stages.filter(s => getStageColor(s) === '#10b981').length;
-                          const progressPct = Math.round((completedCount / stages.length) * 100);
+                          type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
+                          const stageDefs: { key: StageKey; label: string; tabName: string }[] = [
+                            { key: '수주정보', label: 'PO', tabName: '수주정보' },
+                            { key: '소싱발주', label: '소싱', tabName: '소싱/발주' },
+                            { key: '물류선적', label: '선적', tabName: '물류/선적' },
+                            { key: '서류관리', label: '서류', tabName: '서류관리' },
+                            { key: '정산결제', label: '정산', tabName: '정산/결제' },
+                          ];
+                          const sc: Record<StageKey, Record<string, boolean>> = (order as any).stageCompletion || {};
+
+                          // stageCompletion 있으면 그 기반, 없으면 기존 getStageColor 폴백
+                          const hasStageCompletion = Object.keys(sc).length > 0;
+
+                          const getBarColor = (key: StageKey) => {
+                            if (hasStageCompletion) {
+                              const items = sc[key] || {};
+                              const keys = Object.keys(items);
+                              if (keys.length === 0) return '#cbd5e1';
+                              const done = keys.filter(k => items[k]).length;
+                              if (done === keys.length) return '#10b981';
+                              if (done > 0) return '#2563eb';
+                              return '#cbd5e1';
+                            }
+                            // 폴백: 기존 getStageColor
+                            return getStageColor(key as any);
+                          };
+
+                          // 전체 완료율
+                          const allKeys = stageDefs.flatMap(s => Object.keys(sc[s.key] || {}));
+                          const allDone = stageDefs.flatMap(s => Object.values(sc[s.key] || {}).filter(Boolean));
+                          const totalPct = allKeys.length > 0
+                            ? Math.round((allDone.length / allKeys.length) * 100)
+                            : (() => {
+                                const completedCount = stageDefs.filter(s => getStageColor(s.key as any) === '#10b981').length;
+                                return Math.round((completedCount / stageDefs.length) * 100);
+                              })();
 
                           return (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {/* 현재 단계 강조 배지 */}
+                              {/* 현재 단계 배지 */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{
                                   background: '#eff6ff', color: '#2563eb',
                                   border: '1px solid #bfdbfe',
                                   fontSize: '11px', fontWeight: 700,
                                   padding: '2px 9px', borderRadius: '20px',
-                                  letterSpacing: '0.02em', whiteSpace: 'nowrap'
+                                  whiteSpace: 'nowrap'
                                 }}>
                                   {currentStep}
                                 </span>
                                 <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                                  {completedCount}/{stages.length}
+                                  {allDone.length > 0 || allKeys.length > 0
+                                    ? `${allDone.length}/${allKeys.length}`
+                                    : `${stageDefs.filter(s => getStageColor(s.key as any) === '#10b981').length}/${stageDefs.length}`}
                                 </span>
                               </div>
                               {/* 컬러 진행바 */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                {stages.map((s, i) => {
-                                  const color = getStageColor(s);
-                                  const isCurrent = s === currentStep;
+                                {stageDefs.map((s, i) => {
+                                  const color = getBarColor(s.key);
+                                  const isCurrent = currentStep === s.tabName;
                                   return (
-                                    <React.Fragment key={s}>
-                                      <div title={s} style={{
+                                    <React.Fragment key={s.key}>
+                                      <div title={s.tabName} style={{
                                         width: isCurrent ? '30px' : '18px',
                                         height: '6px',
                                         borderRadius: '3px',
@@ -650,14 +685,14 @@ export const Orders: React.FC = () => {
                                         transition: 'all 0.2s',
                                         flexShrink: 0,
                                       }} />
-                                      {i < stages.length - 1 && (
+                                      {i < stageDefs.length - 1 && (
                                         <div style={{ width: '2px', height: '1px', background: '#e2e8f0', flexShrink: 0 }} />
                                       )}
                                     </React.Fragment>
                                   );
                                 })}
                                 <span style={{ marginLeft: '5px', fontSize: '10.5px', color: '#94a3b8', fontWeight: 600 }}>
-                                  {progressPct}%
+                                  {totalPct}%
                                 </span>
                               </div>
                             </div>

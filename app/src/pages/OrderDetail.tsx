@@ -121,6 +121,67 @@ export const OrderDetail: React.FC = () => {
   const [activeLogisticsTab, setActiveLogisticsTab] = useState<'선적관리' | '패킹리스트' | '도착보고_쉬핑마크'>('선적관리');
   const [showPoDetails, setShowPoDetails] = useState(false);
   const isEditing = true;
+
+  // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
+  type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
+  const defaultStageCompletion: Record<StageKey, Record<string, boolean>> = {
+    수주정보: {
+      '인코텀즈/결제조건 확인': false,
+      '고객 PO 접수 확인': false,
+      'L/C 정보 입력': false,
+      '수주 품목 및 금액 확정': false,
+    },
+    소싱발주: {
+      '공급사 배정 완료': false,
+      '발주서 발행 및 발송': false,
+      '공급사 납기일 확정': false,
+      '카고 레디 확인': false,
+    },
+    물류선적: {
+      '포워더/운송사 확정': false,
+      'Vessel(선박명) 확정': false,
+      'CFS 입고일 확정': false,
+      '선적 완료 확인': false,
+    },
+    서류관리: {
+      'CI/PL 작성 완료': false,
+      '수출신고 완료': false,
+      'B/L 수령': false,
+      '서류 발송/은행 제출': false,
+    },
+    정산결제: {
+      '전금(선금) 수령': false,
+      '잔금 수령 완료': false,
+      '공급사 대금 지급': false,
+      '세금계산서 처리': false,
+    },
+  };
+  const [stageCompletion, setStageCompletion] = useState<Record<StageKey, Record<string, boolean>>>(defaultStageCompletion);
+
+  // 체크박스 토글 → Firebase 즉시 저장
+  const handleChecklistToggle = async (stage: StageKey, item: string) => {
+    if (!order) return;
+    const newVal = !((stageCompletion[stage] || {})[item]);
+    const updated = {
+      ...stageCompletion,
+      [stage]: { ...(stageCompletion[stage] || {}), [item]: newVal }
+    };
+    setStageCompletion(updated);
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { stageCompletion: updated, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (e) { console.error('체크리스트 저장 실패:', e); }
+  };
+
+  // stageCompletion 완료율 계산
+  const getStageProgress = (stage: StageKey) => {
+    const items = stageCompletion[stage] || {};
+    const keys = Object.keys(items);
+    if (keys.length === 0) return { done: 0, total: 0, pct: 0 };
+    const done = keys.filter(k => items[k]).length;
+    return { done, total: keys.length, pct: Math.round((done / keys.length) * 100) };
+  };
+  // ────────────────────────────────────────────────────────────────────────
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
@@ -1224,6 +1285,13 @@ export const OrderDetail: React.FC = () => {
         setForwardersList(data.forwarders || []);
         if (data.activeSourcingTab) {
           setActiveSourcingTab(data.activeSourcingTab as any);
+        }
+        // stageCompletion 로드 — 없으면 기본값 유지
+        if ((data as any).stageCompletion) {
+          setStageCompletion(prev => ({
+            ...prev,
+            ...(data as any).stageCompletion
+          }));
         }
       } else {
         setOrder(null);
@@ -3519,81 +3587,143 @@ export const OrderDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* 마일스톤 대시보드 */}
+      {/* ── 단계별 독립 체크리스트 대시보드 ── */}
       {(() => {
-        const checklist = [
-          { label: '인코텀즈/결제조건 확인', completed: !!(basicForm.incoterms && basicForm.paymentTerms) },
-          { label: 'L/C 정보 기입', completed: basicForm.isLc === 'Y' ? !!basicForm.lcNo : true },
-          { label: '모든 품목 공급업체 배정', completed: orderItems.length > 0 && orderItems.every(it => it.supplier) },
-          { label: '공급사 발주서 발행', completed: !!(issuedDocs && issuedDocs.length > 0) },
-          { label: '공급사 납기일 확정', completed: !!basicForm.cargoReadyDate },
-          { label: '포워딩/운송사 지정', completed: forwardersList.length > 0 },
-          { label: 'Vessel(선박명) 지정', completed: !!basicForm.vesselBooking },
-          { label: '작업장소 및 입고일 지정', completed: !!(basicForm.containerWorkspaceType && basicForm.cfsEntryDate) },
-          { label: 'CI/PL 유첨 등록', completed: basicForm.ciPlStatus === 'Y' || !!(order.ciFiles && order.ciFiles.length > 0) },
-          { label: '수출면장 파일 업로드', completed: !!(basicForm.exportDeclarationNo && order.exportDeclarationFiles && order.exportDeclarationFiles.length > 0) },
-          { label: '컨테이너 작업 사진 등록', completed: !!(order.containerWorkFiles && order.containerWorkFiles.length > 0) },
-          { label: '공급사 세금계산서 승인번호 기입', completed: (() => {
-              if (!basicForm.supplierTaxInvoiceDetails) return false;
-              const keys = Object.keys(basicForm.supplierTaxInvoiceDetails);
-              if (keys.length === 0) return false;
-              return keys.some(key => {
-                const detail = basicForm.supplierTaxInvoiceDetails[key];
-                if (!detail) return false;
-                if (Array.isArray(detail)) {
-                  return detail.some(d => !!d.invoiceNo);
-                }
-                return !!(detail as any).invoiceNo;
-              });
-            })()
-          },
-          { label: '대금 수금 내역 등록', completed: !!(basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.length > 0 && (basicForm.paymentCollectedInstallments[0].amount || 0) > 0) }
+        type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
+        const stageMeta: { key: StageKey; label: string; icon: string; tabTarget: typeof steps[number] }[] = [
+          { key: '수주정보', label: '수주정보', icon: '📋', tabTarget: '수주정보' },
+          { key: '소싱발주', label: '소싱/발주', icon: '🏭', tabTarget: '소싱/발주' },
+          { key: '물류선적', label: '물류/선적', icon: '🚢', tabTarget: '물류/선적' },
+          { key: '서류관리', label: '서류관리', icon: '📄', tabTarget: '서류관리' },
+          { key: '정산결제', label: '정산/결제', icon: '💰', tabTarget: '정산/결제' },
         ];
 
-        const totalItems = checklist.length;
-        const completedItems = checklist.filter(item => item.completed).length;
-        const percent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+        // 전체 완료율
+        const allItems = stageMeta.flatMap(s => Object.keys(stageCompletion[s.key] || {}));
+        const allDone = stageMeta.flatMap(s => Object.values(stageCompletion[s.key] || {}).filter(Boolean));
+        const totalPct = allItems.length > 0 ? Math.round((allDone.length / allItems.length) * 100) : 0;
 
         return (
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                🚩 마일스톤 대시보드 (오더 진행 진척율)
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px 20px', marginBottom: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)' }}>
+            {/* 헤더 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>
+                🚩 단계별 진행 체크리스트
               </span>
-              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#2563eb' }}>
-                {completedItems} / {totalItems} 개 완료 ({percent}%)
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
+                전체 {allDone.length}/{allItems.length} ({totalPct}%)
               </span>
-            </div>
-            
-            {/* Progress Bar */}
-            <div style={{ width: '100%', height: '8px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${percent}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6 0%, #10b981 100%)', borderRadius: '4px', transition: 'width 0.3s ease-in-out' }} />
             </div>
 
-            {/* 완료/대기 항목 태그 리스트 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {completedItems > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#047857', marginRight: '4px' }}>[완료]</span>
-                  {checklist.filter(item => item.completed).map((item, idx) => (
-                    <span key={idx} style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#d1fae5', color: '#065f46', fontSize: '10px', fontWeight: 600 }}>
-                      {item.label}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {completedItems < totalItems && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#4b5563', marginRight: '4px' }}>[대기]</span>
-                  {checklist.filter(item => !item.completed).map((item, idx) => (
-                    <span key={idx} style={{ display: 'inline-flex', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#f3f4f6', color: '#374151', fontSize: '10px', fontWeight: 600 }}>
-                      {item.label}
-                    </span>
-                  ))}
-                </div>
-              )}
+            {/* 전체 진행바 */}
+            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', marginBottom: '16px' }}>
+              <div style={{ width: `${totalPct}%`, height: '100%', background: 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px', transition: 'width 0.3s' }} />
             </div>
+
+            {/* 5개 단계 카드 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+              {stageMeta.map(({ key, label, icon, tabTarget }) => {
+                const { done, total, pct } = getStageProgress(key);
+                const isActive = activeStep === tabTarget;
+                const items = stageCompletion[key] || {};
+
+                // 단계 상태 색상
+                const stageColor = done === total ? '#10b981' : done > 0 ? '#2563eb' : '#94a3b8';
+                const stageBg = done === total ? '#f0fdf4' : done > 0 ? '#eff6ff' : '#f8fafc';
+                const stageBorder = done === total ? '#86efac' : done > 0 ? '#bfdbfe' : '#e2e8f0';
+
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      border: isActive ? '2px solid #2563eb' : `1px solid ${stageBorder}`,
+                      borderRadius: '10px',
+                      background: isActive ? '#eff6ff' : stageBg,
+                      padding: '10px 12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      boxShadow: isActive ? '0 0 0 2px rgba(37,99,235,0.15)' : 'none',
+                    }}
+                    onClick={() => handleStepClick(tabTarget)}
+                  >
+                    {/* 단계 헤더 */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 800, color: isActive ? '#1d4ed8' : '#374151' }}>
+                        {icon} {label}
+                      </span>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: stageColor }}>
+                        {done}/{total}
+                      </span>
+                    </div>
+
+                    {/* 단계 진행바 */}
+                    <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: stageColor, borderRadius: '2px', transition: 'width 0.3s' }} />
+                    </div>
+
+                    {/* 체크리스트 항목 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {Object.entries(items).map(([itemKey, checked]) => (
+                        <div
+                          key={itemKey}
+                          onClick={e => { e.stopPropagation(); handleChecklistToggle(key, itemKey); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                            cursor: 'pointer', padding: '2px 0',
+                          }}
+                        >
+                          <div style={{
+                            width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
+                            border: checked ? 'none' : '1.5px solid #cbd5e1',
+                            background: checked ? '#10b981' : '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.15s',
+                          }}>
+                            {checked && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                          </div>
+                          <span style={{
+                            fontSize: '10px', fontWeight: checked ? 600 : 400,
+                            color: checked ? '#065f46' : '#64748b',
+                            textDecoration: checked ? 'none' : 'none',
+                            lineHeight: 1.3,
+                          }}>
+                            {itemKey}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 미완료 항목 요약 */}
+            {(() => {
+              const pending = stageMeta.flatMap(s =>
+                Object.entries(stageCompletion[s.key] || {})
+                  .filter(([, v]) => !v)
+                  .map(([k]) => ({ stage: s.label, item: k }))
+              );
+              if (pending.length === 0) return (
+                <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', fontSize: '11.5px', fontWeight: 700, color: '#15803d', textAlign: 'center' }}>
+                  🎉 모든 단계 완료! 오더가 마감되었습니다.
+                </div>
+              );
+              return (
+                <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>⏳ 미완료 항목 ({pending.length}건): </span>
+                  {pending.slice(0, 6).map((p, i) => (
+                    <span key={i} style={{ fontSize: '10.5px', color: '#475569', marginRight: '6px' }}>
+                      <span style={{ color: '#94a3b8' }}>[{p.stage}]</span> {p.item}{i < Math.min(pending.length, 6) - 1 ? ' · ' : ''}
+                    </span>
+                  ))}
+                  {pending.length > 6 && <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>외 {pending.length - 6}건</span>}
+                </div>
+              );
+            })()}
           </div>
         );
       })()}
