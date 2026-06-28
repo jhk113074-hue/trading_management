@@ -350,7 +350,7 @@ export const ProformaInvoices: React.FC = () => {
     <div className="page-container" style={{ padding: '28px', background: '#f8fafc', minHeight: '100vh', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>견적관리 (Proforma Invoice)</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>견적관리</h1>
           <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px', fontWeight: 500 }}>전체 PI 목록 · 실시간 동기화 대시보드</p>
         </div>
         <button 
