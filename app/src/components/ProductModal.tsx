@@ -287,15 +287,6 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       const found = suppliers.find(s => s.name === formData.manufacturerName || s.supplierCode === (formData as any).manufacturer);
       if (found) {
         setManufacturerInput(`[${found.supplierCode}] ${found.name}`);
-        setFormData(prev => ({
-          ...prev,
-          manufacturerName: found.name,
-          manufacturerCode: found.supplierCode,
-          manufacturerContact: found.managerName || '',
-          manufacturerPhone: found.managerPhone || found.phone || '',
-          manufacturerEmail: found.purchaseEmail || '',
-          manufacturerAddress: found.address || '',
-        }));
       } else {
         setManufacturerInput(formData.manufacturerName);
       }
@@ -1087,7 +1078,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           </tr>
                         ) : (
                           formData.suppliers.map((sup, idx) => (
-                            <tr key={sup.supplierCode} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                            <tr key={sup.supplierCode || idx} style={{ borderBottom: '1px solid #f3e8ff' }}>
                               <td style={{ padding: '8px' }}>
                                 <input
                                   type="radio"
