@@ -15,6 +15,8 @@ import { previewFile } from '../components/FilePreviewModal';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
+import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
+
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
   if (!pkgNo) return '0';
@@ -121,6 +123,7 @@ export const OrderDetail: React.FC = () => {
   const [activeSettlementTab, setActiveSettlementTab] = useState<'세금계산서' | '대금결제' | '수금관리' | '정산현황'>('정산현황');
   const [activeLogisticsTab, setActiveLogisticsTab] = useState<'선적관리' | '패킹리스트' | '도착보고_쉬핑마크'>('선적관리');
   const [activeDocumentTab, setActiveDocumentTab] = useState<'서류업로드' | 'CI_PL작성'>('서류업로드');
+  const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
   const [showPoDetails, setShowPoDetails] = useState(false);
   const isEditing = true;
 
@@ -8198,6 +8201,13 @@ export const OrderDetail: React.FC = () => {
                         </button>
                         <button
                           type="button"
+                          onClick={() => setIsCiPlPreviewOpen(true)}
+                          style={{ padding: '6px 14px', background: '#3b82f6', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          🔍 미리보기
+                        </button>
+                        <button
+                          type="button"
                           onClick={handleExportExcelLocal}
                           style={{ padding: '6px 14px', background: '#10b981', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
@@ -10080,6 +10090,67 @@ export const OrderDetail: React.FC = () => {
         </div>
       )}
 
+      {order && (
+        <CiPlPreviewModal
+          isOpen={isCiPlPreviewOpen}
+          onClose={() => setIsCiPlPreviewOpen(false)}
+          data={{
+            piNumber: basicForm.piNumber,
+            invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
+            customerName: basicForm.customer,
+            customerAddress: basicForm.customerAddress || '',
+            issuingCompany: basicForm.issuingCompany,
+            lcNo: basicForm.lcNo,
+            lcDate: basicForm.lcIssuingDate,
+            lcIssuingBank: basicForm.lcIssuingBank,
+            notifyParty: basicForm.lcRemark || 'SAME AS APPLICANT', 
+            remarks: basicForm.remark,
+            portOfLoading: basicForm.portOfLoading,
+            portOfDischarge: basicForm.portOfDischarge,
+            vesselName: basicForm.vesselBooking,
+            etd: basicForm.etd,
+            paymentTerms: basicForm.paymentTerms,
+            deliveryTerms: basicForm.incoterms,
+            shippingMarks: (commonShippingMark.company || 'YSACC') + '\n' + ((commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '')) + '\n' + (commonShippingMark.origin || 'MADE IN KOREA'),
+            items: orderItems.map(it => {
+              const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+              let itemNetWeight = matchedProd?.palletWeight || 0;
+              let itemGrossWeight = matchedProd?.palletGrossWeight || 0;
+              let itemCbm = 0.5;
+              let itemPkgCount = it.qty;
+              let itemPkgType = matchedProd?.packageType || 'Pallet';
+
+              if (basicForm.packingList?.containers) {
+                basicForm.packingList.containers.forEach((c: any) => {
+                  (c.items || []).forEach((plIt: any) => {
+                    if (plIt.description?.includes(it.name) || plIt.pkgNo?.includes(it.itemId)) {
+                      itemNetWeight = Number(plIt.netWeight) || 0;
+                      itemGrossWeight = Number(plIt.grossWeight) || 0;
+                      itemCbm = Number(plIt.cbm) || 0;
+                      itemPkgCount = Number(plIt.pkg) || 0;
+                      itemPkgType = plIt.packageType || 'Pallet';
+                    }
+                  });
+                });
+              }
+
+              return {
+                name: it.name || '',
+                qty: it.qty || 0,
+                unit: it.unit || 'kg',
+                unitPrice: it.unitPrice || 0,
+                amount: it.amount || 0,
+                hsCode: it.hsCode || matchedProd?.hsCode || '',
+                netWeight: itemNetWeight,
+                grossWeight: itemGrossWeight,
+                cbm: itemCbm,
+                packageType: itemPkgType,
+                packagesCount: itemPkgCount
+              };
+            })
+          }}
+        />
+      )}
     </div>
   );
 };
