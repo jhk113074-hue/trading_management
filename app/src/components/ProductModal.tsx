@@ -21,6 +21,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   const [manufacturerInput, setManufacturerInput] = useState('');
   const [sameAsSupplier, setSameAsSupplier] = useState(false);
 
+  // States for multi-suppliers
+  const [selSupplierVal, setSelSupplierVal] = useState('');
+  const [selPrice, setSelPrice] = useState<number>(0);
+  const [selCurrency, setSelCurrency] = useState('USD');
+  const [selMoq, setSelMoq] = useState<number>(0);
+  const [selLeadTime, setSelLeadTime] = useState<number>(0);
+  const [selRemarks, setSelRemarks] = useState('');
+
   // Category states
   const [largeCategories, setLargeCategories] = useState<string[]>([]);
   const [mediumCategories, setMediumCategories] = useState<string[]>([]);
@@ -116,7 +124,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     stockQty: 0, leadTimeDays: 0, storageLocation: '', storageTemp: '', storageHumidity: '',
     manufacturer: '', manufactureDate: '', expiryDate: '', certifications: '', msdsManaged: 'N',
     packingMethods: [],
-    customerHsCodes: {}
+    customerHsCodes: {},
+    suppliers: []
   });
 
   const [newCustomerName, setNewCustomerName] = useState('');
@@ -1230,6 +1239,209 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       )}
                     </>
                   )}
+                </div>
+
+                {/* ─── 다중 유통사 및 단가 계약 관리 섹션 ─── */}
+                <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '10px', padding: '16px', marginTop: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '15px' }}>🔗</span>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#7e22ce', margin: 0 }}>공급 유통사 지정 및 가격 정보 (다중 관리)</h4>
+                    <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>제조사 제품별 유통 채널별 계약 단가</span>
+                  </div>
+
+                  {/* 신규 유통사 정보 등록 폼 */}
+                  <div style={{ background: '#fff', border: '1px solid #f3e8ff', borderRadius: '8px', padding: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>유통사 선택</label>
+                        <input
+                          type="text"
+                          list="multi_suppliers_datalist"
+                          value={selSupplierVal}
+                          placeholder="유통사 검색 및 입력"
+                          onChange={e => setSelSupplierVal(e.target.value)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                        <datalist id="multi_suppliers_datalist">
+                          {suppliers.map(s => (
+                            <option key={s.id} value={`[${s.supplierCode}] ${s.name}`} />
+                          ))}
+                        </datalist>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>납품 단가 (구매가)</label>
+                        <input
+                          type="number"
+                          value={selPrice}
+                          step="0.01"
+                          onChange={e => setSelPrice(parseFloat(e.target.value) || 0)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>거래 통화</label>
+                        <select
+                          value={selCurrency}
+                          onChange={e => setSelCurrency(e.target.value)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        >
+                          <option value="USD">USD</option>
+                          <option value="KRW">KRW</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>최소 주문수량 (MOQ)</label>
+                        <input
+                          type="number"
+                          value={selMoq}
+                          onChange={e => setSelMoq(parseInt(e.target.value) || 0)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>납기 (L/T 일수)</label>
+                        <input
+                          type="number"
+                          value={selLeadTime}
+                          onChange={e => setSelLeadTime(parseInt(e.target.value) || 0)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>특이사항 (메모)</label>
+                        <input
+                          type="text"
+                          value={selRemarks}
+                          placeholder="단가 계약 비고 등"
+                          onChange={e => setSelRemarks(e.target.value)}
+                          style={{ padding: '6px 8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const code = getRawSupplierCode(selSupplierVal);
+                        const found = suppliers.find(s => s.supplierCode === code || s.name === selSupplierVal || `[${s.supplierCode}] ${s.name}` === selSupplierVal);
+                        if (!found && !selSupplierVal.trim()) {
+                          alert('유통(공급)사를 먼저 선택해주세요.');
+                          return;
+                        }
+                        const sCode = found ? found.supplierCode : code;
+                        const sName = found ? found.name : selSupplierVal;
+
+                        const newLink = {
+                          supplierCode: sCode,
+                          supplierName: sName,
+                          purchasePrice: selPrice,
+                          currency: selCurrency,
+                          minOrderQty: selMoq,
+                          leadTimeDays: selLeadTime,
+                          isDefault: (formData.suppliers || []).length === 0, // 첫 공급사는 자동으로 기본값 설정
+                          remarks: selRemarks
+                        };
+
+                        // 중복 유통사 검사
+                        const exists = (formData.suppliers || []).some(s => s.supplierCode === sCode);
+                        if (exists) {
+                          alert('이미 리스트에 등록된 유통사입니다.');
+                          return;
+                        }
+
+                        setFormData(prev => ({
+                          ...prev,
+                          suppliers: [...(prev.suppliers || []), newLink]
+                        }));
+
+                        // 입력 폼 클리어
+                        setSelSupplierVal('');
+                        setSelPrice(0);
+                        setSelCurrency('USD');
+                        setSelMoq(0);
+                        setSelLeadTime(0);
+                        setSelRemarks('');
+                      }}
+                      style={{ marginTop: '4px', background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      ➕ 유통사 지정 추가
+                    </button>
+                  </div>
+
+                  {/* 등록된 유통사 목록 테이블 */}
+                  <div style={{ border: '1px solid #e9d5ff', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: '#f5f3ff', borderBottom: '1px solid #e9d5ff', color: '#6b21a8', fontWeight: 700 }}>
+                          <th style={{ padding: '8px' }}>기본</th>
+                          <th style={{ padding: '8px' }}>유통사명 (코드)</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>납품 단가</th>
+                          <th style={{ padding: '8px' }}>통화</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>MOQ</th>
+                          <th style={{ padding: '8px', textAlign: 'right' }}>납기</th>
+                          <th style={{ padding: '8px' }}>비고</th>
+                          <th style={{ padding: '8px', textAlign: 'center' }}>삭제</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(!formData.suppliers || formData.suppliers.length === 0) ? (
+                          <tr>
+                            <td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>등록된 유통사가 없습니다. 상단에서 유통사를 추가해 주세요.</td>
+                          </tr>
+                        ) : (
+                          formData.suppliers.map((sup, idx) => (
+                            <tr key={sup.supplierCode} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                              <td style={{ padding: '8px' }}>
+                                <input
+                                  type="radio"
+                                  name="default_supplier"
+                                  checked={sup.isDefault}
+                                  onChange={() => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      suppliers: (prev.suppliers || []).map((s, i) => ({
+                                        ...s,
+                                        isDefault: i === idx
+                                      }))
+                                    }));
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                />
+                              </td>
+                              <td style={{ padding: '8px', fontWeight: 600 }}>{sup.supplierName} <span style={{ fontSize: '10px', color: '#6b7280', fontWeight: 400 }}>({sup.supplierCode})</span></td>
+                              <td style={{ padding: '8px', textAlign: 'right', color: '#7e22ce', fontWeight: 700 }}>{sup.purchasePrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '8px' }}>{sup.currency}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{sup.minOrderQty.toLocaleString()}</td>
+                              <td style={{ padding: '8px', textAlign: 'right' }}>{sup.leadTimeDays}일</td>
+                              <td style={{ padding: '8px', color: '#6b7280' }}>{sup.remarks || '-'}</td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData(prev => {
+                                      const next = (prev.suppliers || []).filter((_, i) => i !== idx);
+                                      // 만약 지운 항목이 기본 공급사였고 남은 항목이 있다면 첫 번째 항목을 기본값으로 승격
+                                      if (sup.isDefault && next.length > 0) {
+                                        next[0].isDefault = true;
+                                      }
+                                      return { ...prev, suppliers: next };
+                                    });
+                                  }}
+                                  style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '11px' }}
+                                >
+                                  삭제
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}

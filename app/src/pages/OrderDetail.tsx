@@ -226,11 +226,31 @@ export const OrderDetail: React.FC = () => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
     const itemCode = match ? match[1] : '-';
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
+
+    let defaultPrice = matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0);
+    let defaultCurrency = matchedProd ? matchedProd.currency : 'USD';
+
+    // 다중 유통사 단가 매핑
+    if (matchedProd && matchedProd.suppliers && matchedProd.suppliers.length > 0) {
+      const activeSup = it.supplier?.trim();
+      const link = matchedProd.suppliers.find(s => s.supplierName?.trim() === activeSup || s.supplierCode === activeSup);
+      if (link) {
+        defaultPrice = link.purchasePrice;
+        defaultCurrency = link.currency;
+      } else {
+        const defLink = matchedProd.suppliers.find(s => s.isDefault);
+        if (defLink) {
+          defaultPrice = defLink.purchasePrice;
+          defaultCurrency = defLink.currency;
+        }
+      }
+    }
+
     const originalPurchasePrice = it.originalPurchasePrice != null 
       ? it.originalPurchasePrice 
       : (it.purchaseUnitPrice != null 
          ? it.purchaseUnitPrice 
-         : (matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0)));
+         : defaultPrice);
     const purchasePrice = it.purchaseUnitPrice != null ? it.purchaseUnitPrice : originalPurchasePrice;
     
     let purchaseCurrency = it.purchaseUnitCurrency;
@@ -240,7 +260,7 @@ export const OrderDetail: React.FC = () => {
       } else if (purchasePrice > 1000) {
         purchaseCurrency = 'KRW';
       } else if (matchedProd) {
-        purchaseCurrency = (matchedProd.currency === 'KRW' ? 'KRW' : 'USD') as any;
+        purchaseCurrency = (defaultCurrency === 'KRW' ? 'KRW' : 'USD') as any;
       } else {
         purchaseCurrency = 'USD';
       }
@@ -1816,20 +1836,50 @@ export const OrderDetail: React.FC = () => {
           
           let buyPrice = prod.purchasePrice || 0;
           let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          let supName = prod.supplierName || '';
+
+          if (prod.suppliers && prod.suppliers.length > 0) {
+            const defLink = prod.suppliers.find(s => s.isDefault);
+            if (defLink) {
+              buyPrice = defLink.purchasePrice;
+              itemCurrency = (defLink.currency === 'KRW' ? 'KRW' : 'USD');
+              supName = defLink.supplierName;
+            }
+          }
+
           const qty = it.qty || 0;
           const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
           it = {
             ...it,
             name: `[${prod.productCode}] ${displayName}`,
-            supplier: prod.supplierName || '',
+            supplier: supName,
             supplierContact: contactInfo || '',
             grade: prod.spec || '',
             unit: (prod.unit || 'kg') as any,
             unitPrice: buyPrice,
             currency: itemCurrency,
-            amount: amt
+            amount: amt,
+            purchaseUnitPrice: buyPrice,
+            purchaseUnitCurrency: itemCurrency
           };
+        }
+      }
+
+      if (field === 'supplier') {
+        const parsedCode = getRawProductCode(it.name);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        if (prod && prod.suppliers && prod.suppliers.length > 0) {
+          const link = prod.suppliers.find(s => s.supplierName === value || s.supplierCode === value);
+          if (link) {
+            it.unitPrice = link.purchasePrice;
+            it.currency = (link.currency === 'KRW' ? 'KRW' : 'USD');
+            it.purchaseUnitPrice = link.purchasePrice;
+            it.purchaseUnitCurrency = (link.currency === 'KRW' ? 'KRW' : 'USD');
+            if (it.qty) {
+              it.amount = it.currency === 'KRW' ? Math.round(it.qty * link.purchasePrice) : parseFloat((it.qty * link.purchasePrice).toFixed(2));
+            }
+          }
         }
       }
 
@@ -1863,20 +1913,50 @@ export const OrderDetail: React.FC = () => {
           
           let buyPrice = prod.purchasePrice || 0;
           let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+          let supName = prod.supplierName || '';
+
+          if (prod.suppliers && prod.suppliers.length > 0) {
+            const defLink = prod.suppliers.find(s => s.isDefault);
+            if (defLink) {
+              buyPrice = defLink.purchasePrice;
+              itemCurrency = (defLink.currency === 'KRW' ? 'KRW' : 'USD');
+              supName = defLink.supplierName;
+            }
+          }
+
           const qty = it.qty || 0;
           const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
           it = {
             ...it,
             name: `[${prod.productCode}] ${displayName}`,
-            supplier: prod.supplierName || '',
+            supplier: supName,
             supplierContact: contactInfo || '',
             grade: prod.spec || '',
             unit: (prod.unit || 'kg') as any,
             unitPrice: buyPrice,
             currency: itemCurrency,
-            amount: amt
+            amount: amt,
+            purchaseUnitPrice: buyPrice,
+            purchaseUnitCurrency: itemCurrency
           };
+        }
+      }
+
+      if (field === 'supplier') {
+        const parsedCode = getRawProductCode(it.name);
+        const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
+        if (prod && prod.suppliers && prod.suppliers.length > 0) {
+          const link = prod.suppliers.find(s => s.supplierName === value || s.supplierCode === value);
+          if (link) {
+            it.unitPrice = link.purchasePrice;
+            it.currency = (link.currency === 'KRW' ? 'KRW' : 'USD');
+            it.purchaseUnitPrice = link.purchasePrice;
+            it.purchaseUnitCurrency = (link.currency === 'KRW' ? 'KRW' : 'USD');
+            if (it.qty) {
+              it.amount = it.currency === 'KRW' ? Math.round(it.qty * link.purchasePrice) : parseFloat((it.qty * link.purchasePrice).toFixed(2));
+            }
+          }
         }
       }
 
@@ -1903,6 +1983,17 @@ export const OrderDetail: React.FC = () => {
       
       let buyPrice = prod.purchasePrice || 0;
       let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      let supName = prod.supplierName || '';
+
+      if (prod.suppliers && prod.suppliers.length > 0) {
+        const def = prod.suppliers.find(s => s.isDefault);
+        if (def) {
+          buyPrice = def.purchasePrice;
+          itemCurrency = (def.currency === 'KRW' ? 'KRW' : 'USD');
+          supName = def.supplierName;
+        }
+      }
+
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
@@ -1911,13 +2002,15 @@ export const OrderDetail: React.FC = () => {
       updated[idx] = {
         ...updated[idx],
         name: `[${prod.productCode}] ${displayName}`,
-        supplier: prod.supplierName || '',
+        supplier: supName,
         supplierContact: contactInfo || '',
         grade: prod.spec || '',
         unit: (prod.unit || 'kg') as any,
         unitPrice: buyPrice,
         currency: itemCurrency,
-        amount: amt
+        amount: amt,
+        purchaseUnitPrice: buyPrice,
+        purchaseUnitCurrency: itemCurrency
       };
       return updated;
     });
@@ -1930,6 +2023,17 @@ export const OrderDetail: React.FC = () => {
       
       let buyPrice = prod.purchasePrice || 0;
       let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+      let supName = prod.supplierName || '';
+
+      if (prod.suppliers && prod.suppliers.length > 0) {
+        const def = prod.suppliers.find(s => s.isDefault);
+        if (def) {
+          buyPrice = def.purchasePrice;
+          itemCurrency = (def.currency === 'KRW' ? 'KRW' : 'USD');
+          supName = def.supplierName;
+        }
+      }
+
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
 
@@ -1938,13 +2042,15 @@ export const OrderDetail: React.FC = () => {
       updated[idx] = {
         ...updated[idx],
         name: `[${prod.productCode}] ${displayName}`,
-        supplier: prod.supplierName || '',
+        supplier: supName,
         supplierContact: contactInfo || '',
         grade: prod.spec || '',
         unit: (prod.unit || 'kg') as any,
         unitPrice: buyPrice,
         currency: itemCurrency,
-        amount: amt
+        amount: amt,
+        purchaseUnitPrice: buyPrice,
+        purchaseUnitCurrency: itemCurrency
       };
       return updated;
     });

@@ -8,6 +8,17 @@ export interface ProductPriceHistory {
   remarks: string;
 }
 
+export interface ProductSupplierLink {
+  supplierCode: string;
+  supplierName: string;
+  purchasePrice: number;
+  currency: string;
+  minOrderQty: number;
+  leadTimeDays: number;
+  isDefault: boolean;
+  remarks?: string;
+}
+
 export interface Product {
   id: string; // The Firestore document ID, typically same as productCode
   
@@ -23,6 +34,9 @@ export interface Product {
   description: string;
   spec?: string;
   imageUrl: string;
+
+  // 다중 유통(공급)사 정보 추가
+  suppliers?: ProductSupplierLink[];
 
   // 2. 구매/공급 정보 - 공급사
   supplierName: string;
