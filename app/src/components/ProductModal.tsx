@@ -33,6 +33,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   const [isAddingMedium, setIsAddingMedium] = useState(false);
   const [isAddingSmall, setIsAddingSmall] = useState(false);
 
+  // C구역(선택입력) 접기/펼치기 — IIFE 안에 두면 Hook Rules 위반이므로 최상단에 선언
+  const [openOptional, setOpenOptional] = useState(false);
+
   const [newLargeVal, setNewLargeVal] = useState('');
   const [newMediumVal, setNewMediumVal] = useState('');
   const [newSmallVal, setNewSmallVal] = useState('');
@@ -287,6 +290,15 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       const found = suppliers.find(s => s.name === formData.manufacturerName || s.supplierCode === (formData as any).manufacturer);
       if (found) {
         setManufacturerInput(`[${found.supplierCode}] ${found.name}`);
+        setFormData(prev => ({
+          ...prev,
+          manufacturerName: found.name,
+          manufacturerCode: found.supplierCode,
+          manufacturerContact: found.managerName || '',
+          manufacturerPhone: found.managerPhone || found.phone || '',
+          manufacturerEmail: found.purchaseEmail || '',
+          manufacturerAddress: found.address || '',
+        }));
       } else {
         setManufacturerInput(formData.manufacturerName);
       }
@@ -745,19 +757,16 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 </div>
 
                 {/* ── C구역: 선택 입력 (접기/펼치기) ── */}
-                {(() => {
-                  const [openOptional, setOpenOptional] = React.useState(false);
-                  return (
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
-                      <button type="button" onClick={() => setOpenOptional(v => !v)}
-                        style={{ width: '100%', padding: '10px 16px', background: '#f8fafc', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ width: '3px', height: '13px', background: '#94a3b8', borderRadius: '2px', display: 'inline-block' }} />
-                          <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>선택 입력</span>
-                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>— 색상, 재질, 상세설명, 이미지, 바이어별 HS CODE</span>
-                        </div>
-                        <span style={{ fontSize: '12px', color: '#94a3b8', transition: 'transform 0.2s', transform: openOptional ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▼</span>
-                      </button>
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                  <button type="button" onClick={() => setOpenOptional(v => !v)}
+                    style={{ width: '100%', padding: '10px 16px', background: '#f8fafc', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: '3px', height: '13px', background: '#94a3b8', borderRadius: '2px', display: 'inline-block' }} />
+                      <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>선택 입력</span>
+                      <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>— 색상, 재질, 상세설명, 이미지, 바이어별 HS CODE</span>
+                    </div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8', transition: 'transform 0.2s', transform: openOptional ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▼</span>
+                  </button>
 
                       {openOptional && (
                         <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -869,8 +878,6 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         </div>
                       )}
                     </div>
-                  );
-                })()}
               </>
             )}
 
@@ -932,7 +939,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             const val = e.target.value;
                             setManufacturerInput(val);
                             const code = getRawSupplierCode(val);
-                            const found = (suppliers || []).find(s => s && (s.supplierCode === code || s.name === val || `[${s.supplierCode || ''}] ${s.name || ''}` === val));
+                            const found = suppliers.find(s => s.supplierCode === code || s.name === val || `[${s.supplierCode}] ${s.name}` === val);
                             if (found) {
                               setFormData(prev => ({
                                 ...prev,
@@ -958,14 +965,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           style={{ width: '100%', padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: '#fff', boxSizing: 'border-box' }}
                         />
                         <datalist id="manufacturers_datalist">
-                          {(suppliers || []).map(s => {
-                            if (!s) return null;
-                            return (
-                              <option key={s.id || Math.random().toString()} value={`[${s.supplierCode || ''}] ${s.name || ''}`}>
-                                {s.name || ''} ({s.supplierCode || ''})
-                              </option>
-                            );
-                          })}
+                          {suppliers.map(s => (
+                            <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
+                              {s.name} ({s.supplierCode})
+                            </option>
+                          ))}
                         </datalist>
                       </div>
 
@@ -1019,12 +1023,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '12px' }}
                       />
                       <datalist id="multi_suppliers_datalist">
-                        {(suppliers || []).map(s => {
-                          if (!s) return null;
-                          return (
-                            <option key={s.id || Math.random().toString()} value={`[${s.supplierCode || ''}] ${s.name || ''}`} />
-                          );
-                        })}
+                        {suppliers.map(s => (
+                          <option key={s.id} value={`[${s.supplierCode}] ${s.name}`} />
+                        ))}
                       </datalist>
                     </div>
 
@@ -1032,7 +1033,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       type="button"
                       onClick={() => {
                         const code = getRawSupplierCode(selSupplierVal);
-                        const found = (suppliers || []).find(s => s && (s.supplierCode === code || s.name === selSupplierVal || `[${s.supplierCode || ''}] ${s.name || ''}` === selSupplierVal));
+                        const found = suppliers.find(s => s.supplierCode === code || s.name === selSupplierVal || `[${s.supplierCode}] ${s.name}` === selSupplierVal);
                         if (!found && !selSupplierVal.trim()) {
                           alert('유통(공급)사를 먼저 선택해주세요.');
                           return;
@@ -1084,7 +1085,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           </tr>
                         ) : (
                           formData.suppliers.map((sup, idx) => (
-                            <tr key={sup.supplierCode || idx} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                            <tr key={sup.supplierCode} style={{ borderBottom: '1px solid #f3e8ff' }}>
                               <td style={{ padding: '8px' }}>
                                 <input
                                   type="radio"
@@ -1105,10 +1106,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               <td style={{ padding: '8px', fontWeight: 600 }}>
                                 <span>{sup.supplierName}</span> <span style={{ fontSize: '10px', color: '#6b7280', fontWeight: 400 }}>({sup.supplierCode})</span>
                                 {(() => {
-                                  const found = (suppliers || []).find(s => s && s.supplierCode === sup.supplierCode);
+                                  const found = suppliers.find(s => s.supplierCode === sup.supplierCode);
                                   if (!found) return null;
-                                  const contact = found.managerName || found.manager || '-';
-                                  const phone = found.managerPhone || found.phone || found.mobile || '-';
+                                  const contact = found.managerName || '-';
+                                  const phone = found.managerPhone || found.phone || '-';
                                   const email = found.purchaseEmail || found.email || '-';
                                   const addr = found.address || '-';
                                   return (
