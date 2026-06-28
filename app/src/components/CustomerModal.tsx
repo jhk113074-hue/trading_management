@@ -124,9 +124,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         {/* Tab Buttons */}
         <div style={{ display: 'flex', gap: '6px', background: '#f8fafc', padding: '6px 12px', borderBottom: '1px solid #f1f5f9' }}>
           {[
-            { id: 'basic', label: '📋 1. 기본 회사 정보' },
-            { id: 'finance', label: '🏦 2. 무역/세무/금융 거래 정보' },
-            { id: 'contacts', label: '👥 3. 바이어 담당자 명부 (' + (formData.contacts?.length || 0) + ')' }
+            { id: 'basic', label: '📋 1. 고객사 및 무역/금융 정보' },
+            { id: 'contacts', label: '👥 2. 바이어 담당자 명부 (' + (formData.contacts?.length || 0) + ')' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -168,8 +167,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
           )}
 
-          {/* TAB 2: Shipping / Finance Info */}
-          {activeSubTab === 'finance' && (
+          {/* TAB 2: Shipping / Finance Info (integrated into Tab 1) */}
+          {activeSubTab === 'basic' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
               {/* 무역/선적 조건 카드 */}
               <div style={{ background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: '12px', padding: '16px' }}>
