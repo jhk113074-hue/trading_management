@@ -11,16 +11,8 @@ import { NewOrderModal } from '../components/NewOrderModal';
 interface NextAction {
   text: string;
   level: 'RED' | 'ORANGE' | 'WHITE';
-  step: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력';
+  step: '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료';
 }
-
-const mapStatusToStep = (st: string): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' => {
-  if (st === "주문" || st === "PO접수" || st === "수주정보") return "수주정보";
-  if (st === "발주" || st === "소싱발주" || st === "소싱/발주") return "소싱/발주";
-  if (st === "선적관리" || st === "수출관리" || st === "서류관리" || st === "물류/선적") return "물류/선적";
-  if (st === "이익관리" || st === "정산마감" || st === "정산/결제") return "정산/결제";
-  return "수주정보";
-};
 
 // stageCompletion 기반 전체 진행률 계산
 type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
@@ -33,6 +25,16 @@ const getOverallProgress = (order: Order) => {
   const allDone = STAGE_KEYS.flatMap(k => Object.values(sc[k] || {}).filter(Boolean));
   if (allKeys.length === 0) return { done: 0, total: 0, pct: 0 };
   return { done: allDone.length, total: allKeys.length, pct: Math.round((allDone.length / allKeys.length) * 100) };
+};
+
+const mapStatusToStep = (st: string, order?: Order): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '변경이력' | '완료' => {
+  if (st === "완료" || st === "정산완료" || (order && getOverallProgress(order).pct === 100)) return "완료";
+  if (st === "주문" || st === "PO접수" || st === "수주정보") return "수주정보";
+  if (st === "발주" || st === "소싱발주" || st === "소싱/발주") return "소싱/발주";
+  if (st === "선적관리" || st === "물류/선적") return "물류/선적";
+  if (st === "수출관리" || st === "서류관리") return "서류관리";
+  if (st === "이익관리" || st === "정산마감" || st === "정산/결제") return "정산/결제";
+  return "수주정보";
 };
 
 const getStageProgress = (order: Order, stageKey: StageKey) => {
@@ -382,12 +384,13 @@ export const Orders: React.FC = () => {
     { step: '물류/선적', key: '물류/선적', icon: '🚢', color: '#7c3aed', bg: '#f5f3ff' },
     { step: '서류관리', key: '서류관리', icon: '📄', color: '#b45309', bg: '#fffbeb' },
     { step: '정산/결제', key: '정산/결제', icon: '💰', color: '#065f46', bg: '#f0fdf4' },
+    { step: '완료', key: '완료', icon: '✅', color: '#475569', bg: '#f1f5f9' },
   ];
 
   const KanbanView = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', alignItems: 'flex-start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', alignItems: 'flex-start' }}>
       {KANBAN_COLS.map(col => {
-        const colOrders = processedOrders.filter(o => mapStatusToStep(o.status || '') === col.step);
+        const colOrders = processedOrders.filter(o => mapStatusToStep(o.status || '', o) === col.step);
         const colAmount = colOrders.reduce((sum, o) => {
           const pi = quotations.find(q => q.id === o.quotationId);
           return sum + (pi?.totalUsd || o.totalAmount || 0);
