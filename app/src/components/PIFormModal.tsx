@@ -927,60 +927,43 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     const value = (formData as any)[field] || '';
     const [isNewMode, setIsNewMode] = useState(false);
     const [newVal, setNewVal] = useState('');
+    const selectStyle: React.CSSProperties = required
+      ? { padding: '2px 4px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
+      : { padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', color: '#334155', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
 
     if (isNewMode) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <label style={{ fontSize: '9.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+            {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
+          </label>
           <div style={{ display: 'flex', gap: '3px', height: '25px' }}>
-            <input 
-              type="text" 
-              value={newVal} 
-              onChange={e => setNewVal(e.target.value)} 
-              placeholder="직접 입력..." 
-              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '13px', height: '25px', boxSizing: 'border-box' }}
+            <input
+              type="text"
+              value={newVal}
+              onChange={e => setNewVal(e.target.value)}
+              placeholder="직접 입력..."
+              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '12px', height: '25px', boxSizing: 'border-box', outline: 'none' }}
               autoFocus
             />
-            <button 
-              type="button"
-              onClick={() => {
-                if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim());
-                setIsNewMode(false);
-              }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              ✓
-            </button>
-            <button 
-              type="button"
-              onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              ✕
-            </button>
+            <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
+            <button type="button" onClick={() => setIsNewMode(false)}
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
         </div>
       );
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label} {required && '★'}</label>
-        <select 
-          value={value} 
-          onChange={e => {
-            if (e.target.value === '__NEW__') setIsNewMode(true);
-            else setFormData(prev => ({...prev, [field]: e.target.value}));
-          }}
-          style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%' }}
-        >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <label style={{ fontSize: '9.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+          {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
+        </label>
+        <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
           <option value="">{placeholder || '-- 선택 --'}</option>
-          {options.map((opt: string) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-          {value && !options.includes(value) && (
-            <option value={value}>{value}</option>
-          )}
+          {options.map((opt: string) => (<option key={opt} value={opt}>{opt}</option>))}
+          {value && !options.includes(value) && (<option value={value}>{value}</option>)}
           <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록</option>
         </select>
       </div>
@@ -1643,7 +1626,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
           
           {/* ── PI Document-style compact form (4 rows) ── */}
-          <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+            {/* ── 섹션: 발행 정보 ── */}
+            <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 (PI Date) ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px', alignItems: 'end' }}>
@@ -1660,11 +1646,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <CompactInput label="Valid Until" value={formData.validUntilDate} disabled />
             </div>
 
+            {/* ── 섹션: 고객 및 거래 조건 ── */}
+            <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0', marginTop: '4px' }}>고객 및 거래 조건</div>
+
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '5px', alignItems: 'end' }}>
               {/* Customer search input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Customer ★</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
                 <div style={{ position: 'relative', height: '25px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -1674,7 +1663,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
                       width: '100%', height: '25px', padding: '1px 32px 1px 6px',
-                      border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px',
+                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
@@ -1716,19 +1705,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid #cbd5e1', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#475569' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '13px' }}>
+            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '10px 4px', width: '310px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600 }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '10px 4px', width: '140px', textAlign: 'center', fontWeight: 600 }}>패킹방식/수량</th>
-                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 600 }}>수량 / 단위</th>
-                  <th style={{ padding: '10px 4px', width: '170px', textAlign: 'center', fontWeight: 600 }}>매입가</th>
-                  <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 600 }}>마진/올림</th>
-                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'right', fontWeight: 600 }}>단가(USD)</th>
-                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right', fontWeight: 600 }}>총액($)</th>
-                  <th style={{ padding: '10px 4px', width: '100px', textAlign: 'right', fontWeight: 600 }}>이익($)</th>
-                  <th style={{ padding: '10px 4px', width: '150px', textAlign: 'center', fontWeight: 600 }}>비고</th>
-                  <th style={{ padding: '10px 4px', width: '35px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
+                  <th style={{ padding: '8px 4px', width: '310px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', width: '140px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', width: '170px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>매입가</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>마진/올림</th>
+                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>단가(USD)</th>
+                  <th style={{ padding: '8px 4px', width: '100px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '100px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '150px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '35px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -1847,7 +1836,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                             if (p && p.supplierName) {
                               return (
-                                <span style={{ fontSize: '12.5px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px' }} title={p.supplierName}>
+                                <span style={{ fontSize: '11.5px', color: '#2563eb', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px', marginLeft: '4px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }} title={p.supplierName}>
                                   {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
                                 </span>
                               );
@@ -2011,23 +2000,23 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#059669' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>
                       ${((it.salePriceUsd || 0) * (it.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 600, color: '#3b82f6' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#16a34a' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
-                      <textarea 
-                        value={it.remarks || ''} 
+                      <textarea
+                        value={it.remarks || ''}
                         placeholder="비고"
-                        onChange={(e) => updateItem(idx, 'remarks', e.target.value)} 
+                        onChange={(e) => updateItem(idx, 'remarks', e.target.value)}
                         rows={2}
-                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }} 
+                        style={{ ...gridInputStyle, resize: 'vertical', minHeight: '40px', fontFamily: 'inherit' }}
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
                     </td>
                   </tr>
                 ))}
@@ -2036,19 +2025,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Extras and Totals */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
-            
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+
             {/* Freight Charges (USD) */}
-            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '16px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Freight Charges (USD)</span>
+            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '12px 16px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
                 <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Freight Headers */}
-                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #e2e8f0', marginBottom: '4px', fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '9.5px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   <div style={{ flex: 1.5 }}>Container Type</div>
-                  <div style={{ flex: 1, textAlign: 'right' }}>Quantities</div>
+                  <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
                   <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>Total</div>
                   <div style={{ flex: 3.5, paddingLeft: '8px' }}>비고 (Remarks)</div>
@@ -2135,28 +2124,36 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   </div>
                 ))}
               </div>
-              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '12px', color: '#475569', marginTop: '4px' }}>
-                운송비 합계: ${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#0f172a', marginTop: '4px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
+                운송비 합계: <span style={{ color: '#0f172a' }}>${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 
           </div>
 
           {/* Remarks */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Remarks</label>
-            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.4' }}></textarea>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Remarks</label>
+            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', color: '#334155', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5', fontFamily: 'monospace' }}></textarea>
           </div>
 
           {initialPI && (
-            <div style={{ background: 'rgba(37,99,235,0.05)', border: '2px solid #2563eb', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
-              <Input label="Revision Reason (변경 사유) ★" value={revisionReason} onChange={(v: any) => setRevisionReason(v)} placeholder="예: 고객 단가 인하 요청 수용" />
+            <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', padding: '12px 16px', borderRadius: '8px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#b45309', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>⚠️ Revision Reason (변경 사유) ★</div>
+              <input
+                type="text"
+                value={revisionReason}
+                onChange={(e) => setRevisionReason(e.target.value)}
+                placeholder="예: 고객 단가 인하 요청 수용"
+                style={{ width: '100%', padding: '6px 10px', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '12.5px', color: '#78350f', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+              />
             </div>
           )}
 
-          <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '16px 24px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ color: '#2563eb', fontSize: '14px', fontWeight: 600 }}>예상 총 이익 (Total Profit): <b style={{ fontSize: '16px' }}>{(() => {
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '12px 20px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
+              <span style={{ color: '#4ade80', fontSize: '16px', fontWeight: 700 }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
                   const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
                   const profit = (it.salePriceUsd || 0) - costUsd;
@@ -2165,12 +2162,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 const totalSales = formData.totalUsd || formData.subtotalUsd || 0;
                 const marginPercent = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
                 return `$${totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${marginPercent.toFixed(1)}%)`;
-              })()}</b></div>
+              })()}</span>
             </div>
-            <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-              <div style={{ color: '#64748b', fontSize: '14px' }}>Subtotal: <b style={{ color: '#334155' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
-              <div style={{ color: '#64748b', fontSize: '14px' }}>Extras: <b style={{ color: '#334155' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></div>
-              <div style={{ fontSize: '18px', color: '#334155' }}>GRAND TOTAL: <strong style={{ color: '#059669', fontSize: '22px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div>
+            <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subtotal</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', marginLeft: '6px' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div>
+                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extras</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', marginLeft: '6px' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div>
+                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grand Total</span>
+                <span style={{ fontSize: '18px', fontWeight: 700, color: '#60a5fa', marginLeft: '8px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
             </div>
           </div>
 
@@ -2356,55 +2362,48 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '8px' }}>
+          {/* 왼쪽: 발주 액션 */}
           <div>
             {initialPI && (
-              <button 
+              <button
                 type="button"
                 onClick={handleConfirmPO}
                 disabled={savingType !== null}
-                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: 700, cursor: savingType !== null ? 'not-allowed' : 'pointer', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)' }}
+                style={{ padding: '8px 16px', borderRadius: '7px', border: '1px solid #fcd34d', background: '#fffbeb', color: '#92400e', fontWeight: 700, fontSize: '12.5px', cursor: savingType !== null ? 'not-allowed' : 'pointer' }}
               >
-                {formData.status === 'PO확정' ? '🤝 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
+                {formData.status === 'PO확정' ? '📨 발주서 추가 발행 (재발주)' : '🤝 PO 확정 & 발주등록'}
               </button>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button onClick={handleCloseAttempt} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 600, color: '#475569', cursor: 'pointer' }}>취소</button>
-            
-            <button 
-              type="button" 
-              onClick={() => generatePIPdf(formData as ProformaInvoice, items)} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #ef4444', background: '#fff', fontWeight: 600, color: '#ef4444', cursor: 'pointer' }}
-            >
-              📄 PDF로 저장하기
+          {/* 오른쪽: 저장/출력 그룹 */}
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onClick={handleCloseAttempt} style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #e2e8f0', background: '#fff', fontWeight: 500, fontSize: '12px', color: '#475569', cursor: 'pointer' }}>취소</button>
+
+            {/* 구분선 */}
+            <div style={{ width: '1px', height: '24px', background: '#e2e8f0' }} />
+
+            <button type="button" onClick={() => generatePIPdf(formData as ProformaInvoice, items)}
+              style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #fca5a5', background: '#fff', fontWeight: 600, fontSize: '12px', color: '#dc2626', cursor: 'pointer' }}>
+              📄 PDF
             </button>
-            
-            <button 
-              type="button" 
-              onClick={() => generatePIExcel(formData as ProformaInvoice, items)} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #10b981', background: '#fff', fontWeight: 600, color: '#10b981', cursor: 'pointer' }}
-            >
-              📊 Excel 견적서
+            <button type="button" onClick={() => generatePIExcel(formData as ProformaInvoice, items)}
+              style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #86efac', background: '#fff', fontWeight: 600, fontSize: '12px', color: '#16a34a', cursor: 'pointer' }}>
+              📊 Excel
             </button>
 
-            <button 
-              type="button"
-              onClick={() => handleSave(false)} 
-              disabled={savingType !== null} 
-              style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}
-            >
-              {savingType === 'normal' ? '✔ 일반저장 중...' : '✔ 일반저장'}
+            {/* 구분선 */}
+            <div style={{ width: '1px', height: '24px', background: '#e2e8f0' }} />
+
+            <button type="button" onClick={() => handleSave(false)} disabled={savingType !== null}
+              style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}>
+              {savingType === 'normal' ? '✔ 저장 중...' : '✔ 일반저장'}
             </button>
 
             {initialPI && (
-              <button 
-                type="button"
-                onClick={() => handleSave(true)} 
-                disabled={savingType !== null} 
-                style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 600, cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}
-              >
+              <button type="button" onClick={() => handleSave(true)} disabled={savingType !== null}
+                style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}>
                 {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
               </button>
             )}
@@ -2526,22 +2525,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   );
 };
 
-const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-    <label style={{ fontSize: '10px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: disabled ? '#f1f5f9' : '#fff', height: '26px', boxSizing: 'border-box' }} />
-  </div>
-);
+const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => {
+  // A급(필수★): 13px bold #0f172a 테두리 강조
+  // C급(읽기전용/자동): 11px #94a3b8 배경 흐리게
+  const isRequired = label?.includes('★');
+  const isReadOnly = disabled;
+  const inputStyle: React.CSSProperties = isReadOnly
+    ? { padding: '2px 6px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '11px', color: '#94a3b8', background: '#f8fafc', height: '25px', boxSizing: 'border-box', width: '100%' }
+    : isRequired
+      ? { padding: '2px 6px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '25px', boxSizing: 'border-box', width: '100%', outline: 'none' }
+      : { padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', color: '#334155', background: '#fff', height: '25px', boxSizing: 'border-box', width: '100%', outline: 'none' };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <label style={{ fontSize: '9.5px', fontWeight: 700, color: isReadOnly ? '#b0bcc8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+        {label?.replace(' ★', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>★</span>}
+        {isReadOnly && <span style={{ color: '#b0bcc8', fontWeight: 400 }}> (자동)</span>}
+      </label>
+      <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
+    </div>
+  );
+};
 
-const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={label}>{label}</label>
-    <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={{ padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13px', background: disabled ? '#f1f5f9' : '#fff', height: '25px', boxSizing: 'border-box', width: '100%' }} />
-  </div>
-);
 
-
-const gridInputStyle = { width: '100%', height: '29px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' as const };
+const gridInputStyle = { width: '100%', height: '28px', padding: '0 7px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '12px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
