@@ -560,7 +560,7 @@ export const Orders: React.FC = () => {
                 {processedOrders.map(order => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = pi?.totalUsd || order.totalAmount || 0;
-                  const currentStep = mapStatusToStep(order.status || '');
+                  const currentStep = mapStatusToStep(order.status || '', order);
                   const currentStepKey = stepToStageKey[currentStep] as StageKey;
                   const { pct } = getOverallProgress(order);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
@@ -589,7 +589,16 @@ export const Orders: React.FC = () => {
                       <td style={{ padding: '10px 16px', minWidth: '200px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', fontSize: '10.5px', fontWeight: 700, padding: '2px 9px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+                            <span style={{ 
+                               background: currentStep === '완료' ? '#ecfdf5' : '#eff6ff', 
+                               color: currentStep === '완료' ? '#10b981' : '#2563eb', 
+                               border: currentStep === '완료' ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
+                               fontSize: '10.5px', 
+                               fontWeight: 700, 
+                               padding: '2px 9px', 
+                               borderRadius: '20px', 
+                               whiteSpace: 'nowrap' 
+                             }}>
                               {currentStep}
                             </span>
                             <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 500 }}>
