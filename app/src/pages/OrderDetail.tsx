@@ -808,6 +808,7 @@ export const OrderDetail: React.FC = () => {
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
     actualContainerSimulation: null as any,
+    quotationId: '',
 
     // 주문 기본정보 및 L/C 거래 상세
     customerAddress: '',
@@ -1463,7 +1464,8 @@ export const OrderDetail: React.FC = () => {
           lcIssuingDate: data.lcIssuingDate || '',
           lcDescription: data.lcDescription || '',
           lcRemark: data.lcRemark || '',
-          actualContainerSimulation: data.actualContainerSimulation || null
+          actualContainerSimulation: data.actualContainerSimulation || null,
+          quotationId: data.quotationId || ''
         });
         setOrderItems(data.items || []);
         setSourcingItems(data.sourcingItems || data.items || []);
@@ -1511,6 +1513,14 @@ export const OrderDetail: React.FC = () => {
     });
     return () => unsubscribe();
   }, [order?.quotationId]);
+
+  const [piList, setPiList] = useState<any[]>([]);
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(doc(db, 'companies', COMPANY_ID), 'proforma_invoices'), (snap) => {
+      setPiList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Switch active tab view locally
   const handleStepClick = async (stepName: typeof steps[number]) => {
@@ -1691,6 +1701,7 @@ export const OrderDetail: React.FC = () => {
         actualContainerSimulation: basicForm.actualContainerSimulation || null,
         commonShippingMark: commonShippingMark,
         activeSourcingTab: sourcingTabToSave,
+        quotationId: basicForm.quotationId || '',
         
         items: orderItems.map(it => ({
           itemId: it.itemId || '',
@@ -4071,6 +4082,29 @@ export const OrderDetail: React.FC = () => {
                 </select>
               ) : (
                 <input type="text" value={order.incoterms} disabled style={{ ...inputStyle(false), padding: '4px 6px', fontSize: '11.5px' }} />
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#4b5563' }}>연결 견적서 (PI)</span>
+              {isEditing ? (
+                <select
+                  value={basicForm.quotationId}
+                  onChange={e => setBasicForm(prev => ({ ...prev, quotationId: e.target.value }))}
+                  style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '11.5px', outline: 'none', background: '#fff' }}
+                >
+                  <option value="">연결 안 함</option>
+                  {piList.map(p => (
+                    <option key={p.id} value={p.id}>{p.piNumber} ({p.customerName})</option>
+                  ))}
+                </select>
+              ) : (
+                <input 
+                  type="text" 
+                  value={basicForm.quotationId ? (piList.find(p => p.id === basicForm.quotationId)?.piNumber || basicForm.quotationId) : '연결 안 함'} 
+                  disabled 
+                  style={{ ...inputStyle(false), padding: '4px 6px', fontSize: '11.5px' }} 
+                />
               )}
             </div>
 
