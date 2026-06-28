@@ -98,11 +98,11 @@ export const IssueBoard: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 4px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 30px' }}>
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>🛠️ 프로그램 오류/수정 게시판</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>🛠️ 프로그램 오류/수정 게시판</h1>
           <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>프로그램 오류 및 기능 개선 요청을 등록하고 팔로업하세요</p>
         </div>
         <button onClick={() => setShowCreateModal(true)} style={{

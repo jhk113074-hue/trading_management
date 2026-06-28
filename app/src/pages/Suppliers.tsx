@@ -154,10 +154,10 @@ export const Suppliers: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{ padding: '24px' }}>
+    <div className="page-container" style={{ padding: '24px 30px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>공급업체 관리 (Suppliers)</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>공급업체 관리 (Suppliers)</h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>원소재 제조사 및 국내외 공급처 마스터 정보와 핵심 스펙 관리</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>

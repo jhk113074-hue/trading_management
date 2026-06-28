@@ -185,9 +185,9 @@ export const MyCompanySettings: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+    <div style={{ padding: '24px 30px', maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '1.8rem', color: '#1e293b', marginBottom: '8px', fontWeight: 800 }}>🏢 자사 정보 관리</h2>
+        <h1 style={{ fontSize: '26px', color: '#0f172a', marginBottom: '8px', fontWeight: 800, letterSpacing: '-0.025em' }}>🏢 자사 정보 관리</h1>
         <p style={{ color: '#64748b' }}>견적서(PI), 발주서(PO) 등 수출 서류에 기본으로 표기되는 회사 정보를 관리합니다.</p>
       </div>
 
