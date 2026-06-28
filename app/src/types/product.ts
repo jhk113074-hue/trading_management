@@ -1,22 +1,19 @@
 export interface ProductPriceHistory {
-  validFrom: string;
-  validTo: string;
-  currency: string;
-  price: number;
-  minQty: number;
-  discountRate: number;
-  remarks: string;
+  validFrom: string;      // 날짜 (시작일)
+  supplierCode?: string;   // 공급사 코드
+  supplierName?: string;   // 공급사 명
+  currency: string;       // 통화
+  price: number;          // 납품단가
+  remarks: string;        // 비고
+  validTo?: string;
+  minQty?: number;
+  discountRate?: number;
 }
 
 export interface ProductSupplierLink {
   supplierCode: string;
   supplierName: string;
-  purchasePrice: number;
-  currency: string;
-  minOrderQty: number;
-  leadTimeDays: number;
   isDefault: boolean;
-  remarks?: string;
 }
 
 export interface Product {

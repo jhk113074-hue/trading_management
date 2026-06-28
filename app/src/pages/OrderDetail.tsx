@@ -222,27 +222,55 @@ export const OrderDetail: React.FC = () => {
   const [isForwarderSearchOpen, setIsForwarderSearchOpen] = useState(false);
   const [forwarderSearchIndex, setForwarderSearchIndex] = useState<number | null>(null);
   
+  const getPriceForSupplier = (prod: Product, supplierNameOrCode: string) => {
+    let price = prod.purchasePrice || 0;
+    let currency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
+    
+    if (prod.purchasePrices && prod.purchasePrices.length > 0) {
+      const match = prod.purchasePrices
+        .filter(p => p.supplierName === supplierNameOrCode || p.supplierCode === supplierNameOrCode)
+        .sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+      
+      if (match.length > 0) {
+        price = match[0].price;
+        currency = (match[0].currency === 'KRW' ? 'KRW' : 'USD');
+      } else {
+        // 일치하는 단가 레코드가 없으면 전체 단가 테이블 중 가장 최신 것 사용
+        const allSorted = [...prod.purchasePrices].sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+        if (allSorted.length > 0) {
+          price = allSorted[0].price;
+          currency = (allSorted[0].currency === 'KRW' ? 'KRW' : 'USD');
+        }
+      }
+    }
+    return { price, currency };
+  };
+
   const getSupplierPurchaseInfo = (it: any) => {
     const match = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
     const itemCode = match ? match[1] : '-';
     const matchedProd = products.find(p => p.productCode === itemCode || p.id === itemCode);
 
     let defaultPrice = matchedProd ? (matchedProd.purchasePrice || 0) : (it.unitPrice || 0);
-    let defaultCurrency = matchedProd ? matchedProd.currency : 'USD';
+    let defaultCurrency = matchedProd ? (matchedProd.currency || 'USD') : 'USD';
 
-    // 다중 유통사 단가 매핑
-    if (matchedProd && matchedProd.suppliers && matchedProd.suppliers.length > 0) {
+    // 단가 테이블(purchasePrices)에서 공급사가 일치하고 날짜가 부합하는 최근 단가 매핑
+    if (matchedProd && matchedProd.purchasePrices && matchedProd.purchasePrices.length > 0) {
       const activeSup = it.supplier?.trim();
-      const link = matchedProd.suppliers.find(s => s.supplierName?.trim() === activeSup || s.supplierCode === activeSup);
-      if (link) {
-        defaultPrice = link.purchasePrice;
-        defaultCurrency = link.currency;
-      } else {
-        const defLink = matchedProd.suppliers.find(s => s.isDefault);
-        if (defLink) {
-          defaultPrice = defLink.purchasePrice;
-          defaultCurrency = defLink.currency;
-        }
+      // 지정 공급사와 일치하는 단가들 필터링
+      let matchedHists = matchedProd.purchasePrices.filter(p => p.supplierName?.trim() === activeSup || p.supplierCode === activeSup);
+      
+      // 일치하는 공급사가 없으면 기본 공급사의 단가 필터링
+      if (matchedHists.length === 0 && matchedProd.suppliers && matchedProd.suppliers.length > 0) {
+        const def = matchedProd.suppliers.find(s => s.isDefault) || matchedProd.suppliers[0];
+        matchedHists = matchedProd.purchasePrices.filter(p => p.supplierCode === def.supplierCode || p.supplierName === def.supplierName);
+      }
+
+      // 날짜순(최신순) 정렬하여 적용 시작일이 현재보다 과거이거나 가장 임박한 첫 번째 단가 채택
+      if (matchedHists.length > 0) {
+        matchedHists.sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+        defaultPrice = matchedHists[0].price;
+        defaultCurrency = matchedHists[0].currency;
       }
     }
 
@@ -1834,18 +1862,17 @@ export const OrderDetail: React.FC = () => {
           const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
           const displayName = prod.nameEn || prod.nameKo || '';
           
-          let buyPrice = prod.purchasePrice || 0;
-          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
           let supName = prod.supplierName || '';
-
           if (prod.suppliers && prod.suppliers.length > 0) {
             const defLink = prod.suppliers.find(s => s.isDefault);
             if (defLink) {
-              buyPrice = defLink.purchasePrice;
-              itemCurrency = (defLink.currency === 'KRW' ? 'KRW' : 'USD');
               supName = defLink.supplierName;
             }
           }
+          
+          const priceObj = getPriceForSupplier(prod, supName);
+          let buyPrice = priceObj.price;
+          let itemCurrency = priceObj.currency;
 
           const qty = it.qty || 0;
           const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
@@ -1869,16 +1896,14 @@ export const OrderDetail: React.FC = () => {
       if (field === 'supplier') {
         const parsedCode = getRawProductCode(it.name);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
-        if (prod && prod.suppliers && prod.suppliers.length > 0) {
-          const link = prod.suppliers.find(s => s.supplierName === value || s.supplierCode === value);
-          if (link) {
-            it.unitPrice = link.purchasePrice;
-            it.currency = (link.currency === 'KRW' ? 'KRW' : 'USD');
-            it.purchaseUnitPrice = link.purchasePrice;
-            it.purchaseUnitCurrency = (link.currency === 'KRW' ? 'KRW' : 'USD');
-            if (it.qty) {
-              it.amount = it.currency === 'KRW' ? Math.round(it.qty * link.purchasePrice) : parseFloat((it.qty * link.purchasePrice).toFixed(2));
-            }
+        if (prod) {
+          const priceObj = getPriceForSupplier(prod, value);
+          it.unitPrice = priceObj.price;
+          it.currency = priceObj.currency;
+          it.purchaseUnitPrice = priceObj.price;
+          it.purchaseUnitCurrency = priceObj.currency;
+          if (it.qty) {
+            it.amount = priceObj.currency === 'KRW' ? Math.round(it.qty * priceObj.price) : parseFloat((it.qty * priceObj.price).toFixed(2));
           }
         }
       }
@@ -1911,18 +1936,17 @@ export const OrderDetail: React.FC = () => {
           const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
           const displayName = prod.nameEn || prod.nameKo || '';
           
-          let buyPrice = prod.purchasePrice || 0;
-          let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
           let supName = prod.supplierName || '';
-
           if (prod.suppliers && prod.suppliers.length > 0) {
             const defLink = prod.suppliers.find(s => s.isDefault);
             if (defLink) {
-              buyPrice = defLink.purchasePrice;
-              itemCurrency = (defLink.currency === 'KRW' ? 'KRW' : 'USD');
               supName = defLink.supplierName;
             }
           }
+          
+          const priceObj = getPriceForSupplier(prod, supName);
+          let buyPrice = priceObj.price;
+          let itemCurrency = priceObj.currency;
 
           const qty = it.qty || 0;
           const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
@@ -1946,16 +1970,14 @@ export const OrderDetail: React.FC = () => {
       if (field === 'supplier') {
         const parsedCode = getRawProductCode(it.name);
         const prod = products.find(p => p.productCode === parsedCode || p.id === parsedCode);
-        if (prod && prod.suppliers && prod.suppliers.length > 0) {
-          const link = prod.suppliers.find(s => s.supplierName === value || s.supplierCode === value);
-          if (link) {
-            it.unitPrice = link.purchasePrice;
-            it.currency = (link.currency === 'KRW' ? 'KRW' : 'USD');
-            it.purchaseUnitPrice = link.purchasePrice;
-            it.purchaseUnitCurrency = (link.currency === 'KRW' ? 'KRW' : 'USD');
-            if (it.qty) {
-              it.amount = it.currency === 'KRW' ? Math.round(it.qty * link.purchasePrice) : parseFloat((it.qty * link.purchasePrice).toFixed(2));
-            }
+        if (prod) {
+          const priceObj = getPriceForSupplier(prod, value);
+          it.unitPrice = priceObj.price;
+          it.currency = priceObj.currency;
+          it.purchaseUnitPrice = priceObj.price;
+          it.purchaseUnitCurrency = priceObj.currency;
+          if (it.qty) {
+            it.amount = priceObj.currency === 'KRW' ? Math.round(it.qty * priceObj.price) : parseFloat((it.qty * priceObj.price).toFixed(2));
           }
         }
       }
@@ -1981,18 +2003,17 @@ export const OrderDetail: React.FC = () => {
       const updated = [...prev];
       const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
       
-      let buyPrice = prod.purchasePrice || 0;
-      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
       let supName = prod.supplierName || '';
-
       if (prod.suppliers && prod.suppliers.length > 0) {
         const def = prod.suppliers.find(s => s.isDefault);
         if (def) {
-          buyPrice = def.purchasePrice;
-          itemCurrency = (def.currency === 'KRW' ? 'KRW' : 'USD');
           supName = def.supplierName;
         }
       }
+
+      const priceObj = getPriceForSupplier(prod, supName);
+      let buyPrice = priceObj.price;
+      let itemCurrency = priceObj.currency;
 
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
@@ -2021,18 +2042,17 @@ export const OrderDetail: React.FC = () => {
       const updated = [...prev];
       const contactInfo = [prod.supplierEmail, prod.supplierPhone].filter(Boolean).join(' / ');
       
-      let buyPrice = prod.purchasePrice || 0;
-      let itemCurrency: 'USD' | 'KRW' = (prod.currency === 'KRW' ? 'KRW' : 'USD');
       let supName = prod.supplierName || '';
-
       if (prod.suppliers && prod.suppliers.length > 0) {
         const def = prod.suppliers.find(s => s.isDefault);
         if (def) {
-          buyPrice = def.purchasePrice;
-          itemCurrency = (def.currency === 'KRW' ? 'KRW' : 'USD');
           supName = def.supplierName;
         }
       }
+
+      const priceObj = getPriceForSupplier(prod, supName);
+      let buyPrice = priceObj.price;
+      let itemCurrency = priceObj.currency;
 
       const qty = updated[idx].qty || 0;
       const amt = itemCurrency === 'KRW' ? Math.round(qty * buyPrice) : parseFloat((qty * buyPrice).toFixed(2));
