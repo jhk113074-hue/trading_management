@@ -141,14 +141,16 @@ export const Layout: React.FC = () => {
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리', external: false },
-        { path: '/orders', label: '📦 주문관리', external: false },
-        { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판 (새 창)', external: true }
+        { path: '/orders', label: '📦 주문관리', external: false }
       ] as any },
       { section: 'DB관리', items: [
         { path: '/products', label: '◫ 상품 DB', external: false },
         { path: '/customers', label: '◎ 고객사 관리', external: false },
         { path: '/suppliers', label: '◉ 공급업체 관리', external: false },
         { path: '/my-company', label: '🏢 자사 정보 관리', external: false }
+      ] as any },
+      { section: '시스템', items: [
+        { path: '/issues', label: '🛠️ 오류/수정 게시판 (새 창)', external: true }
       ] as any }
     ];
 
