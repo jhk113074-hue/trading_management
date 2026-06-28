@@ -288,7 +288,13 @@ export const Customers: React.FC = () => {
                 const statusBg = c.tradeStatus === 'Active' ? '#d1fae5' : c.tradeStatus === 'Blocked' ? '#fee2e2' : '#fef3c7';
 
                 return (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
+                  <tr 
+                    key={c.id} 
+                    onClick={() => { setEditingCustId(c.id); setIsModalOpen(true); }}
+                    style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
                     <td style={{ padding: '12px' }}><strong style={{ color: '#0891b2' }}>{c.customerCode || '-'}</strong></td>
                     <td style={{ padding: '12px' }}>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{c.name || '-'}</div>
@@ -312,11 +318,11 @@ export const Customers: React.FC = () => {
                     </td>
                     <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button 
-                        onClick={() => { setEditingCustId(c.id); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); setEditingCustId(c.id); setIsModalOpen(true); }}
                         style={{ background: 'rgba(37,99,235,0.05)', color: '#2563eb', border: '1px solid #2563eb', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px' }}
                       >✏ 수정</button>
                       <button 
-                        onClick={() => handleDelete(c.id, c.name)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }}
                         style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
                       >✕ 삭제</button>
                     </td>

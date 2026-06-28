@@ -226,7 +226,13 @@ export const Suppliers: React.FC = () => {
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>조건에 부합하는 공급업체가 없습니다.</td></tr>
             ) : (
               filteredAndSorted.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
+                <tr 
+                  key={s.id} 
+                  onClick={() => { setEditingSupId(s.id); setIsModalOpen(true); }}
+                  style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <td style={{ padding: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <strong style={{ color: '#0891b2' }}>{s.supplierCode || '-'}</strong>
@@ -252,11 +258,11 @@ export const Suppliers: React.FC = () => {
                   </td>
                   <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
-                      onClick={() => { setEditingSupId(s.id); setIsModalOpen(true); }}
+                      onClick={(e) => { e.stopPropagation(); setEditingSupId(s.id); setIsModalOpen(true); }}
                       style={{ background: 'rgba(37,99,235,0.05)', color: '#2563eb', border: '1px solid #2563eb', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px' }}
                     >✏ 수정</button>
                     <button 
-                      onClick={() => handleDelete(s.id, s.name)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.name); }}
                       style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
                     >✕ 삭제</button>
                   </td>
