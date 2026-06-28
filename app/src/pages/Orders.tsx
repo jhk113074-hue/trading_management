@@ -21,8 +21,22 @@ const STAGE_KEYS: StageKey[] = ['수주정보', '소싱발주', '물류선적', 
 const getOverallProgress = (order: Order) => {
   const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
   if (!sc) return { done: 0, total: 0, pct: 0 };
-  const allKeys = STAGE_KEYS.flatMap(k => Object.keys(sc[k] || {}));
-  const allDone = STAGE_KEYS.flatMap(k => Object.values(sc[k] || {}).filter(Boolean));
+  const isLc = (order as any).isLc || (order as any).basicForm?.isLc;
+  const allKeys = STAGE_KEYS.flatMap(k => {
+    const keys = Object.keys(sc[k] || {});
+    if (k === '수주정보' && isLc !== 'Y') {
+      return keys.filter(x => x !== 'L/C 정보 입력');
+    }
+    return keys;
+  });
+  const allDone = STAGE_KEYS.flatMap(k => {
+    const entries = Object.entries(sc[k] || {});
+    let validEntries = entries;
+    if (k === '수주정보' && isLc !== 'Y') {
+      validEntries = entries.filter(([x]) => x !== 'L/C 정보 입력');
+    }
+    return validEntries.map(([_, v]) => v).filter(Boolean);
+  });
   if (allKeys.length === 0) return { done: 0, total: 0, pct: 0 };
   return { done: allDone.length, total: allKeys.length, pct: Math.round((allDone.length / allKeys.length) * 100) };
 };
@@ -40,8 +54,12 @@ const mapStatusToStep = (st: string, order?: Order): '수주정보' | '소싱/�
 const getStageProgress = (order: Order, stageKey: StageKey) => {
   const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
   if (!sc || !sc[stageKey]) return { done: 0, total: 0, pct: 0 };
-  const keys = Object.keys(sc[stageKey]);
-  const done = Object.values(sc[stageKey]).filter(Boolean).length;
+  let keys = Object.keys(sc[stageKey]);
+  const isLc = (order as any).isLc || (order as any).basicForm?.isLc;
+  if (stageKey === '수주정보' && isLc !== 'Y') {
+    keys = keys.filter(x => x !== 'L/C 정보 입력');
+  }
+  const done = keys.filter(x => sc[stageKey][x]).length;
   return { done, total: keys.length, pct: keys.length > 0 ? Math.round((done / keys.length) * 100) : 0 };
 };
 
@@ -55,8 +73,12 @@ const getNextTodoItem = (order: Order): string => {
     '서류관리': '서류관리',
     '정산결제': '정산/결제'
   };
+  const isLc = (order as any).isLc || (order as any).basicForm?.isLc;
   for (const sk of STAGE_KEYS) {
-    const items = sc[sk] || {};
+    let items = { ...(sc[sk] || {}) };
+    if (sk === '수주정보' && isLc !== 'Y') {
+      delete items['L/C 정보 입력'];
+    }
     // 키 배열을 돌면서 완료되지 않은 항목을 선별
     const unfinished = Object.entries(items).find(([_, isDone]) => !isDone);
     if (unfinished) {
