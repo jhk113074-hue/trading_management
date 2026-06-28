@@ -16,6 +16,7 @@ export interface Product {
   nameKo: string;
   nameEn: string;
   hsCode?: string;
+  customerHsCodes?: Record<string, string>;
   categoryLarge: string;
   categoryMedium: string;
   categorySmall: string;

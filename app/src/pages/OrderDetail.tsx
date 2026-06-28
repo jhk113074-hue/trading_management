@@ -1476,9 +1476,10 @@ export const OrderDetail: React.FC = () => {
           const codeMatch = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
           const code = codeMatch ? codeMatch[1] : (it.itemId || '');
           const matchedProd = products.find(p => p.productCode === code || p.id === code);
+          const custSpecificHs = matchedProd?.customerHsCodes?.[data.customer || ''] || '';
           return {
             ...it,
-            hsCode: it.hsCode || matchedProd?.hsCode || ''
+            hsCode: it.hsCode || custSpecificHs || matchedProd?.hsCode || ''
           };
         });
         setOrderItems(itemsWithHs);
@@ -8141,7 +8142,7 @@ export const OrderDetail: React.FC = () => {
                       unit: it.unit || 'kg',
                       unitPrice: it.unitPrice || 0,
                       amount: it.amount || 0,
-                      hsCode: it.hsCode || matchedProd?.hsCode || '',
+                      hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
                       netWeight: itemNetWeight,
                       grossWeight: itemGrossWeight,
                       cbm: itemCbm,

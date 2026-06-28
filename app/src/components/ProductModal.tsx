@@ -115,8 +115,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     stackable: 'Y', rotation: 'Y', color: '', material: '', origin: '',
     stockQty: 0, leadTimeDays: 0, storageLocation: '', storageTemp: '', storageHumidity: '',
     manufacturer: '', manufactureDate: '', expiryDate: '', certifications: '', msdsManaged: 'N',
-    packingMethods: []
+    packingMethods: [],
+    customerHsCodes: {}
   });
+
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerHsCode, setNewCustomerHsCode] = useState('');
 
   useEffect(() => {
     if (initialProduct) {
@@ -614,6 +618,93 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   <Input label="상품명_한글 (필수) ★" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} />
                   <Input label="상품명_영문" value={formData.nameEn} onChange={(v: any) => handleChange('nameEn', v)} />
                   <Input label="HS CODE" value={formData.hsCode} onChange={(v: any) => handleChange('hsCode', v)} />
+
+                  {/* 고객사별 맞춤형 HS CODE 개별 관리 카드 */}
+                  <div style={{ gridColumn: 'span 3', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a' }}>🔑 바이어(고객사)별 HS CODE 개별 등록</span>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>일반 HS CODE와 다른 바이어별 전용 HS CODE를 기입하고 등록할 수 있습니다.</span>
+                    </div>
+
+                    {/* 등록 리스트 테이블 */}
+                    {Object.keys(formData.customerHsCodes || {}).length > 0 ? (
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                        <thead>
+                          <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700 }}>고객사명 (Customer / Buyer)</th>
+                            <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700 }}>바이어 HS CODE</th>
+                            <th style={{ padding: '6px 10px', width: '60px', textAlign: 'center' }}>삭제</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(formData.customerHsCodes || {}).map(([cust, code]) => (
+                            <tr key={cust} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1e293b' }}>{cust}</td>
+                              <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#0f766e' }}>{code}</td>
+                              <td style={{ padding: '4px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextMap = { ...(formData.customerHsCodes || {}) };
+                                    delete nextMap[cust];
+                                    handleChange('customerHsCodes', nextMap);
+                                  }}
+                                  style={{ border: 'none', background: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                                >
+                                  ✕
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '14px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#fff', border: '1px dashed #cbd5e1', borderRadius: '6px' }}>
+                        등록된 바이어별 전용 HS CODE가 없습니다.
+                      </div>
+                    )}
+
+                    {/* 추가 입력 제어 영역 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>고객사명</span>
+                        <input 
+                          type="text" 
+                          placeholder="예: KUWAIT CUSTOMER" 
+                          value={newCustomerName}
+                          onChange={e => setNewCustomerName(e.target.value)}
+                          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>전용 HS CODE</span>
+                        <input 
+                          type="text" 
+                          placeholder="예: 3901.20.9000" 
+                          value={newCustomerHsCode}
+                          onChange={e => setNewCustomerHsCode(e.target.value)}
+                          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px' }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newCustomerName.trim() || !newCustomerHsCode.trim()) {
+                            alert('고객사명과 HS CODE를 모두 입력해 주세요.');
+                            return;
+                          }
+                          const nextMap = { ...(formData.customerHsCodes || {}), [newCustomerName.trim()]: newCustomerHsCode.trim() };
+                          handleChange('customerHsCodes', nextMap);
+                          setNewCustomerName('');
+                          setNewCustomerHsCode('');
+                        }}
+                        style={{ padding: '6px 14px', background: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: '#fff', cursor: 'pointer', height: '31px' }}
+                      >
+                        + 추가
+                      </button>
+                    </div>
+                  </div>
+
                   {/* 대분류 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>대분류</label>
