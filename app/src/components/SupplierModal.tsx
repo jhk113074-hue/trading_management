@@ -6,9 +6,11 @@ import type { Supplier, SupplierContact } from '../types/supplier';
 interface Props {
   initialSupplier?: Supplier;
   onClose: () => void;
+  onSave?: (supplier: Supplier) => void;
+  defaultCategory?: '공급사' | '포워딩사';
 }
 
-export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => {
+export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSave, defaultCategory }) => {
   const [isSaving, setIsSaving] = useState(false);
 
   // 다중 담당자 임시 추가용 state
@@ -31,7 +33,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
   const [formData, setFormData] = useState<Partial<Supplier>>({
     supplierCode: '', name: '', bizNumber: '', representative: '',
     phone: '', purchaseEmail: '', address: '', managerName: '', managerPhone: '',
-    category: '공급사', bankKrw: '', bankUsd: '', contacts: []
+    category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: []
   });
 
   // 기존 bankKrw/bankUsd 역파싱하여 개별 상태에 채워넣기
@@ -158,7 +160,11 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
 
       await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', docId), finalData);
       alert('✅ 성공적으로 저장되었습니다.');
-      onClose();
+      if (onSave) {
+        onSave({ id: docId, ...finalData } as Supplier);
+      } else {
+        onClose();
+      }
     } catch (err: any) {
       alert('❌ 저장 실패: ' + err.message);
     } finally {
