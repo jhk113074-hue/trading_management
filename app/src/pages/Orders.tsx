@@ -712,39 +712,37 @@ export const Orders: React.FC = () => {
 
   // ── 메인 렌더링 ───────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>주문 관리 대시보드</h1>
-          <p style={{ color: '#64748b', fontSize: '13.5px', marginTop: '4px' }}>수주 오더 현황 및 단계별 진행 관리</p>
+          <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', margin: 0 }}>주문 관리 대시보드</h1>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 700, fontSize: '13.5px', boxShadow: '0 4px 10px rgba(37,99,235,0.25)', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)', display: 'flex', alignItems: 'center', gap: '4px' }}
         >
           ➕ 신규 PO 등록
         </button>
       </div>
 
       {/* 스탯 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>진행 중 오더</span>
-          <div style={{ fontSize: '30px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>{stats.activeCount} 건</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 중 오더</span>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{stats.activeCount} 건</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>총 진행 수주금액</span>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f766e', marginTop: '4px' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '11px', color: '#475569', borderTop: '1px solid #f1f5f9', paddingTop: '6px' }}>
-            <span><strong>YSACC:</strong> ${stats.totalYsaccUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-            <span><strong>영성:</strong> ${stats.totalYsUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 수주금액</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
           </div>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', borderRadius: '12px', padding: '20px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: stats.urgentCount > 0 ? '#dc2626' : '#64748b' }}>오늘 처리 필요 (긴급)</span>
-          <div style={{ fontSize: '30px', fontWeight: 800, color: stats.urgentCount > 0 ? '#dc2626' : '#0f172a', marginTop: '4px' }}>{stats.urgentCount} 건</div>
+        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: stats.urgentCount > 0 ? '#dc2626' : '#64748b' }}>오늘 처리 필요 (긴급)</span>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: stats.urgentCount > 0 ? '#dc2626' : '#0f172a' }}>{stats.urgentCount} 건</div>
         </div>
       </div>
 
