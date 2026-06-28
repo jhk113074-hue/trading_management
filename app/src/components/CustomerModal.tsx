@@ -66,7 +66,6 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
     try {
       const docId = initialCustomer?.id || formData.customerCode;
       
-      // 하위 호환성을 위한 Double Writing 매핑
       let legacyFields = {
         contactPerson: '',
         contactPhone: '',
@@ -103,29 +102,29 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
   };
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(4px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
-      <div style={{ background: '#fff', borderRadius: '12px', width: '96%', maxWidth: '1180px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(3px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 3000 }}>
+      <div style={{ background: '#fff', borderRadius: '10px', width: '96%', maxWidth: '1100px', maxHeight: '96vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
         
         {/* Header */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>🌐</span>
               {initialCustomer ? '고객사 정보 수정 (Edit Customer Master)' : '신규 고객사 등록 (Register Customer Master)'}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', transition: 'color 0.15s' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
-        {/* Body Container (All in One, scrollable) */}
-        <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', background: '#f8fafc' }}>
+        {/* Body Container (Ultra Compact, scrollable only if screen is tiny) */}
+        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
           
           {/* SECTION 1: 회사 기본 규격 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
               <span style={{ color: '#2563eb' }}>🏢</span> 회사 기본 정보 (Company Profile)
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
               <Input label="고객코드 (자동지정)" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={true} placeholder="생성 중..." />
               <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL BASSAM FACTORIES" labelColor="#2563eb" />
               <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: AL-BASSAM" />
@@ -145,15 +144,15 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
           </div>
 
-          {/* SECTION 2: 무역 선적 & 세무 금융 정보 (한 줄에 배치) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          {/* SECTION 2: 무역 선적 & 세무 금융 정보 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             
             {/* 무역/선적 스펙 */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                 <span style={{ color: '#1d4ed8' }}>🚢</span> 무역 거래 및 선적 조건
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <Select label="기본 인도조건 (Incoterms)" value={formData.preferredIncoterms} onChange={(v: any) => handleChange('preferredIncoterms', v)} options={['FOB', 'EXW', 'CIF', 'CFR', 'FCA', 'CPT', 'CIP', 'DAP', 'DDP']} />
                 <Input label="도착항 (Destination Port)" value={formData.shippingPort} onChange={(v: any) => handleChange('shippingPort', v)} placeholder="예: JEBEL ALI PORT" />
                 <div style={{ gridColumn: 'span 2' }}>
@@ -162,12 +161,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
               </div>
             </div>
 
-            {/* 세무/금융 금융계좌 */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+            {/* 세무/금융 금융계좌 (2줄로 나누어 공간 최적 확보) */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                 <span style={{ color: '#475569' }}>💳</span> 세무 등록 및 외환 계좌 정보
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <Input label="TAX-ID / VAT" value={formData.taxId} onChange={(v: any) => handleChange('taxId', v)} placeholder="VAT Number" />
                 <Input label="은행명" value={formData.bankName} onChange={(v: any) => handleChange('bankName', v)} placeholder="Bank Name" />
                 <Input label="계좌번호" value={formData.bankAccount} onChange={(v: any) => handleChange('bankAccount', v)} placeholder="Account No" />
@@ -178,33 +177,33 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
           </div>
 
-          {/* SECTION 3: 다중 담당자 입체 관리 (추가 폼 한줄 + 테이블) */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+          {/* SECTION 3: 다중 담당자 입체 관리 */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
               <span style={{ color: '#7e22ce' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
             </div>
 
-            {/* 인라인 등록 폼 (한줄에 전원 정렬) */}
-            <div style={{ display: 'flex', gap: '8px', background: '#faf5ff', padding: '10px 12px', borderRadius: '6px', border: '1px solid #f3e8ff', marginBottom: '10px', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
-                <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+            {/* 인라인 등록 폼 */}
+            <div style={{ display: 'flex', gap: '6px', background: '#faf5ff', padding: '8px 10px', borderRadius: '5px', border: '1px solid #f3e8ff', marginBottom: '8px', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
+                <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
-                <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
+                <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
-              <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
-                <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+              <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
+                <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
-              <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
-                <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+              <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
+                <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
-              <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
-                <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+              <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
+                <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
               <button
                 type="button"
@@ -225,59 +224,59 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                   }));
                   setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                 }}
-                style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '5px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', height: '30px' }}
+                style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
               >
                 + 추가
               </button>
             </div>
 
-            {/* 테이블 명부 (초컴팩트형) */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+            {/* 테이블 명부 */}
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
-                    <th style={{ padding: '6px 10px', width: '50px', textAlign: 'center' }}>대표</th>
-                    <th style={{ padding: '6px 10px', width: '150px' }}>이름 (직책)</th>
-                    <th style={{ padding: '6px 10px', width: '240px' }}>연락망 (연락처 / 이메일)</th>
-                    <th style={{ padding: '6px 10px' }}>역할 / 특이사항</th>
-                    <th style={{ padding: '6px 10px', width: '60px', textAlign: 'center' }}>삭제</th>
+                    <th style={{ padding: '5px 8px', width: '45px', textAlign: 'center' }}>대표</th>
+                    <th style={{ padding: '5px 8px', width: '140px' }}>이름 (직책)</th>
+                    <th style={{ padding: '5px 8px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
+                    <th style={{ padding: '5px 8px' }}>역할 / 특이사항</th>
+                    <th style={{ padding: '5px 8px', width: '50px', textAlign: 'center' }}>삭제</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(!formData.contacts || formData.contacts.length === 0) ? (
                     <tr>
-                      <td colSpan={5} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>등록된 소싱 담당자가 없습니다. 상단에서 추가해 주세요.</td>
+                      <td colSpan={5} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>등록된 소싱 담당자가 없습니다. 상단에서 추가해 주세요.</td>
                     </tr>
                   ) : (
                     formData.contacts.map((c, idx) => (
                       <tr key={c.id || idx} style={{ borderBottom: '1px solid #f1f5f9', background: c.isPrimary ? '#faf5ff' : 'transparent' }}>
-                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                           <input
                             type="radio"
                             name="primary_contact"
                             checked={c.isPrimary}
                             onChange={() => {
                               setFormData(prev => ({
-                                ...prev,
-                                contacts: (prev.contacts || []).map((item, i) => ({
-                                  ...item,
-                                  isPrimary: i === idx
-                                }))
+                                  ...prev,
+                                  contacts: (prev.contacts || []).map((item, i) => ({
+                                    ...item,
+                                    isPrimary: i === idx
+                                  }))
                               }));
                             }}
                             style={{ cursor: 'pointer' }}
                           />
                         </td>
-                        <td style={{ padding: '6px 10px', fontWeight: 700, color: c.isPrimary ? '#7e22ce' : '#1e293b' }}>
-                          {c.name} {c.position && <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 400 }}>({c.position})</span>}
-                          {c.isPrimary && <span style={{ fontSize: '8px', background: '#f3e8ff', color: '#a855f7', border: '1px solid #d8b4fe', padding: '0px 4px', borderRadius: '3px', marginLeft: '4px' }}>대표</span>}
+                        <td style={{ padding: '5px 8px', fontWeight: 700, color: c.isPrimary ? '#7e22ce' : '#1e293b' }}>
+                          {c.name} {c.position && <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 400 }}>({c.position})</span>}
+                          {c.isPrimary && <span style={{ fontSize: '8px', background: '#f3e8ff', color: '#a855f7', border: '1px solid #d8b4fe', padding: '0px 3px', borderRadius: '2px', marginLeft: '4px' }}>대표</span>}
                         </td>
-                        <td style={{ padding: '6px 10px' }}>
-                          <span style={{ marginRight: '10px', fontWeight: 500 }}>📞 {c.phone || '-'}</span>
+                        <td style={{ padding: '5px 8px' }}>
+                          <span style={{ marginRight: '8px', fontWeight: 500 }}>📞 {c.phone || '-'}</span>
                           <span style={{ color: '#64748b' }}>✉️ {c.email || '-'}</span>
                         </td>
-                        <td style={{ padding: '6px 10px', color: '#64748b' }}>{c.remarks || '-'}</td>
-                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                        <td style={{ padding: '5px 8px', color: '#64748b' }}>{c.remarks || '-'}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                           <button
                             type="button"
                             onClick={() => {
@@ -289,7 +288,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                                 return { ...prev, contacts: next };
                               });
                             }}
-                            style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '3px', padding: '1px 5px', cursor: 'pointer', fontSize: '10px' }}
+                            style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '3px', padding: '1px 4px', cursor: 'pointer', fontSize: '9.5px' }}
                           >
                             삭제
                           </button>
@@ -303,16 +302,16 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
           </div>
 
           {/* 특이사항 / 비고 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
             <Input label="바이어 특이사항 / 종합 비고 (General Remarks)" value={formData.remarks} onChange={(v: any) => handleChange('remarks', v)} placeholder="예: 바이어 신용 등급 및 특이 조항 등" />
           </div>
 
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button onClick={onClose} style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '12px' }}>취소</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '7px 16px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '12px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>
+        <div style={{ padding: '10px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button onClick={onClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
+          <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '5px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '11.5px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>
             {isSaving ? '저장 중...' : '✔ 고객 정보 저장'}
           </button>
         </div>
@@ -325,8 +324,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
 const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = '#475569' }: any) => {
   const isRequired = label?.includes('★');
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-      <label style={{ fontSize: '9px', fontWeight: 700, color: labelColor, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      <label style={{ fontSize: '8.5px', fontWeight: 700, color: labelColor, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
         {label?.replace(' ★', '')}
         {isRequired && <span style={{ color: '#ef4444', marginLeft: '2px' }}>★</span>}
       </label>
@@ -338,10 +337,12 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
         placeholder={placeholder}
         step={step}
         style={{
-          padding: '6px 9px',
+          boxSizing: 'border-box',
+          width: '100%',
+          padding: '5px 8px',
           border: disabled ? '1px solid #f1f5f9' : (isRequired ? '1.5px solid #94a3b8' : '1px solid #cbd5e1'),
-          borderRadius: '5px',
-          fontSize: '12px',
+          borderRadius: '4px',
+          fontSize: '11.5px',
           background: disabled ? '#f8fafc' : '#fff',
           color: disabled ? '#94a3b8' : '#0f172a',
           outline: 'none',
@@ -355,16 +356,18 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
 };
 
 const Select = ({ label, value, onChange, options }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-    <label style={{ fontSize: '9px', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+    <label style={{ fontSize: '8.5px', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
     <select
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       style={{
-        padding: '6px 9px',
+        boxSizing: 'border-box',
+        width: '100%',
+        padding: '5px 8px',
         border: '1px solid #cbd5e1',
-        borderRadius: '5px',
-        fontSize: '12px',
+        borderRadius: '4px',
+        fontSize: '11.5px',
         background: '#fff',
         color: '#0f172a',
         outline: 'none'
