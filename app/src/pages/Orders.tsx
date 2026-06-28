@@ -619,7 +619,30 @@ export const Orders: React.FC = () => {
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
                   {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th 
+                      key={h} 
+                      style={{ 
+                        padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
+                        fontWeight: 700, 
+                        color: '#475569', 
+                        fontSize: '12px', 
+                        letterSpacing: '0.05em', 
+                        textAlign: 'center', 
+                        whiteSpace: 'nowrap',
+                        minWidth: h === '단계' ? '280px' : undefined
+                      }}
+                    >
+                      {h === '단계' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700 }}>단계</span>
+                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
+                            {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
+                              <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ) : h}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -655,7 +678,7 @@ export const Orders: React.FC = () => {
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 단계 */}
-                      <td style={{ padding: '9px 16px', minWidth: '200px' }}>
+                      <td style={{ padding: '9px 16px', minWidth: '280px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ 
