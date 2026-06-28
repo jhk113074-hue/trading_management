@@ -287,16 +287,6 @@ export const Products: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`⚠️ 정말로 상품 [${name}]을(를) DB에서 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    try {
-      await deleteDoc(doc(db, "companies", COMPANY_ID, "products", id));
-      alert("✅ 성공적으로 삭제되었습니다.");
-    } catch (e: any) {
-      alert("❌ 삭제 실패: " + e.message);
-    }
-  };
-
   const handleClearCache = async () => {
     try {
       setLoading(true);
@@ -359,50 +349,57 @@ export const Products: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-        <input 
-          type="text" 
-          placeholder="상품명, 코드, 카테고리 검색..." 
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap', backgroundColor: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+        <input
+          type="text"
+          placeholder="상품명, 코드, 스펙 검색..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '200px', fontSize: '13px' }}
+          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', flex: '1', minWidth: '200px', fontSize: '13px', outline: 'none', color: '#1e293b' }}
         />
-        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
+        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">전체 대분류</option>
           {categories.large.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
+        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">전체 중분류</option>
           {categories.medium.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
+        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">통화(전체)</option>
           <option value="USD">USD</option>
           <option value="KRW">KRW</option>
           <option value="EUR">EUR</option>
         </select>
-        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px' }}>
+        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">공급업체(전체)</option>
           {uniqueSuppliers.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-      </div>
-
-      <div style={{ marginBottom: '12px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>
-        총 {filteredAndSorted.length}건
+        {/* 필터 초기화 */}
+        {(searchQuery || catLargeFilter || catMediumFilter || currFilter || supplierFilter) && (
+          <button
+            onClick={() => { setSearchQuery(''); setCatLargeFilter(''); setCatMediumFilter(''); setCurrFilter(''); setSupplierFilter(''); }}
+            style={{ padding: '7px 10px', border: '1px solid #fecaca', borderRadius: '7px', background: '#fef2f2', color: '#dc2626', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+          >✕ 초기화</button>
+        )}
+        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '5px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+          총 {filteredAndSorted.length}건
+          {filteredAndSorted.length !== products.length && <span style={{ color: '#94a3b8', fontWeight: 400 }}> / 전체 {products.length}건</span>}
+        </span>
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0', fontSize: '13px' }}>
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', fontSize: '11px' }}>
             <tr>
-              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '6px 8px', cursor: 'pointer' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '6px 8px', cursor: 'pointer' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '6px 8px', cursor: 'pointer' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
-              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '6px 8px', cursor: 'pointer', textAlign: 'right' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '6px 8px', cursor: 'pointer' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '6px 8px', cursor: 'pointer' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '6px 8px', textAlign: 'right' })}>관리<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
+              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '9px 10px', cursor: 'pointer', textAlign: 'right', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
+              <th style={thStyle(6, { padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>관리<span {...resizerProps(6)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -426,79 +423,108 @@ export const Products: React.FC = () => {
                 const palletW = p.palletWidth ?? (p.packageType === 'Pallet' ? p.specWidth : 0);
                 const palletL = p.palletLength ?? (p.packageType === 'Pallet' ? p.specLength : 0);
                 const palletH = p.palletHeight ?? (p.packageType === 'Pallet' ? p.specHeight : 0);
-                const palletWt = p.palletWeight ?? (p.packageType === 'Pallet' ? p.weight : 0);
 
                 return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
-                    <td style={{ padding: '6px 8px' }}>
-                      <strong style={{ color: '#0891b2' }}>{p.productCode || '-'}</strong>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>ID: {p.id}</div>
+                  <tr
+                    key={p.id}
+                    style={{ borderBottom: '1px solid #f1f5f9', fontSize: '12.5px', transition: 'background 0.1s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
+                    onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
+                  >
+                    {/* 상품코드 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</div>
                       {p.hsCode && (
-                        <div style={{ fontSize: '10.5px', color: '#475569', backgroundColor: '#f1f5f9', padding: '1px 5px', borderRadius: '4px', display: 'inline-block', marginTop: '3px', fontWeight: 'bold' }}>
-                          HS: {p.hsCode}
+                        <div style={{ fontSize: '9.5px', color: '#475569', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
+                          HS {p.hsCode}
                         </div>
                       )}
+                      <div style={{ fontSize: '9px', color: '#cbd5e1', marginTop: '2px' }}>{p.id}</div>
                     </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontWeight: 600, color: '#111827' }}>{p.nameKo || '-'}</div>
-                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{p.nameEn || '-'}</div>
-                      
-                      {/* Spec and Packings */}
-                      <div style={{ marginTop: '4px', fontSize: '11px', color: '#475569' }}>
-                        <span style={{ fontWeight: 600, color: '#64748b' }}>Spec:</span> {p.spec || '-'}
+
+                    {/* 상품명 / 규격 — 핵심 정보 2줄로 압축 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                      {/* 1줄: 한글명(굵게) + 영문명(연하게) */}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>{p.nameKo || '-'}</span>
+                        {p.nameEn && p.nameEn !== p.nameKo && (
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 400 }}>{p.nameEn}</span>
+                        )}
                       </div>
-                      <div style={{ marginTop: '3px', fontSize: '11px', color: '#475569', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <span>
-                          <span style={{ background: 'rgba(37,99,235,0.08)', color: '#2563eb', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>UNIT</span>
-                          {unitW}x{unitL}x{unitH} ({unitWt}kg)
-                        </span>
-                        {(palletW || palletL || palletH || palletWt || p.qtyPerPallet) ? (
-                          <span>
-                            <span style={{ background: 'rgba(8,145,178,0.08)', color: '#0891b2', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>PLT</span>
-                            {palletW}x{palletL}x{palletH} ({palletWt}kg)
+                      {/* 2줄: 스펙 + UNIT/PLT/적재 뱃지 */}
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
+                        {p.spec && (
+                          <span style={{ fontSize: '10.5px', color: '#64748b' }}>{p.spec}</span>
+                        )}
+                        {(unitW || unitL || unitH || unitWt) ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>UNIT</span>
+                            <span style={{ fontSize: '10px', color: '#475569' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
+                          </span>
+                        ) : null}
+                        {(palletW || palletL || palletH) ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <span style={{ background: '#ecfeff', color: '#0891b2', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>PLT</span>
+                            <span style={{ fontSize: '10px', color: '#475569' }}>{palletW}x{palletL}x{palletH}</span>
                           </span>
                         ) : null}
                         {p.qtyPerPallet ? (
-                          <span>
-                             <span style={{ background: 'rgba(217,119,6,0.08)', color: '#d97706', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, fontSize: '10px', marginRight: '4px' }}>적재</span>
-                             <strong style={{ color: '#111827' }}>{p.qtyPerPallet}</strong> EA
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                            <span style={{ background: '#fffbeb', color: '#d97706', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>적재</span>
+                            <span style={{ fontSize: '10.5px', color: '#0f172a', fontWeight: 700 }}>{p.qtyPerPallet} EA</span>
                           </span>
                         ) : null}
                       </div>
                     </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <span style={{ fontSize: '11px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px', color: '#6b7280' }}>
-                        {p.categoryLarge || '-'} &gt; {p.categoryMedium || '-'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669' }}>
-                        {p.currency || 'USD'} {priceFormatted} / <span style={{ color: '#2563eb', fontWeight: 700 }}>{p.unit || 'KG'}</span>
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>Min Qty: {p.minOrderQty || 0}</div>
-                    </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      <div style={{ fontWeight: 600, color: '#334155' }}>
-                        {p.supplierName || '-'}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#7c3aed', marginTop: '2px' }}>
-                        <span style={{ color: '#6b7280', fontSize: '10px', marginRight: '4px' }}>제조:</span> {p.manufacturerName || '-'}
+
+                    {/* 분류 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: '11px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
+                        {p.categoryLarge || '-'}
+                        {p.categoryMedium && <span style={{ color: '#94a3b8' }}> &gt; {p.categoryMedium}</span>}
                       </div>
                     </td>
-                    <td style={{ padding: '6px 8px' }}><span style={{ fontSize: '11px', color: '#6b7280' }}>{p.origin || '-'}</span></td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button 
+
+                    {/* 단가 */}
+                    <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>
+                        {p.currency || 'KRW'} {priceFormatted}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#2563eb', fontWeight: 700 }}>/ {p.unit || 'KG'}</div>
+                      {(p.minOrderQty || 0) > 0 && (
+                        <div style={{ fontSize: '9.5px', color: '#94a3b8', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
+                      )}
+                    </td>
+
+                    {/* 공급업체 / 제조사 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>{p.supplierName || '-'}</div>
+                      {p.manufacturerName && p.manufacturerName !== p.supplierName && (
+                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>
+                          <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>제조: </span>{p.manufacturerName}
+                        </div>
+                      )}
+                    </td>
+
+                    {/* 원산지 */}
+                    <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>{p.origin || '-'}</span>
+                    </td>
+
+                    {/* 관리 — 삭제는 수정 모달 안에서만, 목록에서는 숨김 */}
+                    <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                      <button
                         onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                        style={{ background: 'none', border: '1px solid #cbd5e1', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', marginRight: '4px' }}
-                      >✏ 수정</button>
-                      <button 
+                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
+                      >수정</button>
+                      <button
                         onClick={() => { setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
-                        style={{ background: 'none', border: '1px solid #3b82f6', color: '#3b82f6', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', marginRight: '4px' }}
-                      >📋 복사</button>
-                      <button 
-                        onClick={() => handleDelete(p.id, p.nameKo)}
-                        style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', padding: '3px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                      >✕ 삭제</button>
+                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', fontWeight: 600 }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
+                      >복사</button>
                     </td>
                   </tr>
                 );
