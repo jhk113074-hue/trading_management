@@ -465,19 +465,19 @@ export const Orders: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상 안내:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#10b981' }} /> 완료
+                <div style={{ width: '18px', height: '6px', borderRadius: '3px', background: '#10b981' }} /> 완료
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#2563eb' }} /> 진행중
+                <div style={{ width: '18px', height: '6px', borderRadius: '3px', background: '#2563eb' }} /> 진행중
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#f59e0b' }} /> 조치필요
+                <div style={{ width: '18px', height: '6px', borderRadius: '3px', background: '#f59e0b' }} /> 조치필요
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#cbd5e1' }} /> 미시작
+                <div style={{ width: '18px', height: '6px', borderRadius: '3px', background: '#cbd5e1' }} /> 미시작
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '28px', height: '7px', borderRadius: '4px', background: '#1e40af', boxShadow: '0 0 5px #1e40af88' }} /> 현재단계
+                <div style={{ width: '28px', height: '6px', borderRadius: '3px', background: '#2563eb' }} /> 현재단계
               </div>
             </div>
 
@@ -622,18 +622,19 @@ export const Orders: React.FC = () => {
                               {/* 현재 단계 강조 배지 */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{
-                                  background: '#1e40af', color: '#fff',
-                                  fontSize: '11px', fontWeight: 800,
-                                  padding: '2px 8px', borderRadius: '10px',
-                                  letterSpacing: '0.03em'
+                                  background: '#eff6ff', color: '#2563eb',
+                                  border: '1px solid #bfdbfe',
+                                  fontSize: '11px', fontWeight: 700,
+                                  padding: '2px 9px', borderRadius: '20px',
+                                  letterSpacing: '0.02em', whiteSpace: 'nowrap'
                                 }}>
                                   {currentStep}
                                 </span>
                                 <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                                  {completedCount}/{stages.length} 완료
+                                  {completedCount}/{stages.length}
                                 </span>
                               </div>
-                              {/* 컬러 도트 진행바 */}
+                              {/* 컬러 진행바 */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                 {stages.map((s, i) => {
                                   const color = getStageColor(s);
@@ -641,24 +642,21 @@ export const Orders: React.FC = () => {
                                   return (
                                     <React.Fragment key={s}>
                                       <div title={s} style={{
-                                        width: isCurrent ? '28px' : '18px',
-                                        height: '7px',
-                                        borderRadius: '4px',
-                                        background: color,
-                                        border: isCurrent ? `2px solid ${color}` : 'none',
-                                        boxShadow: isCurrent ? `0 0 5px ${color}88` : 'none',
+                                        width: isCurrent ? '30px' : '18px',
+                                        height: '6px',
+                                        borderRadius: '3px',
+                                        background: isCurrent ? '#2563eb' : color,
+                                        opacity: isCurrent ? 1 : 0.85,
                                         transition: 'all 0.2s',
-                                        position: 'relative',
                                         flexShrink: 0,
-                                      }}>
-                                      </div>
+                                      }} />
                                       {i < stages.length - 1 && (
-                                        <div style={{ width: '3px', height: '1px', background: '#e2e8f0', flexShrink: 0 }} />
+                                        <div style={{ width: '2px', height: '1px', background: '#e2e8f0', flexShrink: 0 }} />
                                       )}
                                     </React.Fragment>
                                   );
                                 })}
-                                <span style={{ marginLeft: '6px', fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>
+                                <span style={{ marginLeft: '5px', fontSize: '10.5px', color: '#94a3b8', fontWeight: 600 }}>
                                   {progressPct}%
                                 </span>
                               </div>
