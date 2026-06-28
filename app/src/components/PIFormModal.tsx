@@ -2291,8 +2291,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📦 3D Container Loading Plan 시뮬레이션 첨부
             </h3>
@@ -2305,9 +2305,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
             {/* .json file upload */}
-            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 프로젝트 파일 (.json)</div>
               {formData.containerSimulation?.simulationFileUrl ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
@@ -2334,11 +2334,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* image upload */}
-            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 결과 스크린샷 이미지 (.png/.jpg)</div>
               {formData.containerSimulation?.simulationImageUrl ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '120px', height: '80px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: '#e2e8f0', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
                     <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
