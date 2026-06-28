@@ -620,11 +620,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', border: '1px solid #e8ecf0', padding: '4px', borderRadius: '8px', marginBottom: '22px' }}>
             {[
-                { id: 1, label: '📑 1. 기본 정보' },
-                { id: 2, label: '🏭 2. 공급 유통망' },
-                { id: 3, label: '💰 3. 가격(단가) 관리' },
-                { id: 4, label: '📦 4. 패킹 정보' },
-                { id: 6, label: '🔬 5. 기술 자료' },
+                { id: 1, label: '📋 1. 상품 스펙 및 패킹/기술자료' },
+                { id: 2, label: '💰 2. 공급 유통사 및 단가 이력' },
             ].map(tab => (
               <button 
                 key={tab.id}
@@ -1123,7 +1120,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
               </>
             )}
 
-            {activeTab === 3 && (
+            {activeTab === 2 && (
               <>
                 {/* ── 현재 구매가(원가) 고정 영역 ── */}
                 {(() => {
@@ -1321,7 +1318,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 </div>
               </>
             )}
-            {activeTab === 4 && (
+            {activeTab === 1 && (
               <>
                 {/* Packing Methods list */}
                 <div style={{ border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
@@ -1545,7 +1542,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
 
 
-            {activeTab === 6 && (
+            {activeTab === 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ fontSize: '13px', color: '#475569', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   📂 <strong>기술 자료 관리:</strong> 상품에 속한 TDS, MSDS 및 기타 기술 사양 문서를 업로드하고 통합 관리합니다. (각 카테고리별 최대 10MB)
