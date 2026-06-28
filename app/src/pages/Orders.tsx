@@ -651,7 +651,6 @@ export const Orders: React.FC = () => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = pi?.totalUsd || order.totalAmount || 0;
                   const currentStep = mapStatusToStep(order.status || '', order);
-                  const currentStepKey = stepToStageKey[currentStep] as StageKey;
                   const { pct } = getOverallProgress(order);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
@@ -700,10 +699,10 @@ export const Orders: React.FC = () => {
                           <div style={{ display: 'flex', gap: '2px' }}>
                             {STAGE_KEYS.map((sk) => {
                               const { done, total } = getStageProgress(order, sk);
-                              const isCurrent = sk === currentStepKey;
                               const isDone = total > 0 && done === total;
-                              const statusText = isDone ? '완료' : (isCurrent || done > 0 ? '작업중' : '미작업');
-                              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : '#cbd5e1';
+                              const isWorking = done > 0 && done < total;
+                              const statusText = isDone ? '완료' : (isWorking ? '작업중' : '미작업');
+                              const color = isDone ? '#10b981' : isWorking ? '#2563eb' : '#cbd5e1';
                               const labelMap: Record<string, string> = {
                                 '수주정보': '수주정보',
                                 '소싱발주': '소싱/발주',
