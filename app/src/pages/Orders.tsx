@@ -657,8 +657,16 @@ export const Orders: React.FC = () => {
                               const { done, total } = getStageProgress(order, sk);
                               const isCurrent = sk === currentStepKey;
                               const isDone = total > 0 && done === total;
-                              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : '#e2e8f0';
-                              return <div key={sk} title={sk} style={{ flex: 1, height: '5px', borderRadius: '3px', background: color }} />;
+                              const statusText = isDone ? '완료' : (isCurrent || done > 0 ? '작업중' : '미작업');
+                              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : '#cbd5e1';
+                              const labelMap: Record<string, string> = {
+                                '수주정보': '수주정보',
+                                '소싱발주': '소싱/발주',
+                                '물류선적': '물류/선적',
+                                '서류관리': '서류관리',
+                                '정산결제': '정산/결제'
+                              };
+                              return <div key={sk} title={`${labelMap[sk] || sk}: ${statusText}`} style={{ flex: 1, height: '5px', borderRadius: '3px', background: color }} />;
                             })}
                           </div>
                         </div>
@@ -700,7 +708,7 @@ export const Orders: React.FC = () => {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '11.5px', color: '#64748b', flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상:</span>
-            {[['#10b981','완료'],['#2563eb','현재단계'],['#f59e0b','조치필요'],['#cbd5e1','미시작']].map(([c,l]) => (
+            {[['#10b981','완료'],['#2563eb','작업중'],['#cbd5e1','미작업']].map(([c,l]) => (
               <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <div style={{ width: '16px', height: '5px', borderRadius: '3px', background: c }} /> {l}
               </div>
