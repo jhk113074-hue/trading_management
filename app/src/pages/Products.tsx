@@ -427,7 +427,8 @@ export const Products: React.FC = () => {
                 return (
                   <tr
                     key={p.id}
-                    style={{ borderBottom: '1px solid #f1f5f9', fontSize: '12.5px', transition: 'background 0.1s' }}
+                    onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
+                    style={{ borderBottom: '1px solid #f1f5f9', fontSize: '12.5px', transition: 'background 0.1s', cursor: 'pointer' }}
                     onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                     onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                   >
@@ -514,13 +515,13 @@ export const Products: React.FC = () => {
                     {/* 관리 — 삭제는 수정 모달 안에서만, 목록에서는 숨김 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button
-                        onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
                         style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
                       >수정</button>
                       <button
-                        onClick={() => { setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
+                        onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
                         style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', fontWeight: 600 }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
