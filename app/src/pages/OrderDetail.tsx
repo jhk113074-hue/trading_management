@@ -158,10 +158,28 @@ export const OrderDetail: React.FC = () => {
   };
   const [stageCompletion, setStageCompletion] = useState<Record<StageKey, Record<string, boolean>>>(defaultStageCompletion);
 
-  // 체크박스 토글 → Firebase 즉시 저장
+  // 수동으로 해제한 항목 기록 — 자동감지가 덮어쓰지 않도록 보호
+  const [manualOverride, setManualOverride] = useState<Record<string, boolean>>({});
+
+  // 체크박스 토글 → Firebase 즉시 저장 + manualOverride 기록
   const handleChecklistToggle = async (stage: StageKey, item: string) => {
     if (!order) return;
-    const newVal = !((stageCompletion[stage] || {})[item]);
+    const prevVal = (stageCompletion[stage] || {})[item];
+    const newVal = !prevVal;
+    const overrideKey = `${stage}__${item}`;
+
+    // 자동감지 조건을 충족하지만 사용자가 수동 해제한 경우 → override 등록
+    // 자동감지 조건과 무관하게 사용자가 체크한 경우 → override 해제 (자동도 허용)
+    const newOverride = { ...manualOverride };
+    if (!newVal) {
+      // 체크 해제 → 수동 오버라이드 등록 (자동감지가 다시 켜지지 않도록)
+      newOverride[overrideKey] = true;
+    } else {
+      // 체크 설정 → 오버라이드 해제 (자동감지와 동기화 허용)
+      delete newOverride[overrideKey];
+    }
+    setManualOverride(newOverride);
+
     const updated = {
       ...stageCompletion,
       [stage]: { ...(stageCompletion[stage] || {}), [item]: newVal }
@@ -169,18 +187,15 @@ export const OrderDetail: React.FC = () => {
     setStageCompletion(updated);
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-      await setDoc(orderRef, { stageCompletion: updated, updatedAt: serverTimestamp() }, { merge: true });
+      await setDoc(orderRef, {
+        stageCompletion: updated,
+        stageCompletionOverride: newOverride,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
     } catch (e) { console.error('체크리스트 저장 실패:', e); }
   };
 
-  // stageCompletion 완료율 계산
-  const getStageProgress = (stage: StageKey) => {
-    const items = stageCompletion[stage] || {};
-    const keys = Object.keys(items);
-    if (keys.length === 0) return { done: 0, total: 0, pct: 0 };
-    const done = keys.filter(k => items[k]).length;
-    return { done, total: keys.length, pct: Math.round((done / keys.length) * 100) };
-  };
+
   // ────────────────────────────────────────────────────────────────────────
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
@@ -752,6 +767,122 @@ export const OrderDetail: React.FC = () => {
     lcRemark: ''
   });
 
+  // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
+  // Firebase 데이터 조건 충족 시 해당 항목 자동 체크
+  // manualOverride에 등록된 항목은 건드리지 않음
+  useEffect(() => {
+    if (!order) return;
+
+    const autoDetect: Partial<Record<StageKey, Record<string, boolean>>> = {};
+
+    // ── 수주정보 ──
+    const po수주: Record<string, boolean> = {};
+    if (basicForm.incoterms && basicForm.paymentTerms)
+      po수주['인코텀즈/결제조건 확인'] = true;
+    if (basicForm.custPo || basicForm.poDate)
+      po수주['고객 PO 접수 확인'] = true;
+    if (basicForm.isLc === 'Y' ? !!basicForm.lcNo : basicForm.isLc === 'N')
+      po수주['L/C 정보 입력'] = true;
+    if (orderItems.length > 0 && orderItems.every(it => (it.qty || 0) > 0 && it.name))
+      po수주['수주 품목 및 금액 확정'] = true;
+    autoDetect['수주정보'] = po수주;
+
+    // ── 소싱/발주 ──
+    const po소싱: Record<string, boolean> = {};
+    if (orderItems.length > 0 && orderItems.every(it => !!it.supplier))
+      po소싱['공급사 배정 완료'] = true;
+    if (issuedDocs && issuedDocs.length > 0)
+      po소싱['발주서 발행 및 발송'] = true;
+    if (basicForm.cargoReadyDate)
+      po소싱['공급사 납기일 확정'] = true;
+    if (basicForm.supplierPoSent && Object.values(basicForm.supplierPoSent).length > 0 && Object.values(basicForm.supplierPoSent).every(v => v === true))
+      po소싱['카고 레디 확인'] = true;
+    autoDetect['소싱발주'] = po소싱;
+
+    // ── 물류/선적 ──
+    const po물류: Record<string, boolean> = {};
+    if (forwardersList.length > 0 || basicForm.forwarderConfirmed)
+      po물류['포워더/운송사 확정'] = true;
+    if (basicForm.vesselBooking)
+      po물류['Vessel(선박명) 확정'] = true;
+    if (basicForm.cfsEntryDate)
+      po물류['CFS 입고일 확정'] = true;
+    if (basicForm.shipmentCompleted === 'Y' || basicForm.etd)
+      po물류['선적 완료 확인'] = true;
+    autoDetect['물류선적'] = po물류;
+
+    // ── 서류관리 ──
+    const po서류: Record<string, boolean> = {};
+    if (basicForm.ciPlStatus === 'Y' || (order.ciFiles && order.ciFiles.length > 0))
+      po서류['CI/PL 작성 완료'] = true;
+    if (basicForm.exportDeclarationNo && order.exportDeclarationFiles && order.exportDeclarationFiles.length > 0)
+      po서류['수출신고 완료'] = true;
+    if (basicForm.blStatus === 'Y' || (order.blFiles && order.blFiles.length > 0))
+      po서류['B/L 수령'] = true;
+    if (basicForm.shippingDocsSentStatus === 'Y' || basicForm.bankSubmissionDate)
+      po서류['서류 발송/은행 제출'] = true;
+    autoDetect['서류관리'] = po서류;
+
+    // ── 정산/결제 ──
+    const po정산: Record<string, boolean> = {};
+    const installments = basicForm.paymentCollectedInstallments || [];
+    const firstInstallment = installments[0];
+    if (firstInstallment && (firstInstallment.amount || 0) > 0)
+      po정산['전금(선금) 수령'] = true;
+    if (basicForm.paymentCollectedDate)
+      po정산['잔금 수령 완료'] = true;
+    if (basicForm.supplierPayments && Object.values(basicForm.supplierPayments).some((v: any) => v?.status === '결제완료'))
+      po정산['공급사 대금 지급'] = true;
+    if (basicForm.supplierTaxInvoiceDetails) {
+      const taxKeys = Object.keys(basicForm.supplierTaxInvoiceDetails);
+      if (taxKeys.length > 0 && taxKeys.some(k => {
+        const d = basicForm.supplierTaxInvoiceDetails[k];
+        if (Array.isArray(d)) return d.some((x: any) => !!x.invoiceNo);
+        return !!(d as any)?.invoiceNo;
+      })) po정산['세금계산서 처리'] = true;
+    }
+    autoDetect['정산결제'] = po정산;
+
+    // manualOverride 보호 + 기존 수동 체크 유지하며 merge
+    setStageCompletion(prev => {
+      const merged = { ...prev };
+      (Object.keys(autoDetect) as StageKey[]).forEach(stage => {
+        const autoItems = autoDetect[stage] || {};
+        const current = prev[stage] || {};
+        const next = { ...current };
+        Object.entries(autoItems).forEach(([itemKey, autoVal]) => {
+          const overrideKey = `${stage}__${itemKey}`;
+          // manualOverride에 등록된 항목은 건드리지 않음
+          if (manualOverride[overrideKey]) return;
+          // 자동감지가 true일 때만 덮어씀 (false로는 절대 덮어쓰지 않음)
+          if (autoVal) next[itemKey] = true;
+        });
+        merged[stage] = next;
+      });
+      return merged;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    order,
+    basicForm.incoterms, basicForm.paymentTerms, basicForm.custPo, basicForm.poDate,
+    basicForm.isLc, basicForm.lcNo,
+    basicForm.cargoReadyDate, basicForm.supplierPoSent,
+    basicForm.vesselBooking, basicForm.cfsEntryDate, basicForm.shipmentCompleted, basicForm.etd,
+    basicForm.ciPlStatus, basicForm.exportDeclarationNo, basicForm.blStatus,
+    basicForm.shippingDocsSentStatus, basicForm.bankSubmissionDate,
+    basicForm.paymentCollectedDate, basicForm.supplierPayments, basicForm.supplierTaxInvoiceDetails,
+    basicForm.paymentCollectedInstallments, basicForm.forwarderConfirmed,
+    orderItems, forwardersList, issuedDocs, manualOverride
+  ]);
+
+  const getStageProgress = (stage: StageKey) => {
+    const items = stageCompletion[stage] || {};
+    const total = Object.keys(items).length;
+    const done = Object.values(items).filter(Boolean).length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    return { done, total, pct };
+  };
+
   const [myCompanies, setMyCompanies] = useState<any[]>([]);
 
   const getShipperText = (issuingCompany: string) => {
@@ -1292,6 +1423,10 @@ export const OrderDetail: React.FC = () => {
             ...prev,
             ...(data as any).stageCompletion
           }));
+        }
+        // manualOverride 로드
+        if ((data as any).stageCompletionOverride) {
+          setManualOverride((data as any).stageCompletionOverride);
         }
       } else {
         setOrder(null);
@@ -3666,34 +3801,62 @@ export const OrderDetail: React.FC = () => {
 
                     {/* 체크리스트 항목 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      {Object.entries(items).map(([itemKey, checked]) => (
-                        <div
-                          key={itemKey}
-                          onClick={e => { e.stopPropagation(); handleChecklistToggle(key, itemKey); }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '5px',
-                            cursor: 'pointer', padding: '2px 0',
-                          }}
-                        >
-                          <div style={{
-                            width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
-                            border: checked ? 'none' : '1.5px solid #cbd5e1',
-                            background: checked ? '#10b981' : '#fff',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.15s',
-                          }}>
-                            {checked && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                      {Object.entries(items).map(([itemKey, checked]) => {
+                        const overrideKey = `${key}__${itemKey}`;
+                        const isOverridden = !!manualOverride[overrideKey]; // 수동 해제된 항목
+                        // 자동감지로 켜진 항목 = checked이고 override 아닌 것 (수동 체크도 포함)
+                        // 구분하려면 별도 autoDetected 맵이 필요하지만, override 없이 checked = 자동 or 수동 둘 다
+                        // 시각 표현: override된 항목은 취소선 + 회색 표시
+                        return (
+                          <div
+                            key={itemKey}
+                            onClick={e => { e.stopPropagation(); handleChecklistToggle(key, itemKey); }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '5px',
+                              cursor: 'pointer', padding: '2px 0',
+                              opacity: isOverridden ? 0.5 : 1,
+                            }}
+                            title={isOverridden ? '자동감지 조건 충족이지만 수동 해제됨 (다시 클릭하면 복구)' : checked ? '완료 (클릭하면 해제)' : '미완료 (클릭하면 완료 처리)'}
+                          >
+                            {/* 체크박스 */}
+                            <div style={{
+                              width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0,
+                              border: checked ? 'none' : '1.5px solid #cbd5e1',
+                              background: checked ? '#10b981' : '#fff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s',
+                            }}>
+                              {checked && <span style={{ color: '#fff', fontSize: '9px', fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                            </div>
+                            {/* 항목 텍스트 */}
+                            <span style={{
+                              fontSize: '10px', fontWeight: checked ? 600 : 400,
+                              color: isOverridden ? '#94a3b8' : checked ? '#065f46' : '#64748b',
+                              textDecoration: isOverridden ? 'line-through' : 'none',
+                              lineHeight: 1.3, flex: 1,
+                            }}>
+                              {itemKey}
+                            </span>
+                            {/* 자동감지 표시 아이콘 */}
+                            {checked && !isOverridden && (
+                              <span
+                                style={{ fontSize: '8px', color: '#94a3b8', flexShrink: 0 }}
+                                title="데이터 자동 감지 또는 수동 완료"
+                              >
+                                ⚡
+                              </span>
+                            )}
+                            {isOverridden && (
+                              <span
+                                style={{ fontSize: '8px', color: '#f59e0b', flexShrink: 0 }}
+                                title="수동 해제됨"
+                              >
+                                ✋
+                              </span>
+                            )}
                           </div>
-                          <span style={{
-                            fontSize: '10px', fontWeight: checked ? 600 : 400,
-                            color: checked ? '#065f46' : '#64748b',
-                            textDecoration: checked ? 'none' : 'none',
-                            lineHeight: 1.3,
-                          }}>
-                            {itemKey}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -3724,6 +3887,14 @@ export const OrderDetail: React.FC = () => {
                 </div>
               );
             })()}
+
+            {/* 아이콘 범례 */}
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+              <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>아이콘 안내:</span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>⚡ 자동감지 또는 수동 완료</span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>✋ 조건 충족이지만 수동 해제됨</span>
+              <span style={{ fontSize: '10px', color: '#64748b', marginLeft: 'auto' }}>* 항목 클릭으로 완료/해제 전환 가능</span>
+            </div>
           </div>
         );
       })()}
