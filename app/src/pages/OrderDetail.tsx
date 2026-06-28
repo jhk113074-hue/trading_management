@@ -983,7 +983,10 @@ export const OrderDetail: React.FC = () => {
   ]);
 
   const getStageProgress = (stage: StageKey) => {
-    const items = stageCompletion[stage] || {};
+    let items = { ...(stageCompletion[stage] || {}) };
+    if (stage === '수주정보' && basicForm.isLc !== 'Y') {
+      delete items['L/C 정보 입력'];
+    }
     const total = Object.keys(items).length;
     const done = Object.values(items).filter(Boolean).length;
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -3942,8 +3945,21 @@ export const OrderDetail: React.FC = () => {
         ];
 
         // 전체 완료율
-        const allItems = stageMeta.flatMap(s => Object.keys(stageCompletion[s.key] || {}));
-        const allDone = stageMeta.flatMap(s => Object.values(stageCompletion[s.key] || {}).filter(Boolean));
+        const allItems = stageMeta.flatMap(s => {
+          const keys = Object.keys(stageCompletion[s.key] || {});
+          if (s.key === '수주정보' && basicForm.isLc !== 'Y') {
+            return keys.filter(k => k !== 'L/C 정보 입력');
+          }
+          return keys;
+        });
+        const allDone = stageMeta.flatMap(s => {
+          const entries = Object.entries(stageCompletion[s.key] || {});
+          let validEntries = entries;
+          if (s.key === '수주정보' && basicForm.isLc !== 'Y') {
+            validEntries = entries.filter(([k]) => k !== 'L/C 정보 입력');
+          }
+          return validEntries.map(([_, v]) => v).filter(Boolean);
+        });
         const totalPct = allItems.length > 0 ? Math.round((allDone.length / allItems.length) * 100) : 0;
 
         return (
@@ -3968,7 +3984,10 @@ export const OrderDetail: React.FC = () => {
               {stageMeta.map(({ key, label, icon, tabTarget }) => {
                 const { done, total, pct } = getStageProgress(key);
                 const isActive = activeStep === tabTarget;
-                const items = stageCompletion[key] || {};
+                let items = { ...(stageCompletion[key] || {}) };
+                if (key === '수주정보' && basicForm.isLc !== 'Y') {
+                  delete items['L/C 정보 입력'];
+                }
 
                 // 단계 상태 색상
                 const stageColor = done === total ? '#10b981' : done > 0 ? '#2563eb' : '#94a3b8';
