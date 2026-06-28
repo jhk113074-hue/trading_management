@@ -142,7 +142,6 @@ export const Layout: React.FC = () => {
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리(Proforma Invoice)', external: false },
         { path: '/orders', label: '📦 주문관리', external: false },
-        { path: '/container-packer', label: '🚢 컨테이너 적재 (새 창)', external: true },
         { path: '/issues', label: '🛠️ 프로그램 오류/수정 게시판 (새 창)', external: true }
       ] as any },
       { section: 'DB관리', items: [
