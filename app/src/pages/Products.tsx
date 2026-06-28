@@ -428,51 +428,51 @@ export const Products: React.FC = () => {
                   <tr
                     key={p.id}
                     onClick={() => { setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                    style={{ borderBottom: '1px solid #f1f5f9', fontSize: '12.5px', transition: 'background 0.1s', cursor: 'pointer' }}
+                    style={{ borderBottom: '1px solid #f1f5f9', fontSize: '13px', transition: 'background 0.1s', cursor: 'pointer' }}
                     onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                     onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                   >
                     {/* 상품코드 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</div>
                       {p.hsCode && (
-                        <div style={{ fontSize: '9.5px', color: '#475569', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
+                        <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
                           HS {p.hsCode}
                         </div>
                       )}
-                      <div style={{ fontSize: '9px', color: '#cbd5e1', marginTop: '2px' }}>{p.id}</div>
+                      <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '2px' }}>{p.id}</div>
                     </td>
 
                     {/* 상품명 / 규격 — 핵심 정보 2줄로 압축 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
                       {/* 1줄: 한글명(굵게) + 영문명(연하게) */}
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f172a' }}>{p.nameKo || '-'}</span>
+                        <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>{p.nameKo || '-'}</span>
                         {p.nameEn && p.nameEn !== p.nameKo && (
-                          <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 400 }}>{p.nameEn}</span>
+                          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{p.nameEn}</span>
                         )}
                       </div>
                       {/* 2줄: 스펙 + UNIT/PLT/적재 뱃지 */}
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
                         {p.spec && (
-                          <span style={{ fontSize: '10.5px', color: '#64748b' }}>{p.spec}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b' }}>{p.spec}</span>
                         )}
                         {(unitW || unitL || unitH || unitWt) ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>UNIT</span>
-                            <span style={{ fontSize: '10px', color: '#475569' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
+                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>UNIT</span>
+                            <span style={{ fontSize: '11.5px', color: '#475569' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
                           </span>
                         ) : null}
                         {(palletW || palletL || palletH) ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#ecfeff', color: '#0891b2', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>PLT</span>
-                            <span style={{ fontSize: '10px', color: '#475569' }}>{palletW}x{palletL}x{palletH}</span>
+                            <span style={{ background: '#ecfeff', color: '#0891b2', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>PLT</span>
+                            <span style={{ fontSize: '11.5px', color: '#475569' }}>{palletW}x{palletL}x{palletH}</span>
                           </span>
                         ) : null}
                         {p.qtyPerPallet ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                            <span style={{ background: '#fffbeb', color: '#d97706', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '9.5px' }}>적재</span>
-                            <span style={{ fontSize: '10.5px', color: '#0f172a', fontWeight: 700 }}>{p.qtyPerPallet} EA</span>
+                            <span style={{ background: '#fffbeb', color: '#d97706', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>적재</span>
+                            <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700 }}>{p.qtyPerPallet} EA</span>
                           </span>
                         ) : null}
                       </div>
@@ -480,7 +480,7 @@ export const Products: React.FC = () => {
 
                     {/* 분류 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '11px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
+                      <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
                         {p.categoryLarge || '-'}
                         {p.categoryMedium && <span style={{ color: '#94a3b8' }}> &gt; {p.categoryMedium}</span>}
                       </div>
@@ -488,41 +488,41 @@ export const Products: React.FC = () => {
 
                     {/* 단가 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#16a34a' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#16a34a' }}>
                         {p.currency || 'KRW'} {priceFormatted}
                       </div>
-                      <div style={{ fontSize: '10px', color: '#2563eb', fontWeight: 700 }}>/ {p.unit || 'KG'}</div>
+                      <div style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>/ {p.unit || 'KG'}</div>
                       {(p.minOrderQty || 0) > 0 && (
-                        <div style={{ fontSize: '9.5px', color: '#94a3b8', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
                       )}
                     </td>
 
                     {/* 공급업체 / 제조사 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>{p.supplierName || '-'}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>{p.supplierName || '-'}</div>
                       {p.manufacturerName && p.manufacturerName !== p.supplierName && (
-                        <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '9.5px' }}>제조: </span>{p.manufacturerName}
+                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>제조: </span>{p.manufacturerName}
                         </div>
                       )}
                     </td>
 
                     {/* 원산지 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>{p.origin || '-'}</span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{p.origin || '-'}</span>
                     </td>
 
                     {/* 관리 — 삭제는 수정 모달 안에서만, 목록에서는 숨김 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
+                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
                       >수정</button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
-                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '11.5px', color: '#475569', fontWeight: 600 }}
+                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: '#475569', fontWeight: 600 }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
                       >복사</button>
