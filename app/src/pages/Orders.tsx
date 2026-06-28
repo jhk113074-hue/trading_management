@@ -714,7 +714,7 @@ export const Orders: React.FC = () => {
     <div style={{ padding: '24px 30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
       {/* 헤더 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>주문 관리 대시보드</h1>
           <select 

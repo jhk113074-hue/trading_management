@@ -354,7 +354,7 @@ export const TaskList: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#fdfdfd' }}>
       <div style={{ padding: '24px 30px 8px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>전체 업무 리스트</h1>
           <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px' }}>
             총 {tasks.length}건 / {dateMode === 'weekly' ? formatWeekLabel(weekOffset) : dateMode === 'daily' ? selectedDate : `${startDate} ~ ${endDate}`} 결과 {filteredAndSortedTasks.length}건
