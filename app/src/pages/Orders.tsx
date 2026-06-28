@@ -593,14 +593,6 @@ export const Orders: React.FC = () => {
         <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>등록된 주문 정보가 없습니다.</div>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: '11.5px', color: '#64748b', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상:</span>
-            {[['#10b981','완료'],['#2563eb','현재단계'],['#f59e0b','조치필요'],['#cbd5e1','미시작']].map(([c,l]) => (
-              <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <div style={{ width: '16px', height: '5px', borderRadius: '3px', background: c }} /> {l}
-              </div>
-            ))}
-          </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
@@ -705,6 +697,14 @@ export const Orders: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '11.5px', color: '#64748b', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상:</span>
+            {[['#10b981','완료'],['#2563eb','현재단계'],['#f59e0b','조치필요'],['#cbd5e1','미시작']].map(([c,l]) => (
+              <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ width: '16px', height: '5px', borderRadius: '3px', background: c }} /> {l}
+              </div>
+            ))}
+          </div>
         </>
       )}
     </div>
@@ -749,12 +749,7 @@ export const Orders: React.FC = () => {
       {/* 뷰 전환 탭 + 필터 통합 한 줄 */}
       <FilterBar />
 
-      {/* 오더 수 표시 */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', background: '#f1f5f9', padding: '4px 14px', borderRadius: '20px' }}>
-          총 {processedOrders.length}건
-        </span>
-      </div>
+
 
       {/* 뷰 컨텐츠 */}
       {loading ? (
