@@ -596,8 +596,8 @@ export const Orders: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
-                  {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map((h, i, arr) => (
-                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: h === '발주액' ? 'right' : (h === '날짜' || h === '수주사' ? 'center' : 'left'), whiteSpace: 'nowrap', borderRight: i < arr.length - 1 ? '1px solid #e2e8f0' : 'none' }}>{h}</th>
+                  {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: h === '발주액' ? 'right' : (h === '날짜' || h === '수주사' ? 'center' : 'left'), whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -625,15 +625,15 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={{ padding: '9px 16px', color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
-                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#2563eb', fontSize: '13.5px', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
-                      <td style={{ padding: '9px 16px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>{issuerBadge}</td>
-                      <td style={{ padding: '9px 16px', color: '#1e293b', fontWeight: 600, fontSize: '13.5px', borderRight: '1px solid #e2e8f0' }}>{order.customer}</td>
-                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0f766e', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14.5px', borderRight: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '9px 16px', color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
+                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#2563eb', fontSize: '13.5px', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
+                      <td style={{ padding: '9px 16px', textAlign: 'center' }}>{issuerBadge}</td>
+                      <td style={{ padding: '9px 16px', color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{order.customer}</td>
+                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0f766e', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14.5px' }}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 단계 */}
-                      <td style={{ padding: '9px 16px', minWidth: '200px', borderRight: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '9px 16px', minWidth: '200px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ 
