@@ -597,7 +597,7 @@ export const Orders: React.FC = () => {
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
                   {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: h === '발주액' ? 'right' : (h === '날짜' || h === '수주사' ? 'center' : 'left'), whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: 'center', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
