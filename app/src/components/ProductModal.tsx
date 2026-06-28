@@ -161,7 +161,16 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       }
 
       let resolvedSuppliers = initialProduct.suppliers || [];
-      let resolvedPrices = initialProduct.purchasePrices || [];
+      let resolvedPrices = (initialProduct.purchasePrices || []).map((p: any) => {
+        if (!p.supplierCode && initialProduct.supplierCode) {
+          return {
+            ...p,
+            supplierCode: initialProduct.supplierCode,
+            supplierName: initialProduct.supplierName || ''
+          };
+        }
+        return p;
+      });
 
       if (resolvedSuppliers.length === 0 && initialProduct.supplierCode && initialProduct.supplierName) {
         resolvedSuppliers = [{
