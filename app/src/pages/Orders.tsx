@@ -596,8 +596,8 @@ export const Orders: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
-                  {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12.5px', textAlign: h === '발주액' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                  {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map((h, i, arr) => (
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', letterSpacing: '0.05em', textAlign: h === '발주액' ? 'right' : (h === '날짜' || h === '수주사' ? 'center' : 'left'), whiteSpace: 'nowrap', borderRight: i < arr.length - 1 ? '1px solid #e2e8f0' : 'none' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -611,42 +611,44 @@ export const Orders: React.FC = () => {
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
                   const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#e2e8f0';
+                  
+                  const isYS = order.issuingCompany === 'YS';
+                  const issuerBadge = isYS
+                    ? <span style={{ fontSize: '12px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
+                    : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+
                   return (
                     <tr
                       key={order.id}
                       onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-                      style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background 0.15s' }}
+                      style={{ borderBottom: '1px solid #e2e8f0', height: '60px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
-                          {order.issuingCompany || 'YSACC'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 16px', color: '#334155', fontWeight: 600 }}>{order.customer}</td>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14px' }}>
+                      <td style={{ padding: '9px 16px', color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
+                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#2563eb', fontSize: '13.5px', borderRight: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
+                      <td style={{ padding: '9px 16px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>{issuerBadge}</td>
+                      <td style={{ padding: '9px 16px', color: '#1e293b', fontWeight: 600, fontSize: '13.5px', borderRight: '1px solid #e2e8f0' }}>{order.customer}</td>
+                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0f766e', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14.5px', borderRight: '1px solid #e2e8f0' }}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 단계 */}
-                      <td style={{ padding: '10px 16px', minWidth: '200px' }}>
+                      <td style={{ padding: '9px 16px', minWidth: '200px', borderRight: '1px solid #e2e8f0' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ 
                                background: currentStep === '완료' ? '#ecfdf5' : '#eff6ff', 
                                color: currentStep === '완료' ? '#10b981' : '#2563eb', 
                                border: currentStep === '완료' ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                               fontSize: '11.5px', 
+                               fontSize: '12px', 
                                fontWeight: 700, 
-                               padding: '2px 9px', 
+                               padding: '3px 10px', 
                                borderRadius: '20px', 
                                whiteSpace: 'nowrap' 
                              }}>
                               {currentStep}
                             </span>
-                            <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 500 }}>
+                            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
                               {pct}%
                             </span>
                           </div>
@@ -662,7 +664,7 @@ export const Orders: React.FC = () => {
                         </div>
                       </td>
                        {/* 다음단계 */}
-                      <td style={{ padding: '12px 16px' }}>
+                      <td style={{ padding: '9px 16px' }}>
                         {(() => {
                            const todoText = getNextTodoItem(order);
                            const isAllDone = todoText === "모든 업무 완료";
