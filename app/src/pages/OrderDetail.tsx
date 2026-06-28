@@ -5691,12 +5691,6 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e3a8a', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>📋 Planned (시뮬레이션 계획안)</div>
                         {piData?.containerSimulation ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-                            <div><strong>컨테이너 타입:</strong> {piData.containerSimulation.containerType || '-'}</div>
-                            <div><strong>체적 적재율:</strong> {piData.containerSimulation.volumeEfficiency ? `${piData.containerSimulation.volumeEfficiency}%` : '-'}</div>
-                            <div><strong>중량 적재율:</strong> {piData.containerSimulation.weightEfficiency ? `${piData.containerSimulation.weightEfficiency}%` : '-'}</div>
-                            <div><strong>총 체적:</strong> {piData.containerSimulation.totalCbm ? `${piData.containerSimulation.totalCbm} CBM` : '-'}</div>
-                            <div><strong>총 중량:</strong> {piData.containerSimulation.totalWeight ? `${piData.containerSimulation.totalWeight.toLocaleString()} KG` : '-'}</div>
-                            <div><strong>총 박스 수:</strong> {piData.containerSimulation.cargoCount ? `${piData.containerSimulation.cargoCount} 개` : '-'}</div>
                             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                               {piData.containerSimulation.simulationFileUrl && (
                                 <a href={piData.containerSimulation.simulationFileUrl} download style={{ padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', textDecoration: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 700 }}>📁 파일 다운로드</a>
@@ -5715,108 +5709,6 @@ export const OrderDetail: React.FC = () => {
                       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
                         <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>✅ Actual (실제 적재 결과)</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12px' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>컨테이너 타입</label>
-                              <input
-                                type="text"
-                                placeholder="예: 20GP 1대"
-                                value={basicForm.actualContainerSimulation?.containerType || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    containerType: e.target.value
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>체적 적재율 (%)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="예: 65.20"
-                                value={basicForm.actualContainerSimulation?.volumeEfficiency || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    volumeEfficiency: parseFloat(e.target.value) || 0
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>중량 적재율 (%)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="예: 13.50"
-                                value={basicForm.actualContainerSimulation?.weightEfficiency || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    weightEfficiency: parseFloat(e.target.value) || 0
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 체적 (CBM)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="예: 21.80"
-                                value={basicForm.actualContainerSimulation?.totalCbm || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    totalCbm: parseFloat(e.target.value) || 0
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 중량 (KG)</label>
-                              <input
-                                type="number"
-                                placeholder="예: 3650"
-                                value={basicForm.actualContainerSimulation?.totalWeight || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    totalWeight: parseInt(e.target.value) || 0
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 박스 수</label>
-                              <input
-                                type="number"
-                                placeholder="예: 8"
-                                value={basicForm.actualContainerSimulation?.cargoCount || ''}
-                                onChange={e => setBasicForm(prev => ({
-                                  ...prev,
-                                  actualContainerSimulation: {
-                                    ...(prev.actualContainerSimulation || {}),
-                                    cargoCount: parseInt(e.target.value) || 0
-                                  }
-                                }))}
-                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                              />
-                            </div>
-                          </div>
-
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '10px' }}>
                             <div>
                               <div style={{ fontSize: '11px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>프로젝트 (.json)</div>

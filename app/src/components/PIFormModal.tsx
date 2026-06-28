@@ -286,20 +286,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       if (event.data && event.data.type === 'CONTAINER_SIMULATION_RESULT') {
         const { data } = event.data;
         
-        // Automatically update form stats fields
-        setFormData(prev => ({
-          ...prev,
-          containerSimulation: {
-            ...prev.containerSimulation,
-            containerType: data.containerType,
-            volumeEfficiency: data.volumeEfficiency,
-            weightEfficiency: data.weightEfficiency,
-            totalCbm: data.totalCbm,
-            totalWeight: data.totalWeight,
-            cargoCount: data.cargoCount,
-          }
-        }));
-        
         // Auto-generate a JSON file Blob from projectData and upload to Firestore / Firebase Storage
         const jsonStr = JSON.stringify(data.projectData, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -2304,108 +2290,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             >
               🚀 3D 컨테이너 적재 시뮬레이터 프로그램 열기
             </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>컨테이너 타입</label>
-              <input
-                type="text"
-                placeholder="예: 20GP 1대, 40HC 1대"
-                value={formData.containerSimulation?.containerType || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    containerType: e.target.value
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>체적 적재율 (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="예: 63.74"
-                value={formData.containerSimulation?.volumeEfficiency || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    volumeEfficiency: parseFloat(e.target.value) || 0
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>중량 적재율 (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="예: 12.74"
-                value={formData.containerSimulation?.weightEfficiency || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    weightEfficiency: parseFloat(e.target.value) || 0
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 체적 (CBM)</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="예: 21.16"
-                value={formData.containerSimulation?.totalCbm || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    totalCbm: parseFloat(e.target.value) || 0
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 중량 (KG)</label>
-              <input
-                type="number"
-                placeholder="예: 3592"
-                value={formData.containerSimulation?.totalWeight || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    totalWeight: parseInt(e.target.value) || 0
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 박스/카고 수</label>
-              <input
-                type="number"
-                placeholder="예: 8"
-                value={formData.containerSimulation?.cargoCount || ''}
-                onChange={e => setFormData(prev => ({
-                  ...prev,
-                  containerSimulation: {
-                    ...(prev.containerSimulation || {}),
-                    cargoCount: parseInt(e.target.value) || 0
-                  }
-                }))}
-                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
-              />
-            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
