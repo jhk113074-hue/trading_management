@@ -2292,17 +2292,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+          <div style={{ marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
               📦 3D Container Loading Plan 시뮬레이션 첨부
             </h3>
-            <button
-              type="button"
-              onClick={() => window.open('/container/index.html', '_blank')}
-              style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              🚀 3D 컨테이너 적재 시뮬레이터 프로그램 열기
-            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
