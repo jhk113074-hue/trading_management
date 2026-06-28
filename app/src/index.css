@@ -263,6 +263,10 @@ body {
     padding-right: 0 !important;
     padding-bottom: 20px !important;
   }
+  .kanban-right-panel {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
   .kanban-board-grid {
     grid-template-columns: repeat(2, 1fr) !important; /* 태블릿에서는 2열 */
   }

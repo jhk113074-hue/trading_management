@@ -966,7 +966,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Main Area (Selected Assignee profile + Info banner + 4 Baskets) */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
+        <div className="kanban-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0, width: '100%' }}>
           
           {/* Active Assignee Info Header & Filters */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '12px 16px', flexWrap: 'wrap', gap: '12px' }}>
