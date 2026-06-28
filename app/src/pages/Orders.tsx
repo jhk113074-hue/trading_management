@@ -463,11 +463,22 @@ export const Orders: React.FC = () => {
           <>
             {/* 단계 색상 범례 (Color Legend) - 오른쪽 정렬 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', padding: '10px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '12px', fontSize: '12px', color: '#64748b', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, color: '#475569' }}>💡 단계 색상 안내:</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#10b981', fontSize: '14px' }}>●</span> 완료됨</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#2563eb', fontSize: '14px' }}>●</span> 진행중 (정상)</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#f59e0b', fontSize: '14px' }}>●</span> 조치 필요 (주의/대기)</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ color: '#cbd5e1', fontSize: '14px' }}>●</span> 미시작</div>
+              <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상 안내:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#10b981' }} /> 완료
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#2563eb' }} /> 진행중
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#f59e0b' }} /> 조치필요
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '18px', height: '7px', borderRadius: '4px', background: '#cbd5e1' }} /> 미시작
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '28px', height: '7px', borderRadius: '4px', background: '#1e40af', boxShadow: '0 0 5px #1e40af88' }} /> 현재단계
+              </div>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
@@ -599,64 +610,61 @@ export const Orders: React.FC = () => {
                         ${orderAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* 단계 (Progress circles) */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                          {/* Circle 1 */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: getStageColor('수주정보'), fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '수주정보' ? 700 : 500, color: currentStep === '수주정보' ? '#1e293b' : '#64748b' }}>수주정보</span>
-                          </div>
-                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                          {/* Circle 2 */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: getStageColor('소싱/발주'), fontSize: '14px' }}>●</span>
-                              <span style={{ fontSize: '11px', fontWeight: currentStep === '소싱/발주' ? 700 : 500, color: currentStep === '소싱/발주' ? '#1e293b' : '#64748b' }}>소싱/발주</span>
+                      {/* 단계 (개선된 Progress 표시) */}
+                      <td style={{ padding: '10px 16px', minWidth: '220px' }}>
+                        {(() => {
+                          const stages: Array<'수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제'> = ['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'];
+                          const completedCount = stages.filter(s => getStageColor(s) === '#10b981').length;
+                          const progressPct = Math.round((completedCount / stages.length) * 100);
+
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {/* 현재 단계 강조 배지 */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{
+                                  background: '#1e40af', color: '#fff',
+                                  fontSize: '11px', fontWeight: 800,
+                                  padding: '2px 8px', borderRadius: '10px',
+                                  letterSpacing: '0.03em'
+                                }}>
+                                  {currentStep}
+                                </span>
+                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                                  {completedCount}/{stages.length} 완료
+                                </span>
+                              </div>
+                              {/* 컬러 도트 진행바 */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                {stages.map((s, i) => {
+                                  const color = getStageColor(s);
+                                  const isCurrent = s === currentStep;
+                                  return (
+                                    <React.Fragment key={s}>
+                                      <div title={s} style={{
+                                        width: isCurrent ? '28px' : '18px',
+                                        height: '7px',
+                                        borderRadius: '4px',
+                                        background: color,
+                                        border: isCurrent ? `2px solid ${color}` : 'none',
+                                        boxShadow: isCurrent ? `0 0 5px ${color}88` : 'none',
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        flexShrink: 0,
+                                      }}>
+                                      </div>
+                                      {i < stages.length - 1 && (
+                                        <div style={{ width: '3px', height: '1px', background: '#e2e8f0', flexShrink: 0 }} />
+                                      )}
+                                    </React.Fragment>
+                                  );
+                                })}
+                                <span style={{ marginLeft: '6px', fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>
+                                  {progressPct}%
+                                </span>
+                              </div>
                             </div>
-                            <span style={{ fontSize: '9px', color: currentStep === '소싱/발주' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
-                              {(() => {
-                                const tab = (order as any).activeSourcingTab || '소싱발주';
-                                switch(tab) {
-                                  case '소싱발주': return '1) 소싱발주';
-                                  case 'COA_성적서': return '2) COA/성적서/파일';
-                                  default: return '1) 소싱발주';
-                                }
-                              })()}
-                            </span>
-                          </div>
-                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                          {/* Circle 3 */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span style={{ color: getStageColor('물류/선적'), fontSize: '14px' }}>●</span>
-                              <span style={{ fontSize: '11px', fontWeight: currentStep === '물류/선적' ? 700 : 500, color: currentStep === '물류/선적' ? '#1e293b' : '#64748b' }}>물류/선적</span>
-                            </div>
-                            <span style={{ fontSize: '9px', color: currentStep === '물류/선적' ? '#2563eb' : '#94a3b8', paddingLeft: '14px', fontWeight: 600 }}>
-                              {(() => {
-                                const tab = (order as any).activeSourcingTab || '선적관리';
-                                switch(tab) {
-                                  case '선적관리': return '1) 선적관리';
-                                  case '패킹리스트': return '2) 패킹리스트';
-                                  case '도착보고_쉬핑마크': return '3) 도착보고';
-                                  default: return '1) 선적관리';
-                                }
-                              })()}
-                            </span>
-                          </div>
-                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                          {/* Circle 4 */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: getStageColor('서류관리'), fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '서류관리' ? 700 : 500, color: currentStep === '서류관리' ? '#1e293b' : '#64748b' }}>서류관리</span>
-                          </div>
-                          <span style={{ color: '#cbd5e1', fontSize: '12px' }}>&gt;</span>
-                          {/* Circle 5 */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ color: getStageColor('정산/결제'), fontSize: '14px' }}>●</span>
-                            <span style={{ fontSize: '11px', fontWeight: currentStep === '정산/결제' ? 700 : 500, color: currentStep === '정산/결제' ? '#1e293b' : '#64748b' }}>정산/결제</span>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </td>
 
                       {/* 다음단계 */}

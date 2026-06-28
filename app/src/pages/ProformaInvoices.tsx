@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer } from '../types/customer';
 import type { ProformaInvoice } from '../types/pi';
@@ -7,12 +8,15 @@ import { PIFormModal } from '../components/PIFormModal';
 import { getAuth } from 'firebase/auth';
 
 export const ProformaInvoices: React.FC = () => {
+  const navigate = useNavigate();
   const [pis, setPIs] = useState<ProformaInvoice[]>([]);
   const [customers, setCustomers] = useState<Record<string, Customer>>({});
+  const [orders, setOrders] = useState<{id: string; quotationId?: string}[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('range');
+  const [filterPiStatus, setFilterPiStatus] = useState<string>('All');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState<string>('2020-01-01');
   const [endDate, setEndDate] = useState<string>('2030-12-31');
@@ -104,7 +108,8 @@ export const ProformaInvoices: React.FC = () => {
     totalUsd: 120,
     issuingCompany: 85,
     createdByName: 75,
-    action: 170
+    piStatus: 110,
+    action: 210
   });
 
   // Load saved column widths from localStorage on load
@@ -160,9 +165,16 @@ export const ProformaInvoices: React.FC = () => {
       setLoading(false);
     });
 
+    // Load Orders (for PI→주문 연결)
+    const ordersRef = collection(doc(db, "companies", COMPANY_ID), "orders");
+    const unsubOrders = onSnapshot(ordersRef, (snap) => {
+      setOrders(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+    });
+
     return () => {
       unsubCust();
       unsubPI();
+      unsubOrders();
     };
   }, []);
 
@@ -186,6 +198,13 @@ export const ProformaInvoices: React.FC = () => {
       if (filterCustomer && p.customerId !== filterCustomer) return false;
       if (filterIssuer !== 'All' && p.issuingCompany !== filterIssuer) return false;
       if (filterPiNum && !(p.piNumber || "").toLowerCase().includes(filterPiNum.toLowerCase())) return false;
+
+      // PI 상태 필터
+      if (filterPiStatus !== 'All') {
+        const piStatus = (p as any).piStatus || '협상중';
+        if (piStatus !== filterPiStatus) return false;
+      }
+
       return true;
     });
 
@@ -550,6 +569,19 @@ export const ProformaInvoices: React.FC = () => {
         </select>
         
         <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '10px 16px', border: '1px solid #cbd5e1', borderRadius: '8px', width: '220px', fontSize: '15px', outline: 'none' }} />
+
+        {/* PI 상태 필터 */}
+        <select
+          value={filterPiStatus}
+          onChange={e => setFilterPiStatus(e.target.value)}
+          style={{ padding: '10px 16px', border: '1.5px solid #8b5cf6', borderRadius: '8px', minWidth: '145px', fontSize: '14px', fontWeight: 600, color: '#6d28d9', outline: 'none', background: '#faf5ff', cursor: 'pointer' }}
+        >
+          <option value="All">📋 전체 상태</option>
+          <option value="협상중">🔵 협상중</option>
+          <option value="수주확정">🟢 수주확정</option>
+          <option value="취소">🔴 취소</option>
+          <option value="만료">⚪ 만료</option>
+        </select>
  
         <span style={{ marginLeft: 'auto', fontSize: '16px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '8px 16px', borderRadius: '20px' }}>
           총 {filteredAndSorted.length}건
@@ -589,6 +621,10 @@ export const ProformaInvoices: React.FC = () => {
                 WRITER {getSortIcon('createdByName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('createdByName', e)} />
               </th>
+              <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.piStatus, minWidth: colWidths.piStatus, maxWidth: colWidths.piStatus, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em', borderRight: '1px solid #e2e8f0', position: 'relative' }}>
+                STATUS
+                <ResizeHandle onMouseDown={(e) => handleResizeStart('piStatus', e)} />
+              </th>
               <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>작업</th>
             </tr>
           </thead>
@@ -602,6 +638,19 @@ export const ProformaInvoices: React.FC = () => {
                 const issuerBadge = p.issuingCompany === 'YS' 
                                  ? <span style={{ fontSize: '12px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
                                  : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+
+                // PI 상태 배지
+                const piStatus = (p as any).piStatus || '협상중';
+                const piStatusConfig: Record<string, { bg: string; color: string; border: string; icon: string }> = {
+                  '협상중': { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: '🔵' },
+                  '수주확정': { bg: '#f0fdf4', color: '#15803d', border: '#86efac', icon: '🟢' },
+                  '취소':    { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca', icon: '🔴' },
+                  '만료':    { bg: '#f8fafc', color: '#64748b', border: '#cbd5e1', icon: '⚪' },
+                };
+                const sc = piStatusConfig[piStatus] || piStatusConfig['협상중'];
+
+                // 연결된 주문 찾기
+                const linkedOrder = orders.find(o => o.quotationId === p.id);
 
                 return (
                   <tr 
@@ -635,7 +684,7 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '14.5px' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '9px 10px', textAlign: 'center', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>{issuerBadge}</td>
+                    <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }}>{issuerBadge}</td>
                     <td style={{ padding: '9px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
                       {(() => {
                         const name = p.createdByName || '-';
@@ -643,8 +692,34 @@ export const ProformaInvoices: React.FC = () => {
                         return name.replace('대표이사 ', '');
                       })()}
                     </td>
+                    {/* STATUS 배지 */}
+                    <td style={{ padding: '9px 10px', textAlign: 'center', width: colWidths.piStatus, minWidth: colWidths.piStatus, maxWidth: colWidths.piStatus, boxSizing: 'border-box', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
+                      <select
+                        value={piStatus}
+                        onChange={async (e) => {
+                          e.stopPropagation();
+                          const newStatus = e.target.value;
+                          try {
+                            const { updateDoc } = await import('firebase/firestore');
+                            await updateDoc(doc(db, "companies", COMPANY_ID, "proforma_invoices", p.id), { piStatus: newStatus });
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
+                        style={{
+                          background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                          borderRadius: '12px', padding: '4px 8px', fontSize: '11.5px', fontWeight: 700,
+                          cursor: 'pointer', outline: 'none', width: '100%', textAlign: 'center'
+                        }}
+                      >
+                        <option value="협상중">🔵 협상중</option>
+                        <option value="수주확정">🟢 수주확정</option>
+                        <option value="취소">🔴 취소</option>
+                        <option value="만료">⚪ 만료</option>
+                      </select>
+                    </td>
                     <td style={{ padding: '6px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
                         <button 
                           onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
                           style={{ 
@@ -657,15 +732,40 @@ export const ProformaInvoices: React.FC = () => {
                             cursor: 'pointer', 
                             transition: 'color 0.2s' 
                           }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = '#1d4ed8';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = '#3b82f6';
-                          }}
+                          onMouseEnter={e => { e.currentTarget.style.color = '#1d4ed8'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = '#3b82f6'; }}
                         >
                           수정
                         </button>
+                        {linkedOrder ? (
+                          <button
+                            onClick={() => navigate(`/orders/${linkedOrder.id}?step=수주정보`)}
+                            style={{
+                              background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac',
+                              padding: '3px 8px', fontSize: '11.5px', fontWeight: 700,
+                              cursor: 'pointer', borderRadius: '8px', transition: 'all 0.15s', whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#dcfce7'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#f0fdf4'; }}
+                            title="연결된 주문 보기"
+                          >
+                            📦 주문
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => navigate(`/orders?createFromPi=${p.id}`)}
+                            style={{
+                              background: '#f8fafc', color: '#64748b', border: '1px solid #cbd5e1',
+                              padding: '3px 8px', fontSize: '11.5px', fontWeight: 700,
+                              cursor: 'pointer', borderRadius: '8px', transition: 'all 0.15s', whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#334155'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                            title="이 PI로 주문 생성"
+                          >
+                            ＋ 주문생성
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleCopy(p)} 
                           style={{ 
