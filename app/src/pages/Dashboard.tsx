@@ -799,10 +799,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Kanban Container: Sidebar on left + Board on right */}
-      <div style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+      <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
         
         {/* Left Side Panel (담당자별 배당 현황 & 미배당 업무) */}
-        <div style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px', borderRight: '1px solid #e2e8f0', paddingRight: '20px' }}>
+        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px', borderRight: '1px solid #e2e8f0', paddingRight: '20px' }}>
           <div>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
             <div style={{ fontSize: '0.78rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
@@ -1006,7 +1006,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {/* 4 Baskets Kanban Board */}
-          <div className="board-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
+          <div className="board-container kanban-board-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
             {baskets.map(basket => (
               <div
                 key={basket.id}
