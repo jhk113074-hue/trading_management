@@ -63,4 +63,16 @@ export interface Customer {
 
   createdAt?: any;
   updatedAt?: any;
+  contacts?: CustomerContact[];
 }
+
+export interface CustomerContact {
+  id: string;
+  name: string;
+  position?: string;
+  phone?: string;
+  email?: string;
+  isPrimary: boolean;
+  remarks?: string;
+}
+

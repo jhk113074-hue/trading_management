@@ -1,4 +1,11 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+const path = require('path');
+
+const rootDir = __dirname;
+const cmPath = path.join(rootDir, 'app', 'src', 'components', 'CustomerModal.tsx');
+
+if (fs.existsSync(cmPath)) {
+  const upgradedCode = `import React, { useState, useEffect } from 'react';
 import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
@@ -401,3 +408,10 @@ const Select = ({ label, value, onChange, options }: any) => (
     </select>
   </div>
 );
+`;
+
+  fs.writeFileSync(cmPath, upgradedCode, 'utf8');
+  console.log('✅ CustomerModal.tsx upgraded to premium multi-tab with multi-contact registration support (v2 fixed template syntax).');
+} else {
+  console.log('❌ CustomerModal.tsx not found');
+}
