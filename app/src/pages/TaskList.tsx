@@ -353,9 +353,30 @@ export const TaskList: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#fdfdfd' }}>
-        <div style={{ padding: '16px 30px 8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#111827', margin: 0 }}>전체 업무 리스트</h2>
+      <div style={{ padding: '16px 30px 8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: '900', color: '#111827', margin: 0 }}>전체 업무 리스트</h2>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px' }}>
+            총 {tasks.length}건 / {dateMode === 'weekly' ? formatWeekLabel(weekOffset) : dateMode === 'daily' ? selectedDate : `${startDate} ~ ${endDate}`} 결과 {filteredAndSortedTasks.length}건
+          </span>
+        </div>
+
+        {/* 필터링 통합 1줄 횡스크롤 카드 */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          alignItems: 'center', 
+          flexWrap: 'nowrap', 
+          background: '#ffffff',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          overflowX: 'auto',
+          marginBottom: '10px'
+        }}>
+          {/* (1) 날짜 관련 필터 그룹 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
           {/* ── 조회 모드 탭 ── */}
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff', marginLeft: '12px' }}>
@@ -517,10 +538,13 @@ export const TaskList: React.FC = () => {
             </div>
           )}
         </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <select className="btn" style={{ padding: '6px 12px' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
+
+        {/* 얇은 수직 구분선 */}
+        <div style={{ width: '1px', height: '20px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
+
+        {/* (2) 담당자/유형/상태 select 그룹 */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+          <select className="btn" style={{ padding: '6px 12px' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
               <option>전체 담당자</option>
               {users.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
             </select>
@@ -594,9 +618,6 @@ export const TaskList: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-          <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280' }}>
-            총 {tasks.length}건 / {dateMode === 'daily' ? `${selectedDate} 결과` : dateMode === 'weekly' ? `${formatWeekLabel(weekOffset)} 결과` : `${startDate} ~ ${endDate} 결과`} <span style={{ color: '#2563eb' }}>{filteredAndSortedTasks.length}건</span>
           </div>
         </div>
       </div>
