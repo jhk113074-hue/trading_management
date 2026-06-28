@@ -172,53 +172,18 @@ export const Orders: React.FC = () => {
   }, [navigate]);
 
   const getNextAction = (order: Order): NextAction => {
-    const currentStep = mapStatusToStep(order.status || '');
-    if (currentStep === '수주정보') {
-      if (order.isLc === 'Y' && order.lcNo && order.lcNo.includes('DISCREPANCY'))
-        return { text: 'L/C와 PI 불일치 — 확인 필요', level: 'RED', step: '수주정보' };
-      if (!order.incoterms || !order.paymentTerms)
-        return { text: '거래조건 확인 필요', level: 'ORANGE', step: '수주정보' };
-      return { text: '소싱/발주 단계로 진행 필요', level: 'WHITE', step: '수주정보' };
+    const todoText = getNextTodoItem(order);
+    if (todoText === "모든 업무 완료") {
+      return { text: "모든 업무 완료", level: 'WHITE', step: '완료' };
     }
-    if (currentStep === '소싱/발주') {
-      const hasUnassigned = order.items?.some(it => !it.supplier);
-      if (hasUnassigned) {
-        const count = order.items?.filter(it => !it.supplier).length || 0;
-        return { text: `품목 ${count}개 공급사 미배정`, level: 'ORANGE', step: '소싱/발주' };
-      }
-      const suppliers = Array.from(new Set(order.items?.map(it => it.supplier).filter(Boolean)));
-      for (const sup of suppliers) {
-        if (order.supplierPoSent && order.supplierPoSent[sup] === false)
-          return { text: `${sup} 발주서 미발송`, level: 'ORANGE', step: '소싱/발주' };
-      }
-      return { text: '물류/선적 단계로 진행 필요', level: 'WHITE', step: '소싱/발주' };
+    const currentStep = getFirstIncompleteStage(order);
+    let level: 'RED' | 'ORANGE' | 'WHITE' = 'WHITE';
+    if (todoText.includes('미수금') || todoText.includes('결제 필요') || todoText.includes('긴급') || todoText.includes('D-')) {
+      level = 'RED';
+    } else if (todoText.includes('미확정') || todoText.includes('미배정') || todoText.includes('미발송') || todoText.includes('미완료')) {
+      level = 'ORANGE';
     }
-    if (currentStep === '물류/선적') {
-      if (order.etd) {
-        const diffDays = Math.ceil((new Date(order.etd).getTime() - Date.now()) / 86400000);
-        if (diffDays <= 3 && order.ciPlStatus !== 'Y')
-          return { text: `서류 마감 D-${Math.max(diffDays, 0)} · 포워더 확정 필요`, level: 'RED', step: '물류/선적' };
-      }
-      if (!order.forwarderConfirmed && (!order.forwarders || order.forwarders.length === 0))
-        return { text: '포워더 미확정', level: 'ORANGE', step: '물류/선적' };
-      return { text: '정산/결제 단계로 진행 필요', level: 'WHITE', step: '물류/선적' };
-    }
-    if (currentStep === '정산/결제') {
-      const suppliers = Array.from(new Set(order.items?.map(it => it.supplier).filter(Boolean)));
-      if (order.supplierPayments) {
-        for (const sup of suppliers) {
-          const p = order.supplierPayments[sup];
-          if (p && p.status !== '결제완료')
-            return { text: `${sup} 대금결제 필요`, level: 'RED', step: '정산/결제' };
-        }
-      }
-      if (!order.paymentCollectedDate)
-        return { text: '고객 대금 미수금 발생', level: 'RED', step: '정산/결제' };
-      const inv = suppliers.some(sup => !order.supplierTaxInvoice || order.supplierTaxInvoice[sup] !== 'Y');
-      if (inv) return { text: '세금계산서 발행 대기', level: 'ORANGE', step: '정산/결제' };
-      return { text: '정산 완료', level: 'WHITE', step: '정산/결제' };
-    }
-    return { text: '오더 확인 필요', level: 'WHITE', step: '수주정보' };
+    return { text: todoText, level, step: currentStep };
   };
 
   const managers = useMemo(() => {
