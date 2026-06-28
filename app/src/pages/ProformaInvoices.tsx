@@ -178,6 +178,12 @@ export const ProformaInvoices: React.FC = () => {
     };
   }, []);
 
+  const getPiStatus = (p: ProformaInvoice) => {
+    const hasOrder = orders.some(o => o.quotationId === p.id);
+    if (hasOrder) return '수주확정';
+    return (p as any).piStatus || '협상중';
+  };
+
   const filteredAndSorted = useMemo(() => {
     let filtered = pis.filter(p => {
       // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
@@ -201,7 +207,7 @@ export const ProformaInvoices: React.FC = () => {
 
       // PI 상태 필터
       if (filterPiStatus !== 'All') {
-        const piStatus = (p as any).piStatus || '협상중';
+        const piStatus = getPiStatus(p);
         if (piStatus !== filterPiStatus) return false;
       }
 
@@ -226,16 +232,16 @@ export const ProformaInvoices: React.FC = () => {
     });
 
     return filtered;
-  }, [pis, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
+  }, [pis, orders, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
 
   const piStats = useMemo(() => {
-    const activePis = pis.filter(p => ((p as any).piStatus || '협상중') === '협상중');
+    const activePis = pis.filter(p => getPiStatus(p) === '협상중');
     const activeCount = activePis.length;
     const totalUsd = activePis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const totalYsaccUsd = activePis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
 
-    const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes((p as any).piStatus || '')).length;
+    const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p))).length;
     const totalCount = activeCount + confirmedCount;
     const conversionRate = totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0;
 
@@ -247,7 +253,7 @@ export const ProformaInvoices: React.FC = () => {
       confirmedCount,
       conversionRate
     };
-  }, [pis]);
+  }, [pis, orders]);
 
   const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
     if (sortKey === key) {
@@ -681,7 +687,7 @@ export const ProformaInvoices: React.FC = () => {
                                  : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
 
                 // PI 상태 배지
-                const piStatus = (p as any).piStatus || '협상중';
+                const piStatus = getPiStatus(p);
                 const piStatusConfig: Record<string, { bg: string; color: string; border: string }> = {
                   '협상중':  { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
                   '수주확정': { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
