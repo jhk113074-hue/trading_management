@@ -235,15 +235,16 @@ export const ProformaInvoices: React.FC = () => {
     const totalYsaccUsd = activePis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
 
-    const validCount = pis.filter(p => ['협상중', '수주확정'].includes(((p as any).piStatus || '협상중'))).length;
-    const confirmedCount = pis.filter(p => ((p as any).piStatus || '협상중') === '수주확정').length;
-    const conversionRate = validCount > 0 ? (confirmedCount / validCount) * 100 : 0;
+    const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes((p as any).piStatus || '')).length;
+    const totalCount = activeCount + confirmedCount;
+    const conversionRate = totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0;
 
     return {
       activeCount,
       totalUsd,
       totalYsaccUsd,
       totalYsUsd,
+      confirmedCount,
       conversionRate
     };
   }, [pis]);
@@ -417,8 +418,8 @@ export const ProformaInvoices: React.FC = () => {
           <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f766e' }}>${piStats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>수주 확정율 (전환율)</span>
-          <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb' }}>{piStats.conversionRate.toFixed(1)}%</div>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>수주 확정 (수주율)</span>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
         </div>
       </div>
 
