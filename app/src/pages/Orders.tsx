@@ -51,6 +51,25 @@ const mapStatusToStep = (st: string, order?: Order): '수주정보' | '소싱/�
   return "수주정보";
 };
 
+const getFirstIncompleteStage = (o: Order): '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제' | '완료' => {
+  const { pct: overallPct } = getOverallProgress(o);
+  if (overallPct === 100) return "완료";
+  const stageLabels: Record<StageKey, '수주정보' | '소싱/발주' | '물류/선적' | '서류관리' | '정산/결제'> = {
+    '수주정보': '수주정보',
+    '소싱발주': '소싱/발주',
+    '물류선적': '물류/선적',
+    '서류관리': '서류관리',
+    '정산결제': '정산/결제'
+  };
+  for (const sk of STAGE_KEYS) {
+    const { done, total } = getStageProgress(o, sk);
+    if (total === 0 || done < total) {
+      return stageLabels[sk];
+    }
+  }
+  return "완료";
+};
+
 const getStageProgress = (order: Order, stageKey: StageKey) => {
   const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
   if (!sc || !sc[stageKey]) return { done: 0, total: 0, pct: 0 };
@@ -465,7 +484,7 @@ export const Orders: React.FC = () => {
   const KanbanView = () => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', alignItems: 'flex-start' }}>
       {KANBAN_COLS.map(col => {
-        const colOrders = processedOrders.filter(o => mapStatusToStep(o.status || '', o) === col.step);
+        const colOrders = processedOrders.filter(o => getFirstIncompleteStage(o) === col.step);
         const colAmount = colOrders.reduce((sum, o) => {
           const pi = quotations.find(q => q.id === o.quotationId);
           return sum + (pi?.totalUsd || o.totalAmount || 0);
@@ -660,6 +679,9 @@ export const Orders: React.FC = () => {
                     ? <span style={{ fontSize: '12px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
                     : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
 
+                  const displayStage = getFirstIncompleteStage(order);
+                  const isAllFinished = displayStage === '완료';
+
                   return (
                     <tr
                       key={order.id}
@@ -678,49 +700,23 @@ export const Orders: React.FC = () => {
                       {/* 단계 */}
                       <td style={{ padding: '9px 16px', minWidth: '280px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                             {(() => {
-                               const getFirstIncompleteStage = (o: Order): string => {
-                                 const { pct: overallPct } = getOverallProgress(o);
-                                 if (overallPct === 100) return "완료";
-                                 const stageLabels: Record<StageKey, string> = {
-                                   '수주정보': '수주정보',
-                                   '소싱발주': '소싱/발주',
-                                   '물류선적': '물류/선적',
-                                   '서류관리': '서류관리',
-                                   '정산결제': '정산/결제'
-                                 };
-                                 for (const sk of STAGE_KEYS) {
-                                   const { done, total } = getStageProgress(o, sk);
-                                   if (total === 0 || done < total) {
-                                     return stageLabels[sk];
-                                   }
-                                 }
-                                 return "완료";
-                               };
-                               
-                               const displayStage = getFirstIncompleteStage(order);
-                               const isAllFinished = displayStage === '완료';
-                               
-                               return (
-                                 <span style={{ 
-                                    background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
-                                    color: isAllFinished ? '#10b981' : '#2563eb', 
-                                    border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                                    fontSize: '12px', 
-                                    fontWeight: 700, 
-                                    padding: '3px 10px', 
-                                    borderRadius: '20px', 
-                                    whiteSpace: 'nowrap' 
-                                  }}>
-                                   {displayStage}
-                                 </span>
-                               );
-                             })()}
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                             <span style={{ 
+                                background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
+                                color: isAllFinished ? '#10b981' : '#2563eb', 
+                                border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
+                                fontSize: '12px', 
+                                fontWeight: 700, 
+                                padding: '3px 10px', 
+                                borderRadius: '20px', 
+                                whiteSpace: 'nowrap' 
+                              }}>
+                               {displayStage}
+                             </span>
                              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
                                {pct}%
                              </span>
-                          </div>
+                           </div>
                           <div style={{ display: 'flex', gap: '2px' }}>
                             {STAGE_KEYS.map((sk) => {
                               const { done, total } = getStageProgress(order, sk);
