@@ -1509,80 +1509,34 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExportPacking.addEventListener('click', () => {
             const projectData = getProjectData();
             
-            // Extract statistics from DOM text values
-            const volText = document.getElementById('vol-eff')?.innerText || '0';
-            const wtText = document.getElementById('weight-eff')?.innerText || '0';
-            const cbmText = document.getElementById('total-cbm')?.innerText || '0';
-            const weightText = document.getElementById('total-weight')?.innerText || '0';
+            // Capture 3D Canvas
+            let screenshotDataUrl = null;
+            try {
+                const canvas = document.querySelector('#export-area canvas') || document.querySelector('canvas');
+                if (canvas) {
+                    screenshotDataUrl = canvas.toDataURL('image/png');
+                }
+            } catch (err) {
+                console.error("Canvas screenshot capture failed", err);
+            }
             
             const summary = {
-                containerType: projectData.containerType || '20GP',
-                volumeEfficiency: parseFloat(volText.replace(/[^0-9.]/g, '')) || 0,
-                weightEfficiency: parseFloat(wtText.replace(/[^0-9.]/g, '')) || 0,
-                totalCbm: parseFloat(cbmText.replace(/[^0-9.]/g, '')) || 0,
-                totalWeight: parseFloat(weightText.replace(/[^0-9.]/g, '')) || 0,
-                cargoCount: currentItems.reduce((sum, item) => sum + (item.quantity || 0), 0),
-                projectData: projectData
+                projectData: projectData,
+                simulationImageBase64: screenshotDataUrl // Add screenshot data URL
             };
             
             if (window.opener) {
                 window.opener.postMessage({ type: 'CONTAINER_SIMULATION_RESULT', data: summary }, '*');
-                alert('👍 적재 시뮬레이션 결과가 견적서 작성 화면으로 전송되었습니다. 견적서 창을 확인해 주세요!');
+                alert('👍 적재 프로젝트와 3D 캡처 이미지가 견적서 화면으로 자동 연계 전송되었습니다.');
             } else {
-                if (!currentResults || currentResults.length === 0) {
-                    alert('시뮬레이션 실행 결과가 없습니다. 시뮬레이션을 먼저 실행해주세요.');
-                    return;
-                }
-                const formattedContainers = currentResults.map((result, idx) => {
-                    const itemsMap = {};
-                    result.loaded.forEach(box => {
-                        const key = `${box.name}|${box.w}x${box.d}x${box.h}|${box.packageType || ''}|${box.supplier || ''}`;
-                        if (!itemsMap[key]) {
-                            itemsMap[key] = {
-                                description: box.name,
-                                supplier: box.supplier || '',
-                                qty: 0,
-                                w: box.w,
-                                d: box.d,
-                                h: box.h,
-                                netWeight: box.netWeight || 0,
-                                grossWeight: box.grossWeight || box.weight || 0,
-                                packageType: box.packageType || 'Pallet'
-                            };
-                        }
-                        itemsMap[key].qty++;
-                    });
-
-                    const items = Object.values(itemsMap).map((g, itemIdx) => {
-                        const totalQty = g.qty;
-                        const cbm = (g.w * g.d * g.h) / 1000000000 * totalQty;
-                        return {
-                            pkgNo: String(itemIdx + 1),
-                            pkg: String(totalQty),
-                            qty: String(totalQty),
-                            description: g.description,
-                            supplier: g.supplier,
-                            netWeight: String((g.netWeight * totalQty).toFixed(1)),
-                            grossWeight: String((g.grossWeight * totalQty).toFixed(1)),
-                            cbm: String(cbm.toFixed(3)),
-                            packageType: g.packageType,
-                            dimensions: `${g.w}x${g.d}x${g.h}`
-                        };
-                    });
-
-                    return {
-                        containerNo: `CONTAINER-${idx + 1}`,
-                        sealNo: '',
-                        containerType: result.containerType,
-                        items: items
-                    };
-                });
-
-                window.parent.postMessage({
-                    type: 'EXPORT_PACKING_LIST',
-                    containers: formattedContainers,
-                    raw3DPlan: projectData // Send raw simulation data
-                }, '*');
+                // Fallback file download code
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `${projectData.projectName || 'loading_plan'}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
             }
         });
     }

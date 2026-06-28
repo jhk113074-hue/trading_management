@@ -298,15 +298,28 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         try {
           const uploadTask = await uploadBytesResumable(storageRef, file);
           const url = await getDownloadURL(uploadTask.ref);
+          
+          let imgUrl = '';
+          const base64Data = data.simulationImageBase64;
+          if (base64Data && base64Data.startsWith('data:image/')) {
+            const response = await fetch(base64Data);
+            const imageBlob = await response.blob();
+            const imageFile = new File([imageBlob], `simulation_screenshot_${Date.now()}.png`, { type: 'image/png' });
+            const imgRef = ref(storage, `tasks/${piId}/simulation_image_${Date.now()}.png`);
+            const imgUploadTask = await uploadBytesResumable(imgRef, imageFile);
+            imgUrl = await getDownloadURL(imgUploadTask.ref);
+          }
+
           setFormData(prev => ({
             ...prev,
             containerSimulation: {
               ...prev.containerSimulation,
               simulationFileUrl: url,
-              simulationFileName: file.name
+              simulationFileName: file.name,
+              ...(imgUrl ? { simulationImageUrl: imgUrl } : {})
             }
           }));
-          alert('✅ 3D 적재 시뮬레이션 파일이 성공적으로 부모 견적서에 자동 유첨되었습니다!');
+          alert('✅ 3D 적재 시뮬레이션 프로젝트 파일 및 캡처 이미지가 성공적으로 자동 연계 및 유첨되었습니다!');
         } catch (error) {
           console.error("Upload failed", error);
         } finally {
