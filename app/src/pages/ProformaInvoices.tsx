@@ -376,9 +376,22 @@ export const ProformaInvoices: React.FC = () => {
   return (
     <div className="page-container" style={{ padding: '28px', background: '#f8fafc', minHeight: '100vh', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>견적관리</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px', fontWeight: 500 }}>전체 PI 목록 · 실시간 동기화 대시보드</p>
+          <select 
+            value={filterIssuer} 
+            onChange={e => setFilterIssuer(e.target.value)} 
+            style={{ 
+              padding: '6px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', 
+              fontSize: '14px', fontWeight: 700, color: '#475569', 
+              outline: 'none', background: '#fff', cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <option value="All">🏢 전체 ISSUER</option>
+            <option value="YSACC">YSACC</option>
+            <option value="YS">영성ACC</option>
+          </select>
         </div>
         <button 
           onClick={() => { setSelectedPiId(null); setIsFormOpen(true); }}
@@ -600,20 +613,7 @@ export const ProformaInvoices: React.FC = () => {
             <option key={id} value={id}>{c.name}</option>
           ))}
         </select>
-        
-        <select 
-          value={filterIssuer} 
-          onChange={e => setFilterIssuer(e.target.value)} 
-          style={{ 
-            padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', 
-            minWidth: '125px', fontSize: '13px', fontWeight: 600, color: '#1e293b', 
-            outline: 'none', background: '#fff', flexShrink: 0
-          }}
-        >
-          <option value="All">🏢 전체 ISSUER</option>
-          <option value="YSACC">YSACC</option>
-          <option value="YS">영성ACC</option>
-        </select>
+
         
         <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', width: '150px', fontSize: '13px', outline: 'none', flexShrink: 0 }} />
 

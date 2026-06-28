@@ -272,7 +272,6 @@ export const Orders: React.FC = () => {
       <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 8px', flexShrink: 0 }} />
 
       {[
-        { label: '발행사', value: issuingCompanyFilter, set: setIssuingCompanyFilter, opts: [['All','전체'],['YS','영성ACC'],['YSACC','YSACC']] },
         { label: '담당자', value: managerFilter, set: setManagerFilter, opts: [['All','전체'], ...managers.map(m => [m, m])] },
         { label: '단계', value: stepFilter, set: setStepFilter, opts: [['All','전체'],['수주정보','수주정보'],['소싱/발주','소싱/발주'],['물류/선적','물류/선적'],['서류관리','서류관리'],['정산/결제','정산/결제']] },
         { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All','전체 오더'],['Urgent','⚠️ 긴급만']] },
@@ -716,8 +715,22 @@ export const Orders: React.FC = () => {
 
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>주문 관리 대시보드</h1>
+          <select 
+            value={issuingCompanyFilter} 
+            onChange={e => setIssuingCompanyFilter(e.target.value)} 
+            style={{ 
+              padding: '6px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', 
+              fontSize: '14px', fontWeight: 700, color: '#475569', 
+              outline: 'none', background: '#fff', cursor: 'pointer',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            }}
+          >
+            <option value="All">🏢 전체 ISSUER</option>
+            <option value="YSACC">YSACC</option>
+            <option value="YS">영성ACC</option>
+          </select>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
