@@ -281,6 +281,58 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     );
   };
 
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data && event.data.type === 'CONTAINER_SIMULATION_RESULT') {
+        const { data } = event.data;
+        
+        // Automatically update form stats fields
+        setFormData(prev => ({
+          ...prev,
+          containerSimulation: {
+            ...prev.containerSimulation,
+            containerType: data.containerType,
+            volumeEfficiency: data.volumeEfficiency,
+            weightEfficiency: data.weightEfficiency,
+            totalCbm: data.totalCbm,
+            totalWeight: data.totalWeight,
+            cargoCount: data.cargoCount,
+          }
+        }));
+        
+        // Auto-generate a JSON file Blob from projectData and upload to Firestore / Firebase Storage
+        const jsonStr = JSON.stringify(data.projectData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const file = new File([blob], `${data.projectData.projectName || 'loading_plan'}.json`, { type: 'application/json' });
+        
+        // Run file upload function and save the simulationFileUrl
+        setIsUploading(true);
+        const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
+        const storageRef = ref(storage, `tasks/${piId}/simulation_${Date.now()}.json`);
+        try {
+          const uploadTask = await uploadBytesResumable(storageRef, file);
+          const url = await getDownloadURL(uploadTask.ref);
+          setFormData(prev => ({
+            ...prev,
+            containerSimulation: {
+              ...prev.containerSimulation,
+              simulationFileUrl: url,
+              simulationFileName: file.name
+            }
+          }));
+          alert('✅ 3D 적재 시뮬레이션 파일이 성공적으로 부모 견적서에 자동 유첨되었습니다!');
+        } catch (error) {
+          console.error("Upload failed", error);
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [initialPI, formData.piNumber]);
+
 
   const isLoadedRef = useRef(false);
   const baselineStateRef = useRef<{ formData: any, items: any } | null>(null);
