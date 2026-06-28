@@ -77,8 +77,14 @@ export const TaskList: React.FC = () => {
   // ── 일간, 주간 및 기간 검색 기준 ──────────────────────────────────────────────
   const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+  });
   const [weekOffset, setWeekOffset] = useState(0);
 
   const getWeekRange = (offset: number) => {
@@ -175,10 +181,17 @@ export const TaskList: React.FC = () => {
     // ── 날짜 및 기간 필터링 ──────────────────────────────────────────────
     result = result.filter(task => {
       const isDone = task.status === 'DONE';
-      
+
       if (isDone) {
-        const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
-        if (!compDate) return false;
+        // 완료 업무: completedAt → dueDate → startDate 순으로 기준 날짜 결정
+        const compDate = (
+          task.completedAt?.split('T')[0] ||
+          task.dueDate ||
+          task.startDate ||
+          task.createdAt?.split('T')[0] ||
+          ''
+        );
+        if (!compDate) return true; // 날짜 정보 없으면 항상 표시
 
         if (dateMode === 'daily') {
           return compDate === selectedDate;
@@ -191,18 +204,27 @@ export const TaskList: React.FC = () => {
           return compDate >= startDate && compDate <= endDate;
         }
       } else {
+        // 미완료 업무: 날짜 범위 겹침 여부로 판단
         const tStart = task.startDate || task.createdAt?.split('T')[0] || '';
-        const tDue = task.dueDate || '9999-12-31';
+        const tDue = task.dueDate || '';
+
+        // 시작일·마감일 둘 다 없으면 모든 기간에 표시
+        if (!tStart && !tDue) return true;
+
+        // 시작일만 있고 마감일 없는 경우 → 시작일 이후 모든 날에 포함
+        const effectiveDue = tDue || '9999-12-31';
+        // 마감일만 있고 시작일 없는 경우 → 마감일 이전 모든 날에 포함
+        const effectiveStart = tStart || '2000-01-01';
 
         if (dateMode === 'daily') {
-          return tStart <= selectedDate && tDue >= selectedDate;
+          return effectiveStart <= selectedDate && effectiveDue >= selectedDate;
         } else if (dateMode === 'weekly') {
           const { start, end } = getWeekRange(weekOffset);
           const wStartStr = start.toISOString().split('T')[0];
           const wEndStr = end.toISOString().split('T')[0];
-          return tStart <= wEndStr && tDue >= wStartStr;
+          return effectiveStart <= wEndStr && effectiveDue >= wStartStr;
         } else {
-          return tStart <= endDate && tDue >= startDate;
+          return effectiveStart <= endDate && effectiveDue >= startDate;
         }
       }
     });
@@ -338,7 +360,10 @@ export const TaskList: React.FC = () => {
           {/* ── 조회 모드 탭 ── */}
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff', marginLeft: '12px' }}>
             <button
-              onClick={() => setDateMode('daily')}
+              onClick={() => {
+                setDateMode('daily');
+                setSelectedDate(new Date().toISOString().split('T')[0]);
+              }}
               style={{
                 padding: '6px 12px',
                 border: 'none',
@@ -353,7 +378,10 @@ export const TaskList: React.FC = () => {
               일간
             </button>
             <button
-              onClick={() => setDateMode('weekly')}
+              onClick={() => {
+                setDateMode('weekly');
+                setWeekOffset(0);
+              }}
               style={{
                 padding: '6px 12px',
                 border: 'none',
@@ -369,7 +397,15 @@ export const TaskList: React.FC = () => {
               주간
             </button>
             <button
-              onClick={() => setDateMode('range')}
+              onClick={() => {
+                setDateMode('range');
+                // 기간검색으로 전환 시 이번달로 자동 설정
+                const today = new Date();
+                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                setStartDate(firstDay.toISOString().split('T')[0]);
+                setEndDate(lastDay.toISOString().split('T')[0]);
+              }}
               style={{
                 padding: '6px 12px',
                 border: 'none',
@@ -559,7 +595,9 @@ export const TaskList: React.FC = () => {
               )}
             </div>
           </div>
-          <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280' }}>총 {tasks.length}건 / {dateMode === 'daily' ? '지정일' : dateMode === 'weekly' ? '선택주' : '선택 기간'} 결과 {filteredAndSortedTasks.length}건</div>
+          <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280' }}>
+            총 {tasks.length}건 / {dateMode === 'daily' ? `${selectedDate} 결과` : dateMode === 'weekly' ? `${formatWeekLabel(weekOffset)} 결과` : `${startDate} ~ ${endDate} 결과`} <span style={{ color: '#2563eb' }}>{filteredAndSortedTasks.length}건</span>
+          </div>
         </div>
       </div>
 
