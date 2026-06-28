@@ -1235,7 +1235,25 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                   style={{ cursor: 'pointer' }}
                                 />
                               </td>
-                              <td style={{ padding: '8px', fontWeight: 600 }}>{sup.supplierName} <span style={{ fontSize: '10px', color: '#6b7280', fontWeight: 400 }}>({sup.supplierCode})</span></td>
+                              <td style={{ padding: '8px', fontWeight: 600 }}>
+                                <span>{sup.supplierName}</span> <span style={{ fontSize: '10px', color: '#6b7280', fontWeight: 400 }}>({sup.supplierCode})</span>
+                                {(() => {
+                                  const found = suppliers.find(s => s.supplierCode === sup.supplierCode);
+                                  if (!found) return null;
+                                  const contact = found.managerName || '-';
+                                  const phone = found.managerPhone || found.phone || '-';
+                                  const email = found.purchaseEmail || found.email || '-';
+                                  const addr = found.address || '-';
+                                  return (
+                                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 500, marginLeft: '12px', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', gap: '8px', flexWrap: 'wrap', border: '1px solid #e2e8f0' }}>
+                                      <span>👤 담당자: {contact}</span>
+                                      <span>📱 Mobile: {phone}</span>
+                                      <span>✉️ 이메일: {email}</span>
+                                      <span>📍 주소: {addr}</span>
+                                    </span>
+                                  );
+                                })()}
+                              </td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
                                 <button
                                   type="button"
