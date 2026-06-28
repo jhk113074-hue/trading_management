@@ -197,10 +197,10 @@ export const Customers: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{ padding: '24px' }}>
+    <div className="page-container" style={{ padding: '24px 30px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', margin: 0 }}>고객사 관리 (Customers)</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>고객사 관리 (Customers)</h1>
           <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>해외 거래처 정보 조회, 등록 및 36개 세부 무역 스펙 관리 도구</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>

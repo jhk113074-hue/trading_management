@@ -316,10 +316,10 @@ export const Products: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{ padding: '12px 16px' }}>
+    <div className="page-container" style={{ padding: '24px 30px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', margin: 0 }}>상품 마스터 관리</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>상품 마스터 관리</h1>
           <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px' }}>회사 내 모든 무역 상품 스펙, 단가, 물류 정보를 중앙 관리합니다.</p>
         </div>
         <div style={{ display: 'flex', gap: '6px' }}>
