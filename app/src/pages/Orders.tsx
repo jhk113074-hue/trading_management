@@ -717,7 +717,7 @@ export const Orders: React.FC = () => {
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', margin: 0 }}>주문 관리 대시보드</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>주문 관리 대시보드</h1>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
