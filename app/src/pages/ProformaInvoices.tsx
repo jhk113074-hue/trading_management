@@ -424,21 +424,21 @@ export const ProformaInvoices: React.FC = () => {
       </header>
 
       {/* 간단 대시보드 스탯 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px' }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 중 견적 (협상중)</span>
-          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{piStats.activeCount} 건</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 중 견적 (협상중)</span>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{piStats.activeCount} 건</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 견적금액</span>
-            <span style={{ fontSize: '10px', color: '#64748b' }}>(YSACC: ${Math.round(piStats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(piStats.totalYsUsd).toLocaleString()})</span>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 견적금액</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(piStats.totalYsUsd).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f766e' }}>${piStats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>수주 확정 (수주율)</span>
-          <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>수주 확정 (수주율)</span>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#2563eb' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
         </div>
       </div>
 
