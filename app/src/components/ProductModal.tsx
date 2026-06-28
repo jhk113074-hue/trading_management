@@ -641,384 +641,245 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
             
             {activeTab === 1 && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                  <Input label="상품코드 (필수) ★" value={formData.productCode} onChange={(v: any) => handleChange('productCode', v)} disabled={!!initialProduct} placeholder="예: PROD-CF-001" />
-                  <Input label="상품명_한글 (필수) ★" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} />
-                  <Input label="상품명_영문" value={formData.nameEn} onChange={(v: any) => handleChange('nameEn', v)} />
-                  <Input label="HS CODE" value={formData.hsCode} onChange={(v: any) => handleChange('hsCode', v)} />
-
-                  {/* 고객사별 맞춤형 HS CODE 개별 관리 카드 */}
-                  <div style={{ gridColumn: 'span 3', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e3a8a' }}>🔑 바이어(고객사)별 HS CODE 개별 등록</span>
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>일반 HS CODE와 다른 바이어별 전용 HS CODE를 기입하고 등록할 수 있습니다.</span>
-                    </div>
-
-                    {/* 등록 리스트 테이블 */}
-                    {Object.keys(formData.customerHsCodes || {}).length > 0 ? (
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                        <thead>
-                          <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700 }}>고객사명 (Customer / Buyer)</th>
-                            <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700 }}>바이어 HS CODE</th>
-                            <th style={{ padding: '6px 10px', width: '60px', textAlign: 'center' }}>삭제</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(formData.customerHsCodes || {}).map(([cust, code]) => (
-                            <tr key={cust} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                              <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1e293b' }}>{cust}</td>
-                              <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#0f766e' }}>{code}</td>
-                              <td style={{ padding: '4px', textAlign: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const nextMap = { ...(formData.customerHsCodes || {}) };
-                                    delete nextMap[cust];
-                                    handleChange('customerHsCodes', nextMap);
-                                  }}
-                                  style={{ border: 'none', background: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
-                                >
-                                  ✕
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '14px', fontSize: '11px', color: '#94a3b8', backgroundColor: '#fff', border: '1px dashed #cbd5e1', borderRadius: '6px' }}>
-                        등록된 바이어별 전용 HS CODE가 없습니다.
-                      </div>
-                    )}
-
-                    {/* 추가 입력 제어 영역 */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>고객사명</span>
-                        <input 
-                          type="text" 
-                          placeholder="예: KUWAIT CUSTOMER" 
-                          value={newCustomerName}
-                          onChange={e => setNewCustomerName(e.target.value)}
-                          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px' }}
-                        />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>전용 HS CODE</span>
-                        <input 
-                          type="text" 
-                          placeholder="예: 3901.20.9000" 
-                          value={newCustomerHsCode}
-                          onChange={e => setNewCustomerHsCode(e.target.value)}
-                          style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px' }}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!newCustomerName.trim() || !newCustomerHsCode.trim()) {
-                            alert('고객사명과 HS CODE를 모두 입력해 주세요.');
-                            return;
-                          }
-                          const nextMap = { ...(formData.customerHsCodes || {}), [newCustomerName.trim()]: newCustomerHsCode.trim() };
-                          handleChange('customerHsCodes', nextMap);
-                          setNewCustomerName('');
-                          setNewCustomerHsCode('');
-                        }}
-                        style={{ padding: '6px 14px', background: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: '#fff', cursor: 'pointer', height: '31px' }}
-                      >
-                        + 추가
-                      </button>
-                    </div>
+                {/* ── A구역: 필수 입력 ── */}
+                <div style={{ background: '#fef2f4', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#dc2626', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '3px', height: '13px', background: '#dc2626', borderRadius: '2px', display: 'inline-block' }} />
+                    필수 입력
                   </div>
-
-                  {/* 대분류 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>대분류</label>
-                    {isAddingLarge ? (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="새 대분류명" 
-                          value={newLargeVal}
-                          onChange={e => setNewLargeVal(e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => registerNewCategory(newLargeVal, 'large')}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          등록
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => { setIsAddingLarge(false); setNewLargeVal(''); }}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          취소
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <select 
-                          value={formData.categoryLarge || ''} 
-                          onChange={e => handleChange('categoryLarge', e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
-                        >
-                          <option value="">-- 선택안함 --</option>
-                          {largeCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                        <button 
-                          type="button"
-                          onClick={() => setIsAddingLarge(true)}
-                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
-                          title="신규 대분류 추가"
-                        >
-                          ➕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 중분류 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>중분류</label>
-                    {isAddingMedium ? (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="새 중분류명" 
-                          value={newMediumVal}
-                          onChange={e => setNewMediumVal(e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => registerNewCategory(newMediumVal, 'medium')}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          등록
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => { setIsAddingMedium(false); setNewMediumVal(''); }}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          취소
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <select 
-                          value={formData.categoryMedium || ''} 
-                          onChange={e => handleChange('categoryMedium', e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
-                        >
-                          <option value="">-- 선택안함 --</option>
-                          {mediumCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                        <button 
-                          type="button"
-                          onClick={() => setIsAddingMedium(true)}
-                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
-                          title="신규 중분류 추가"
-                        >
-                          ➕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 소분류 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>소분류</label>
-                    {isAddingSmall ? (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="새 소분류명" 
-                          value={newSmallVal}
-                          onChange={e => setNewSmallVal(e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', outline: 'none' }}
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => registerNewCategory(newSmallVal, 'small')}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          등록
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => { setIsAddingSmall(false); setNewSmallVal(''); }}
-                          style={{ padding: '4px 10px', fontSize: '12px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}
-                        >
-                          취소
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <select 
-                          value={formData.categorySmall || ''} 
-                          onChange={e => handleChange('categorySmall', e.target.value)}
-                          style={{ flex: 1, padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}
-                        >
-                          <option value="">-- 선택안함 --</option>
-                          {smallCategories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                        <button 
-                          type="button"
-                          onClick={() => setIsAddingSmall(true)}
-                          style={{ padding: '8px 10px', fontSize: '13px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#f8fafc', cursor: 'pointer' }}
-                          title="신규 소분류 추가"
-                        >
-                          ➕
-                        </button>
-                      </div>
-                    )}
+                  <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: '10px' }}>
+                    <Input label="상품코드 (필수) ★" value={formData.productCode} onChange={(v: any) => handleChange('productCode', v)} disabled={!!initialProduct} placeholder="예: P0001" />
+                    <Input label="상품명_한글 (필수) ★" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} />
+                    <Input label="상품명_영문" value={formData.nameEn} onChange={(v: any) => handleChange('nameEn', v)} />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>상품 상세 설명</label>
-                    <textarea 
-                      rows={2} 
-                      value={formData.description} 
-                      onChange={(e: any) => handleChange('description', e.target.value)} 
-                      style={{ 
-                        padding: '9px 12px', 
-                        border: '1px solid #cbd5e1', 
-                        borderRadius: '6px', 
-                        fontSize: '13px', 
-                        outline: 'none',
-                        color: '#0f172a',
-                        transition: 'border-color 0.15s, box-shadow 0.15s'
-                      }} 
-                      onFocus={e => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; }}
-                      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
-                    />
+
+                {/* ── B구역: 분류 + 스펙 + HS CODE ── */}
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#2563eb', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ width: '3px', height: '13px', background: '#2563eb', borderRadius: '2px', display: 'inline-block' }} />
+                    분류 + 스펙 + HS CODE
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>규격 / 스펙 (Spec)</label>
-                    <textarea 
-                      rows={2} 
-                      value={formData.spec || ''} 
-                      onChange={(e: any) => handleChange('spec', e.target.value)} 
-                      placeholder="예: TPA Resin, Low Profile Additive 등" 
-                      style={{ 
-                        padding: '9px 12px', 
-                        border: '1px solid #cbd5e1', 
-                        borderRadius: '6px', 
-                        fontSize: '13px', 
-                        outline: 'none',
-                        color: '#0f172a',
-                        transition: 'border-color 0.15s, box-shadow 0.15s'
-                      }} 
-                      onFocus={e => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; }}
-                      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
-                    />
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                  <Input label="색상" value={formData.color} onChange={(v: any) => handleChange('color', v)} />
-                  <Input label="재질" value={formData.material} onChange={(v: any) => handleChange('material', v)} />
-                  <Input label="원산지" value={formData.origin} onChange={(v: any) => handleChange('origin', v)} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '14px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>상품 이미지</label>
-                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                    {/* Preview box */}
-                    <div style={{ 
-                      width: '78px', 
-                      height: '78px', 
-                      borderRadius: '8px', 
-                      border: '1px solid #cbd5e1', 
-                      background: '#f8fafc', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      overflow: 'hidden',
-                      flexShrink: 0
-                    }}>
-                      {formData.imageUrl ? (
-                        <img src={formData.imageUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
+                  {/* 분류 3단계 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                    {/* 대분류 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em', textTransform: 'uppercase' }}>대분류</label>
+                      {isAddingLarge ? (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <input type="text" placeholder="새 대분류명" value={newLargeVal} onChange={e => setNewLargeVal(e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', outline: 'none' }} />
+                          <button type="button" onClick={() => registerNewCategory(newLargeVal, 'large')}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>등록</button>
+                          <button type="button" onClick={() => { setIsAddingLarge(false); setNewLargeVal(''); }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
+                        </div>
                       ) : (
-                        <span style={{ fontSize: '20px', color: '#94a3b8' }}>🖼️</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <select value={formData.categoryLarge || ''} onChange={e => handleChange('categoryLarge', e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                            <option value="">-- 선택안함 --</option>
+                            {largeCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setIsAddingLarge(true)}
+                            style={{ padding: '0 8px', fontSize: '14px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>＋</button>
+                        </div>
                       )}
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <input 
-                          type="file" 
-                          id="product-image-upload" 
-                          accept="image/*" 
-                          style={{ display: 'none' }} 
-                          onChange={(e) => handleImageUpload(e.target.files)} 
-                        />
-                        <label 
-                          htmlFor="product-image-upload" 
-                          style={{ 
-                            padding: '8px 16px', 
-                            background: '#eff6ff', 
-                            color: '#2563eb', 
-                            borderRadius: '6px', 
-                            fontSize: '13px', 
-                            fontWeight: 600, 
-                            cursor: 'pointer', 
-                            border: '1px solid #bfdbfe',
-                            display: 'inline-block' 
-                          }}
-                        >
-                          {isImageUploading ? '📤 업로드 중...' : '＋ 이미지 파일 추가'}
-                        </label>
-                        {formData.imageUrl && (
-                          <button 
-                            type="button" 
-                            onClick={() => handleChange('imageUrl', '')} 
-                            style={{ 
-                              padding: '8px 16px', 
-                              background: '#fff', 
-                              color: '#ef4444', 
-                              borderRadius: '6px', 
-                              fontSize: '13px', 
-                              fontWeight: 600, 
-                              cursor: 'pointer', 
-                              border: '1px solid #fca5a5' 
-                            }}
-                          >
-                            삭제
-                          </button>
-                        )}
-                      </div>
-                      <input 
-                        type="text" 
-                        value={formData.imageUrl || ''} 
-                        onChange={(e) => handleChange('imageUrl', e.target.value)} 
-                        placeholder="또는 이미지 주소(URL)를 입력해주세요" 
-                        style={{ 
-                          width: '100%', 
-                          padding: '9px 12px', 
-                          border: '1px solid #cbd5e1', 
-                          borderRadius: '6px', 
-                          fontSize: '13px', 
-                          outline: 'none',
-                          background: '#fff',
-                          boxSizing: 'border-box'
-                        }} 
-                        onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
-                        onBlur={e => { e.target.style.borderColor = '#cbd5e1'; }}
-                      />
+                    {/* 중분류 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em', textTransform: 'uppercase' }}>중분류</label>
+                      {isAddingMedium ? (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <input type="text" placeholder="새 중분류명" value={newMediumVal} onChange={e => setNewMediumVal(e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', outline: 'none' }} />
+                          <button type="button" onClick={() => registerNewCategory(newMediumVal, 'medium')}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>등록</button>
+                          <button type="button" onClick={() => { setIsAddingMedium(false); setNewMediumVal(''); }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <select value={formData.categoryMedium || ''} onChange={e => handleChange('categoryMedium', e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                            <option value="">-- 선택안함 --</option>
+                            {mediumCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setIsAddingMedium(true)}
+                            style={{ padding: '0 8px', fontSize: '14px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>＋</button>
+                        </div>
+                      )}
+                    </div>
+                    {/* 소분류 */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em', textTransform: 'uppercase' }}>소분류</label>
+                      {isAddingSmall ? (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <input type="text" placeholder="새 소분류명" value={newSmallVal} onChange={e => setNewSmallVal(e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', outline: 'none' }} />
+                          <button type="button" onClick={() => registerNewCategory(newSmallVal, 'small')}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>등록</button>
+                          <button type="button" onClick={() => { setIsAddingSmall(false); setNewSmallVal(''); }}
+                            style={{ padding: '4px 8px', fontSize: '11px', background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>취소</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <select value={formData.categorySmall || ''} onChange={e => handleChange('categorySmall', e.target.value)}
+                            style={{ flex: 1, padding: '7px 10px', fontSize: '12.5px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                            <option value="">-- 선택안함 --</option>
+                            {smallCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setIsAddingSmall(true)}
+                            style={{ padding: '0 8px', fontSize: '14px', background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>＋</button>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* 스펙 + HS CODE + 원산지 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 100px', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em', textTransform: 'uppercase' }}>규격 / 스펙 (Spec)</label>
+                      <textarea rows={2} value={formData.spec || ''} onChange={(e: any) => handleChange('spec', e.target.value)}
+                        placeholder="예: TPA Resin, Low Profile Additive 등"
+                        style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12.5px', color: '#334155', outline: 'none', resize: 'vertical', lineHeight: 1.5 }}
+                        onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
+                        onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                      />
+                    </div>
+                    <Input label="HS CODE" value={formData.hsCode} onChange={(v: any) => handleChange('hsCode', v)} />
+                    <Input label="원산지" value={formData.origin} onChange={(v: any) => handleChange('origin', v)} />
+                  </div>
                 </div>
+
+                {/* ── C구역: 선택 입력 (접기/펼치기) ── */}
+                {(() => {
+                  const [openOptional, setOpenOptional] = React.useState(false);
+                  return (
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden' }}>
+                      <button type="button" onClick={() => setOpenOptional(v => !v)}
+                        style={{ width: '100%', padding: '10px 16px', background: '#f8fafc', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ width: '3px', height: '13px', background: '#94a3b8', borderRadius: '2px', display: 'inline-block' }} />
+                          <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>선택 입력</span>
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>— 색상, 재질, 상세설명, 이미지, 바이어별 HS CODE</span>
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#94a3b8', transition: 'transform 0.2s', transform: openOptional ? 'rotate(180deg)' : 'rotate(0deg)', display: 'inline-block' }}>▼</span>
+                      </button>
+
+                      {openOptional && (
+                        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                          {/* 색상 / 재질 */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <Input label="색상" value={formData.color} onChange={(v: any) => handleChange('color', v)} />
+                            <Input label="재질" value={formData.material} onChange={(v: any) => handleChange('material', v)} />
+                          </div>
+
+                          {/* 상품 상세 설명 */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>상품 상세 설명</label>
+                            <textarea rows={2} value={formData.description} onChange={(e: any) => handleChange('description', e.target.value)}
+                              style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', color: '#475569', outline: 'none', resize: 'vertical', lineHeight: 1.6 }}
+                              onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
+                              onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                            />
+                          </div>
+
+                          {/* 상품 이미지 */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>상품 이미지</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                              <div style={{ width: '68px', height: '68px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                                {formData.imageUrl
+                                  ? <img src={formData.imageUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  : <span style={{ fontSize: '20px', color: '#94a3b8' }}>🖼️</span>}
+                              </div>
+                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <input type="file" id="product-image-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload(e.target.files)} />
+                                  <label htmlFor="product-image-upload"
+                                    style={{ padding: '6px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1px solid #bfdbfe', display: 'inline-block' }}>
+                                    {isImageUploading ? '📤 업로드 중...' : '＋ 이미지 파일 추가'}
+                                  </label>
+                                  {formData.imageUrl && (
+                                    <button type="button" onClick={() => handleChange('imageUrl', '')}
+                                      style={{ padding: '6px 12px', background: '#fff', color: '#ef4444', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: '1px solid #fca5a5' }}>삭제</button>
+                                  )}
+                                </div>
+                                <input type="text" value={formData.imageUrl || ''} onChange={(e) => handleChange('imageUrl', e.target.value)}
+                                  placeholder="또는 이미지 URL 직접 입력"
+                                  style={{ width: '100%', padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                  onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
+                                  onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 바이어별 HS CODE — 선택 구역으로 이동 */}
+                          <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px 14px', background: '#fff' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '10px' }}>
+                              <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#1e3a8a', letterSpacing: '0.06em', textTransform: 'uppercase' }}>🔑 바이어(고객사)별 HS CODE 개별 등록</span>
+                              <span style={{ fontSize: '10.5px', color: '#64748b' }}>일반 HS CODE와 다른 바이어 전용 HS CODE</span>
+                            </div>
+                            {Object.keys(formData.customerHsCodes || {}).length > 0 ? (
+                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left', border: '1px solid #e2e8f0', borderRadius: '6px', marginBottom: '8px' }}>
+                                <thead>
+                                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                    <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>고객사명</th>
+                                    <th style={{ padding: '6px 10px', color: '#475569', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>바이어 HS CODE</th>
+                                    <th style={{ padding: '6px 10px', width: '50px', textAlign: 'center' }}></th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {Object.entries(formData.customerHsCodes || {}).map(([cust, code]) => (
+                                    <tr key={cust} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                      <td style={{ padding: '6px 10px', fontWeight: 600, color: '#1e293b', fontSize: '12px' }}>{cust}</td>
+                                      <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#0f766e', fontSize: '12px' }}>{code as string}</td>
+                                      <td style={{ padding: '4px', textAlign: 'center' }}>
+                                        <button type="button" onClick={() => {
+                                          const nextMap = { ...(formData.customerHsCodes || {}) };
+                                          delete nextMap[cust];
+                                          handleChange('customerHsCodes', nextMap);
+                                        }} style={{ border: 'none', background: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <div style={{ textAlign: 'center', padding: '10px', fontSize: '11px', color: '#94a3b8', background: '#fff', border: '1px dashed #e2e8f0', borderRadius: '6px', marginBottom: '8px' }}>
+                                등록된 바이어별 전용 HS CODE가 없습니다.
+                              </div>
+                            )}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '6px', alignItems: 'end' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>고객사명</label>
+                                <input type="text" placeholder="예: KUWAIT CUSTOMER" value={newCustomerName} onChange={e => setNewCustomerName(e.target.value)}
+                                  style={{ padding: '6px 9px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>전용 HS CODE</label>
+                                <input type="text" placeholder="예: 3901.20.9000" value={newCustomerHsCode} onChange={e => setNewCustomerHsCode(e.target.value)}
+                                  style={{ padding: '6px 9px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                              </div>
+                              <button type="button" onClick={() => {
+                                if (!newCustomerName.trim() || !newCustomerHsCode.trim()) { alert('고객사명과 HS CODE를 모두 입력해 주세요.'); return; }
+                                handleChange('customerHsCodes', { ...(formData.customerHsCodes || {}), [newCustomerName.trim()]: newCustomerHsCode.trim() });
+                                setNewCustomerName(''); setNewCustomerHsCode('');
+                              }} style={{ padding: '6px 12px', background: '#2563eb', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
+                                + 추가
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </>
             )}
 
@@ -1292,6 +1153,38 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
             {activeTab === 3 && (
               <>
+                {/* ── 현재 구매가(원가) 고정 영역 ── */}
+                {(() => {
+                  // 가장 최신 단가 찾기
+                  const latestPrice = (formData.purchasePrices || [])
+                    .filter((p: any) => p.price > 0)
+                    .sort((a: any, b: any) => (b.validFrom || '').localeCompare(a.validFrom || ''))[0];
+                  return (
+                    <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#16a34a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>현재 구매가 (원가) — 최신 단가</div>
+                        {latestPrice ? (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
+                              {(latestPrice.currency || 'KRW')} {Number(latestPrice.price || 0).toLocaleString('ko-KR')}
+                            </span>
+                            <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>/ {formData.unit || 'KG'}</span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '8px' }}>적용일: {latestPrice.validFrom || '-'}</span>
+                            {latestPrice.supplierName && (
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>· {latestPrice.supplierName}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: '#94a3b8' }}>등록된 단가 없음 — 아래에서 단가를 추가하세요</div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#16a34a', background: '#dcfce7', padding: '6px 12px', borderRadius: '20px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        총 {(formData.purchasePrices || []).length}건 이력
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div style={{ border: '1px solid #e9d5ff', borderRadius: '10px', padding: '16px', background: '#faf5ff' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
@@ -1775,34 +1668,47 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   );
 };
 
-const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = '#475569' }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
-    <label style={{ fontSize: '11px', fontWeight: 600, color: labelColor }}>{label}</label>
-    <input 
-      type={type} 
-      value={value ?? ''} 
-      onChange={e => onChange(e.target.value)} 
-      disabled={disabled} 
-      placeholder={placeholder} 
-      step={step} 
-      style={{ 
-        width: '100%',
-        boxSizing: 'border-box',
-        minWidth: 0,
-        padding: '9px 12px', 
-        border: '1px solid #cbd5e1', 
-        borderRadius: '6px', 
-        fontSize: '13px', 
-        background: disabled ? '#f8fafc' : '#fff', 
-        color: disabled ? '#64748b' : '#0f172a',
-        outline: 'none',
-        transition: 'border-color 0.15s, box-shadow 0.15s'
-      }} 
-      onFocus={e => { if(!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.06)'; } }}
-      onBlur={e => { e.target.style.borderColor = '#cbd5e1'; e.target.style.boxShadow = 'none'; }}
-    />
-  </div>
-);
+const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor }: any) => {
+  const isRequired = label?.includes('★');
+  const borderStyle = isRequired
+    ? '1.5px solid #94a3b8'
+    : '1px solid #e2e8f0';
+  const fontStyle = isRequired
+    ? { fontSize: '13px', fontWeight: 600, color: '#0f172a' }
+    : disabled
+      ? { fontSize: '11.5px', color: '#94a3b8' }
+      : { fontSize: '12.5px', color: '#334155' };
+  const computedLabelColor = labelColor || (isRequired ? '#475569' : disabled ? '#b0bcc8' : '#64748b');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+      <label style={{ fontSize: '9.5px', fontWeight: 700, color: computedLabelColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        {label?.replace(' ★', '')}
+        {isRequired && <span style={{ color: '#ef4444', marginLeft: '2px' }}>★</span>}
+        {disabled && <span style={{ color: '#b0bcc8', fontWeight: 400, textTransform: 'none', marginLeft: '4px' }}>(자동)</span>}
+      </label>
+      <input
+        type={type}
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+        placeholder={placeholder}
+        step={step}
+        style={{
+          width: '100%', boxSizing: 'border-box', minWidth: 0,
+          padding: '7px 10px',
+          border: disabled ? '1px solid #f1f5f9' : borderStyle,
+          borderRadius: '6px',
+          ...fontStyle,
+          background: disabled ? '#f8fafc' : '#fff',
+          outline: 'none',
+          transition: 'border-color 0.15s, box-shadow 0.15s'
+        }}
+        onFocus={e => { if (!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.1)'; } }}
+        onBlur={e => { e.target.style.borderColor = isRequired ? '#94a3b8' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+      />
+    </div>
+  );
+};
 
 
 
