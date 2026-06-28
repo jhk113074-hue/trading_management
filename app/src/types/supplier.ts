@@ -14,4 +14,16 @@ export interface Supplier {
   category?: '공급사' | '포워딩사' | '';
   createdAt?: any;
   updatedAt?: any;
+  contacts?: SupplierContact[];
 }
+
+export interface SupplierContact {
+  id: string;
+  name: string;
+  position?: string;
+  phone?: string;
+  email?: string;
+  isPrimary: boolean;
+  remarks?: string;
+}
+
