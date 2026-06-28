@@ -277,7 +277,7 @@ export const Layout: React.FC = () => {
             >
               ☰
             </button>
-            <div style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center' }}>
+            <div className="header-logo-text" style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
               <span style={{ color: '#be123c', marginRight: '6px' }}>YSACC</span>
               <span style={{ color: '#334155' }}>업무포탈</span>
             </div>
@@ -285,7 +285,7 @@ export const Layout: React.FC = () => {
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
-              <span style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
+              <span className="header-user-text" style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}

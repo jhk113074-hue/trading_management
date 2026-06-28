@@ -232,3 +232,20 @@ body {
   align-items: center;
   gap: 2px;
 }
+
+/* 모바일 반응형 헤더 & 대시보드 보완 스타일 */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px !important;
+    height: 56px !important;
+  }
+  .header-logo-text {
+    font-size: 18px !important;
+  }
+  .header-logo-text span {
+    margin-right: 3px !important;
+  }
+  .header-user-text {
+    display: none !important; /* 모바일 환경에서는 좁아서 이름님 로그인중 텍스트를 숨겨 겹침 방지 */
+  }
+}
