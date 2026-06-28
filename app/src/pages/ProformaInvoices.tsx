@@ -228,6 +228,26 @@ export const ProformaInvoices: React.FC = () => {
     return filtered;
   }, [pis, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
 
+  const piStats = useMemo(() => {
+    const activePis = pis.filter(p => ((p as any).piStatus || '협상중') === '협상중');
+    const activeCount = activePis.length;
+    const totalUsd = activePis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const totalYsaccUsd = activePis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+
+    const validCount = pis.filter(p => ['협상중', '수주확정'].includes(((p as any).piStatus || '협상중'))).length;
+    const confirmedCount = pis.filter(p => ((p as any).piStatus || '협상중') === '수주확정').length;
+    const conversionRate = validCount > 0 ? (confirmedCount / validCount) * 100 : 0;
+
+    return {
+      activeCount,
+      totalUsd,
+      totalYsaccUsd,
+      totalYsUsd,
+      conversionRate
+    };
+  }, [pis]);
+
   const handleSort = (key: keyof ProformaInvoice | 'customerName') => {
     if (sortKey === key) {
       setSortDir(sortDir === 1 ? -1 : 1);
@@ -382,6 +402,25 @@ export const ProformaInvoices: React.FC = () => {
           <span>➕</span> New PI
         </button>
       </header>
+
+      {/* 간단 대시보드 스탯 카드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '10px' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 중 견적 (협상중)</span>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{piStats.activeCount} 건</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>진행 견적금액</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>(YSACC: ${Math.round(piStats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(piStats.totalYsUsd).toLocaleString()})</span>
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f766e' }}>${piStats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>수주 확정율 (전환율)</span>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb' }}>{piStats.conversionRate.toFixed(1)}%</div>
+        </div>
+      </div>
 
       {/* Filters Card */}
       <div style={{ 
