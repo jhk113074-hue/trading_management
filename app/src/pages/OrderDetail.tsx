@@ -343,6 +343,58 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const [isSimFileUploading, setIsSimFileUploading] = useState(false);
+  const [isSimImageUploading, setIsSimImageUploading] = useState(false);
+
+  const handleSimFileUpload = async (file: File) => {
+    if (!file || !order) return;
+    setIsSimFileUploading(true);
+    try {
+      const storageRef = ref(storage, `tasks/${order.id}/actual_simulation_file.json`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+      const url = await getDownloadURL(uploadTask.snapshot.ref);
+      setBasicForm(prev => ({
+        ...prev,
+        actualContainerSimulation: {
+          ...(prev.actualContainerSimulation || {}),
+          simulationFileUrl: url,
+          simulationFileName: file.name
+        }
+      }));
+    } catch (err: any) {
+      alert("업로드 실패: " + err.message);
+    } finally {
+      setIsSimFileUploading(false);
+    }
+  };
+
+  const handleSimImageUpload = async (file: File) => {
+    if (!file || !order) return;
+    setIsSimImageUploading(true);
+    try {
+      const storageRef = ref(storage, `tasks/${order.id}/actual_simulation_image.jpg`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+      const url = await getDownloadURL(uploadTask.snapshot.ref);
+      setBasicForm(prev => ({
+        ...prev,
+        actualContainerSimulation: {
+          ...(prev.actualContainerSimulation || {}),
+          simulationImageUrl: url
+        }
+      }));
+    } catch (err: any) {
+      alert("업로드 실패: " + err.message);
+    } finally {
+      setIsSimImageUploading(false);
+    }
+  };
+
   const handleReceiptUpload = async (file: File, index: number, supplierName: string) => {
     if (!order) return;
     setUploadingReceipt({ supplier: supplierName, index });
@@ -755,6 +807,7 @@ export const OrderDetail: React.FC = () => {
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
+    actualContainerSimulation: null as any,
 
     // 주문 기본정보 및 L/C 거래 상세
     customerAddress: '',
@@ -1409,7 +1462,8 @@ export const OrderDetail: React.FC = () => {
           lcIssuingBank: data.lcIssuingBank || '',
           lcIssuingDate: data.lcIssuingDate || '',
           lcDescription: data.lcDescription || '',
-          lcRemark: data.lcRemark || ''
+          lcRemark: data.lcRemark || '',
+          actualContainerSimulation: data.actualContainerSimulation || null
         });
         setOrderItems(data.items || []);
         setSourcingItems(data.sourcingItems || data.items || []);
@@ -1634,6 +1688,7 @@ export const OrderDetail: React.FC = () => {
         lcRemark: basicForm.lcRemark,
 
         packingList: basicForm.packingList || null,
+        actualContainerSimulation: basicForm.actualContainerSimulation || null,
         commonShippingMark: commonShippingMark,
         activeSourcingTab: sourcingTabToSave,
         
@@ -5622,6 +5677,179 @@ export const OrderDetail: React.FC = () => {
                       >
                         PL 미리보기 및 PDF 저장
                       </button>
+                    </div>
+                  </div>
+
+                  {/* 3D 적재 시뮬레이션 계획 대조 (Planned vs Actual) */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '16px' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '13.5px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '8px' }}>
+                      📦 3D 적재 시뮬레이션 계획 대조 (Planned vs Actual)
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                      {/* Planned Card */}
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e3a8a', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>📋 Planned (시뮬레이션 계획안)</div>
+                        {piData?.containerSimulation ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                            <div><strong>컨테이너 타입:</strong> {piData.containerSimulation.containerType || '-'}</div>
+                            <div><strong>체적 적재율:</strong> {piData.containerSimulation.volumeEfficiency ? `${piData.containerSimulation.volumeEfficiency}%` : '-'}</div>
+                            <div><strong>중량 적재율:</strong> {piData.containerSimulation.weightEfficiency ? `${piData.containerSimulation.weightEfficiency}%` : '-'}</div>
+                            <div><strong>총 체적:</strong> {piData.containerSimulation.totalCbm ? `${piData.containerSimulation.totalCbm} CBM` : '-'}</div>
+                            <div><strong>총 중량:</strong> {piData.containerSimulation.totalWeight ? `${piData.containerSimulation.totalWeight.toLocaleString()} KG` : '-'}</div>
+                            <div><strong>총 박스 수:</strong> {piData.containerSimulation.cargoCount ? `${piData.containerSimulation.cargoCount} 개` : '-'}</div>
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                              {piData.containerSimulation.simulationFileUrl && (
+                                <a href={piData.containerSimulation.simulationFileUrl} download style={{ padding: '6px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', textDecoration: 'none', color: '#2563eb', fontSize: '11px', fontWeight: 700 }}>📁 파일 다운로드</a>
+                              )}
+                              {piData.containerSimulation.simulationImageUrl && (
+                                <button type="button" onClick={() => previewFile(piData.containerSimulation.simulationImageUrl, '계획안 스크린샷')} style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>🔍 스크린샷 보기</button>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>PI에 시뮬레이션 계획안이 등록되지 않았습니다.</div>
+                        )}
+                      </div>
+
+                      {/* Actual Card */}
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>✅ Actual (실제 적재 결과)</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>컨테이너 타입</label>
+                              <input
+                                type="text"
+                                placeholder="예: 20GP 1대"
+                                value={basicForm.actualContainerSimulation?.containerType || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    containerType: e.target.value
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>체적 적재율 (%)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="예: 65.20"
+                                value={basicForm.actualContainerSimulation?.volumeEfficiency || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    volumeEfficiency: parseFloat(e.target.value) || 0
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>중량 적재율 (%)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="예: 13.50"
+                                value={basicForm.actualContainerSimulation?.weightEfficiency || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    weightEfficiency: parseFloat(e.target.value) || 0
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 체적 (CBM)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="예: 21.80"
+                                value={basicForm.actualContainerSimulation?.totalCbm || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    totalCbm: parseFloat(e.target.value) || 0
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 중량 (KG)</label>
+                              <input
+                                type="number"
+                                placeholder="예: 3650"
+                                value={basicForm.actualContainerSimulation?.totalWeight || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    totalWeight: parseInt(e.target.value) || 0
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontWeight: 600, color: '#475569', fontSize: '11px' }}>총 박스 수</label>
+                              <input
+                                type="number"
+                                placeholder="예: 8"
+                                value={basicForm.actualContainerSimulation?.cargoCount || ''}
+                                onChange={e => setBasicForm(prev => ({
+                                  ...prev,
+                                  actualContainerSimulation: {
+                                    ...(prev.actualContainerSimulation || {}),
+                                    cargoCount: parseInt(e.target.value) || 0
+                                  }
+                                }))}
+                                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px', borderTop: '1px dashed #e2e8f0', paddingTop: '10px' }}>
+                            <div>
+                              <div style={{ fontSize: '11px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>프로젝트 (.json)</div>
+                              {basicForm.actualContainerSimulation?.simulationFileUrl ? (
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                  <a href={basicForm.actualContainerSimulation.simulationFileUrl} download style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '10.5px', fontWeight: 700 }}>다운로드</a>
+                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <input type="file" accept=".json" id="actual-sim-json" onChange={e => e.target.files && handleSimFileUpload(e.target.files[0])} style={{ display: 'none' }} />
+                                  <label htmlFor="actual-sim-json" style={{ padding: '4px 10px', background: '#2563eb', color: '#fff', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, display: 'inline-block' }}>{isSimFileUploading ? '...' : '파일 첨부'}</label>
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '11px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>결과 스크린샷 이미지</div>
+                              {basicForm.actualContainerSimulation?.simulationImageUrl ? (
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                  <img src={basicForm.actualContainerSimulation.simulationImageUrl} alt="Actual Screenshot" style={{ width: '48px', height: '32px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                                  <button type="button" onClick={() => previewFile(basicForm.actualContainerSimulation.simulationImageUrl, '실제 결과 스크린샷')} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#334155', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer' }}>보기</button>
+                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <input type="file" accept="image/*" id="actual-sim-img" onChange={e => e.target.files && handleSimImageUpload(e.target.files[0])} style={{ display: 'none' }} />
+                                  <label htmlFor="actual-sim-img" style={{ padding: '4px 10px', background: '#2563eb', color: '#fff', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 700, display: 'inline-block' }}>{isSimImageUploading ? '...' : '이미지 첨부'}</label>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

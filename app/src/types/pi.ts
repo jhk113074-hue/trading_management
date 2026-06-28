@@ -106,4 +106,15 @@ export interface ProformaInvoice {
   
   itemsSummary?: string[]; // Quick summary of line items
   attachments?: { name: string; url: string; size: number; path: string }[];
+  containerSimulation?: {
+    containerType?: string;
+    volumeEfficiency?: number;
+    weightEfficiency?: number;
+    totalCbm?: number;
+    totalWeight?: number;
+    cargoCount?: number;
+    simulationFileUrl?: string;
+    simulationFileName?: string;
+    simulationImageUrl?: string;
+  };
 }

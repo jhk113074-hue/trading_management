@@ -115,12 +115,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
         'exchangeRate', 'remarks', 'deliveryTerm', 'origin', 'yourRef', 'handlingFee', 'freightTotal', 'insurance',
         'subtotalUsd', 'extrasUsd', 'totalUsd', 'totalKrw',
-        'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments'
+        'status', 'currentVersion', 'createdByName', 'createdBy', 'attachments', 'containerSimulation'
       ];
       for (const key of safeFields) {
         const val = pi[key];
         if (val !== undefined && val !== null) {
-          if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' || Array.isArray(val)) {
+          if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean' || Array.isArray(val) || typeof val === 'object') {
             (defaults as any)[key] = val;
           }
         }
@@ -225,6 +225,60 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       console.error("Delete error:", err);
       alert("파일 삭제 중 오류가 발생했습니다.");
     }
+  };
+
+  const [isSimFileUploading, setIsSimFileUploading] = useState(false);
+  const [isSimImageUploading, setIsSimImageUploading] = useState(false);
+
+  const handleSimFileUpload = async (file: File) => {
+    if (!file) return;
+    setIsSimFileUploading(true);
+    const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
+    const storageRef = ref(storage, `tasks/${piId}/simulation_file.json`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on('state_changed', null, 
+      (error) => {
+        console.error("Simulation file upload failed", error);
+        setIsSimFileUploading(false);
+      },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        setFormData(prev => ({
+          ...prev,
+          containerSimulation: {
+            ...(prev.containerSimulation || {}),
+            simulationFileUrl: url,
+            simulationFileName: file.name
+          }
+        }));
+        setIsSimFileUploading(false);
+      }
+    );
+  };
+
+  const handleSimImageUpload = async (file: File) => {
+    if (!file) return;
+    setIsSimImageUploading(true);
+    const piId = initialPI?.id || formData.piNumber || `temp_${Date.now()}`;
+    const storageRef = ref(storage, `tasks/${piId}/simulation_image.jpg`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+    uploadTask.on('state_changed', null, 
+      (error) => {
+        console.error("Simulation image upload failed", error);
+        setIsSimImageUploading(false);
+      },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        setFormData(prev => ({
+          ...prev,
+          containerSimulation: {
+            ...(prev.containerSimulation || {}),
+            simulationImageUrl: url
+          }
+        }));
+        setIsSimImageUploading(false);
+      }
+    );
   };
 
 
@@ -2182,6 +2236,180 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 })}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📦 3D Container Loading Plan 시뮬레이션 첨부
+            </h3>
+            <button
+              type="button"
+              onClick={() => window.open('/container/index.html', '_blank')}
+              style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              🚀 3D 컨테이너 적재 시뮬레이터 프로그램 열기
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>컨테이너 타입</label>
+              <input
+                type="text"
+                placeholder="예: 20GP 1대, 40HC 1대"
+                value={formData.containerSimulation?.containerType || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    containerType: e.target.value
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>체적 적재율 (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="예: 63.74"
+                value={formData.containerSimulation?.volumeEfficiency || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    volumeEfficiency: parseFloat(e.target.value) || 0
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>중량 적재율 (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="예: 12.74"
+                value={formData.containerSimulation?.weightEfficiency || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    weightEfficiency: parseFloat(e.target.value) || 0
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 체적 (CBM)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="예: 21.16"
+                value={formData.containerSimulation?.totalCbm || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    totalCbm: parseFloat(e.target.value) || 0
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 중량 (KG)</label>
+              <input
+                type="number"
+                placeholder="예: 3592"
+                value={formData.containerSimulation?.totalWeight || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    totalWeight: parseInt(e.target.value) || 0
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>총 박스/카고 수</label>
+              <input
+                type="number"
+                placeholder="예: 8"
+                value={formData.containerSimulation?.cargoCount || ''}
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  containerSimulation: {
+                    ...(prev.containerSimulation || {}),
+                    cargoCount: parseInt(e.target.value) || 0
+                  }
+                }))}
+                style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+            {/* .json file upload */}
+            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 프로젝트 파일 (.json)</div>
+              {formData.containerSimulation?.simulationFileUrl ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#0f766e', fontWeight: 600 }}>📁 {formData.containerSimulation.simulationFileName || '프로젝트 파일 완료'}</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: '#e2e8f0', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="file"
+                    accept=".json"
+                    id="sim-json-file"
+                    onChange={e => e.target.files && handleSimFileUpload(e.target.files[0])}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="sim-json-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+                    {isSimFileUploading ? '업로드 중...' : '프로젝트 파일 첨부'}
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* image upload */}
+            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 결과 스크린샷 이미지 (.png/.jpg)</div>
+              {formData.containerSimulation?.simulationImageUrl ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '120px', height: '80px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: '#e2e8f0', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="sim-image-file"
+                    onChange={e => e.target.files && handleSimImageUpload(e.target.files[0])}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="sim-image-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+                    {isSimImageUploading ? '업로드 중...' : '이미지 첨부'}
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -153,6 +153,17 @@ export interface Order {
   forwarderFreightCurrency?: 'USD' | 'KRW'; // 포워딩 운송비 통화 (legacy)
   forwarders?: ForwarderEntry[]; // 포워더 목록 (다수 지원)
   packingList?: any;
+  actualContainerSimulation?: {
+    containerType?: string;
+    volumeEfficiency?: number;
+    weightEfficiency?: number;
+    totalCbm?: number;
+    totalWeight?: number;
+    cargoCount?: number;
+    simulationFileUrl?: string;
+    simulationFileName?: string;
+    simulationImageUrl?: string;
+  };
   
   // Container & transportation photos/files
   containerWorkFiles?: Array<{ name: string; url: string; size: number; path: string }>;
