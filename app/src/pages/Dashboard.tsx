@@ -549,12 +549,12 @@ export const Dashboard: React.FC = () => {
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
-    <>
+    <div style={{ padding: '24px 30px' }}>
       <div className="top-section" style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.025em' }}>
           <span>📊 무역 실시간 매출 및 PI 현황</span>
           <span style={{ fontSize: '0.7rem', background: 'var(--primary-color)', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
-        </h2>
+        </h1>
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>YSACC CO., LTD. 실시간 Proforma Invoice 통계 및 매출 지표</p>
       </div>
 
@@ -1185,6 +1185,6 @@ export const Dashboard: React.FC = () => {
           }}
         />
       )}
-    </>
+    </div>
   );
 };
