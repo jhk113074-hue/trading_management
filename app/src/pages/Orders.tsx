@@ -45,6 +45,27 @@ const getStageProgress = (order: Order, stageKey: StageKey) => {
   return { done, total: keys.length, pct: keys.length > 0 ? Math.round((done / keys.length) * 100) : 0 };
 };
 
+const getNextTodoItem = (order: Order): string => {
+  const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
+  if (!sc) return "진행 정보 없음";
+  const stageLabels: Record<StageKey, string> = {
+    '수주정보': '수주정보',
+    '소싱발주': '소싱/발주',
+    '물류선적': '물류/선적',
+    '서류관리': '서류관리',
+    '정산결제': '정산/결제'
+  };
+  for (const sk of STAGE_KEYS) {
+    const items = sc[sk] || {};
+    // 키 배열을 돌면서 완료되지 않은 항목을 선별
+    const unfinished = Object.entries(items).find(([_, isDone]) => !isDone);
+    if (unfinished) {
+      return `미완료: [${stageLabels[sk]}] ${unfinished[0]}`;
+    }
+  }
+  return "모든 업무 완료";
+};
+
 // 단계 → stageKey 매핑
 const stepToStageKey: Record<string, StageKey> = {
   '수주정보': '수주정보',
@@ -616,12 +637,22 @@ export const Orders: React.FC = () => {
                           </div>
                         </div>
                       </td>
-                      {/* 다음단계 */}
+                       {/* 다음단계 */}
                       <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: lvlBg, border: `1px solid ${lvlBdr}`, color: lvlColor, fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          <span>{order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '→'}</span>
-                          <span>{order.nextAction.text}</span>
-                        </div>
+                        {(() => {
+                          const todoText = getNextTodoItem(order);
+                          const isAllDone = todoText === "모든 업무 완료";
+                          const bg = isAllDone ? '#ecfdf5' : lvlBg;
+                          const borderCol = isAllDone ? '#a7f3d0' : lvlBdr;
+                          const textCol = isAllDone ? '#10b981' : lvlColor;
+                          const icon = isAllDone ? '✅' : (order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '⌛');
+                          return (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              <span>{icon}</span>
+                              <span>{todoText}</span>
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );
