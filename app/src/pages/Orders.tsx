@@ -593,11 +593,11 @@ export const Orders: React.FC = () => {
       ) : (
         <>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
                   {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
-                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '11.5px', textAlign: h === '발주액' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12.5px', textAlign: h === '발주액' ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -619,15 +619,15 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '12px', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
+                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
                       <td style={{ padding: '12px 16px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px', background: order.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: order.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
                           {order.issuingCompany || 'YSACC'}
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px', color: '#334155', fontWeight: 600 }}>{order.customer}</td>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14px' }}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       {/* 단계 */}
@@ -638,7 +638,7 @@ export const Orders: React.FC = () => {
                                background: currentStep === '완료' ? '#ecfdf5' : '#eff6ff', 
                                color: currentStep === '완료' ? '#10b981' : '#2563eb', 
                                border: currentStep === '완료' ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                               fontSize: '10.5px', 
+                               fontSize: '11.5px', 
                                fontWeight: 700, 
                                padding: '2px 9px', 
                                borderRadius: '20px', 
@@ -646,7 +646,7 @@ export const Orders: React.FC = () => {
                              }}>
                               {currentStep}
                             </span>
-                            <span style={{ fontSize: '10.5px', color: '#94a3b8', fontWeight: 500 }}>
+                            <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 500 }}>
                               {pct}%
                             </span>
                           </div>
@@ -664,18 +664,18 @@ export const Orders: React.FC = () => {
                        {/* 다음단계 */}
                       <td style={{ padding: '12px 16px' }}>
                         {(() => {
-                          const todoText = getNextTodoItem(order);
-                          const isAllDone = todoText === "모든 업무 완료";
-                          const bg = isAllDone ? '#ecfdf5' : lvlBg;
-                          const borderCol = isAllDone ? '#a7f3d0' : lvlBdr;
-                          const textCol = isAllDone ? '#10b981' : lvlColor;
-                          const icon = isAllDone ? '✅' : (order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '⌛');
-                          return (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '11.5px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                              <span>{icon}</span>
-                              <span>{todoText}</span>
-                            </div>
-                          );
+                           const todoText = getNextTodoItem(order);
+                           const isAllDone = todoText === "모든 업무 완료";
+                           const bg = isAllDone ? '#ecfdf5' : lvlBg;
+                           const borderCol = isAllDone ? '#a7f3d0' : lvlBdr;
+                           const textCol = isAllDone ? '#10b981' : lvlColor;
+                           const icon = isAllDone ? '✅' : (order.nextAction.level === 'RED' ? '⚠️' : order.nextAction.level === 'ORANGE' ? '⏰' : '⌛');
+                           return (
+                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '16px', background: bg, border: `1px solid ${borderCol}`, color: textCol, fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                               <span>{icon}</span>
+                               <span>{todoText}</span>
+                             </div>
+                           );
                         })()}
                       </td>
                     </tr>
