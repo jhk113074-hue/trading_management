@@ -650,7 +650,6 @@ export const Orders: React.FC = () => {
                 {processedOrders.map(order => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = pi?.totalUsd || order.totalAmount || 0;
-                  const currentStep = mapStatusToStep(order.status || '', order);
                   const { pct } = getOverallProgress(order);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
@@ -680,21 +679,47 @@ export const Orders: React.FC = () => {
                       <td style={{ padding: '9px 16px', minWidth: '280px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ 
-                               background: currentStep === '완료' ? '#ecfdf5' : '#eff6ff', 
-                               color: currentStep === '완료' ? '#10b981' : '#2563eb', 
-                               border: currentStep === '완료' ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                               fontSize: '12px', 
-                               fontWeight: 700, 
-                               padding: '3px 10px', 
-                               borderRadius: '20px', 
-                               whiteSpace: 'nowrap' 
-                             }}>
-                              {currentStep}
-                            </span>
-                            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
-                              {pct}%
-                            </span>
+                             {(() => {
+                               const getFirstIncompleteStage = (o: Order): string => {
+                                 const { pct: overallPct } = getOverallProgress(o);
+                                 if (overallPct === 100) return "완료";
+                                 const stageLabels: Record<StageKey, string> = {
+                                   '수주정보': '수주정보',
+                                   '소싱발주': '소싱/발주',
+                                   '물류선적': '물류/선적',
+                                   '서류관리': '서류관리',
+                                   '정산결제': '정산/결제'
+                                 };
+                                 for (const sk of STAGE_KEYS) {
+                                   const { done, total } = getStageProgress(o, sk);
+                                   if (total === 0 || done < total) {
+                                     return stageLabels[sk];
+                                   }
+                                 }
+                                 return "완료";
+                               };
+                               
+                               const displayStage = getFirstIncompleteStage(order);
+                               const isAllFinished = displayStage === '완료';
+                               
+                               return (
+                                 <span style={{ 
+                                    background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
+                                    color: isAllFinished ? '#10b981' : '#2563eb', 
+                                    border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
+                                    fontSize: '12px', 
+                                    fontWeight: 700, 
+                                    padding: '3px 10px', 
+                                    borderRadius: '20px', 
+                                    whiteSpace: 'nowrap' 
+                                  }}>
+                                   {displayStage}
+                                 </span>
+                               );
+                             })()}
+                             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
+                               {pct}%
+                             </span>
                           </div>
                           <div style={{ display: 'flex', gap: '2px' }}>
                             {STAGE_KEYS.map((sk) => {
