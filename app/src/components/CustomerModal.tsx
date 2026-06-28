@@ -32,6 +32,26 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         ...initialCustomer,
         contacts: initialCustomer.contacts || []
       });
+      if (!initialCustomer.customerCode || initialCustomer.customerCode.trim() === '' || initialCustomer.customerCode.trim() === '-') {
+        const fetchNextCode = async () => {
+          try {
+            const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'customers'));
+            let maxNum = 0;
+            snap.forEach(d => {
+              const code = d.data().customerCode || '';
+              if (code.startsWith('CU')) {
+                const num = parseInt(code.substring(2), 10);
+                if (!isNaN(num) && num > maxNum) maxNum = num;
+              }
+            });
+            const nextCode = 'CU' + String(maxNum + 1).padStart(5, '0');
+            setFormData(prev => ({ ...prev, customerCode: nextCode }));
+          } catch (e) {
+            console.error("Error generating customer code:", e);
+          }
+        };
+        fetchNextCode();
+      }
     } else {
       const fetchNextCode = async () => {
         try {

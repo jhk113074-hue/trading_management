@@ -77,7 +77,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose }) => 
   }, [initialSupplier]);
 
   useEffect(() => {
-    if (initialSupplier) return;
+    if (initialSupplier && initialSupplier.supplierCode && initialSupplier.supplierCode.trim() !== '' && initialSupplier.supplierCode.trim() !== '-') return;
 
     const generateCode = async () => {
       let maxNum = 0;
