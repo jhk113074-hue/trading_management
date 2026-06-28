@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="102.4" fill="#C41E3A"/>
+  <text
+    x="50%" y="54%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="Arial, sans-serif"
+    font-weight="900"
+    font-size="194.56"
+    fill="white"
+    letter-spacing="5.12"
+  >YS</text>
+  <text
+    x="50%" y="80%"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    font-family="Arial, sans-serif"
+    font-weight="700"
+    font-size="71.68"
+    fill="rgba(255,255,255,0.75)"
+    letter-spacing="10.24"
+  >ACC</text>
+</svg>
