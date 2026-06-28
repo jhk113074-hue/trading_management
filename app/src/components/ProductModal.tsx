@@ -932,7 +932,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             const val = e.target.value;
                             setManufacturerInput(val);
                             const code = getRawSupplierCode(val);
-                            const found = suppliers.find(s => s.supplierCode === code || s.name === val || `[${s.supplierCode}] ${s.name}` === val);
+                            const found = (suppliers || []).find(s => s && (s.supplierCode === code || s.name === val || `[${s.supplierCode || ''}] ${s.name || ''}` === val));
                             if (found) {
                               setFormData(prev => ({
                                 ...prev,
@@ -958,11 +958,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           style={{ width: '100%', padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: '#fff', boxSizing: 'border-box' }}
                         />
                         <datalist id="manufacturers_datalist">
-                          {suppliers.map(s => (
-                            <option key={s.id} value={`[${s.supplierCode}] ${s.name}`}>
-                              {s.name} ({s.supplierCode})
-                            </option>
-                          ))}
+                          {(suppliers || []).map(s => {
+                            if (!s) return null;
+                            return (
+                              <option key={s.id || Math.random().toString()} value={`[${s.supplierCode || ''}] ${s.name || ''}`}>
+                                {s.name || ''} ({s.supplierCode || ''})
+                              </option>
+                            );
+                          })}
                         </datalist>
                       </div>
 
@@ -1016,9 +1019,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '12px' }}
                       />
                       <datalist id="multi_suppliers_datalist">
-                        {suppliers.map(s => (
-                          <option key={s.id} value={`[${s.supplierCode}] ${s.name}`} />
-                        ))}
+                        {(suppliers || []).map(s => {
+                          if (!s) return null;
+                          return (
+                            <option key={s.id || Math.random().toString()} value={`[${s.supplierCode || ''}] ${s.name || ''}`} />
+                          );
+                        })}
                       </datalist>
                     </div>
 
@@ -1026,7 +1032,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       type="button"
                       onClick={() => {
                         const code = getRawSupplierCode(selSupplierVal);
-                        const found = suppliers.find(s => s.supplierCode === code || s.name === selSupplierVal || `[${s.supplierCode}] ${s.name}` === selSupplierVal);
+                        const found = (suppliers || []).find(s => s && (s.supplierCode === code || s.name === selSupplierVal || `[${s.supplierCode || ''}] ${s.name || ''}` === selSupplierVal));
                         if (!found && !selSupplierVal.trim()) {
                           alert('유통(공급)사를 먼저 선택해주세요.');
                           return;
@@ -1099,10 +1105,10 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               <td style={{ padding: '8px', fontWeight: 600 }}>
                                 <span>{sup.supplierName}</span> <span style={{ fontSize: '10px', color: '#6b7280', fontWeight: 400 }}>({sup.supplierCode})</span>
                                 {(() => {
-                                  const found = suppliers.find(s => s.supplierCode === sup.supplierCode);
+                                  const found = (suppliers || []).find(s => s && s.supplierCode === sup.supplierCode);
                                   if (!found) return null;
-                                  const contact = found.managerName || '-';
-                                  const phone = found.managerPhone || found.phone || '-';
+                                  const contact = found.managerName || found.manager || '-';
+                                  const phone = found.managerPhone || found.phone || found.mobile || '-';
                                   const email = found.purchaseEmail || found.email || '-';
                                   const addr = found.address || '-';
                                   return (
