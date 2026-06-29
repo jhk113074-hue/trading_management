@@ -1698,6 +1698,46 @@ export const OrderDetail: React.FC = () => {
     };
   }, [basicForm, orderItems, sourcingItems, forwardersList, order]);
 
+  // 사이트 전체 입력 필드 이탈(Blur) 및 Enter 입력 시 자동 저장 (글로벌 위임)
+  useEffect(() => {
+    const handleGlobalFocusOut = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
+      ) {
+        // file 타입 uploader 등은 자동저장 대상에서 제외 (기존 파일 업로드 콜백이 따로 돌기 때문)
+        if (target.getAttribute('type') === 'file') return;
+        
+        // 팝업 알림 없이 백그라운드 무음 자동 저장
+        handleSaveBasic(false);
+      }
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
+      ) {
+        // textarea 에서 Shift + Enter 입력시 줄바꿈 지원을 위해 제외
+        if (target.tagName === 'TEXTAREA' && e.shiftKey) return;
+
+        if (e.key === 'Enter') {
+          // Enter 키 입력 시 포커스 아웃시켜 focusout 이벤트 유발
+          target.blur();
+        }
+      }
+    };
+
+    window.addEventListener('focusout', handleGlobalFocusOut);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('focusout', handleGlobalFocusOut);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [basicForm, orderItems, sourcingItems, forwardersList, order]);
+
   // Switch active tab view locally
   const handleStepClick = async (stepName: typeof steps[number]) => {
     setActiveStep(stepName);
