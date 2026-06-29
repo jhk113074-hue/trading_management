@@ -10204,6 +10204,15 @@ export const OrderDetail: React.FC = () => {
                 const consolidatedPurchaseKrw = Math.round((purchaseUsd * customsRate) + purchaseKrw);
 
                 const forwarderExpenseKrw = forwardersList.reduce((sum, fw) => {
+                  if (fw.taxInvoices && fw.taxInvoices.length > 0) {
+                    const invoiceSum = fw.taxInvoices.reduce((invSum, inv) => {
+                      const supplyVal = inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0);
+                      const vat = inv.vat !== undefined ? inv.vat : 0;
+                      const agent = inv.agentAmount !== undefined ? inv.agentAmount : 0;
+                      return invSum + (inv.amount || (supplyVal + vat + agent));
+                    }, 0);
+                    return sum + invoiceSum;
+                  }
                   const usd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                   const krw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                   return sum + krw + Math.round(usd * customsRate);
