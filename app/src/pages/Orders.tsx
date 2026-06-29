@@ -601,7 +601,7 @@ export const Orders: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
               <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                 <tr>
-                  {['날짜','주문번호','수주사','발주사','발주액','단계','다음단계'].map(h => (
+                  {['날짜','주문번호','수주사','발주사','발주액','ETD','ETA','단계','다음단계'].map(h => (
                     <th 
                       key={h} 
                       style={{ 
@@ -661,6 +661,8 @@ export const Orders: React.FC = () => {
                       <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0f766e', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14.5px' }}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
+                      <td style={{ padding: '9px 16px', color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center', whiteSpace: 'nowrap' }}>{order.etd || '-'}</td>
+                      <td style={{ padding: '9px 16px', color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center', whiteSpace: 'nowrap' }}>{order.eta || '-'}</td>
                       {/* 단계 */}
                       <td style={{ padding: '9px 16px', minWidth: '280px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
