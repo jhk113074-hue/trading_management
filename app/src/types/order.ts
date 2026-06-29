@@ -200,18 +200,7 @@ export interface Order {
   }>;
 }
 
-export const getFormattedPoId = (poId: string, issuingCompany?: 'YSACC' | 'YS'): string => {
-  if (!poId) return '';
-  if (/^PO-(YS|YSACC)-\d{2}-\d{4}$/.test(poId)) {
-    return poId;
-  }
-  const match = poId.match(/^PO-(\d{4})-(\d{4})$/);
-  if (match) {
-    const year2d = match[1].substring(2);
-    const seq = match[2];
-    const company = issuingCompany === 'YS' ? 'YS' : 'YSACC';
-    return `PO-${company}-${year2d}-${seq}`;
-  }
-  return poId;
+export const getFormattedPoId = (poId: string, _issuingCompany?: 'YSACC' | 'YS'): string => {
+  return poId || '';
 };
 

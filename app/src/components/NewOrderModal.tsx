@@ -134,32 +134,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     }
   }, [initialQuotationId, quotations]);
 
-  // Auto-generate PO Number: PO-YS-26-xxxx or PO-YSACC-26-xxxx
-  useEffect(() => {
-    const generatePoNumber = async () => {
-      try {
-        const currentYear2d = new Date().getFullYear().toString().substring(2); // '26'
-        const companyPrefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
-        const prefix = `PO-${companyPrefix}-${currentYear2d}-`;
-        const ordersRef = collection(doc(db, 'companies', COMPANY_ID), 'orders');
-        const snap = await getDocs(ordersRef);
-        
-        const seqNums = snap.docs
-          .map(d => d.id)
-          .filter(id => id.startsWith(prefix))
-          .map(id => parseInt(id.replace(prefix, ''), 10))
-          .filter(n => !isNaN(n));
-        
-        const nextSeq = seqNums.length > 0 ? Math.max(...seqNums) + 1 : 1;
-        const generatedId = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
-        
-        setFormData(prev => ({ ...prev, poId: generatedId }));
-      } catch (err) {
-        console.error("Failed to auto-generate PO Number:", err);
-      }
-    };
-    generatePoNumber();
-  }, [formData.issuingCompany]);
+  // Auto-generate PO Number has been removed. ID is inputted manually as Confirmed CI Number.
 
   const handleFormDataChange = (field: string, value: any) => {
     setFormData(prev => {
@@ -417,7 +392,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     + forwarders.reduce((sum, fw) => sum + (fw.amountUsd || 0), 0);
 
   const handleSave = async () => {
-    if (!formData.poId.trim()) { alert('PO 번호는 필수 항목입니다.'); return; }
+    if (!formData.poId.trim()) { alert('확정 CI 번호는 필수 항목입니다.'); return; }
     if (!formData.customerId) { alert('고객사를 선택해야 합니다.'); return; }
     if (items.some(item => !item.name?.trim())) { alert('모든 품목의 품명을 입력해야 합니다.'); return; }
 
@@ -436,6 +411,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       
       const orderPayload: Order = {
         id: formData.poId,
+        ciNumber: formData.poId,
         custPo: formData.custPo,
         quotationId: formData.quotationId,
         customer: formData.customerName,
@@ -529,8 +505,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           {/* Form Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PO 번호 (자동 생성) ★</label>
-              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
+              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>확정 CI 번호 ★</label>
+              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} placeholder="예: YS(SU)-26-04" style={{ padding: '5px 8px', border: '1px solid #e8ecf0', borderRadius: '6px', fontSize: '12px' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
