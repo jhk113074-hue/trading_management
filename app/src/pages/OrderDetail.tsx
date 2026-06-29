@@ -44,9 +44,11 @@ interface FormattedNumberInputProps {
   placeholder?: string;
   style?: React.CSSProperties;
   disabled?: boolean;
+  onBlur?: () => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
-const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onChange, placeholder, style, disabled }) => {
+const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onChange, placeholder, style, disabled, onBlur, onKeyDown }) => {
   const formatWithCommas = (num: number) => {
     if (!num) return '';
     return num.toLocaleString();
@@ -85,6 +87,9 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
 
   const handleBlur = () => {
     setTempValue(formatWithCommas(value));
+    if (onBlur) {
+      onBlur();
+    }
   };
 
   return (
@@ -93,6 +98,7 @@ const FormattedNumberInput: React.FC<FormattedNumberInputProps> = ({ value, onCh
       value={tempValue}
       onChange={handleChange}
       onBlur={handleBlur}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       style={style}
       disabled={disabled}
@@ -9580,6 +9586,8 @@ export const OrderDetail: React.FC = () => {
                                         type="date"
                                         value={bc.date || ''}
                                         onChange={e => handleFieldChange('date', e.target.value)}
+                                        onBlur={() => handleSaveBasic(false)}
+                                        onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
                                         style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
                                       />
                                     </td>
@@ -9589,6 +9597,8 @@ export const OrderDetail: React.FC = () => {
                                         value={bc.item || ''}
                                         placeholder="예: 환가료 / 전신료 / 대체료 등"
                                         onChange={e => handleFieldChange('item', e.target.value)}
+                                        onBlur={() => handleSaveBasic(false)}
+                                        onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
                                         style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
                                       />
                                     </td>
@@ -9596,6 +9606,8 @@ export const OrderDetail: React.FC = () => {
                                       <FormattedNumberInput
                                         value={bc.amount || 0}
                                         onChange={val => handleFieldChange('amount', val)}
+                                        onBlur={() => handleSaveBasic(false)}
+                                        onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
                                         style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', fontWeight: 600, boxSizing: 'border-box' }}
                                       />
                                     </td>
