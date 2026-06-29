@@ -2013,6 +2013,42 @@ export const OrderDetail: React.FC = () => {
     });
   };
 
+  const moveStep1Item = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === orderItems.length - 1) return;
+    
+    setOrderItems(prev => {
+      const newItems = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      const temp = newItems[index];
+      newItems[index] = newItems[targetIndex];
+      newItems[targetIndex] = temp;
+      
+      const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      
+      if (order) {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        setDoc(orderRef, { items: cleaned, updatedAt: serverTimestamp() }, { merge: true }).catch(e => console.error("Failed to save step1 items order:", e));
+      }
+      return cleaned;
+    });
+  };
+
+  const moveStep2Item = (containerIdx: number, itemIdx: number, direction: 'up' | 'down') => {
+    const nextContainers = [...basicForm.packingList.containers];
+    const items = nextContainers[containerIdx].items || [];
+    if (direction === 'up' && itemIdx === 0) return;
+    if (direction === 'down' && itemIdx === items.length - 1) return;
+    
+    const targetIdx = direction === 'up' ? itemIdx - 1 : itemIdx + 1;
+    const temp = items[itemIdx];
+    items[itemIdx] = items[targetIdx];
+    items[targetIdx] = temp;
+    
+    nextContainers[containerIdx].items = items;
+    setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
+  };
+
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
     setSourcingItems(prev => {
       const updated = [...prev];
@@ -6077,7 +6113,8 @@ export const OrderDetail: React.FC = () => {
                           <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>총중량 (Kg)</th>
                           <th style={{ padding: '8px', textAlign: 'center', width: '10%' }}>완제 팔레트수</th>
                           <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>남은 자투리 수량</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '18%' }}>자투리 처리 방식</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '13%' }}>자투리 처리 방식</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '5%' }}>순서</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -6243,6 +6280,26 @@ export const OrderDetail: React.FC = () => {
                                   <option value="single">박스 단품 (손적재)</option>
                                   <option value="mixed">혼적용 (Mixed PLT)</option>
                                 </select>
+                              </td>
+                              <td style={{ padding: '8px', textAlign: 'center' }}>
+                                <div style={{ display: 'flex', gap: '3px', justifyContent: 'center' }}>
+                                  <button 
+                                    type="button"
+                                    disabled={idx === 0 || !isEditing}
+                                    onClick={() => moveStep1Item(idx, 'up')}
+                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: (idx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
+                                  >
+                                    ▲
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    disabled={idx === orderItems.length - 1 || !isEditing}
+                                    onClick={() => moveStep1Item(idx, 'down')}
+                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: (idx === orderItems.length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === orderItems.length - 1 ? 0.3 : 1 }}
+                                  >
+                                    ▼
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -6574,7 +6631,7 @@ export const OrderDetail: React.FC = () => {
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '8%', whiteSpace: 'nowrap' }}>동작</th>
+                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '12%', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -6855,6 +6912,22 @@ export const OrderDetail: React.FC = () => {
                                     </td>
                                     <td style={{ padding: '2px 4px', textAlign: 'center' }}>
                                       <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                        <button 
+                                          type="button"
+                                          disabled={itIdx === 0 || !isEditing}
+                                          onClick={() => moveStep2Item(cIdx, itIdx, 'up')}
+                                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '2px 4px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: itIdx === 0 ? 0.3 : 1, height: '22px', display: 'inline-flex', alignItems: 'center' }}
+                                        >
+                                          ▲
+                                        </button>
+                                        <button 
+                                          type="button"
+                                          disabled={itIdx === (c.items || []).length - 1 || !isEditing}
+                                          onClick={() => moveStep2Item(cIdx, itIdx, 'down')}
+                                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '2px 4px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '22px', display: 'inline-flex', alignItems: 'center' }}
+                                        >
+                                          ▼
+                                        </button>
                                         <button
                                           type="button"
                                           disabled={!isEditing}
