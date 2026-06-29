@@ -2142,7 +2142,16 @@ export const OrderDetail: React.FC = () => {
   const handleForwarderChange = (index: number, field: keyof ForwarderEntry, value: any) => {
     console.log("[DEBUG] handleForwarderChange called:", index, field, value);
     setForwardersList(prev => {
-      const next = prev.map((f, i) => i === index ? { ...f, [field]: value } : f);
+      const next = prev.map((f, i) => {
+        if (i === index) {
+          const updated = { ...f, [field]: value };
+          if (field === 'amountKrw') {
+            updated.amountVatKrw = Math.round(Number(value) * 0.1);
+          }
+          return updated;
+        }
+        return f;
+      });
       console.log("[DEBUG] Updated forwardersList state to:", next);
       return next;
     });
@@ -5715,9 +5724,10 @@ export const OrderDetail: React.FC = () => {
                           + 운송사 추가
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 140px 140px 120px 32px', gap: '6px', marginBottom: '4px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 120px 110px 120px 110px 32px', gap: '6px', marginBottom: '4px' }}>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송비(KRW)</span>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내부가세(KRW)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임(USD)</span>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>최종(USD)</span>
                         <span></span>
@@ -5729,12 +5739,13 @@ export const OrderDetail: React.FC = () => {
                           const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
                           const freightAmt = Number(fw.freightAmount) || 0;
                           const amtKrw = Number(fw.amountKrw) || 0;
+                          const vatKrw = Number(fw.amountVatKrw) || 0;
                           
-                          // 최종(USD) = 해상운임(USD) + 국내운송비(KRW)/환율
-                          const finalUsd = freightAmt + (amtKrw / customsRate);
+                          // 최종(USD) = 해상운임(USD) + (국내운송비(KRW) + 부가세(KRW))/환율
+                          const finalUsd = freightAmt + ((amtKrw + vatKrw) / customsRate);
 
                           return (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 140px 140px 120px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 120px 110px 120px 110px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                             {/* 포워더명 SubWindow 선택 */}
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                               <input
@@ -5776,6 +5787,23 @@ export const OrderDetail: React.FC = () => {
                               onChange={e => {
                                 const val = e.target.value.replace(/[^0-9]/g, '');
                                 handleForwarderChange(idx, 'amountKrw', val);
+                              }}
+                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
+                            />
+
+                            {/* 실행(국내부가세) - KRW */}
+                            <input
+                              type="text"
+                              disabled={!isEditing}
+                              placeholder="0"
+                              value={
+                                fw.amountVatKrw !== undefined && fw.amountVatKrw !== null && String(fw.amountVatKrw) !== '' && !Number.isNaN(Number(fw.amountVatKrw))
+                                  ? Number(fw.amountVatKrw).toLocaleString()
+                                  : ''
+                              }
+                              onChange={e => {
+                                const val = e.target.value.replace(/[^0-9]/g, '');
+                                handleForwarderChange(idx, 'amountVatKrw', val);
                               }}
                               style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
                             />
