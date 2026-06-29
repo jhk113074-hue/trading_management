@@ -5396,23 +5396,50 @@ export const OrderDetail: React.FC = () => {
                                   {/* SUBTOTAL ROW */}
                                   {items.length > 0 && (
                                     <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 700 }}>
-                                      <td colSpan={7} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
-                                      <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right' }}>
+                                      <td colSpan={6} style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>SUBTOTAL (합계)</td>
+                                      {/* 금액합계 */}
+                                      <td style={{ padding: '8px 6px', textAlign: 'right' }}>
                                         {(() => {
-                                          const usdTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
-                                          const krwTotal = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const usdAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const krwAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const parts = [];
+                                          if (usdAmount > 0) parts.push(`$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                          if (krwAmount > 0) parts.push(`₩${krwAmount.toLocaleString()}`);
+                                          return <span style={{ color: '#0f766e' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                        })()}
+                                      </td>
+                                      {/* 부가세 합계 */}
+                                      <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                                        {(() => {
+                                          const usdAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const krwAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
                                           const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
-                                          const usdVat = taxType === '영세' ? 0 : parseFloat((usdTotal * 0.1).toFixed(2));
-                                          const krwVat = taxType === '영세' ? 0 : Math.round(krwTotal * 0.1);
-                                          const usdGrand = usdTotal + usdVat;
-                                          const krwGrand = krwTotal + krwVat;
-                                          
+                                          const usdVat = taxType === '영세' ? 0 : parseFloat((usdAmount * 0.1).toFixed(2));
+                                          const krwVat = taxType === '영세' ? 0 : Math.round(krwAmount * 0.1);
+                                          const parts = [];
+                                          if (usdVat > 0) parts.push(`$${usdVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+                                          if (krwVat > 0) parts.push(`₩${krwVat.toLocaleString()}`);
+                                          return <span style={{ color: '#4b5563' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
+                                        })()}
+                                      </td>
+                                      {/* 합계 총합 */}
+                                      <td style={{ padding: '8px 6px', textAlign: 'right' }}>
+                                        {(() => {
+                                          const usdAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const krwAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                                          const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                                          const usdVat = taxType === '영세' ? 0 : parseFloat((usdAmount * 0.1).toFixed(2));
+                                          const krwVat = taxType === '영세' ? 0 : Math.round(krwAmount * 0.1);
+                                          const usdGrand = usdAmount + usdVat;
+                                          const krwGrand = krwAmount + krwVat;
                                           const parts = [];
                                           if (usdGrand > 0) parts.push(`$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
                                           if (krwGrand > 0) parts.push(`₩${krwGrand.toLocaleString()}`);
                                           return <span style={{ color: '#dc2626' }}>{parts.length > 0 ? parts.join(' / ') : '₩0'}</span>;
                                         })()}
                                       </td>
+                                      {/* 순서/관리 공간 확보용 빈 셀 */}
+                                      <td></td>
                                     </tr>
                                   )}
                                 </tbody>
