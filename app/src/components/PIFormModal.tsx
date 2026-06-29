@@ -860,6 +860,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     setItems(newItems);
   };
 
+  const moveItem = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === items.length - 1) return;
+    const newItems = [...items];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+    newItems.forEach((it, i) => it.lineNumber = i + 1);
+    setItems(newItems);
+  };
+
   const addFreightCharge = () => {
     setFormData(prev => ({
       ...prev,
@@ -2016,7 +2028,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       />
                     </td>
                     <td style={{ padding: '4px', textAlign: 'center' }}>
-                      <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px' }}>✕</button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          <button 
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveItem(idx, 'up')} 
+                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
+                          >
+                            ▲
+                          </button>
+                          <button 
+                            type="button"
+                            disabled={idx === items.length - 1}
+                            onClick={() => moveItem(idx, 'down')} 
+                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === items.length - 1 ? 0.3 : 1 }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+                        <button onClick={() => removeItem(idx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '11px', width: '100%' }}>✕</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
