@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Order } from '../types/order';
-import { getFormattedPoId } from '../types/order';
 import type { ProformaInvoice } from '../types/pi';
 import { NewOrderModal } from '../components/NewOrderModal';
 
@@ -377,7 +376,7 @@ export const Orders: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
             <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {getFormattedPoId(order.id, order.issuingCompany)}
+              {order.ciNumber || order.id}
             </span>
             <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {order.customer}
@@ -536,7 +535,7 @@ export const Orders: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
-                    {getFormattedPoId(o.id, o.issuingCompany)}
+                    {o.ciNumber || o.id}
                   </span>
                   <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '8px', background: o.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: o.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
                     {o.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
@@ -656,7 +655,7 @@ export const Orders: React.FC = () => {
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
                       <td style={{ padding: '9px 16px', color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center', whiteSpace: 'nowrap' }}>{order.poDate || '-'}</td>
-                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#2563eb', fontSize: '13.5px', whiteSpace: 'nowrap' }}>{getFormattedPoId(order.id, order.issuingCompany)}</td>
+                      <td style={{ padding: '9px 16px', fontWeight: 700, color: '#2563eb', fontSize: '13.5px', whiteSpace: 'nowrap' }}>{order.ciNumber || order.id}</td>
                       <td style={{ padding: '9px 16px', textAlign: 'center' }}>{issuerBadge}</td>
                       <td style={{ padding: '9px 16px', color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{order.customer}</td>
                       <td style={{ padding: '9px 16px', fontWeight: 700, color: '#0f766e', textAlign: 'right', whiteSpace: 'nowrap', fontSize: '14.5px' }}>
