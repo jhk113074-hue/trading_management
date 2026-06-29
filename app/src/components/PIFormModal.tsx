@@ -1707,7 +1707,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Line Items */}
-          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px', overflowX: 'auto' }}>
+          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📦</span> 상품 라인 (Line Items)
@@ -1717,7 +1717,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid #cbd5e1', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#475569' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+              <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
                   <th style={{ padding: '8px 4px', width: '310px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
@@ -2055,6 +2056,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </tbody>
             </table>
           </div>
+        </div>
 
           {/* Extras and Totals */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
