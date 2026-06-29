@@ -119,7 +119,7 @@ export const OrderDetail: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<typeof steps[number]>("수주정보");
-  const [activeSettlementTab, setActiveSettlementTab] = useState<'세금계산서' | '대금결제' | '수금관리' | '정산현황'>('정산현황');
+  const [activeSettlementTab, setActiveSettlementTab] = useState<'세금계산서' | '대금결제' | 'BANK_CHARGES' | '수금관리' | '정산현황'>('정산현황');
   const [activeLogisticsTab, setActiveLogisticsTab] = useState<'선적관리' | '패킹리스트' | '도착보고_쉬핑마크'>('선적관리');
   const [activeDocumentTab, setActiveDocumentTab] = useState<'서류업로드' | 'CI_PL작성'>('서류업로드');
   const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
@@ -859,6 +859,7 @@ export const OrderDetail: React.FC = () => {
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
+    bankCharges: [] as Array<{ item: string; amount: number }>,
     actualContainerSimulation: null as any,
     quotationId: '',
 
@@ -1509,6 +1510,7 @@ export const OrderDetail: React.FC = () => {
             ? data.paymentCollectedInstallments
             : [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }],
           bankSubmissionStatus: data.bankSubmissionStatus || '',
+          bankCharges: data.bankCharges || [],
 
           // 주문 기본정보 및 L/C 거래 상세 로드
           customerAddress: data.customerAddress || '',
@@ -1751,6 +1753,7 @@ export const OrderDetail: React.FC = () => {
         supplierPaymentInstallments: basicForm.supplierPaymentInstallments,
         paymentCollectedInstallments: basicForm.paymentCollectedInstallments || [],
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
+        bankCharges: basicForm.bankCharges || [],
 
         // 주문 기본정보 및 L/C 거래 상세 저장
         customerAddress: basicForm.customerAddress,
@@ -8896,8 +8899,9 @@ export const OrderDetail: React.FC = () => {
                 {[
                   { id: '세금계산서', label: '1) 세금계산서' },
                   { id: '대금결제', label: '2) 대금결제' },
-                  { id: '수금관리', label: '3) 수금관리' },
-                  { id: '정산현황', label: '4) 정산현황' }
+                  { id: 'BANK_CHARGES', label: '3) BANK CHARGES(LC)' },
+                  { id: '수금관리', label: '4) 수금관리' },
+                  { id: '정산현황', label: '5) 정산현황' }
                 ].map(tab => {
                   const isActive = activeSettlementTab === tab.id;
                   return (
@@ -9416,6 +9420,104 @@ export const OrderDetail: React.FC = () => {
               
               )}
 
+              {activeSettlementTab === 'BANK_CHARGES' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>💸 BANK CHARGES (LC 수수료 관리)</h4>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>L/C 개설, 매입, 환가료 등 은행에서 발생한 수수료 항목과 금액을 등록합니다. (정산현황에서 자동 차감됩니다.)</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = basicForm.bankCharges || [];
+                          setBasicForm(p => ({
+                            ...p,
+                            bankCharges: [...current, { item: '', amount: 0 }]
+                          }));
+                        }}
+                        style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '11.5px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                      >
+                        ＋ 수수료 항목 추가
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {(!basicForm.bankCharges || basicForm.bankCharges.length === 0) ? (
+                        <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px', border: '1px dashed #cbd5e1', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                          등록된 은행 수수료 내역이 없습니다. '수수료 항목 추가' 버튼을 눌러 등록해주세요.
+                        </div>
+                      ) : (
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '50px' }}>번호</th>
+                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>수수료 항목 (예: 환가료, 대체료, 전신료)</th>
+                                <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#475569', width: '200px' }}>금액 (KRW ₩)</th>
+                                <th style={{ padding: '10px', textAlign: 'center', fontWeight: 700, color: '#475569', width: '80px' }}>작업</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {basicForm.bankCharges.map((bc, index) => {
+                                const handleFieldChange = (field: 'item' | 'amount', val: any) => {
+                                  const list = [...(basicForm.bankCharges || [])];
+                                  list[index] = { ...list[index], [field]: val };
+                                  setBasicForm(p => ({ ...p, bankCharges: list }));
+                                };
+
+                                return (
+                                  <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '10px', color: '#64748b', fontWeight: 600 }}>{index + 1}</td>
+                                    <td style={{ padding: '10px' }}>
+                                      <input
+                                        type="text"
+                                        value={bc.item || ''}
+                                        placeholder="예: 환가료 / 전신료 / 대체료 등"
+                                        onChange={e => handleFieldChange('item', e.target.value)}
+                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '10px' }}>
+                                      <FormattedNumberInput
+                                        value={bc.amount || 0}
+                                        onChange={val => handleFieldChange('amount', val)}
+                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', fontWeight: 600, boxSizing: 'border-box' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const list = (basicForm.bankCharges || []).filter((_, i) => i !== index);
+                                          setBasicForm(p => ({ ...p, bankCharges: list }));
+                                        }}
+                                        style={{ background: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', color: '#fff', cursor: 'pointer' }}
+                                      >
+                                        삭제
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                              {/* 총액 합계 Row */}
+                              <tr style={{ background: '#eff6ff', fontWeight: 800, borderTop: '2px solid #2563eb' }}>
+                                <td colSpan={2} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 BANK CHARGES 총액 합계</td>
+                                <td style={{ padding: '12px', color: '#2563eb', textAlign: 'right', fontSize: '13px' }}>
+                                  ₩{basicForm.bankCharges.reduce((sum, bc) => sum + (bc.amount || 0), 0).toLocaleString()} KRW
+                                </td>
+                                <td></td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeSettlementTab === '대금결제' && (
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -9854,14 +9956,19 @@ export const OrderDetail: React.FC = () => {
                   return sum + krw + Math.round(usd * customsRate);
                 }, 0);
 
+                // BANK CHARGES (LC) 계산 (KRW 기준)
+                const totalBankChargesKrw = (basicForm.bankCharges || []).reduce((sum, bc) => sum + (bc.amount || 0), 0);
+                const totalBankChargesUsd = customsRate > 0 ? (totalBankChargesKrw / customsRate) : 0;
+
                 const totalCostKrw = consolidatedPurchaseKrw + forwarderExpenseKrw;
                 const totalCostUsd = customsRate > 0 ? (totalCostKrw / customsRate) : 0;
 
-                const actualUsdProfit = orderAmountUsd - totalCostUsd;
+                // 정산현황에서 BANK CHARGES 차감
+                const actualUsdProfit = orderAmountUsd - totalCostUsd - totalBankChargesUsd;
                 const usdMargin = orderAmountUsd > 0 ? (actualUsdProfit / orderAmountUsd) * 100 : 0;
 
                 const orderAmountKrw = orderAmountUsd * customsRate;
-                const actualKrwProfit = orderAmountKrw - totalCostKrw;
+                const actualKrwProfit = orderAmountKrw - totalCostKrw - totalBankChargesKrw;
                 const krwMargin = orderAmountKrw > 0 ? (actualKrwProfit / orderAmountKrw) * 100 : 0;
 
                 return (
@@ -9869,7 +9976,7 @@ export const OrderDetail: React.FC = () => {
                     {activeSettlementTab === '정산현황' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {/* 상단 기본정보 카드 */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
                       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                         <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문 금액 (USD)</div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
@@ -9900,6 +10007,15 @@ export const OrderDetail: React.FC = () => {
                           ${totalCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
                         </div>
                       </div>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#fff1f2', borderColor: '#fecdd3', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#be123c', fontWeight: 700 }}>BANK CHARGES (LC)</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#9f1239', marginTop: '4px' }}>
+                          ₩{totalBankChargesKrw.toLocaleString()} KRW
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#e11d48', marginTop: '2px' }}>
+                          ${totalBankChargesUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                        </div>
+                      </div>
                     </div>
 
                     {/* 하단 실제 이익 분석 카드 */}
@@ -9919,7 +10035,7 @@ export const OrderDetail: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#60a5fa', marginTop: '10px', borderTop: '1px dashed #bfdbfe', paddingTop: '8px' }}>
-                          공식: 주문받은 금액(USD) - (매입가전체 + 운송비실비) / 수출면장환율
+                          공식: 주문받은 금액(USD) - (매입가전체 + 운송비실비) / 수출면장환율 - BANK CHARGES(USD)
                         </div>
                       </div>
 
@@ -9938,7 +10054,7 @@ export const OrderDetail: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '10px', borderTop: '1px dashed #a7f3d0', paddingTop: '8px' }}>
-                          공식: 주문받은 금액(USD) * 수출환율 - (매입가전체 + 운송비실비)
+                          공식: 주문받은 금액(USD) * 수출환율 - (매입가전체 + 운송비실비) - BANK CHARGES(KRW)
                         </div>
                       </div>
                     </div>
