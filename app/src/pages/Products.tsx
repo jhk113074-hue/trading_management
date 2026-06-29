@@ -11,6 +11,7 @@ const excelMapping = [
   { header: "상품명(한글)", key: "nameKo" },
   { header: "상품명(영문)", key: "nameEn" },
   { header: "HS CODE", key: "hsCode" },
+  { header: "고객사별 HS CODE(바이어명:HSCODE,바이어명2:HSCODE)", key: "customerHsCodes" },
   { header: "대분류", key: "categoryLarge" },
   { header: "중분류", key: "categoryMedium" },
   { header: "소분류", key: "categorySmall" },
@@ -23,6 +24,12 @@ const excelMapping = [
   { header: "공급연락처", key: "supplierPhone" },
   { header: "공급이메일", key: "supplierEmail" },
   { header: "공급업체주소", key: "supplierAddress" },
+  { header: "제조업체명", key: "manufacturerName" },
+  { header: "제조업체코드", key: "manufacturerCode" },
+  { header: "제조담당자", key: "manufacturerContact" },
+  { header: "제조연락처", key: "manufacturerPhone" },
+  { header: "제조이메일", key: "manufacturerEmail" },
+  { header: "제조업체주소", key: "manufacturerAddress" },
   { header: "MOQ", key: "minOrderQty" },
   { header: "구매가", key: "purchasePrice" },
   { header: "구매통화", key: "currency" },
@@ -58,7 +65,7 @@ const excelMapping = [
   { header: "보관위치", key: "storageLocation" },
   { header: "보관온도", key: "storageTemp" },
   { header: "보관습도", key: "storageHumidity" },
-  { header: "제조사명", key: "manufacturer" },
+  { header: "제조사명(Legacy)", key: "manufacturer" },
   { header: "제조일자", key: "manufactureDate" },
   { header: "품질유효종료일", key: "expiryDate" },
   { header: "MSDS관리여부", key: "msdsManaged" },
@@ -93,7 +100,12 @@ export const Products: React.FC = () => {
     const data = products.map(p => {
       let row: any = {};
       excelMapping.forEach(m => {
-        row[m.header] = (p as any)[m.key] ?? "";
+        if (m.key === 'customerHsCodes') {
+          const map = p.customerHsCodes || {};
+          row[m.header] = Object.entries(map).map(([k, v]) => `${k}:${v}`).join(',');
+        } else {
+          row[m.header] = (p as any)[m.key] ?? "";
+        }
       });
       return row;
     });
@@ -124,7 +136,21 @@ export const Products: React.FC = () => {
             if (row[m.header] !== undefined && row[m.header] !== null) {
                let val = String(row[m.header]).trim();
                if (m.key === 'unit') val = val.toUpperCase();
-               productData[m.key] = val;
+               
+               if (m.key === 'customerHsCodes') {
+                 const record: Record<string, string> = {};
+                 if (val) {
+                   val.split(',').forEach(pair => {
+                     const [k, v] = pair.split(':');
+                     if (k && v) {
+                       record[k.trim()] = v.trim();
+                     }
+                   });
+                 }
+                 productData.customerHsCodes = record;
+               } else {
+                 productData[m.key] = val;
+               }
             }
           });
           
