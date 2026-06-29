@@ -17,6 +17,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
   const [newContactPhone, setNewContactPhone] = useState('');
   const [newContactEmail, setNewContactEmail] = useState('');
   const [newContactRemarks, setNewContactRemarks] = useState('');
+  const [editingContactId, setEditingContactId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Customer>>({
     customerCode: '', name: '', nameKo: '', countryName: '', city: '',
@@ -111,13 +112,29 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         finalData.createdAt = serverTimestamp();
       }
 
-      Object.keys(finalData).forEach(key => {
-        if ((finalData as any)[key] === undefined) {
-          delete (finalData as any)[key];
+      const cleanUndefined = (obj: any): any => {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) return obj.map(cleanUndefined);
+        if (typeof obj === 'object') {
+          if (obj.constructor && (obj.constructor.name.includes('FieldValue') || obj.constructor.name === 'Date')) {
+            return obj;
+          }
+          if (obj.constructor && obj.constructor.name !== 'Object') {
+            return obj;
+          }
+          const clean: any = {};
+          for (const key of Object.keys(obj)) {
+            if (obj[key] !== undefined) {
+              clean[key] = cleanUndefined(obj[key]);
+            }
+          }
+          return clean;
         }
-      });
+        return obj;
+      };
 
-      await setDoc(doc(db, 'companies', COMPANY_ID, 'customers', docId), finalData);
+      const sanitizedData = cleanUndefined(finalData);
+      await setDoc(doc(db, 'companies', COMPANY_ID, 'customers', docId), sanitizedData);
       alert('✅ 성공적으로 저장되었습니다.');
       onClose();
     } catch (err: any) {
@@ -231,29 +248,66 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                 <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
                 <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
-                  const newContact: CustomerContact = {
-                    id: 'contact_' + Math.random().toString(36).substr(2, 9),
-                    name: newContactName.trim(),
-                    position: newContactPosition.trim() || undefined,
-                    phone: newContactPhone.trim() || undefined,
-                    email: newContactEmail.trim() || undefined,
-                    isPrimary: (formData.contacts || []).length === 0,
-                    remarks: newContactRemarks.trim() || undefined
-                  };
-                  setFormData(prev => ({
-                    ...prev,
-                    contacts: [...(prev.contacts || []), newContact]
-                  }));
-                  setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
-                }}
-                style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
-              >
-                + 추가
-              </button>
+              {editingContactId ? (
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
+                      setFormData(prev => ({
+                        ...prev,
+                        contacts: (prev.contacts || []).map(c => c.id === editingContactId ? {
+                          ...c,
+                          name: newContactName.trim(),
+                          position: newContactPosition.trim() || undefined,
+                          phone: newContactPhone.trim() || undefined,
+                          email: newContactEmail.trim() || undefined,
+                          remarks: newContactRemarks.trim() || undefined
+                        } : c)
+                      }));
+                      setEditingContactId(null);
+                      setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
+                    }}
+                    style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                  >
+                    수정완료
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingContactId(null);
+                      setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
+                    }}
+                    style={{ background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                  >
+                    취소
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
+                    const newContact: CustomerContact = {
+                      id: 'contact_' + Math.random().toString(36).substr(2, 9),
+                      name: newContactName.trim(),
+                      position: newContactPosition.trim() || undefined,
+                      phone: newContactPhone.trim() || undefined,
+                      email: newContactEmail.trim() || undefined,
+                      isPrimary: (formData.contacts || []).length === 0,
+                      remarks: newContactRemarks.trim() || undefined
+                    };
+                    setFormData(prev => ({
+                      ...prev,
+                      contacts: [...(prev.contacts || []), newContact]
+                    }));
+                    setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
+                  }}
+                  style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
+                >
+                  + 추가
+                </button>
+              )}
             </div>
 
             {/* 테이블 명부 */}
@@ -265,63 +319,24 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                     <th style={{ padding: '5px 8px', width: '140px' }}>이름 (직책)</th>
                     <th style={{ padding: '5px 8px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
                     <th style={{ padding: '5px 8px' }}>역할 / 특이사항</th>
-                    <th style={{ padding: '5px 8px', width: '50px', textAlign: 'center' }}>삭제</th>
+                    <th style={{ padding: '5px 8px', width: '100px', textAlign: 'center' }}>관리</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(!formData.contacts || formData.contacts.length === 0) ? (
-                    <tr>
-                      <td colSpan={5} style={{ padding: '12px', textAlign: 'center', color: '#94a3b8' }}>등록된 소싱 담당자가 없습니다. 상단에서 추가해 주세요.</td>
+                  {(formData.contacts || []).map((c: any) => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                        <input type="radio" checked={c.isPrimary} onChange={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.map((ct: any) => ({ ...ct, isPrimary: ct.id === c.id })) }))} />
+                      </td>
+                      <td style={{ padding: '5px 8px' }}>{c.name}<br /><span style={{ color: '#64748b' }}>{c.position}</span></td>
+                      <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: '#64748b' }}>{c.email}</span></td>
+                      <td style={{ padding: '5px 8px' }}>{c.remarks}</td>
+                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                        <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px' }}>수정</button>
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.filter((ct: any) => ct.id !== c.id) }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>삭제</button>
+                      </td>
                     </tr>
-                  ) : (
-                    formData.contacts.map((c, idx) => (
-                      <tr key={c.id || idx} style={{ borderBottom: '1px solid #f1f5f9', background: c.isPrimary ? '#faf5ff' : 'transparent' }}>
-                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                          <input
-                            type="radio"
-                            name="primary_contact"
-                            checked={c.isPrimary}
-                            onChange={() => {
-                              setFormData(prev => ({
-                                  ...prev,
-                                  contacts: (prev.contacts || []).map((item, i) => ({
-                                    ...item,
-                                    isPrimary: i === idx
-                                  }))
-                              }));
-                            }}
-                            style={{ cursor: 'pointer' }}
-                          />
-                        </td>
-                        <td style={{ padding: '5px 8px', fontWeight: 700, color: c.isPrimary ? '#7e22ce' : '#1e293b' }}>
-                          {c.name} {c.position && <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: 400 }}>({c.position})</span>}
-                          {c.isPrimary && <span style={{ fontSize: '8px', background: '#f3e8ff', color: '#a855f7', border: '1px solid #d8b4fe', padding: '0px 3px', borderRadius: '2px', marginLeft: '4px' }}>대표</span>}
-                        </td>
-                        <td style={{ padding: '5px 8px' }}>
-                          <span style={{ marginRight: '8px', fontWeight: 500 }}>📞 {c.phone || '-'}</span>
-                          <span style={{ color: '#64748b' }}>✉️ {c.email || '-'}</span>
-                        </td>
-                        <td style={{ padding: '5px 8px', color: '#64748b' }}>{c.remarks || '-'}</td>
-                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData(prev => {
-                                const next = (prev.contacts || []).filter((_, i) => i !== idx);
-                                if (c.isPrimary && next.length > 0) {
-                                  next[0].isPrimary = true;
-                                }
-                                return { ...prev, contacts: next };
-                              });
-                            }}
-                            style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '3px', padding: '1px 4px', cursor: 'pointer', fontSize: '9.5px' }}
-                          >
-                            삭제
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>

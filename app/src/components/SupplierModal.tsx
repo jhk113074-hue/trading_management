@@ -158,13 +158,29 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
         finalData.createdAt = serverTimestamp();
       }
 
-      Object.keys(finalData).forEach(key => {
-        if ((finalData as any)[key] === undefined) {
-          delete (finalData as any)[key];
+      const cleanUndefined = (obj: any): any => {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) return obj.map(cleanUndefined);
+        if (typeof obj === 'object') {
+          if (obj.constructor && (obj.constructor.name.includes('FieldValue') || obj.constructor.name === 'Date')) {
+            return obj;
+          }
+          if (obj.constructor && obj.constructor.name !== 'Object') {
+            return obj;
+          }
+          const clean: any = {};
+          for (const key of Object.keys(obj)) {
+            if (obj[key] !== undefined) {
+              clean[key] = cleanUndefined(obj[key]);
+            }
+          }
+          return clean;
         }
-      });
+        return obj;
+      };
 
-      await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', docId), finalData);
+      const sanitizedData = cleanUndefined(finalData);
+      await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', docId), sanitizedData);
       alert('✅ 성공적으로 저장되었습니다.');
       if (onSave) {
         onSave({ id: docId, ...finalData } as Supplier);
