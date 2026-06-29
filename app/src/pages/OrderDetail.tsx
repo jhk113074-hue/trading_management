@@ -9557,6 +9557,26 @@ export const OrderDetail: React.FC = () => {
                                     </div>
                                   );
                                 })}
+
+                                {/* 세금계산서 전체 합계 Row */}
+                                {(() => {
+                                  const totalSupply = taxInvoices.reduce((sum, inv) => sum + (inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0)), 0);
+                                  const totalVat = taxInvoices.reduce((sum, inv) => sum + (inv.vat !== undefined ? inv.vat : 0), 0);
+                                  const totalAgent = taxInvoices.reduce((sum, inv) => sum + (inv.agentAmount !== undefined ? inv.agentAmount : 0), 0);
+                                  const totalSum = taxInvoices.reduce((sum, inv) => sum + (inv.amount || ((inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0)) + (inv.vat !== undefined ? inv.vat : 0) + (inv.agentAmount !== undefined ? inv.agentAmount : 0))), 0);
+
+                                  return (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center', background: '#f5f3ff', borderTop: '2px solid #c084fc', borderBottom: '2.5px double #c084fc', padding: '6px 0', fontSize: '12px', fontWeight: 800 }}>
+                                      <span style={{ paddingLeft: '10px', color: '#6b21a8' }}>합계 (Total)</span>
+                                      <span></span>
+                                      <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalSupply.toLocaleString()}</span>
+                                      <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalVat.toLocaleString()}</span>
+                                      <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalAgent.toLocaleString()}</span>
+                                      <span style={{ textAlign: 'right', paddingRight: '12px', color: '#7c3aed', fontSize: '13px' }}>₩{totalSum.toLocaleString()}</span>
+                                      <span style={{ width: '28px' }} />
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                           );
