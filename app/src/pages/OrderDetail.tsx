@@ -306,6 +306,7 @@ export const OrderDetail: React.FC = () => {
   const [uploadingReceipt, setUploadingReceipt] = useState<{ supplier: string; index: number } | null>(null);
   const [uploadingFwReceipt, setUploadingFwReceipt] = useState<{ fwIndex: number; instIndex: number } | null>(null);
   const [uploadingCollectReceipt, setUploadingCollectReceipt] = useState<number | null>(null);
+  const [uploadingBankChargeReceipt, setUploadingBankChargeReceipt] = useState<number | null>(null);
 
   const handleCollectReceiptUpload = async (file: File, index: number) => {
     if (!order) return;
@@ -386,6 +387,94 @@ export const OrderDetail: React.FC = () => {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       await setDoc(orderRef, {
         paymentCollectedInstallments: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert("✅ 삭제되었습니다.");
+    } catch (err: any) {
+      alert("❌ 삭제 실패: " + err.message);
+    }
+  };
+
+  const handleBankChargeReceiptUpload = async (file: File, index: number) => {
+    if (!order) return;
+    setUploadingBankChargeReceipt(index);
+    try {
+      const uniqueFileName = `${Date.now()}_${file.name || 'bank_charge_receipt.png'}`;
+      const storageRef = ref(storage, `tasks/${order.id}/payments/bank_charges/${index}/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', null, reject, () => resolve());
+      });
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const newFile = {
+        name: file.name || `수수료영수증_${new Date().toLocaleDateString()}.png`,
+        url: downloadUrl,
+        size: file.size,
+        path: uploadTask.snapshot.ref.fullPath
+      };
+
+      const list = basicForm.bankCharges || [];
+      const updatedList = [...list];
+      if (!updatedList[index]) {
+        updatedList[index] = { item: '', amount: 0 };
+      }
+      const currentReceipts = updatedList[index].receiptFiles || [];
+      updatedList[index] = {
+        ...updatedList[index],
+        receiptFiles: [...currentReceipts, newFile]
+      };
+
+      setBasicForm(prev => ({
+        ...prev,
+        bankCharges: updatedList
+      }));
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        bankCharges: updatedList,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('✅ 수수료 영수증이 업로드 되었습니다.');
+    } catch (err: any) {
+      alert('❌ 업로드 실패: ' + err.message);
+    } finally {
+      setUploadingBankChargeReceipt(null);
+    }
+  };
+
+  const handleDeleteBankChargeReceipt = async (bcIndex: number, fileIndex: number) => {
+    if (!order) return;
+    if (!window.confirm("이 영수증을 삭제하시겠습니까?")) return;
+
+    const list = basicForm.bankCharges || [];
+    const updatedList = [...list];
+    if (!updatedList[bcIndex] || !updatedList[bcIndex].receiptFiles) return;
+
+    const fileToDelete = updatedList[bcIndex].receiptFiles[fileIndex];
+    const newReceipts = updatedList[bcIndex].receiptFiles.filter((_: any, idx: number) => idx !== fileIndex);
+    updatedList[bcIndex] = {
+      ...updatedList[bcIndex],
+      receiptFiles: newReceipts
+    };
+
+    try {
+      if (fileToDelete.path) {
+        const fileRef = ref(storage, fileToDelete.path);
+        await deleteObject(fileRef).catch(e => console.warn("Failed to delete storage file:", e));
+      }
+
+      setBasicForm(prev => ({
+        ...prev,
+        bankCharges: updatedList
+      }));
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        bankCharges: updatedList,
         updatedAt: serverTimestamp()
       }, { merge: true });
 
@@ -859,7 +948,7 @@ export const OrderDetail: React.FC = () => {
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
-    bankCharges: [] as Array<{ item: string; amount: number }>,
+    bankCharges: [] as Array<{ item: string; amount: number; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     actualContainerSimulation: null as any,
     quotationId: '',
 
@@ -9455,7 +9544,8 @@ export const OrderDetail: React.FC = () => {
                               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '50px' }}>번호</th>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>수수료 항목 (예: 환가료, 대체료, 전신료)</th>
-                                <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#475569', width: '200px' }}>금액 (KRW ₩)</th>
+                                <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#475569', width: '180px' }}>금액 (KRW ₩)</th>
+                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '250px' }}>영수증 첨부</th>
                                 <th style={{ padding: '10px', textAlign: 'center', fontWeight: 700, color: '#475569', width: '80px' }}>작업</th>
                               </tr>
                             </thead>
@@ -9486,6 +9576,71 @@ export const OrderDetail: React.FC = () => {
                                         style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', fontWeight: 600, boxSizing: 'border-box' }}
                                       />
                                     </td>
+                                    <td style={{ padding: '10px' }}>
+                                      <div 
+                                        style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+                                        onPaste={async (e) => {
+                                          const items = e.clipboardData.items;
+                                          for (let fIdx = 0; fIdx < items.length; fIdx++) {
+                                            if (items[fIdx].type.indexOf('image') !== -1) {
+                                              const file = items[fIdx].getAsFile();
+                                              if (file) {
+                                                e.preventDefault();
+                                                await handleBankChargeReceiptUpload(file, index);
+                                              }
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            id={`bank-charge-receipt-upload-${index}`}
+                                            style={{ display: 'none' }}
+                                            onChange={async (e) => {
+                                              const file = e.target.files?.[0];
+                                              if (file) {
+                                                await handleBankChargeReceiptUpload(file, index);
+                                              }
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`bank-charge-receipt-upload-${index}`}
+                                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '10.5px', color: '#475569', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                                          >
+                                            파일 선택
+                                          </label>
+                                          <span style={{ fontSize: '9px', color: '#94a3b8', whiteSpace: 'nowrap' }}>클릭 후 Ctrl+V 붙여넣기 지원</span>
+                                        </div>
+
+                                        {bc.receiptFiles && bc.receiptFiles.length > 0 && (
+                                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '2px' }}>
+                                            {bc.receiptFiles.map((file: any, fIdx: number) => (
+                                              <div key={fIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>
+                                                <span 
+                                                  onClick={() => previewFile(file.url, file.name)} 
+                                                  style={{ fontSize: '10.5px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                                  title={file.name}
+                                                >
+                                                  {file.name}
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteBankChargeReceipt(index, fIdx)}
+                                                  style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '11px', cursor: 'pointer', padding: '0 2px' }}
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {uploadingBankChargeReceipt === index && (
+                                          <span style={{ fontSize: '9px', color: '#2563eb', fontWeight: 600 }}>⏳ 업로드 중...</span>
+                                        )}
+                                      </div>
+                                    </td>
                                     <td style={{ padding: '10px', textAlign: 'center' }}>
                                       <button
                                         type="button"
@@ -9507,7 +9662,7 @@ export const OrderDetail: React.FC = () => {
                                 <td style={{ padding: '12px', color: '#2563eb', textAlign: 'right', fontSize: '13px' }}>
                                   ₩{basicForm.bankCharges.reduce((sum, bc) => sum + (bc.amount || 0), 0).toLocaleString()} KRW
                                 </td>
-                                <td></td>
+                                <td colSpan={2}></td>
                               </tr>
                             </tbody>
                           </table>
