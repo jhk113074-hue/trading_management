@@ -9596,12 +9596,15 @@ export const OrderDetail: React.FC = () => {
                                           <input
                                             type="file"
                                             accept="image/*"
+                                            multiple
                                             id={`bank-charge-receipt-upload-${index}`}
                                             style={{ display: 'none' }}
                                             onChange={async (e) => {
-                                              const file = e.target.files?.[0];
-                                              if (file) {
-                                                await handleBankChargeReceiptUpload(file, index);
+                                              const files = e.target.files;
+                                              if (files && files.length > 0) {
+                                                for (let fIdx = 0; fIdx < files.length; fIdx++) {
+                                                  await handleBankChargeReceiptUpload(files[fIdx], index);
+                                                }
                                               }
                                             }}
                                           />
