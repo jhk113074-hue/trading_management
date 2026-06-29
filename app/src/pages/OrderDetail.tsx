@@ -948,7 +948,7 @@ export const OrderDetail: React.FC = () => {
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
-    bankCharges: [] as Array<{ item: string; amount: number; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
+    bankCharges: [] as Array<{ date?: string; item: string; amount: number; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     actualContainerSimulation: null as any,
     quotationId: '',
 
@@ -9543,6 +9543,7 @@ export const OrderDetail: React.FC = () => {
                             <thead>
                               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '50px' }}>번호</th>
+                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '130px' }}>발생일자</th>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>수수료 항목 (예: 환가료, 대체료, 전신료)</th>
                                 <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#475569', width: '180px' }}>금액 (KRW ₩)</th>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '250px' }}>영수증 첨부</th>
@@ -9551,7 +9552,7 @@ export const OrderDetail: React.FC = () => {
                             </thead>
                             <tbody>
                               {basicForm.bankCharges.map((bc, index) => {
-                                const handleFieldChange = (field: 'item' | 'amount', val: any) => {
+                                const handleFieldChange = (field: 'date' | 'item' | 'amount', val: any) => {
                                   const list = [...(basicForm.bankCharges || [])];
                                   list[index] = { ...list[index], [field]: val };
                                   setBasicForm(p => ({ ...p, bankCharges: list }));
@@ -9560,6 +9561,14 @@ export const OrderDetail: React.FC = () => {
                                 return (
                                   <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                     <td style={{ padding: '10px', color: '#64748b', fontWeight: 600 }}>{index + 1}</td>
+                                    <td style={{ padding: '10px' }}>
+                                      <input
+                                        type="date"
+                                        value={bc.date || ''}
+                                        onChange={e => handleFieldChange('date', e.target.value)}
+                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
+                                      />
+                                    </td>
                                     <td style={{ padding: '10px' }}>
                                       <input
                                         type="text"
@@ -9661,7 +9670,7 @@ export const OrderDetail: React.FC = () => {
                               })}
                               {/* 총액 합계 Row */}
                               <tr style={{ background: '#eff6ff', fontWeight: 800, borderTop: '2px solid #2563eb' }}>
-                                <td colSpan={2} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 BANK CHARGES 총액 합계</td>
+                                <td colSpan={3} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 BANK CHARGES 총액 합계</td>
                                 <td style={{ padding: '12px', color: '#2563eb', textAlign: 'right', fontSize: '13px' }}>
                                   ₩{basicForm.bankCharges.reduce((sum, bc) => sum + (bc.amount || 0), 0).toLocaleString()} KRW
                                 </td>
