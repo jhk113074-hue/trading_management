@@ -2074,6 +2074,28 @@ export const OrderDetail: React.FC = () => {
       }
       
       updated[index] = it;
+
+      // 동기화: 수주 품목 정보 변경 시, 소싱/발주 탭(sourcingItems)에도 실시간 반영
+      setSourcingItems(sourcingPrev => {
+        const sourcingUpdated = [...sourcingPrev];
+        if (sourcingUpdated[index]) {
+          sourcingUpdated[index] = {
+            ...sourcingUpdated[index],
+            name: it.name,
+            qty: it.qty,
+            unit: it.unit,
+            supplier: it.supplier,
+            supplierContact: it.supplierContact,
+            grade: it.grade,
+            purchaseUnitPrice: it.purchaseUnitPrice,
+            purchaseUnitCurrency: it.purchaseUnitCurrency,
+            amount: it.amount,
+            currency: it.currency
+          };
+        }
+        return sourcingUpdated;
+      });
+
       return updated;
     });
   };
