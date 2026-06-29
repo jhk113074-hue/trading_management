@@ -2000,6 +2000,19 @@ export const OrderDetail: React.FC = () => {
     });
   };
 
+  const moveSourcingItem = (indexInMain: number, direction: 'up' | 'down') => {
+    setSourcingItems(prev => {
+      if (direction === 'up' && indexInMain === 0) return prev;
+      if (direction === 'down' && indexInMain === prev.length - 1) return prev;
+      const newItems = [...prev];
+      const targetIndex = direction === 'up' ? indexInMain - 1 : indexInMain + 1;
+      const temp = newItems[indexInMain];
+      newItems[indexInMain] = newItems[targetIndex];
+      newItems[targetIndex] = temp;
+      return newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+    });
+  };
+
   const handleSelectSourcingProduct = (idx: number, prod: Product) => {
     setSourcingItems(prev => {
       const updated = [...prev];
@@ -5151,7 +5164,7 @@ export const OrderDetail: React.FC = () => {
                                     <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>금액</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>부가세</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '110px' }}>합계</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '50px' }}>삭제</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '65px' }}>순서/관리</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -5341,17 +5354,37 @@ export const OrderDetail: React.FC = () => {
                                           </td>
                                           <td style={{ padding: '6px', textAlign: 'center' }}>
                                             {isEditing ? (
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  if (window.confirm("이 품목을 삭제하시겠습니까?")) {
-                                                    setSourcingItems(prev => prev.filter(x => x !== it).map((x, idx) => ({ ...x, itemId: (idx + 1).toString() })));
-                                                  }
-                                                }}
-                                                style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}
-                                              >
-                                                ✕
-                                              </button>
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', gap: '2px' }}>
+                                                  <button 
+                                                    type="button"
+                                                    disabled={idx === 0}
+                                                    onClick={() => moveSourcingItem(itemIndexInMain, 'up')} 
+                                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
+                                                  >
+                                                    ▲
+                                                  </button>
+                                                  <button 
+                                                    type="button"
+                                                    disabled={idx === items.length - 1}
+                                                    onClick={() => moveSourcingItem(itemIndexInMain, 'down')} 
+                                                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === items.length - 1 ? 0.3 : 1 }}
+                                                  >
+                                                    ▼
+                                                  </button>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    if (window.confirm("이 품목을 삭제하시겠습니까?")) {
+                                                      setSourcingItems(prev => prev.filter(x => x !== it).map((x, idx) => ({ ...x, itemId: (idx + 1).toString() })));
+                                                    }
+                                                  }}
+                                                  style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '3px 6px', cursor: 'pointer', fontSize: '11px', width: '100%', fontWeight: 'bold' }}
+                                                >
+                                                  ✕
+                                                </button>
+                                              </div>
                                             ) : (
                                               '-'
                                             )}
