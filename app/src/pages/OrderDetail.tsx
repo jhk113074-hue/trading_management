@@ -1629,8 +1629,16 @@ export const OrderDetail: React.FC = () => {
             hsCode: it.hsCode || custSpecificHs || matchedProd?.hsCode || ''
           };
         });
+        const alignedSourcing = (data.sourcingItems || data.items || []).map((sIt: any, sIdx: number) => {
+          const matchItem = itemsWithHs[sIdx];
+          if (matchItem && matchItem.name === sIt.name && matchItem.supplier !== sIt.supplier) {
+            return { ...sIt, supplier: matchItem.supplier, supplierContact: matchItem.supplierContact };
+          }
+          return sIt;
+        });
+
         setOrderItems(itemsWithHs);
-        setSourcingItems(data.sourcingItems || data.items || []);
+        setSourcingItems(alignedSourcing);
         setForwardersList(data.forwarders || []);
         if (data.activeSourcingTab) {
           setActiveSourcingTab(data.activeSourcingTab as any);
@@ -2284,7 +2292,7 @@ export const OrderDetail: React.FC = () => {
 
       const displayName = prod.nameEn || prod.nameKo || '';
 
-      updated[idx] = {
+      const targetItem = {
         ...updated[idx],
         name: `[${prod.productCode}] ${displayName}`,
         supplier: supName,
@@ -2297,20 +2305,43 @@ export const OrderDetail: React.FC = () => {
         purchaseUnitPrice: buyPrice,
         purchaseUnitCurrency: itemCurrency
       };
+      updated[idx] = targetItem;
+
+      // 동기화: 수주 품목 정보 변경 시, 소싱/발주 탭(sourcingItems)에도 실시간 반영
+      setSourcingItems(sourcingPrev => {
+        const sourcingUpdated = [...sourcingPrev];
+        if (sourcingUpdated[idx]) {
+          sourcingUpdated[idx] = {
+            ...sourcingUpdated[idx],
+            name: targetItem.name,
+            qty: targetItem.qty,
+            unit: targetItem.unit,
+            supplier: targetItem.supplier,
+            supplierContact: targetItem.supplierContact,
+            grade: targetItem.grade,
+            purchaseUnitPrice: targetItem.purchaseUnitPrice,
+            purchaseUnitCurrency: targetItem.purchaseUnitCurrency,
+            amount: targetItem.amount,
+            currency: targetItem.currency
+          };
+        }
+        return sourcingUpdated;
+      });
+
       return updated;
     });
   };
 
   const addItemRow = () => {
-    setOrderItems(prev => [
-      ...prev,
-      { itemId: (prev.length + 1).toString(), name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' }
-    ]);
+    const newItem = { itemId: (orderItems.length + 1).toString(), name: '', supplier: '', supplierContact: '', grade: '', qty: 0, unit: 'kg', unitPrice: 0, amount: 0, currency: 'USD' as const };
+    setOrderItems(prev => [...prev, newItem]);
+    setSourcingItems(prev => [...prev, newItem]);
   };
 
   const removeItemRow = (index: number) => {
     if (orderItems.length === 1) return;
     setOrderItems(prev => prev.filter((_, idx) => idx !== index).map((it, idx) => ({ ...it, itemId: (idx + 1).toString() })));
+    setSourcingItems(prev => prev.filter((_, idx) => idx !== index).map((it, idx) => ({ ...it, itemId: (idx + 1).toString() })));
   };
 
   const handleForwarderChange = (index: number, field: keyof ForwarderEntry, value: any) => {
