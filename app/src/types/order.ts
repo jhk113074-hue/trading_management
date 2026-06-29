@@ -11,7 +11,7 @@ export interface ForwarderEntry {
   invoiceFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   taxInvoiceDate?: string;
   taxInvoiceNo?: string;
-  taxInvoices?: Array<{ date: string; invoiceNo: string; amount?: number; supplyValue?: number; vat?: number }>; // 다중 세금계산서 지원
+  taxInvoices?: Array<{ date: string; invoiceNo: string; amount?: number; supplyValue?: number; vat?: number; agentAmount?: number }>; // 다중 세금계산서 지원
   paymentInstallments?: Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>;
 }
 

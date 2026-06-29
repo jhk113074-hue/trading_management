@@ -9167,7 +9167,7 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
                       ) : (
                         forwardersList.map((fw, idx) => {
-                          const taxInvoices = fw.taxInvoices || (fw.taxInvoiceDate || fw.taxInvoiceNo ? [{ date: fw.taxInvoiceDate || '', invoiceNo: fw.taxInvoiceNo || '', amount: 0, supplyValue: 0, vat: 0 }] : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0 }]);
+                          const taxInvoices = fw.taxInvoices || (fw.taxInvoiceDate || fw.taxInvoiceNo ? [{ date: fw.taxInvoiceDate || '', invoiceNo: fw.taxInvoiceNo || '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }] : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }]);
                           
                           return (
                             <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 14px', background: '#faf5ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
@@ -9176,7 +9176,7 @@ export const OrderDetail: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const newList = [...taxInvoices, { date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0 }];
+                                    const newList = [...taxInvoices, { date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }];
                                     setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                   }}
                                   style={{ background: '#fff', border: '1px solid #d8b4fe', borderRadius: '4px', padding: '3px 10px', fontSize: '11px', fontWeight: 700, color: '#7c3aed', cursor: 'pointer' }}
@@ -9186,11 +9186,12 @@ export const OrderDetail: React.FC = () => {
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
                                   <span style={{ paddingLeft: '4px' }}>발행일자</span>
                                   <span>승인번호</span>
                                   <span>공급가액</span>
                                   <span>부가세액</span>
+                                  <span>대납비용</span>
                                   <span style={{ textAlign: 'right', paddingRight: '12px' }}>합계금액</span>
                                   <span style={{ width: '28px' }}></span>
                                 </div>
@@ -9198,10 +9199,11 @@ export const OrderDetail: React.FC = () => {
                                 {taxInvoices.map((inv, invIdx) => {
                                   const displaySupplyVal = inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0);
                                   const displayVat = inv.vat !== undefined ? inv.vat : 0;
-                                  const displayTotal = inv.amount || (displaySupplyVal + displayVat);
+                                  const displayAgentAmt = inv.agentAmount !== undefined ? inv.agentAmount : 0;
+                                  const displayTotal = inv.amount || (displaySupplyVal + displayVat + displayAgentAmt);
 
                                   return (
-                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center' }}>
+                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center' }}>
                                       {/* 발행일자 */}
                                       <input
                                         type="date"
@@ -9234,9 +9236,10 @@ export const OrderDetail: React.FC = () => {
                                           const val = fromCommaString(e.target.value);
                                           const autoVat = Math.round(val * 0.1);
                                           const newList = [...taxInvoices];
+                                          const currentAgentAmt = newList[invIdx].agentAmount !== undefined ? newList[invIdx].agentAmount : 0;
                                           newList[invIdx].supplyValue = val;
                                           newList[invIdx].vat = autoVat;
-                                          newList[invIdx].amount = val + autoVat;
+                                          newList[invIdx].amount = val + autoVat + currentAgentAmt;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
                                         style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
@@ -9249,9 +9252,26 @@ export const OrderDetail: React.FC = () => {
                                         onChange={e => {
                                           const val = fromCommaString(e.target.value);
                                           const newList = [...taxInvoices];
-                                          const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : (newList[invIdx].amount || 0);
+                                          const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : 0;
+                                          const currentAgentAmt = newList[invIdx].agentAmount !== undefined ? newList[invIdx].agentAmount : 0;
                                           newList[invIdx].vat = val;
-                                          newList[invIdx].amount = currentSupply + val;
+                                          newList[invIdx].amount = currentSupply + val + currentAgentAmt;
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                      {/* 대납비용 */}
+                                      <input
+                                        type="text"
+                                        placeholder="₩ 대납비용"
+                                        value={toCommaString(displayAgentAmt)}
+                                        onChange={e => {
+                                          const val = fromCommaString(e.target.value);
+                                          const newList = [...taxInvoices];
+                                          const currentSupply = newList[invIdx].supplyValue !== undefined ? newList[invIdx].supplyValue : 0;
+                                          const currentVat = newList[invIdx].vat !== undefined ? newList[invIdx].vat : 0;
+                                          newList[invIdx].agentAmount = val;
+                                          newList[invIdx].amount = currentSupply + currentVat + val;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
                                         style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
@@ -9267,7 +9287,7 @@ export const OrderDetail: React.FC = () => {
                                           type="button"
                                           onClick={() => {
                                             const filtered = taxInvoices.filter((_, i) => i !== invIdx);
-                                            const updated = filtered.length > 0 ? filtered : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0 }];
+                                            const updated = filtered.length > 0 ? filtered : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }];
                                             setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: updated } : f));
                                           }}
                                           style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: 0 }}
