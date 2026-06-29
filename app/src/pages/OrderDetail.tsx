@@ -2306,10 +2306,66 @@ export const OrderDetail: React.FC = () => {
         }
       };
 
-      await setDoc(orderRef, {
+      const cleanSourcingItems = sourcingItems.map(it => ({
+        itemId: it.itemId || '',
+        name: it.name || '',
+        supplier: it.supplier || '',
+        supplierContact: it.supplierContact || '',
+        grade: it.grade || '',
+        qty: parseFloat(it.qty as any) || 0,
+        unit: (it.unit || 'kg') as any,
+        unitPrice: parseFloat(it.unitPrice as any) || 0,
+        purchaseUnitPrice: it.purchaseUnitPrice != null ? (parseFloat(it.purchaseUnitPrice as any) || 0) : null,
+        purchaseUnitCurrency: it.purchaseUnitCurrency || null,
+        originalPurchasePrice: it.originalPurchasePrice != null ? (parseFloat(it.originalPurchasePrice as any) || 0) : null,
+        originalPurchaseCurrency: it.originalPurchaseCurrency || null,
+        amount: it.amount || 0,
+        currency: (it.currency || 'USD') as any
+      }));
+
+      const cleanItems = (order.items || []).map(it => {
+        const matched = sourcingItems.find(x => x.itemId === it.itemId);
+        if (matched) {
+          return {
+            ...it,
+            purchaseUnitPrice: matched.purchaseUnitPrice != null ? (parseFloat(matched.purchaseUnitPrice as any) || 0) : null,
+            purchaseUnitCurrency: matched.purchaseUnitCurrency || null,
+            originalPurchasePrice: matched.originalPurchasePrice != null ? (parseFloat(matched.originalPurchasePrice as any) || 0) : null,
+            originalPurchaseCurrency: matched.originalPurchaseCurrency || null,
+          };
+        }
+        return it;
+      });
+
+      const cleanUndefined = (obj: any): any => {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) return obj.map(cleanUndefined);
+        if (typeof obj === 'object') {
+          if (obj.constructor && (obj.constructor.name.includes('FieldValue') || obj.constructor.name === 'Date')) {
+            return obj;
+          }
+          if (obj.constructor && obj.constructor.name !== 'Object') {
+            return obj;
+          }
+          const clean: any = {};
+          for (const key of Object.keys(obj)) {
+            if (obj[key] !== undefined) {
+              clean[key] = cleanUndefined(obj[key]);
+            }
+          }
+          return clean;
+        }
+        return obj;
+      };
+
+      const payload = cleanUndefined({
         supplierPoDetails: updatedPoDetails,
+        sourcingItems: cleanSourcingItems,
+        items: cleanItems,
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      });
+
+      await setDoc(orderRef, payload, { merge: true });
 
       alert(`✅ [${supplierName}]의 발주 조건이 클라우드에 성공적으로 저장되었습니다.`);
     } catch (err: any) {
