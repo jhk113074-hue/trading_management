@@ -1678,6 +1678,20 @@ export const OrderDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Ctrl+S 단축키로 전체 저장 (대안 3)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveBasic(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [basicForm, orderItems, sourcingItems, forwardersList, order]);
+
   // Switch active tab view locally
   const handleStepClick = async (stepName: typeof steps[number]) => {
     setActiveStep(stepName);
