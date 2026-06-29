@@ -10148,22 +10148,31 @@ export const OrderDetail: React.FC = () => {
                         </div>
                       </div>
                       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>환산 매출액 (KRW)</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문금액 (KRW)</div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
                           ₩{Math.round(orderAmountKrw).toLocaleString()} KRW
                         </div>
                       </div>
                       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>총 비용 (원가+운송비)</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>매입금액</div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
-                          ₩{totalCostKrw.toLocaleString()} KRW
+                          ₩{consolidatedPurchaseKrw.toLocaleString()} KRW
                         </div>
                         <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
-                          ${totalCostUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                          ${(customsRate > 0 ? consolidatedPurchaseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                        </div>
+                      </div>
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
+                          ₩{forwarderExpenseKrw.toLocaleString()} KRW
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
+                          ${(customsRate > 0 ? forwarderExpenseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
                         </div>
                       </div>
                       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#fff1f2', borderColor: '#fecdd3', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#be123c', fontWeight: 700 }}>BANK CHARGES (LC)</div>
+                        <div style={{ fontSize: '11px', color: '#be123c', fontWeight: 700 }}>BANK CHARGES</div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#9f1239', marginTop: '4px' }}>
                           ₩{totalBankChargesKrw.toLocaleString()} KRW
                         </div>
@@ -10178,7 +10187,7 @@ export const OrderDetail: React.FC = () => {
                       {/* USD 관점 */}
                       <div style={{ border: '1px solid #1e3a8a', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>💵 USD 관점 최종 이익 (주문금액 - 매입가 - 운송비 - BANK CHARGES)</span>
+                          <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>💵 USD 관점 최종 이익</span>
                           <span style={{ fontSize: '11px', color: '#3b82f6', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
@@ -10197,7 +10206,7 @@ export const OrderDetail: React.FC = () => {
                       {/* KRW 관점 */}
                       <div style={{ border: '1px solid #065f46', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#065f46', fontWeight: 700 }}>🪙 KRW 관점 최종 이익 (주문금액 - 매입가 - 운송비 - BANK CHARGES)</span>
+                          <span style={{ fontSize: '12px', color: '#065f46', fontWeight: 700 }}>🪙 KRW 관점 최종 이익</span>
                           <span style={{ fontSize: '11px', color: '#10b981', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
@@ -10209,7 +10218,7 @@ export const OrderDetail: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '10px', borderTop: '1px dashed #a7f3d0', paddingTop: '8px' }}>
-                          공식: 환산매출액(KRW) - 매입원가(KRW 상당) - 운송비(KRW 상당) - BANK CHARGES(KRW)
+                          공식: 주문금액(KRW) - 매입금액 - 운송비 - BANK CHARGES
                         </div>
                       </div>
                     </div>
