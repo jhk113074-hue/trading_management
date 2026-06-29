@@ -10178,7 +10178,7 @@ export const OrderDetail: React.FC = () => {
                       {/* USD 관점 */}
                       <div style={{ border: '1px solid #1e3a8a', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>💵 USD 관점 실제 이익</span>
+                          <span style={{ fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>💵 USD 관점 최종 이익 (주문금액 - 매입가 - 운송비 - BANK CHARGES)</span>
                           <span style={{ fontSize: '11px', color: '#3b82f6', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
@@ -10190,14 +10190,14 @@ export const OrderDetail: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#60a5fa', marginTop: '10px', borderTop: '1px dashed #bfdbfe', paddingTop: '8px' }}>
-                          공식: 주문받은 금액(USD) - (매입가전체 + 운송비실비) / 수출면장환율 - BANK CHARGES(USD)
+                          공식: 주문금액(USD) - 매입원가(USD 상당) - 운송비(USD 상당) - BANK CHARGES(USD 상당)
                         </div>
                       </div>
 
                       {/* KRW 관점 */}
                       <div style={{ border: '1px solid #065f46', borderRadius: '12px', padding: '16px', background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#065f46', fontWeight: 700 }}>🪙 KRW 관점 실제 이익</span>
+                          <span style={{ fontSize: '12px', color: '#065f46', fontWeight: 700 }}>🪙 KRW 관점 최종 이익 (주문금액 - 매입가 - 운송비 - BANK CHARGES)</span>
                           <span style={{ fontSize: '11px', color: '#10b981', background: '#ffffff', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>영업이익률</span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '12px' }}>
@@ -10209,7 +10209,7 @@ export const OrderDetail: React.FC = () => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '10px', borderTop: '1px dashed #a7f3d0', paddingTop: '8px' }}>
-                          공식: 주문받은 금액(USD) * 수출환율 - (매입가전체 + 운송비실비) - BANK CHARGES(KRW)
+                          공식: 환산매출액(KRW) - 매입원가(KRW 상당) - 운송비(KRW 상당) - BANK CHARGES(KRW)
                         </div>
                       </div>
                     </div>
