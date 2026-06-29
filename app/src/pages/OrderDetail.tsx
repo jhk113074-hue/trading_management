@@ -2159,40 +2159,45 @@ export const OrderDetail: React.FC = () => {
     
     setUploadingField(fieldName);
 
-    const file = files[0];
-    const uniqueFileName = `${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, `tasks/${order.id}/${uniqueFileName}`);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const uniqueFileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `tasks/${order.id}/${uniqueFileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        
+        return new Promise<{ name: string; url: string; size: number; path: string }>((resolve, reject) => {
+          uploadTask.on('state_changed',
+            () => {},
+            (error) => reject(error),
+            async () => {
+              try {
+                const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve({
+                  name: file.name,
+                  url: downloadUrl,
+                  size: file.size,
+                  path: uploadTask.snapshot.ref.fullPath
+                });
+              } catch (err) {
+                reject(err);
+              }
+            }
+          );
+        });
+      });
 
-    uploadTask.on('state_changed', 
-      () => {}, 
-      (error) => {
-        console.error("Upload failed", error);
-        alert("업로드 중 에러가 발생했습니다: " + error.message);
-        setUploadingField(null);
-      }, 
-      async () => {
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          const newAttachment = {
-            name: file.name,
-            url: downloadUrl,
-            size: file.size,
-            path: uploadTask.snapshot.ref.fullPath
-          };
-
-          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-          const updatedList = [...(order[fieldName] || []), newAttachment];
-          await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
-          
-          alert("✅ 파일이 성공적으로 업로드되었습니다.");
-        } catch (err: any) {
-          alert("파일 정보 저장 실패: " + err.message);
-        } finally {
-          setUploadingField(null);
-        }
-      }
-    );
+      const uploadedFiles = await Promise.all(uploadPromises);
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      const updatedList = [...(order[fieldName] || []), ...uploadedFiles];
+      await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+      
+      alert("✅ 모든 파일이 성공적으로 업로드되었습니다.");
+    } catch (err: any) {
+      console.error("Upload failed", err);
+      alert("업로드 중 에러가 발생했습니다: " + err.message);
+    } finally {
+      setUploadingField(null);
+    }
   };
 
   const handleSupplierCertUpload = async (file: File, supplierName: string) => {
@@ -2516,6 +2521,7 @@ export const OrderDetail: React.FC = () => {
               style={{ display: 'none' }}
               onChange={(e) => handleDocUpload(e, fieldName)}
               disabled={uploadingField !== null}
+              multiple
             />
           </div>
         )}
