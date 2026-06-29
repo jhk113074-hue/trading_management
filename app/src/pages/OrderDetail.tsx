@@ -4940,6 +4940,112 @@ export const OrderDetail: React.FC = () => {
                     )}
                   </div>
 
+                  {/* 업체별 발주 집계 현황 카드 */}
+                  {allOrderSuppliers.length > 0 && (
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+                      <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#0f766e', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        📊 업체별 발주액 및 총계 요약
+                      </h4>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+                        <thead>
+                          <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', fontWeight: 700, color: '#475569' }}>
+                            <th style={{ padding: '8px 12px', textAlign: 'left' }}>공급업체명</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right' }}>발주 금액 합계</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right' }}>부가세 합계</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', color: '#b91c1c' }}>합계 총합</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const summary = allOrderSuppliers.map(supplierName => {
+                              const items = groupedSupplierItems[supplierName] || [];
+                              const usdAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency !== 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                              const krwAmount = items.filter(it => getSupplierPurchaseInfo(it).purchaseCurrency === 'KRW').reduce((sum, it) => sum + getSupplierPurchaseInfo(it).purchasePrice * (it.qty || 0), 0);
+                              const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
+                              const usdVat = taxType === '영세' ? 0 : parseFloat((usdAmount * 0.1).toFixed(2));
+                              const krwVat = taxType === '영세' ? 0 : Math.round(krwAmount * 0.1);
+                              
+                              const usdGrand = usdAmount + usdVat;
+                              const krwGrand = krwAmount + krwVat;
+                              
+                              return {
+                                supplierName,
+                                usdAmount,
+                                krwAmount,
+                                usdVat,
+                                krwVat,
+                                usdGrand,
+                                krwGrand
+                              };
+                            });
+
+                            const totalUsdAmount = summary.reduce((acc, s) => acc + s.usdAmount, 0);
+                            const totalKrwAmount = summary.reduce((acc, s) => acc + s.krwAmount, 0);
+                            const totalUsdVat = summary.reduce((acc, s) => acc + s.usdVat, 0);
+                            const totalKrwVat = summary.reduce((acc, s) => acc + s.krwVat, 0);
+                            const totalUsdGrand = totalUsdAmount + totalUsdVat;
+                            const totalKrwGrand = totalKrwAmount + totalKrwVat;
+
+                            return (
+                              <>
+                                {summary.map((s, idx) => {
+                                  const amtParts = [];
+                                  if (s.usdAmount > 0) amtParts.push(`$${s.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.krwAmount > 0) amtParts.push(`₩${s.krwAmount.toLocaleString()}`);
+
+                                  const vatParts = [];
+                                  if (s.usdVat > 0) vatParts.push(`$${s.usdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.krwVat > 0) vatParts.push(`₩${s.krwVat.toLocaleString()}`);
+
+                                  const grandParts = [];
+                                  if (s.usdGrand > 0) grandParts.push(`$${s.usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.krwGrand > 0) grandParts.push(`₩${s.krwGrand.toLocaleString()}`);
+
+                                  return (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                      <td style={{ padding: '8px 12px', fontWeight: 600, color: '#1e3a8a' }}>{s.supplierName}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 500 }}>{amtParts.length > 0 ? amtParts.join(' / ') : '₩0'}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b' }}>{vatParts.length > 0 ? vatParts.join(' / ') : '₩0'}</td>
+                                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#dc2626' }}>{grandParts.length > 0 ? grandParts.join(' / ') : '₩0'}</td>
+                                    </tr>
+                                  );
+                                })}
+                                {/* 총계 행 */}
+                                <tr style={{ background: '#f8fafc', borderTop: '2px solid #cbd5e1', fontWeight: 800, color: '#0f172a' }}>
+                                  <td style={{ padding: '10px 12px', color: '#0f766e' }}>합계 총계 (Grand Total)</td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                                    {(() => {
+                                      const parts = [];
+                                      if (totalUsdAmount > 0) parts.push(`$${totalUsdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalKrwAmount > 0) parts.push(`₩${totalKrwAmount.toLocaleString()}`);
+                                      return parts.length > 0 ? parts.join(' / ') : '₩0';
+                                    })()}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>
+                                    {(() => {
+                                      const parts = [];
+                                      if (totalUsdVat > 0) parts.push(`$${totalUsdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalKrwVat > 0) parts.push(`₩${totalKrwVat.toLocaleString()}`);
+                                      return parts.length > 0 ? parts.join(' / ') : '₩0';
+                                    })()}
+                                  </td>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#b91c1c', fontSize: '13px' }}>
+                                    {(() => {
+                                      const parts = [];
+                                      if (totalUsdGrand > 0) parts.push(`$${totalUsdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalKrwGrand > 0) parts.push(`₩${totalKrwGrand.toLocaleString()}`);
+                                      return parts.length > 0 ? parts.join(' / ') : '₩0';
+                                    })()}
+                                  </td>
+                                </tr>
+                              </>
+                            );
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {allOrderSuppliers.length === 0 ? (
                       <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>발주할 공급업체가 없습니다.</div>
