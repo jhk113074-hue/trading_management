@@ -1718,19 +1718,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
             <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
-              <table style={{ width: '100%', minWidth: '1360px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+              <table style={{ width: '100%', minWidth: '980px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '8px 4px', width: '310px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', width: '140px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', width: '170px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>매입가</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>마진/올림</th>
-                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>단가(USD)</th>
-                  <th style={{ padding: '8px 4px', width: '100px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '100px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>이익($)</th>
-                  <th style={{ padding: '8px 4px', width: '150px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>비고</th>
-                  <th style={{ padding: '8px 4px', width: '35px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
+                  <th style={{ padding: '8px 4px', width: '230px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>매입가</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>마진/올림</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>단가(USD)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '40px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
                 </tr>
               </thead>
               <tbody>
