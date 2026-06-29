@@ -111,6 +111,12 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         finalData.createdAt = serverTimestamp();
       }
 
+      Object.keys(finalData).forEach(key => {
+        if ((finalData as any)[key] === undefined) {
+          delete (finalData as any)[key];
+        }
+      });
+
       await setDoc(doc(db, 'companies', COMPANY_ID, 'customers', docId), finalData);
       alert('✅ 성공적으로 저장되었습니다.');
       onClose();

@@ -158,6 +158,12 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
         finalData.createdAt = serverTimestamp();
       }
 
+      Object.keys(finalData).forEach(key => {
+        if ((finalData as any)[key] === undefined) {
+          delete (finalData as any)[key];
+        }
+      });
+
       await setDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', docId), finalData);
       alert('✅ 성공적으로 저장되었습니다.');
       if (onSave) {
