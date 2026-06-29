@@ -17,6 +17,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
   const [selectedSupplier, setSelectedSupplier] = useState('All');
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
+  const [isCopyMode, setIsCopyMode] = useState(false);
 
   // Extract unique categories & suppliers for filtering
   const categories = useMemo(() => {
@@ -319,6 +320,26 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingProd(p);
+                            setIsCopyMode(true);
+                            setIsProdModalOpen(true);
+                          }}
+                          style={{
+                            background: '#fef08a', color: '#854d0e', border: '1px solid #fef08a',
+                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                            fontWeight: 600, cursor: 'pointer',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fde047'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fef08a'}
+                          title="복사"
+                        >
+                          📋
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProd(p);
+                            setIsCopyMode(false);
                             setIsProdModalOpen(true);
                           }}
                           style={{
@@ -339,48 +360,52 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
                             if (window.confirm(`정말 "${p.nameKo || p.productCode}" 상품을 삭제하시겠습니까?`)) {
                               try {
                                 const pRef = doc(db, 'companies', COMPANY_ID, 'products', p.id);
-                                await deleteDoc(pRef);
-                                alert('상품이 삭제되었습니다.');
-                              } catch (err) {
-                                console.error('Failed to delete product:', err);
-                                alert('상품 삭제에 실패했습니다.');
+                                  await deleteDoc(pRef);
+                                  alert('상품이 삭제되었습니다.');
+                                } catch (err) {
+                                  console.error('Failed to delete product:', err);
+                                  alert('상품 삭제에 실패했습니다.');
+                                }
                               }
-                            }
-                          }}
-                          style={{
-                            background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2',
-                            padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
-                            fontWeight: 600, cursor: 'pointer',
-                            transition: 'background-color 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fee2e2';
-                            e.currentTarget.style.borderColor = '#fca5a5';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fef2f2';
-                            e.currentTarget.style.borderColor = '#fee2e2';
-                          }}
-                          title="삭제"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                            }}
+                            style={{
+                              background: '#fef2f2', color: '#dc2626', border: '1px solid #fee2e2',
+                              padding: '6px 8px', borderRadius: '6px', fontSize: '11px',
+                              fontWeight: 600, cursor: 'pointer',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fee2e2';
+                              e.currentTarget.style.borderColor = '#fca5a5';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fef2f2';
+                              e.currentTarget.style.borderColor = '#fee2e2';
+                            }}
+                            title="삭제"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+        {isProdModalOpen && (
+          <ProductModal
+            initialProduct={editingProd}
+            onClose={() => {
+              setIsProdModalOpen(false);
+              setIsCopyMode(false);
+            }}
+            products={products}
+            isCopy={isCopyMode}
+          />
+        )}
       </div>
-      {isProdModalOpen && (
-        <ProductModal
-          initialProduct={editingProd}
-          onClose={() => setIsProdModalOpen(false)}
-          products={products}
-        />
-      )}
-    </div>
-  );
-};
+    );
+  };
