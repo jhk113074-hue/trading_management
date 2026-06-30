@@ -2210,13 +2210,24 @@ export const OrderDetail: React.FC = () => {
 
   const moveSourcingItem = (indexInMain: number, direction: 'up' | 'down') => {
     setSourcingItems(prev => {
-      if (direction === 'up' && indexInMain === 0) return prev;
-      if (direction === 'down' && indexInMain === prev.length - 1) return prev;
+      const targetItem = prev[indexInMain];
+      if (!targetItem) return prev;
+      
+      const supplierItems = prev.filter(x => x.supplier === targetItem.supplier);
+      const subIdx = supplierItems.indexOf(targetItem);
+      
+      if (direction === 'up' && subIdx === 0) return prev;
+      if (direction === 'down' && subIdx === supplierItems.length - 1) return prev;
+      
+      const siblingItem = supplierItems[direction === 'up' ? subIdx - 1 : subIdx + 1];
+      const siblingIndexInMain = prev.indexOf(siblingItem);
+      
+      if (siblingIndexInMain === -1) return prev;
+      
       const newItems = [...prev];
-      const targetIndex = direction === 'up' ? indexInMain - 1 : indexInMain + 1;
-      const temp = newItems[indexInMain];
-      newItems[indexInMain] = newItems[targetIndex];
-      newItems[targetIndex] = temp;
+      newItems[indexInMain] = siblingItem;
+      newItems[siblingIndexInMain] = targetItem;
+      
       const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
       
       if (order) {
