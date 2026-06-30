@@ -235,23 +235,38 @@ export const ProformaInvoices: React.FC = () => {
   }, [pis, orders, customers, dateMode, selectedDate, startDate, endDate, weekOffset, filterCustomer, filterIssuer, filterPiNum, sortKey, sortDir]);
 
   const piStats = useMemo(() => {
-    const activePis = pis.filter(p => getPiStatus(p) === '협상중');
-    const activeCount = activePis.length;
-    const totalUsd = activePis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
-    const totalYsaccUsd = activePis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
-    const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    // 1. 총 견적 건수 & 각사 건수 (모든 상태 포함)
+    const totalQuotesCount = pis.length;
+    const quotesYsaccCount = pis.filter(p => p.issuingCompany === 'YSACC').length;
+    const quotesYsCount = pis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').length;
 
+    // 2. 총 견적 금액 & 각사 금액 (모든 상태 포함)
+    const totalQuotesAmount = pis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const quotesYsaccAmount = pis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const quotesYsAmount = pis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+
+    // 3. 수주 건수
     const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p))).length;
-    const totalCount = activeCount + confirmedCount;
-    const conversionRate = totalCount > 0 ? (confirmedCount / totalCount) * 100 : 0;
+    const conversionRate = totalQuotesCount > 0 ? (confirmedCount / totalQuotesCount) * 100 : 0;
+
+    // 4. 총 수주 금액 & 각사 수주 금액 (수주확정/PO확정 상태만 포함)
+    const confirmedPis = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p)));
+    const totalConfirmedAmount = confirmedPis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const confirmedYsaccAmount = confirmedPis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const confirmedYsAmount = confirmedPis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
 
     return {
-      activeCount,
-      totalUsd,
-      totalYsaccUsd,
-      totalYsUsd,
+      totalQuotesCount,
+      quotesYsaccCount,
+      quotesYsCount,
+      totalQuotesAmount,
+      quotesYsaccAmount,
+      quotesYsAmount,
       confirmedCount,
-      conversionRate
+      conversionRate,
+      totalConfirmedAmount,
+      confirmedYsaccAmount,
+      confirmedYsAmount
     };
   }, [pis, orders]);
 
@@ -426,19 +441,25 @@ export const ProformaInvoices: React.FC = () => {
       {/* 간단 대시보드 스탯 카드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 중 견적 (협상중)</span>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{piStats.activeCount} 건</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>총 견적 건수</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: {piStats.quotesYsaccCount}건 / 영성ACC: {piStats.quotesYsCount}건)</span>
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{piStats.totalQuotesCount} 건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 견적금액</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(piStats.totalYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>총 견적금액</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.quotesYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.quotesYsAmount).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalQuotesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>수주 확정 (수주율)</span>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#2563eb' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>수주 확정 (수주율)</span>
+            <span style={{ fontSize: '10.5px', color: '#1e40af', fontWeight: 700 }}>총수주: ${piStats.totalConfirmedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br/><span style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.confirmedYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.confirmedYsAmount).toLocaleString()})</span></span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb', textAlign: 'right' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
         </div>
       </div>
 
