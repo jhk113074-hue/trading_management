@@ -5117,18 +5117,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               placeholder="공급사명"
                               style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                             />
-                            {(() => {
-                              const rawCode = getRawProductCode(item.name);
-                              const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
-                              if (p && p.supplierName) {
-                                return (
-                                  <span style={{ fontSize: '14.5px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
-                                    {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
-                                  </span>
-                                );
-                              }
-                              return null;
-                            })()}
                           </div>
                         </td>
 
