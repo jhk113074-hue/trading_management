@@ -1912,6 +1912,7 @@ export const OrderDetail: React.FC = () => {
         paymentCollectedInstallments: basicForm.paymentCollectedInstallments || [],
         bankSubmissionStatus: basicForm.bankSubmissionStatus,
         bankCharges: basicForm.bankCharges || [],
+        transactionFiles: order.transactionFiles || [],
 
         // 주문 기본정보 및 L/C 거래 상세 저장
         customerAddress: basicForm.customerAddress,
