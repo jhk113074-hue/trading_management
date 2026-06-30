@@ -8874,17 +8874,16 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               </div>
 
               {activeDocumentTab === '서류업로드' && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {/* 수출신고번호, 수출면장 기준환율 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
-                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 010-22-19-1234567" />
+                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), width: '100%' }} placeholder="예: 010-22-19-1234567" />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '160px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
-                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={inputStyle(isEditing)} placeholder="예: 1352.50" />
+                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), width: '100%' }} placeholder="예: 1352.50" />
                   </div>
-                  <div />
 
                   {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
                   {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
