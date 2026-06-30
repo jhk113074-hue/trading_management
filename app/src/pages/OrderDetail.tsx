@@ -4678,13 +4678,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               key={step}
               onClick={() => handleStepClick(step)}
               style={{
-                padding: '6px 14px',
+                padding: '8px 18px',
                 borderRadius: '20px',
                 border: isCurrent ? '1px solid #2563eb' : '1px solid #cbd5e1',
                 background: isCurrent ? '#2563eb' : '#f8fafc',
                 color: isCurrent ? '#fff' : '#64748b',
                 fontWeight: isCurrent ? 700 : 500,
-                fontSize: '12.5px',
+                fontSize: '15px',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 boxShadow: isCurrent ? '0 2px 4px rgba(37, 99, 235, 0.2)' : 'none'
