@@ -967,7 +967,9 @@ export const OrderDetail: React.FC = () => {
     lcIssuingBank: '',
     lcIssuingDate: '',
     lcDescription: '',
-    lcRemark: ''
+    lcRemark: '',
+    shipmentType: 'FCL' as 'LCL' | 'FCL' | '',
+    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number }>
   });
 
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
@@ -1618,7 +1620,9 @@ export const OrderDetail: React.FC = () => {
           lcDescription: data.lcDescription || '',
           lcRemark: data.lcRemark || '',
           actualContainerSimulation: data.actualContainerSimulation || null,
-          quotationId: data.quotationId || ''
+          quotationId: data.quotationId || '',
+          shipmentType: data.shipmentType || 'FCL',
+          fclSpecs: data.fclSpecs || []
         });
         const itemsWithHs = (data.items || []).map((it) => {
           const codeMatch = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
@@ -1941,6 +1945,8 @@ export const OrderDetail: React.FC = () => {
         lcIssuingDate: basicForm.lcIssuingDate,
         lcDescription: basicForm.lcDescription,
         lcRemark: basicForm.lcRemark,
+        shipmentType: basicForm.shipmentType || 'FCL',
+        fclSpecs: basicForm.fclSpecs || [],
 
         packingList: basicForm.packingList || null,
         actualContainerSimulation: basicForm.actualContainerSimulation || null,
@@ -6266,6 +6272,107 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                         })
                       )}
                     </div>
+
+                    {/* 수출할 VOLUME 입력 영역 추가 */}
+                    <div style={{ gridColumn: 'span 3', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', background: '#f8fafc', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a' }}>📦 수출할 VOLUME</span>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="shipmentType"
+                              value="LCL"
+                              checked={basicForm.shipmentType === 'LCL'}
+                              disabled={!isEditing}
+                              onChange={() => setBasicForm(p => ({ ...p, shipmentType: 'LCL' }))}
+                            /> LCL
+                          </label>
+                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="shipmentType"
+                              value="FCL"
+                              checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
+                              disabled={!isEditing}
+                              onChange={() => setBasicForm(p => ({ ...p, shipmentType: 'FCL' }))}
+                            /> FCL
+                          </label>
+                        </div>
+                      </div>
+
+                      {(basicForm.shipmentType === 'FCL' || !basicForm.shipmentType) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>FCL 컨테이너 상세 정보</span>
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = basicForm.fclSpecs || [];
+                                  setBasicForm(p => ({
+                                    ...p,
+                                    fclSpecs: [...current, { type: '20GP', qty: 1 }]
+                                  }));
+                                }}
+                                style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                              >
+                                + 컨테이너 추가
+                              </button>
+                            )}
+                          </div>
+
+                          {(basicForm.fclSpecs || []).length === 0 ? (
+                            <div style={{ padding: '8px', textAlign: 'center', color: '#94a3b8', fontSize: '11px', background: '#fff', borderRadius: '4px', border: '1px dashed #cbd5e1' }}>
+                              컨테이너를 추가해주세요 (FCL 선택됨)
+                            </div>
+                          ) : (
+                            (basicForm.fclSpecs || []).map((c, idx) => (
+                              <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <select
+                                  value={c.type}
+                                  disabled={!isEditing}
+                                  onChange={e => {
+                                    const updated = [...(basicForm.fclSpecs || [])];
+                                    updated[idx].type = e.target.value as any;
+                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                  }}
+                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff', width: '130px' }}
+                                >
+                                  {['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG'].map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  disabled={!isEditing}
+                                  value={c.qty || 1}
+                                  onChange={e => {
+                                    const updated = [...(basicForm.fclSpecs || [])];
+                                    updated[idx].qty = parseInt(e.target.value) || 1;
+                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                  }}
+                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '70px', textAlign: 'right' }}
+                                />
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>대</span>
+                                {isEditing && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
+                                      setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                    }}
+                                    style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
+                                  >✕</button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     {/* Vessel확정(선박명/항차)/DOC CLS/CARGO CLS/ETD/ETA을 한줄로 표시 */}
                     <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
