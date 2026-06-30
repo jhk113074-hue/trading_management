@@ -70,7 +70,7 @@ export interface Order {
   otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   transactionFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   shipmentType?: 'LCL' | 'FCL' | '';
-  fclSpecs?: Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; }>;
+  fclSpecs?: Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>;
   additionalSuppliers?: string[];
   ciPlSentDate?: string;
   bankSubmissionDate?: string;

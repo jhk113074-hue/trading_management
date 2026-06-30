@@ -969,7 +969,7 @@ export const OrderDetail: React.FC = () => {
     lcDescription: '',
     lcRemark: '',
     shipmentType: 'FCL' as 'LCL' | 'FCL' | '',
-    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number }>
+    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>
   });
 
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
@@ -1946,7 +1946,7 @@ export const OrderDetail: React.FC = () => {
         lcDescription: basicForm.lcDescription,
         lcRemark: basicForm.lcRemark,
         shipmentType: basicForm.shipmentType || 'FCL',
-        fclSpecs: basicForm.fclSpecs || [],
+        fclSpecs: (basicForm.fclSpecs || []).map(c => ({ type: c.type, qty: c.qty, containerNo: c.containerNo || '', sealNo: c.sealNo || '' })),
 
         packingList: basicForm.packingList || null,
         actualContainerSimulation: basicForm.actualContainerSimulation || null,
@@ -6362,9 +6362,38 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     setBasicForm(p => ({ ...p, fclSpecs: updated }));
                                     setTimeout(() => handleSaveBasic(false), 50);
                                   }}
-                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '70px', textAlign: 'right' }}
+                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '60px', textAlign: 'right' }}
                                 />
-                                <span style={{ fontSize: '11px', color: '#64748b' }}>대</span>
+                                <span style={{ fontSize: '11px', color: '#64748b', marginRight: '4px' }}>대</span>
+
+                                {/* Container No. 및 Seal No. 입력란 추가 */}
+                                <input
+                                  type="text"
+                                  placeholder="Container No."
+                                  disabled={!isEditing}
+                                  value={c.containerNo || ''}
+                                  onChange={e => {
+                                    const updated = [...(basicForm.fclSpecs || [])];
+                                    updated[idx].containerNo = e.target.value;
+                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                    setTimeout(() => handleSaveBasic(false), 50);
+                                  }}
+                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '130px' }}
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Seal No."
+                                  disabled={!isEditing}
+                                  value={c.sealNo || ''}
+                                  onChange={e => {
+                                    const updated = [...(basicForm.fclSpecs || [])];
+                                    updated[idx].sealNo = e.target.value;
+                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                    setTimeout(() => handleSaveBasic(false), 50);
+                                  }}
+                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '110px' }}
+                                />
+
                                 {isEditing && (
                                   <button
                                     type="button"
