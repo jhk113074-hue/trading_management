@@ -8989,7 +8989,7 @@ export const OrderDetail: React.FC = () => {
 
                     const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
                     const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
-                    const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT';
+                    const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant';
 
                     exportCiPlToExcel({
                       orderId: order.id,
@@ -9145,8 +9145,8 @@ export const OrderDetail: React.FC = () => {
                           <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Notify Party (통지처)</span>
                           <input 
                             type="text" 
-                            placeholder="SAME AS APPLICANT" 
-                            value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'SAME AS APPLICANT')} 
+                            placeholder="Same as Applicant" 
+                            value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'Same as Applicant')} 
                             onChange={e => {
                               const textVal = e.target.value;
                               setBasicForm(p => ({
@@ -11215,7 +11215,7 @@ export const OrderDetail: React.FC = () => {
             lcNo: basicForm.lcNo,
             lcDate: basicForm.lcIssuingDate,
             lcIssuingBank: basicForm.lcIssuingBank,
-            notifyParty: basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT', 
+            notifyParty: basicForm.packingList?.notifyParty || basicForm.lcRemark || 'Same as Applicant', 
             remarks: basicForm.remark,
             portOfLoading: basicForm.portOfLoading,
             portOfDischarge: basicForm.portOfDischarge,
