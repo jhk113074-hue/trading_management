@@ -6050,7 +6050,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {/* 물류/선적 하위 탭 메뉴 */}
               <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', gap: '8px', marginBottom: '8px' }}>
                 {[
-                  { id: '선적관리', label: '1) 선적관리/쉬핑마크 작성' },
+                  { id: '선적관리', label: '1) 포워딩/운송사 선정' },
                   { id: '패킹리스트', label: '2) 패킹 및 컨테이너로딩플랜' },
                   { id: '도착보고_쉬핑마크', label: '3) 도착보고' }
                 ].map(tab => {
@@ -6088,7 +6088,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {activeLogisticsTab === '선적관리' && (
 
                 <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚢 2) 선적관리 정보 등록</h4>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>🚢 2) 포워딩/운송사 선정</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     {/* 제품준비일 및 선적일정 수립 가이드 */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px 16px', borderRadius: '8px', gridColumn: 'span 3', marginBottom: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -6149,7 +6149,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     {/* 포워딩업체 목록 및 비용 */}
                     <div style={{ gridColumn: 'span 3', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '14px', background: '#f5f3ff', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사</span>
                         <button
                           type="button"
                           disabled={!isEditing}
@@ -6165,28 +6165,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           + 운송사 추가
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 120px 110px 120px 110px 32px', gap: '6px', marginBottom: '4px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '4px' }}>
                         <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송비(KRW)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내부가세(KRW)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임(USD)</span>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>최종(USD)</span>
+                        <span></span>
                         <span></span>
                       </div>
                       {forwardersList.length === 0 ? (
-                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>운송사를 추가하세요 (최대 4개)</div>
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>포워더/운송사를 추가하세요 (최대 4개)</div>
                       ) : (
                         forwardersList.map((fw, idx) => {
-                          const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
-                          const freightAmt = Number(fw.freightAmount) || 0;
-                          const amtKrw = Number(fw.amountKrw) || 0;
-                          const vatKrw = Number(fw.amountVatKrw) || 0;
-                          
-                          // 최종(USD) = 해상운임(USD) + (국내운송비(KRW) + 부가세(KRW))/환율
-                          const finalUsd = freightAmt + ((amtKrw + vatKrw) / customsRate);
-
                           return (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.5fr 120px 110px 120px 110px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                             {/* 포워더명 SubWindow 선택 */}
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                               <input
@@ -6202,87 +6191,23 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 }}
                                 style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#f8fafc', cursor: isEditing ? 'pointer' : 'default', outline: 'none' }}
                               />
-                              <button
-                                type="button"
-                                disabled={!isEditing}
-                                onClick={() => {
-                                  setForwarderSearchIndex(idx);
-                                  setIsForwarderSearchOpen(true);
-                                }}
-                                style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed' }}
-                              >
-                                🔍
-                              </button>
                             </div>
-
-                            {/* 실행(국내비용) - KRW */}
-                            <input
-                              type="text"
+                            <button
+                              type="button"
                               disabled={!isEditing}
-                              placeholder="0"
-                              value={
-                                fw.amountKrw !== undefined && fw.amountKrw !== null && String(fw.amountKrw) !== '' && !Number.isNaN(Number(fw.amountKrw))
-                                  ? Number(fw.amountKrw).toLocaleString()
-                                  : ''
-                              }
-                              onChange={e => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                handleForwarderChange(idx, 'amountKrw', val);
+                              onClick={() => {
+                                setForwarderSearchIndex(idx);
+                                setIsForwarderSearchOpen(true);
                               }}
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
-                            />
-
-                            {/* 실행(국내부가세) - KRW */}
-                            <input
-                              type="text"
-                              disabled={!isEditing}
-                              placeholder="0"
-                              value={
-                                fw.amountVatKrw !== undefined && fw.amountVatKrw !== null && String(fw.amountVatKrw) !== '' && !Number.isNaN(Number(fw.amountVatKrw))
-                                  ? Number(fw.amountVatKrw).toLocaleString()
-                                  : ''
-                              }
-                              onChange={e => {
-                                const val = e.target.value.replace(/[^0-9]/g, '');
-                                handleForwarderChange(idx, 'amountVatKrw', val);
-                              }}
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
-                            />
-
-                            {/* 해상운임 - USD */}
-                            <input
-                              type="text"
-                              disabled={!isEditing}
-                              placeholder="0"
-                              value={
-                                fw.freightAmount !== undefined && fw.freightAmount !== null && String(fw.freightAmount) !== '' && !Number.isNaN(Number(fw.freightAmount))
-                                  ? (() => {
-                                      const parts = String(fw.freightAmount).split('.');
-                                      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                                      return parts.join('.');
-                                    })()
-                                  : ''
-                              }
-                              onChange={e => {
-                                const val = e.target.value.replace(/[^0-9.]/g, '');
-                                const parts = val.split('.');
-                                const cleanVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
-                                handleForwarderChange(idx, 'freightAmount', cleanVal);
-                                handleForwarderChange(idx, 'freightCurrency', 'USD'); // 강제로 USD 설정
-                              }}
-                              style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none', width: '100%' }}
-                            />
-
-                            {/* 최종(USD) 표시 */}
-                            <div style={{ padding: '6px 8px', fontSize: '11.5px', fontWeight: 700, color: '#ef4444', textAlign: 'right', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                              ${finalUsd > 0 ? finalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                            </div>
-
+                              style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed', height: '30px', display: 'flex', alignItems: 'center' }}
+                            >
+                              🔍
+                            </button>
                             <button
                               type="button"
                               disabled={!isEditing}
                               onClick={() => removeForwarderRow(idx)}
-                              style={{ padding: '6px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700 }}
+                              style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center' }}
                             >✕</button>
                           </div>
                           );
@@ -9651,6 +9576,71 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   ＋ 계산서 추가
                                 </button>
                               </div>
+                              
+                              {/* 포워딩/운송사 금액 입력 관리 피처 이식 */}
+                              {(() => {
+                                const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
+                                const freightAmt = Number(fw.freightAmount) || 0;
+                                const amtKrw = Number(fw.amountKrw) || 0;
+                                const vatKrw = Number(fw.amountVatKrw) || 0;
+                                const finalUsd = freightAmt + ((amtKrw + vatKrw) / customsRate);
+
+                                return (
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', background: '#fff', borderRadius: '6px', marginBottom: '8px', border: '1px solid #e9d5ff' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내운송비(KRW)</span>
+                                      <input
+                                        type="text"
+                                        disabled={!isEditing}
+                                        placeholder="0"
+                                        value={fw.amountKrw !== undefined && fw.amountKrw !== null && String(fw.amountKrw) !== '' && !Number.isNaN(Number(fw.amountKrw)) ? Number(fw.amountKrw).toLocaleString() : ''}
+                                        onChange={e => {
+                                          const val = e.target.value.replace(/[^0-9]/g, '');
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: val === '' ? 0 : parseInt(val, 10) } : f));
+                                        }}
+                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                      />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>국내부가세(KRW)</span>
+                                      <input
+                                        type="text"
+                                        disabled={!isEditing}
+                                        placeholder="0"
+                                        value={fw.amountVatKrw !== undefined && fw.amountVatKrw !== null && String(fw.amountVatKrw) !== '' && !Number.isNaN(Number(fw.amountVatKrw)) ? Number(fw.amountVatKrw).toLocaleString() : ''}
+                                        onChange={e => {
+                                          const val = e.target.value.replace(/[^0-9]/g, '');
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, amountVatKrw: val === '' ? 0 : parseInt(val, 10) } : f));
+                                        }}
+                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                      />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임(USD)</span>
+                                      <input
+                                        type="text"
+                                        disabled={!isEditing}
+                                        placeholder="0"
+                                        value={fw.freightAmount !== undefined && fw.freightAmount !== null && String(fw.freightAmount) !== '' && !Number.isNaN(Number(fw.freightAmount)) ? Number(fw.freightAmount).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+                                        onChange={e => {
+                                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                                          const parts = val.split('.');
+                                          const cleanVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+                                          const numVal = cleanVal === '' ? 0 : parseFloat(cleanVal);
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, freightAmount: numVal, freightCurrency: 'USD' } : f));
+                                        }}
+                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                      />
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                      <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600, textAlign: 'right', marginRight: '4px' }}>최종(USD)</span>
+                                      <div style={{ padding: '6px 8px', fontSize: '11.5px', fontWeight: 700, color: '#ef4444', textAlign: 'right', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', boxSizing: 'border-box' }}>
+                                        ${finalUsd > 0 ? finalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '11px', fontWeight: 700 }}>
