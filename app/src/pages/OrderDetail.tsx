@@ -6285,7 +6285,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value="LCL"
                               checked={basicForm.shipmentType === 'LCL'}
                               disabled={!isEditing}
-                              onChange={() => setBasicForm(p => ({ ...p, shipmentType: 'LCL' }))}
+                              onChange={() => {
+                                setBasicForm(p => ({ ...p, shipmentType: 'LCL' }));
+                                setTimeout(() => handleSaveBasic(false), 50);
+                              }}
                             /> LCL
                           </label>
                           <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
@@ -6295,7 +6298,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value="FCL"
                               checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
                               disabled={!isEditing}
-                              onChange={() => setBasicForm(p => ({ ...p, shipmentType: 'FCL' }))}
+                              onChange={() => {
+                                setBasicForm(p => ({ ...p, shipmentType: 'FCL' }));
+                                setTimeout(() => handleSaveBasic(false), 50);
+                              }}
                             /> FCL
                           </label>
                         </div>
@@ -6314,6 +6320,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     ...p,
                                     fclSpecs: [...current, { type: '20GP', qty: 1 }]
                                   }));
+                                  setTimeout(() => handleSaveBasic(false), 50);
                                 }}
                                 style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                               >
@@ -6336,6 +6343,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].type = e.target.value as any;
                                     setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                    setTimeout(() => handleSaveBasic(false), 50);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff', width: '130px' }}
                                 >
@@ -6352,6 +6360,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].qty = parseInt(e.target.value) || 1;
                                     setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                    setTimeout(() => handleSaveBasic(false), 50);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '70px', textAlign: 'right' }}
                                 />
@@ -6362,6 +6371,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     onClick={() => {
                                       const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
                                       setBasicForm(p => ({ ...p, fclSpecs: updated }));
+                                      setTimeout(() => handleSaveBasic(false), 50);
                                     }}
                                     style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
                                   >✕</button>
