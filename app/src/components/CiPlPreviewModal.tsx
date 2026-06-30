@@ -62,8 +62,6 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const companyName = data.issuingCompany === 'YSACC' ? 'YSACC CO., LTD.' : 'YS CO., LTD.';
   const shipperAddress = `${companyName}\nSuite 408, Dae-il Bldg, 12, Mapo-daero 4-gil,\nMapo-gu, Seoul, 04175, Korea`;
 
@@ -117,6 +115,8 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
       window.removeEventListener('mouseup', handleUp);
     };
   }, [isDragging]);
+
+  if (!isOpen) return null;
 
   // Styles
   const windowStyle: React.CSSProperties = {
