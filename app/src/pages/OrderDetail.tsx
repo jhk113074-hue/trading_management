@@ -3723,6 +3723,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
     }
   };
 
+  /*
   const handleEmailSupplierPo = (supplierName: string, items: OrderItem[]) => {
     if (!order) return;
     const cleanSupplierName = supplierName.replace(/\s+/g, '');
@@ -3780,6 +3781,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       handlePrintSupplierPo(supplierName, items);
     }
   };
+  */
 
   // CI automated print handler
   const handlePrintCI = () => {
@@ -5427,12 +5429,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 >
                                   📥 발주서 발행 및 저장
                                 </button>
-                                <button 
-                                  onClick={() => handleEmailSupplierPo(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#10b981', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
-                                >
-                                  ✉️ 이메일 발송
-                                </button>
+                                
                               </div>
                             </div>
                             {/* 1. 상호, 일자 및 품목 테이블 + 생산완료일 */}
