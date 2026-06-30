@@ -5441,7 +5441,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
                                 <thead>
                                   <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                    <th style={{ padding: '6px', textAlign: 'left', width: '230px' }}>품목명</th>
+                                    <th style={{ padding: '6px', textAlign: 'left', width: '320px' }}>품목명</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>스펙</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>수량</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>매입가<br/>(통화/단가)</th>
@@ -5480,7 +5480,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ width: '170px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                                    style={{ width: '260px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
                                                   />
                                                   <button
                                                     type="button"
