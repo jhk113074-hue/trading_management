@@ -5006,7 +5006,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 value={item.name || ''}
                                 onChange={e => handleItemChange(idx, 'name', e.target.value)}
                                 placeholder="상품코드 검색/입력"
-                                style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                                style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                               />
                               {item.name && (
                                 <button
@@ -5095,7 +5095,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    height: '26px',
+                                    height: '28px',
                                     width: '26px',
                                     boxSizing: 'border-box'
                                   }}
@@ -5115,7 +5115,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value={item.supplier || ''}
                               onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
                               placeholder="공급사명"
-                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             />
                           </div>
                         </td>
@@ -5128,14 +5128,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value={item.qty || ''}
                               onChange={e => handleItemChange(idx, 'qty', e.target.value)}
                               placeholder="수량"
-                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '70px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             />
                             <input
                               type="text"
                               value={item.unit || ''}
                               onChange={e => handleItemChange(idx, 'unit', e.target.value)}
                               placeholder="단위"
-                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '26px', outline: 'none', textAlign: 'center' }}
+                              style={{ width: '60px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '28px', outline: 'none', textAlign: 'center' }}
                             />
                           </div>
                         </td>
@@ -5146,7 +5146,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             <select
                               value={item.currency || 'USD'}
                               onChange={e => handleItemChange(idx, 'currency', e.target.value)}
-                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             >
                               <option value="USD">USD ($)</option>
                               <option value="KRW">KRW (₩)</option>
@@ -5157,7 +5157,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value={item.unitPrice || ''}
                               onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
                               placeholder="단가"
-                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '80px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             />
                           </div>
                         </td>
@@ -7235,14 +7235,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
                                   <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '12%', whiteSpace: 'nowrap' }}>동작</th>
+                                  <th style={{ padding: '6px', textAlign: 'center', width: '140px', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {(c.items || []).map((it: any, itIdx: number) => (
                                   <tr key={itIdx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                                     <td style={{ padding: '2px 4px' }}>
-                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'center', height: '24px', boxSizing: 'border-box' }} value={it.pkgNo || ''} onChange={e => {
+                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'center', height: '28px', boxSizing: 'border-box' }} value={it.pkgNo || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].pkgNo = val;
@@ -7258,7 +7258,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             disabled={!isEditing}
                                             placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                             list={`packing_products_datalist_${cIdx}_${itIdx}`}
-                                            style={{ padding: '2px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', height: '24px' }}
+                                            style={{ padding: '2px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', height: '28px' }}
                                             value={it.description || ''}
                                             onChange={e => {
                                               const val = e.target.value;
@@ -7307,7 +7307,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                height: '24px',
+                                                height: '28px',
                                                 width: '24px',
                                                 boxSizing: 'border-box',
                                                 flexShrink: 0
@@ -7324,7 +7324,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         type="number"
                                         placeholder="수량"
                                         disabled={!isEditing}
-                                        style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }}
+                                        style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }}
                                         value={it.qty || ''}
                                         onChange={e => {
                                           const val = e.target.value;
@@ -7345,7 +7345,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         return (
                                           <select
                                               disabled={!isEditing}
-                                              style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '98%', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '98%', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                                               value={it.packageType || ''}
                                               onChange={e => {
                                                 const val = e.target.value;
@@ -7400,7 +7400,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="W"
                                               disabled={!isEditing}
                                               value={width}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const w = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7414,7 +7414,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="L"
                                               disabled={!isEditing}
                                               value={length}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const l = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7428,7 +7428,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="H"
                                               disabled={!isEditing}
                                               value={height}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '24px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
                                               onChange={e => {
                                                 const h = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7441,7 +7441,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       })()}
                                     </td>
                                     <td style={{ padding: '2px 4px' }}>
-                                      <input type="text" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '98%', height: '24px', boxSizing: 'border-box' }} value={it.supplier || ''} onChange={e => {
+                                      <input type="text" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '98%', height: '28px', boxSizing: 'border-box' }} value={it.supplier || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].supplier = val;
@@ -7449,7 +7449,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       }} />
                                     </td>
                                     <td style={{ padding: '2px 4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }} value={it.netWeight || ''} onChange={e => {
+                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }} value={it.netWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].netWeight = val;
@@ -7457,7 +7457,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       }} />
                                     </td>
                                     <td style={{ padding: '2px 4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }} value={it.grossWeight || ''} onChange={e => {
+                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }} value={it.grossWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].grossWeight = val;
@@ -7511,16 +7511,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             } catch {}
                                           }
                                         }}
-                                        style={{ padding: '2px 4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '24px', boxSizing: 'border-box' }}
+                                        style={{ padding: '2px 4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '2px 4px', textAlign: 'center' }}>
-                                      <div style={{ display: 'flex', gap: '3px', justifyContent: 'center', alignItems: 'center' }}>
+                                    <td style={{ padding: '4px', textAlign: 'center' }}>
+                                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
                                         <button 
                                           type="button"
                                           disabled={itIdx === 0 || !isEditing}
                                           onClick={() => moveStep2Item(cIdx, itIdx, 'up')}
-                                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '2px 4px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: itIdx === 0 ? 0.3 : 1, height: '22px', display: 'inline-flex', alignItems: 'center' }}
+                                          title="위로 이동"
+                                          style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === 0 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === 0 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                           ▲
                                         </button>
@@ -7528,7 +7529,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           type="button"
                                           disabled={itIdx === (c.items || []).length - 1 || !isEditing}
                                           onClick={() => moveStep2Item(cIdx, itIdx, 'down')}
-                                          style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '3px', padding: '2px 4px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '22px', display: 'inline-flex', alignItems: 'center' }}
+                                          title="아래로 이동"
+                                          style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', cursor: (itIdx === (c.items || []).length - 1 || !isEditing) ? 'not-allowed' : 'pointer', fontSize: '12px', opacity: itIdx === (c.items || []).length - 1 ? 0.3 : 1, height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                           ▼
                                         </button>
@@ -7541,9 +7543,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             nextContainers[cIdx].items.splice(itIdx + 1, 0, copiedItem);
                                             setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                           }}
-                                          style={{ padding: '2px 4px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '14.5px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                          title="품목 복사"
+                                          style={{ width: '28px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '14px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
-                                          복사
+                                          📋
                                         </button>
                                         <button
                                           type="button"
@@ -7553,9 +7556,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             nextContainers[cIdx].items = nextContainers[cIdx].items.filter((_: any, idx: number) => idx !== itIdx);
                                             setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                           }}
-                                          style={{ padding: '2px 4px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '14.5px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                          title="품목 삭제"
+                                          style={{ width: '28px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '13px', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
-                                          삭제
+                                          🗑️
                                         </button>
                                       </div>
                                     </td>
