@@ -47,6 +47,9 @@ interface CiPlPreviewModalProps {
 
 export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onClose, data, onExportExcel }) => {
   const [activeTab, setActiveTab] = useState<'CI' | 'PL'>('CI');
+  const [position, setPosition] = useState({ x: window.innerWidth - 900, y: 120 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   if (!isOpen) return null;
 
@@ -60,21 +63,52 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
   const totalGross = data.totalGrossWeight || data.items.reduce((sum, item) => sum + (item.grossWeight || 0), 0);
   const totalCbm = data.totalCbm || data.items.reduce((sum, item) => sum + (item.cbm || 0), 0);
 
-  // Styles
-  const overlayStyle: React.CSSProperties = {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center',
-    alignItems: 'flex-start', zIndex: 1000, overflowY: 'auto', padding: '40px 20px'
+  // Mouse Drag Events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
   };
 
-  const modalStyle: React.CSSProperties = {
-    backgroundColor: '#fff', borderRadius: '12px', width: '850px',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column',
-    position: 'relative', border: '1px solid #cbd5e1'
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStart.x));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStart.y));
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
+  // Styles
+  const windowStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: `${position.x}px`,
+    top: `${position.y}px`,
+    width: '820px',
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    boxShadow: '0 12px 36px rgba(0,0,0,0.25)',
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: 10000,
+    border: '2px solid #cbd5e1',
+    userSelect: isDragging ? 'none' : 'auto'
   };
 
   const a4PageStyle: React.CSSProperties = {
-    padding: '40px', color: '#000', fontFamily: 'serif', fontSize: '12px',
+    padding: '30px', color: '#000', fontFamily: 'serif', fontSize: '12px',
     lineHeight: 1.3, display: 'flex', flexDirection: 'column', gap: '15px'
   };
 
@@ -95,54 +129,62 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={e => e.stopPropagation()}>
-        {/* Modal Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={() => setActiveTab('CI')}
-              style={{
-                padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer',
-                border: activeTab === 'CI' ? 'none' : '1px solid #cbd5e1',
-                backgroundColor: activeTab === 'CI' ? '#2563eb' : '#fff',
-                color: activeTab === 'CI' ? '#fff' : '#475569'
-              }}
-            >
-              Commercial Invoice 미리보기
-            </button>
-            <button
-              onClick={() => setActiveTab('PL')}
-              style={{
-                padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer',
-                border: activeTab === 'PL' ? 'none' : '1px solid #cbd5e1',
-                backgroundColor: activeTab === 'PL' ? '#2563eb' : '#fff',
-                color: activeTab === 'PL' ? '#fff' : '#475569'
-              }}
-            >
-              Packing List 미리보기
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {onExportExcel && (
-              <button
-                type="button"
-                onClick={onExportExcel}
-                style={{
-                  padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer',
-                  border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px',
-                  boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
-                }}
-              >
-                📥 Excel 파일 내보내기
-              </button>
-            )}
-            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}>✕</button>
-          </div>
+    <div style={windowStyle}>
+      {/* Draggable Title Header */}
+      <div 
+        onMouseDown={handleMouseDown}
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 16px', borderBottom: '1px solid #cbd5e1', backgroundColor: '#f1f5f9',
+          borderTopLeftRadius: '10px', borderTopRightRadius: '10px', cursor: 'move',
+          userSelect: 'none'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', marginRight: '8px' }}>⚡ 드래그하여 이동 가능</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); setActiveTab('CI'); }}
+            style={{
+              padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
+              border: activeTab === 'CI' ? 'none' : '1px solid #cbd5e1',
+              backgroundColor: activeTab === 'CI' ? '#2563eb' : '#fff',
+              color: activeTab === 'CI' ? '#fff' : '#475569'
+            }}
+          >
+            Invoice
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setActiveTab('PL'); }}
+            style={{
+              padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
+              border: activeTab === 'PL' ? 'none' : '1px solid #cbd5e1',
+              backgroundColor: activeTab === 'PL' ? '#2563eb' : '#fff',
+              color: activeTab === 'PL' ? '#fff' : '#475569'
+            }}
+          >
+            Packing List
+          </button>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onMouseDown={e => e.stopPropagation()}>
+          {onExportExcel && (
+            <button
+              type="button"
+              onClick={onExportExcel}
+              style={{
+                padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
+                border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px',
+                boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
+              }}
+            >
+              📥 Excel 다운로드
+            </button>
+          )}
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', fontWeight: 'bold' }}>✕</button>
+        </div>
+      </div>
 
         {/* Paper Container */}
-        <div style={{ padding: '20px', backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ padding: '20px', backgroundColor: '#f1f5f9', display: 'flex', justifyContent: 'center', maxHeight: '72vh', overflowY: 'auto' }}>
           <div style={{ backgroundColor: '#fff', width: '100%', maxWidth: '800px', boxShadow: '0 4px 10px rgba(0,0,0,0.06)', borderRadius: '4px' }}>
             <div style={a4PageStyle}>
               {/* Document Title */}
@@ -333,7 +375,6 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };
