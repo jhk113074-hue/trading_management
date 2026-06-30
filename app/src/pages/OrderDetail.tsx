@@ -7253,12 +7253,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     <td style={{ padding: '2px 4px' }}>
                                       <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                                         <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                          <input
-                                            type="text"
+                                          <textarea
                                             disabled={!isEditing}
                                             placeholder="[상품코드] 상품명 또는 사양 직접 입력"
-                                            list={`packing_products_datalist_${cIdx}_${itIdx}`}
-                                            style={{ padding: '2px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', height: '28px' }}
+                                            rows={2}
+                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto' }}
                                             value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
                                             onChange={e => {
                                               const val = e.target.value;
