@@ -4715,38 +4715,38 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           </div>
 
           {/* Form Fields Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>PI 번호</span>
               <input type="text" value={basicForm.piNumber} onChange={e => setBasicForm(prev => ({ ...prev, piNumber: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="PI 번호 입력" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 6' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>고객정보</span>
               <input type="text" value={basicForm.customer} onChange={e => setBasicForm(prev => ({ ...prev, customer: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="고객사명" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>도착지 (목적국가)</span>
               <input type="text" value={basicForm.destinationCountry} onChange={e => setBasicForm(prev => ({ ...prev, destinationCountry: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="목적국가" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 12' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>주소 (Customer Address)</span>
               <input type="text" value={basicForm.customerAddress} onChange={e => setBasicForm(prev => ({ ...prev, customerAddress: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="주소 입력" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>출발항</span>
               <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="출발항" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 5' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>도착항</span>
               <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} placeholder="도착항" />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 4' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>발행사 (발주서 기준)</span>
               {isEditing ? (
                 <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ padding: '4px 6px', border: '2px solid #3b82f6', borderRadius: '5px', fontSize: '14.5px', fontWeight: 700, background: '#eff6ff', outline: 'none' }}>
@@ -4758,22 +4758,22 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>고객사 PO 번호</span>
               <input type="text" value={basicForm.custPo} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>PO 접수일</span>
               <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>담당 영업사원</span>
               <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>인코텀즈</span>
               {isEditing ? (
                 <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', outline: 'none' }}>
@@ -4789,7 +4789,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 6' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>연결 견적서 (PI)</span>
               {isEditing ? (
                 <select
@@ -4812,12 +4812,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>결제 조건</span>
               <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(prev => ({ ...prev, paymentTerms: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>L/C 거래 여부</span>
               {isEditing ? (
                 <select value={basicForm.isLc} onChange={e => setBasicForm(prev => ({ ...prev, isLc: e.target.value as any }))} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', outline: 'none' }}>
@@ -4830,12 +4830,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 4' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>요청 납기일</span>
               <input type="date" value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 4' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>확정 CI 번호</span>
               <input
                 type="text"
@@ -4846,7 +4846,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 4' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f766e' }}>제품준비일 (최종 완료일)</span>
               <input
                 type="date"
@@ -4856,7 +4856,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 12' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>비고 (Remarks)</span>
               <textarea rows={1} value={basicForm.remark} onChange={e => setBasicForm(prev => ({ ...prev, remark: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', resize: 'vertical', outline: 'none' }} />
             </div>
