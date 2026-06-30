@@ -5441,8 +5441,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
                                 <thead>
                                   <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                    <th style={{ padding: '6px', textAlign: 'left', width: '230px' }}>상품코드<br/>+ 품목명</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>스펙</th>
+                                    <th style={{ padding: '6px', textAlign: 'left', width: '230px' }}>품목명</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>스펙</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '100px' }}>수량</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>매입가<br/>(통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>실매입가<br/>(통화/단가)</th>
@@ -5461,7 +5461,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     </tr>
                                   ) : (
                                     items.map((it, idx) => {
-                                      const { purchasePrice, purchaseCurrency, itemCode, itemName, originalPurchasePrice } = getSupplierPurchaseInfo(it);
+                                      const { purchasePrice, purchaseCurrency, itemName, originalPurchasePrice } = getSupplierPurchaseInfo(it);
                                       const origCurrency = it.originalPurchaseCurrency || (it.originalPurchasePrice != null ? (it.originalPurchasePrice > 1000 ? 'KRW' : 'USD') : purchaseCurrency);
                                       
                                       const totalPurchaseAmount = purchasePrice * (it.qty || 0);
@@ -5472,7 +5472,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           {/* 1. 상품코드 + 품목명 (병합 열) */}
                                           <td style={{ padding: '4px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                              <span style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', whiteSpace: 'nowrap' }}>{itemCode}</span>
                                               {isEditing ? (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                   <input
@@ -5480,7 +5479,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ width: '120px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                                    style={{ width: '170px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
                                                   />
                                                   <button
                                                     type="button"
@@ -5489,9 +5488,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                       setIsSourcingSearch(true);
                                                       setIsProductSearchOpen(true);
                                                     }}
-                                                    style={{ padding: '3px 5px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    title="품목 검색"
                                                   >
-                                                    검색
+                                                    🔍
                                                   </button>
                                                 </div>
                                               ) : (
@@ -5517,7 +5517,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                   });
                                                 }}
                                                 style={{
-                                                  width: '65px',
+                                                  width: '120px',
                                                   padding: '3px 4px',
                                                   border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
