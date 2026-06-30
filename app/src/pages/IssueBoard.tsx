@@ -226,6 +226,37 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
   const [previewFile, setPreviewFile] = useState<{ name: string; url: string; type: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [position, setPosition] = useState({ x: 100, y: 120 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStartRef.current.y));
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   useEffect(() => {
     const handleGlobalPaste = (e: ClipboardEvent) => {
       const clipboardFiles = e.clipboardData?.files;
@@ -283,9 +314,18 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+    <div style={{
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      width: '600px',
+      zIndex: 1000,
+      userSelect: isDragging ? 'none' : 'auto'
+    }}>
+      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
+        <div 
+          onMouseDown={handleMouseDown}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, cursor: 'move', userSelect: 'none' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>🛠️ 프로그램 오류/수정 등록</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
         </div>
@@ -393,6 +433,37 @@ const IssueDetailModal: React.FC<{
   const [editCategory, setEditCategory] = useState<Category>(issue.category);
   const [editPriority, setEditPriority] = useState<Priority>(issue.priority);
   const [savingChanges, setSavingChanges] = useState(false);
+
+  const [position, setPosition] = useState({ x: 150, y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStartRef.current.y));
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   useEffect(() => {
     const q = query(
@@ -520,10 +591,19 @@ const IssueDetailModal: React.FC<{
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" style={{ maxWidth: 700, maxHeight: '92vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+    <div style={{
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      width: '700px',
+      zIndex: 1000,
+      userSelect: isDragging ? 'none' : 'auto'
+    }}>
+      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
         {/* 헤더 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #e8ecf0', paddingBottom: 10 }}>
+        <div 
+          onMouseDown={handleMouseDown}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #cbd5e1', paddingBottom: 10, cursor: 'move', userSelect: 'none' }}>
           <div>
             <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>No. {issue.issueNo || '-'} 상세 정보</span>
             <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>

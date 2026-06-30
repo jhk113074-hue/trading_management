@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, doc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -486,18 +486,60 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     }
   };
 
+  const [position, setPosition] = useState({ x: 80, y: 60 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStartRef.current.y));
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: '12px', width: '95%', maxWidth: '1150px', maxHeight: '96vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
-        
-        {/* Header */}
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '12px 12px 0 0' }}>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>신규 PO(발주서) 등록</div>
-            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '1px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
+    <>
+      <div style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: '95%',
+        maxWidth: '1150px',
+        zIndex: 1000,
+        userSelect: isDragging ? 'none' : 'auto'
+      }}>
+        <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1' }}>
+          
+          {/* Header */}
+          <div 
+            onMouseDown={handleMouseDown}
+            style={{ padding: '10px 16px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '12px 12px 0 0', cursor: 'move', userSelect: 'none' }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>신규 PO(발주서) 등록</div>
+              <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '1px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
+            </div>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '18px', cursor: 'pointer' }}>✕</button>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '18px', cursor: 'pointer' }}>✕</button>
-        </div>
 
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1108,8 +1150,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             })()}
           </div>
         </div>
+      </div>
 
-        {/* Footer */}
+      {/* Footer */}
         <div style={{ padding: '8px 16px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 12px 12px' }}>
           <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontSize: '12px' }}>취소</button>
           <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }}>
@@ -1167,6 +1210,6 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           }}
         />
       )}
-    </div>
+    </>
   );
 };
