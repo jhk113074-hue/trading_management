@@ -5753,10 +5753,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 </tbody>
                               </table>
                               
-                              {/* 생산완료일 지정 영역을 카드 하단에 병합 */}
-                              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#f8fafc', padding: '8px 16px', borderTop: '1px solid #cbd5e1', marginTop: '10px' }}>
+                              {/* 생산완료일, 입고요청일, 납품처를 가로 한 줄 레이아웃으로 통합 */}
+                              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderTop: '1px solid #cbd5e1', marginTop: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ fontWeight: 600, fontSize: '11.5px', color: '#4b5563' }}>생산완료일(납기일):</span>
+                                  <span style={{ fontWeight: 600, fontSize: '11px', color: '#4b5563', whiteSpace: 'nowrap' }}>생산완료일:</span>
                                   <input 
                                     type="date"
                                     value={basicForm.supplierProductionDates[supplierName] || ''}
@@ -5779,17 +5779,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         };
                                       });
                                     }}
-                                    style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px' }}
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', width: '120px' }}
                                   />
                                 </div>
-                              </div>
-                            </div>
 
-                            {/* 2. 입고요청일, 납품처, 일반사항 Panel */}
-                            <div style={{ padding: '0 16px 12px 16px', background: '#fff', fontSize: '12px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>입고요청일 (Request Date)</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                                  <span style={{ fontWeight: 600, fontSize: '11px', color: '#4b5563', whiteSpace: 'nowrap' }}>입고요청일:</span>
                                   <input 
                                     type="text" 
                                     placeholder="예: 2026-07-15"
@@ -5807,11 +5802,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         };
                                       });
                                     }}
-                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
+                                    style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
                                   />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <label style={{ fontWeight: 'bold', fontSize: '11px', color: '#475569' }}>납품처 (Delivery Place)</label>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 2 }}>
+                                  <span style={{ fontWeight: 600, fontSize: '11px', color: '#4b5563', whiteSpace: 'nowrap' }}>납품처:</span>
                                   <input 
                                     type="text" 
                                     placeholder="예: YSACC 인천창고"
@@ -5829,9 +5825,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         };
                                       });
                                     }}
-                                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
+                                    style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', background: '#fff', outline: 'none' }}
                                   />
                                 </div>
+                              </div>
+                            </div>
+
+                            {/* 2. 일반사항 Panel */}
+                            <div style={{ padding: '0 16px 12px 16px', background: '#fff', fontSize: '12px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '12px' }}>
 
                                 {/* 일반사항 */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
