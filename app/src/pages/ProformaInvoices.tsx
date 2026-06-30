@@ -239,7 +239,7 @@ export const ProformaInvoices: React.FC = () => {
     const activeCount = activePis.length;
     const totalUsd = activePis.reduce((sum, p) => sum + (p.totalUsd || 0), 0);
     const totalYsaccUsd = activePis.filter(p => p.issuingCompany === 'YSACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
-    const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
+    const totalYsUsd = activePis.filter(p => p.issuingCompany === 'YS' || p.issuingCompany === '영성ACC').reduce((sum, p) => sum + (p.totalUsd || 0), 0);
 
     const confirmedCount = pis.filter(p => ['수주확정', 'PO확정'].includes(getPiStatus(p))).length;
     const totalCount = activeCount + confirmedCount;

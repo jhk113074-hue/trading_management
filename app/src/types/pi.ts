@@ -57,7 +57,7 @@ export interface ProformaInvoice {
   validityDays: number;
   validUntilDate: string;
   
-  issuingCompany: 'YSACC' | 'YS';
+  issuingCompany: 'YSACC' | 'YS' | '영성ACC';
   
   customerId: string;
   customerName: string;

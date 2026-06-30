@@ -20,7 +20,7 @@ interface Props {
     custPo: string;
     incoterms: string;
     paymentTerms: string;
-    issuingCompany: 'YS' | 'YSACC';
+    issuingCompany: 'YS' | 'YSACC' | '영성ACC';
     portOfLoading?: string;
     finalDestination?: string;
     carrier?: string;

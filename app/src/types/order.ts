@@ -73,7 +73,7 @@ export interface Order {
   ciPlSentDate?: string;
   bankSubmissionDate?: string;
   paymentCollectedDate?: string;
-  issuingCompany?: 'YSACC' | 'YS';
+  issuingCompany?: 'YSACC' | 'YS' | '영성ACC';
   activeSourcingTab?: string;
 
   // 주문 기본정보 및 L/C 거래 상세

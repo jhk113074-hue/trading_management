@@ -54,7 +54,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
     remark: '',
     status: '주문' as const,
     exchangeRate: 1400,
-    issuingCompany: 'YSACC' as 'YSACC' | 'YS',
+    issuingCompany: 'YSACC' as 'YSACC' | 'YS' | '영성ACC',
     // PI-derived shipping fields
     departurePort: '',
     destinationPort: '',
