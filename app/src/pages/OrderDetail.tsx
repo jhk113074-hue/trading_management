@@ -2199,20 +2199,39 @@ export const OrderDetail: React.FC = () => {
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === orderItems.length - 1) return;
     
+    // 1. Swap orderItems
+    let cleanedItems: any[] = [];
     setOrderItems(prev => {
       const newItems = [...prev];
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
       const temp = newItems[index];
       newItems[index] = newItems[targetIndex];
       newItems[targetIndex] = temp;
+      cleanedItems = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      return cleanedItems;
+    });
+
+    // 2. Swap sourcingItems
+    setSourcingItems(prev => {
+      const newItems = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newItems[index] && newItems[targetIndex]) {
+        const temp = newItems[index];
+        newItems[index] = newItems[targetIndex];
+        newItems[targetIndex] = temp;
+      }
+      const cleanedSourcing = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
       
-      const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
-      
+      // Save changes immediately to Firestore
       if (order) {
         const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
-        setDoc(orderRef, { items: cleaned, updatedAt: serverTimestamp() }, { merge: true }).catch(e => console.error("Failed to save step1 items order:", e));
+        setDoc(orderRef, { 
+          items: cleanedItems, 
+          sourcingItems: cleanedSourcing, 
+          updatedAt: serverTimestamp() 
+        }, { merge: true }).catch(e => console.error("Failed to save step1 items order:", e));
       }
-      return cleaned;
+      return cleanedSourcing;
     });
   };
 
@@ -4773,7 +4792,7 @@ export const OrderDetail: React.FC = () => {
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '11px' }}>
                   <thead>
                     <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
+                      <th style={{ padding: '8px 4px', textAlign: 'center', width: '70px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No / 순서</th>
                       <th style={{ padding: '8px 4px', textAlign: 'left', width: '300px' }}>상품코드</th>
                       <th style={{ padding: '8px 4px', textAlign: 'left', width: '200px' }}>공급사</th>
                       <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>수량 / 단위</th>
@@ -4787,7 +4806,47 @@ export const OrderDetail: React.FC = () => {
                       if (item.isSourcingOnly) return null;
                       return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>{idx + 1}</td>
+                          <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                              <span style={{ fontWeight: 600 }}>{idx + 1}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => moveStep1Item(idx, 'up')}
+                                  disabled={idx === 0}
+                                  style={{
+                                    border: 'none',
+                                    background: 'none',
+                                    padding: '0 2px',
+                                    fontSize: '9px',
+                                    cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                                    color: idx === 0 ? '#cbd5e1' : '#3b82f6',
+                                    lineHeight: 1
+                                  }}
+                                  title="위로 이동"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveStep1Item(idx, 'down')}
+                                  disabled={idx === orderItems.length - 1}
+                                  style={{
+                                    border: 'none',
+                                    background: 'none',
+                                    padding: '0 2px',
+                                    fontSize: '9px',
+                                    cursor: idx === orderItems.length - 1 ? 'not-allowed' : 'pointer',
+                                    color: idx === orderItems.length - 1 ? '#cbd5e1' : '#3b82f6',
+                                    lineHeight: 1
+                                  }}
+                                  title="아래로 이동"
+                                >
+                                  ▼
+                                </button>
+                              </div>
+                            </div>
+                          </td>
                         
                         {/* 상품코드 */}
                         <td style={{ padding: '4px 4px' }}>
