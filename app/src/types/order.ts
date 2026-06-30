@@ -69,6 +69,8 @@ export interface Order {
 
   otherFiles?: Array<{ name: string; url: string; size: number; path: string }>;
   transactionFiles?: Array<{ name: string; url: string; size: number; path: string }>;
+  shipmentType?: 'LCL' | 'FCL' | '';
+  fclSpecs?: Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR'; qty: number; }>;
   additionalSuppliers?: string[];
   ciPlSentDate?: string;
   bankSubmissionDate?: string;

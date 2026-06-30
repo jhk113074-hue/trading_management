@@ -967,7 +967,9 @@ export const OrderDetail: React.FC = () => {
     lcIssuingBank: '',
     lcIssuingDate: '',
     lcDescription: '',
-    lcRemark: ''
+    lcRemark: '',
+    shipmentType: '' as 'LCL' | 'FCL' | '',
+    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR'; qty: number; }>
   });
 
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
@@ -1617,6 +1619,8 @@ export const OrderDetail: React.FC = () => {
           lcIssuingDate: data.lcIssuingDate || '',
           lcDescription: data.lcDescription || '',
           lcRemark: data.lcRemark || '',
+          shipmentType: data.shipmentType || '',
+          fclSpecs: data.fclSpecs || [],
           actualContainerSimulation: data.actualContainerSimulation || null,
           quotationId: data.quotationId || ''
         });
@@ -1878,6 +1882,8 @@ export const OrderDetail: React.FC = () => {
         dispatchStatusByVendor: basicForm.dispatchStatusByVendor,
         containerWorkspaceType: basicForm.containerWorkspaceType,
         shipmentCompleted: basicForm.shipmentCompleted,
+        shipmentType: basicForm.shipmentType || '',
+        fclSpecs: basicForm.fclSpecs || [],
         docsSentOrBankSubmitted: basicForm.docsSentOrBankSubmitted,
         purchaseCertificateByVendor: basicForm.purchaseCertificateByVendor,
         paymentStatusByVendor: basicForm.paymentStatusByVendor,
@@ -6277,6 +6283,127 @@ export const OrderDetail: React.FC = () => {
                         <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
                         <input type="date" value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
+                    </div>
+
+                    {/* LCL / FCL 선적 유형 및 FCL 세부 사양 입력란 */}
+                    <div style={{ gridColumn: 'span 3', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '12px 14px', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>🛳️ 선적 유형 (Shipment Type)</span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            disabled={!isEditing}
+                            onClick={() => setBasicForm(p => ({ ...p, shipmentType: 'LCL', fclSpecs: [] }))}
+                            style={{
+                              padding: '6px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'default',
+                              background: basicForm.shipmentType === 'LCL' ? '#1e3a8a' : '#fff',
+                              color: basicForm.shipmentType === 'LCL' ? '#fff' : '#475569',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            LCL (소량 화물)
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!isEditing}
+                            onClick={() => setBasicForm(p => ({ ...p, shipmentType: 'FCL' }))}
+                            style={{
+                              padding: '6px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'default',
+                              background: basicForm.shipmentType === 'FCL' ? '#1e3a8a' : '#fff',
+                              color: basicForm.shipmentType === 'FCL' ? '#fff' : '#475569',
+                              transition: 'all 0.15s'
+                            }}
+                          >
+                            FCL (컨테이너 화물)
+                          </button>
+                        </div>
+                      </div>
+
+                      {basicForm.shipmentType === 'FCL' && (
+                        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#4b5563' }}>📦 FCL 컨테이너 규격 및 수량 설정</span>
+                          
+                          {/* FCL Specs List */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {(!basicForm.fclSpecs || basicForm.fclSpecs.length === 0) ? (
+                              <span style={{ fontSize: '11.5px', color: '#94a3b8', fontStyle: 'italic' }}>등록된 컨테이너 규격이 없습니다. 아래에서 규격과 수량을 추가해 주세요.</span>
+                            ) : (
+                              basicForm.fclSpecs.map((spec, index) => (
+                                <div key={index} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', color: '#1e40af', fontWeight: 700 }}>
+                                  <span>{spec.type} × {spec.qty}대</span>
+                                  {isEditing && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = [...(basicForm.fclSpecs || [])];
+                                        next.splice(index, 1);
+                                        setBasicForm(p => ({ ...p, fclSpecs: next }));
+                                      }}
+                                      style={{ border: 'none', background: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', padding: '0 2px', fontSize: '12px' }}
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {/* FCL Spec Add Form */}
+                          {isEditing && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                              <select id="fclSpecTypeSel" style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', background: '#fff' }}>
+                                <option value="20GP">20GP (일반 20피트)</option>
+                                <option value="40GP">40GP (일반 40피트)</option>
+                                <option value="40HQ">40HQ (하이큐빅 40피트)</option>
+                                <option value="20RF">20RF (냉동 20피트)</option>
+                                <option value="20OT">20OT (오픈탑 20피트)</option>
+                                <option value="40OT">40OT (오픈탑 40피트)</option>
+                                <option value="20FR">20FR (플랫랙 20피트)</option>
+                                <option value="40FR">40FR (플랫랙 40피트)</option>
+                              </select>
+
+                              <input
+                                id="fclSpecQtyInput"
+                                type="number"
+                                min="1"
+                                defaultValue="1"
+                                placeholder="수량(Q'ty)"
+                                style={{ width: '80px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }}
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const sel = document.getElementById('fclSpecTypeSel') as HTMLSelectElement;
+                                  const qtyIn = document.getElementById('fclSpecQtyInput') as HTMLInputElement;
+                                  if (!sel || !qtyIn) return;
+                                  const typeVal = sel.value as any;
+                                  const qtyVal = parseInt(qtyIn.value, 10);
+                                  if (isNaN(qtyVal) || qtyVal <= 0) {
+                                    alert('수량을 1개 이상 입력해 주세요.');
+                                    return;
+                                  }
+
+                                  const nextSpecs = [...(basicForm.fclSpecs || [])];
+                                  const existingIdx = nextSpecs.findIndex(s => s.type === typeVal);
+                                  if (existingIdx > -1) {
+                                    nextSpecs[existingIdx].qty += qtyVal;
+                                  } else {
+                                    nextSpecs.push({ type: typeVal, qty: qtyVal });
+                                  }
+
+                                  setBasicForm(p => ({ ...p, fclSpecs: nextSpecs }));
+                                  qtyIn.value = '1';
+                                }}
+                                style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                              >
+                                ＋ 추가
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* 컨테이너작업장소/컨테이너(CFS)입고일/CFS 회사명/주소 및 담당(신규등록 및 저장기능)-1줄 표현 */}
