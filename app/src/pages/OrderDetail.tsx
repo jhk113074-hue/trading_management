@@ -8951,7 +8951,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       customerName: customApplicantVal,
                       customerAddress: '',
                       issuingCompany: basicForm.issuingCompany,
-                      invoiceNo: basicForm.piNumber || order.id,
+                      invoiceNo: basicForm.ciNumber || basicForm.piNumber || order.id,
                       invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
                       lcNo: basicForm.lcNo,
                       lcDate: basicForm.lcIssuingDate,
@@ -9006,7 +9006,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Invoice / PL 번호</span>
-                            <input type="text" value={basicForm.piNumber} onChange={e => setBasicForm(p => ({ ...p, piNumber: e.target.value }))} style={inputStyle(true)} />
+                            <input type="text" value={basicForm.ciNumber || ''} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} style={inputStyle(true)} />
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>작성일자 (Invoice Date)</span>
