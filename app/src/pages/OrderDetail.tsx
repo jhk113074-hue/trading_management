@@ -2846,10 +2846,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           {fileList.length > 0 ? (
             fileList.map((file, idx) => (
               <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <span 
                     onClick={() => previewFile(file.url, file.name)}
-                    style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px', cursor: 'pointer', textDecoration: 'underline' }} 
+                    style={{ fontSize: '12px', color: '#1e3a8a', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, cursor: 'pointer', textDecoration: 'underline' }} 
                     title="클릭하여 미리보기"
                   >
                     {file.name}
@@ -8888,7 +8888,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                   {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
                   <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                       {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
                       {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
@@ -8896,13 +8896,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     </div>
                   </div>
 
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '10px' }}>
+                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
                     {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
                     {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
                   </div>
 
                   {/* 컨테이너 작업 및 운송 사진 */}
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
+                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
                     {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
                     {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
                   </div>
