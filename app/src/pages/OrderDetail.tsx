@@ -5283,37 +5283,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {(activeSourcingTab === '소싱발주' || (activeSourcingTab !== 'COA_성적서')) && (
 
                 <>
-                  {/* 추가 발주사(원자재/OEM) 관리 UI */}
-                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <select 
-                        value={selectedAddSupplier} 
-                        onChange={e => setSelectedAddSupplier(e.target.value)}
-                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', minWidth: '220px' }}
-                      >
-                        <option value="">-- 추가할 공급사 선택 --</option>
-                        {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                      </select>
-                      <button 
-                        onClick={handleAddSupplier}
-                        style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
-                      >
-                        + 발주사 추가
-                      </button>
-                    </div>
-                    {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
-                        {order.additionalSuppliers.map(s => (
-                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600 }}>
-                            {s}
-                            <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}>✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   {/* 업체별 발주 집계 현황 카드 */}
                   {allOrderSuppliers.length > 0 && (
                     <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
@@ -5364,15 +5333,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               <>
                                 {summary.map((s, idx) => {
                                   const amtParts = [];
-                                  if (s.usdAmount > 0) amtParts.push(`$${s.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.usdAmount > 0) amtParts.push(`${s.usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                   if (s.krwAmount > 0) amtParts.push(`₩${s.krwAmount.toLocaleString()}`);
 
                                   const vatParts = [];
-                                  if (s.usdVat > 0) vatParts.push(`$${s.usdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.usdVat > 0) vatParts.push(`${s.usdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                   if (s.krwVat > 0) vatParts.push(`₩${s.krwVat.toLocaleString()}`);
 
                                   const grandParts = [];
-                                  if (s.usdGrand > 0) grandParts.push(`$${s.usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                  if (s.usdGrand > 0) grandParts.push(`${s.usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                   if (s.krwGrand > 0) grandParts.push(`₩${s.krwGrand.toLocaleString()}`);
 
                                   return (
@@ -5390,7 +5359,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                                     {(() => {
                                       const parts = [];
-                                      if (totalUsdAmount > 0) parts.push(`$${totalUsdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalUsdAmount > 0) parts.push(`${totalUsdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                       if (totalKrwAmount > 0) parts.push(`₩${totalKrwAmount.toLocaleString()}`);
                                       return parts.length > 0 ? parts.join(' / ') : '₩0';
                                     })()}
@@ -5398,7 +5367,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#64748b' }}>
                                     {(() => {
                                       const parts = [];
-                                      if (totalUsdVat > 0) parts.push(`$${totalUsdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalUsdVat > 0) parts.push(`${totalUsdVat.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                       if (totalKrwVat > 0) parts.push(`₩${totalKrwVat.toLocaleString()}`);
                                       return parts.length > 0 ? parts.join(' / ') : '₩0';
                                     })()}
@@ -5406,7 +5375,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#b91c1c', fontSize: '13px' }}>
                                     {(() => {
                                       const parts = [];
-                                      if (totalUsdGrand > 0) parts.push(`$${totalUsdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                                      if (totalUsdGrand > 0) parts.push(`${totalUsdGrand.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
                                       if (totalKrwGrand > 0) parts.push(`₩${totalKrwGrand.toLocaleString()}`);
                                       return parts.length > 0 ? parts.join(' / ') : '₩0';
                                     })()}
@@ -5419,6 +5388,37 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       </table>
                     </div>
                   )}
+
+                  {/* 추가 발주사(원자재/OEM) 관리 UI */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', marginBottom: '8px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🛠️ 추가 발주사 (원자재/OEM 생산 등) 관리</h4>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <select 
+                        value={selectedAddSupplier} 
+                        onChange={e => setSelectedAddSupplier(e.target.value)}
+                        style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', minWidth: '220px' }}
+                      >
+                        <option value="">-- 추가할 공급사 선택 --</option>
+                        {suppliersList.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                      </select>
+                      <button 
+                        onClick={handleAddSupplier}
+                        style={{ padding: '6px 16px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 700, fontSize: '12.5px', cursor: 'pointer' }}
+                      >
+                        + 발주사 추가
+                      </button>
+                    </div>
+                    {order.additionalSuppliers && order.additionalSuppliers.length > 0 && (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                        {order.additionalSuppliers.map(s => (
+                          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', color: '#334155', padding: '4px 10px', borderRadius: '20px', fontSize: '11.5px', fontWeight: 600 }}>
+                            {s}
+                            <button onClick={() => handleRemoveSupplier(s)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: 700 }}>✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     {allOrderSuppliers.length === 0 ? (
