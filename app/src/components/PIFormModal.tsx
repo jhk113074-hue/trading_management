@@ -1559,9 +1559,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   const [position, setPosition] = useState({ x: 50, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMaximized) return;
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
@@ -1591,19 +1593,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   return (
     <div style={{
       position: 'fixed',
-      left: `${position.x}px`,
-      top: `${position.y}px`,
-      width: '90%',
-      maxWidth: '1400px',
+      left: isMaximized ? '0px' : `${position.x}px`,
+      top: isMaximized ? '0px' : `${position.y}px`,
+      width: isMaximized ? '100vw' : '90%',
+      maxWidth: isMaximized ? 'none' : '1400px',
+      height: isMaximized ? '100vh' : 'auto',
       zIndex: 1000,
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1' }}>
+      <div style={{ background: '#fff', borderRadius: isMaximized ? '0px' : '14px', width: '100%', height: isMaximized ? '100vh' : 'auto', maxHeight: isMaximized ? '100vh' : '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: isMaximized ? 'none' : '2px solid #cbd5e1' }}>
         
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
-          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0', cursor: 'move', userSelect: 'none' }}>
+          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: isMaximized ? '0px' : '14px 14px 0 0', cursor: isMaximized ? 'default' : 'move', userSelect: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
@@ -1672,7 +1675,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             )}
           </div>
-          <button onClick={handleCloseAttempt} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer' }}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <button
+              type="button"
+              onClick={() => setIsMaximized(!isMaximized)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#6b7280',
+                fontSize: '18px',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                lineHeight: 1
+              }}
+              title={isMaximized ? '이전 크기로 복원' : '화면 최대화'}
+            >
+              {isMaximized ? '🗗' : '🗖'}
+            </button>
+            <button onClick={handleCloseAttempt} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '20px', cursor: 'pointer', padding: '4px' }}>✕</button>
+          </div>
         </div>
 
         {/* Body */}
