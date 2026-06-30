@@ -2774,7 +2774,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
   ) => {
     const fileList = order?.[fieldName] || [];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc', minHeight: '142px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>{label}</span>
         </div>
@@ -2783,7 +2783,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
             style={{
               background: '#ffffff',
               border: '1px dashed #cbd5e1',
-              padding: '10px',
+              padding: '6px 10px',
               borderRadius: '6px',
               textAlign: 'center',
               cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
@@ -8887,24 +8887,18 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   <div />
 
                   {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
+                  {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
                   <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                       {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
                       {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
                       {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
+                      {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
+                      {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
+                      {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
+                      {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
                     </div>
-                  </div>
-
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
-                    {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                    {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
-                  </div>
-
-                  {/* 컨테이너 작업 및 운송 사진 */}
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
-                    {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
-                    {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
                   </div>
                 </div>
               )}
