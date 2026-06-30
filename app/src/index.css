@@ -277,3 +277,15 @@ body {
     grid-template-columns: 1fr !important; /* 모바일폰에서는 1열 세로 정렬 */
   }
 }
+
+/* Chrome, Safari, Edge, Opera에서 input number의 위아래 조절 화살표(스핀버튼) 숨김 */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox에서 input number의 스핀버튼 숨김 */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
