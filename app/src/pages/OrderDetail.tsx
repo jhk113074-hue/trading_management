@@ -6228,200 +6228,204 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       </div>
                     </div>
 
-                    {/* 포워딩업체 목록 및 비용 */}
-                    <div style={{ gridColumn: 'span 3', border: '1px solid #ddd6fe', borderRadius: '8px', padding: '14px', background: '#f5f3ff', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사</span>
-                        <button
-                          type="button"
-                          disabled={!isEditing}
-                          onClick={() => {
-                            if (forwardersList.length >= 4) {
-                              alert("운송사는 최대 4개까지 추가 가능합니다.");
-                              return;
-                            }
-                            addForwarderRow();
-                          }}
-                          style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
-                        >
-                          + 운송사 추가
-                        </button>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
-                        <span></span>
-                        <span></span>
-                      </div>
-                      {forwardersList.length === 0 ? (
-                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>포워더/운송사를 추가하세요 (최대 4개)</div>
-                      ) : (
-                        forwardersList.map((fw, idx) => {
-                          return (
-                          <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
-                            {/* 포워더명 SubWindow 선택 */}
-                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                              <input
-                                type="text"
-                                readOnly
+                    {/* 포워딩업체 목록 & 수출할 VOLUME 2컬럼 배치 */}
+                    <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
+                      
+                      {/* 1) 왼쪽 컬럼: 포워딩업체 목록 및 비용 */}
+                      <div style={{ border: '1px solid #ddd6fe', borderRadius: '8px', padding: '14px', background: '#f5f3ff' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사</span>
+                          <button
+                            type="button"
+                            disabled={!isEditing}
+                            onClick={() => {
+                              if (forwardersList.length >= 4) {
+                                alert("운송사는 최대 4개까지 추가 가능합니다.");
+                                return;
+                              }
+                              addForwarderRow();
+                            }}
+                            style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed' }}
+                          >
+                            + 운송사 추가
+                          </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명 (클릭)</span>
+                          <span></span>
+                          <span></span>
+                        </div>
+                        {forwardersList.length === 0 ? (
+                          <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '11px' }}>포워더/운송사를 추가하세요 (최대 4개)</div>
+                        ) : (
+                          forwardersList.map((fw, idx) => {
+                            return (
+                            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                              {/* 포워더명 SubWindow 선택 */}
+                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                <input
+                                  type="text"
+                                  readOnly
+                                  disabled={!isEditing}
+                                  placeholder="포워딩사 클릭 선택..."
+                                  value={fw.name || ''}
+                                  onClick={() => {
+                                    if (!isEditing) return;
+                                    setForwarderSearchIndex(idx);
+                                    setIsForwarderSearchOpen(true);
+                                  }}
+                                  style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#f8fafc', cursor: isEditing ? 'pointer' : 'default', outline: 'none' }}
+                                />
+                              </div>
+                              <button
+                                type="button"
                                 disabled={!isEditing}
-                                placeholder="포워딩사 클릭 선택..."
-                                value={fw.name || ''}
                                 onClick={() => {
-                                  if (!isEditing) return;
                                   setForwarderSearchIndex(idx);
                                   setIsForwarderSearchOpen(true);
                                 }}
-                                style={{ flex: 1, padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '11.5px', boxSizing: 'border-box', background: '#f8fafc', cursor: isEditing ? 'pointer' : 'default', outline: 'none' }}
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              disabled={!isEditing}
-                              onClick={() => {
-                                setForwarderSearchIndex(idx);
-                                setIsForwarderSearchOpen(true);
-                              }}
-                              style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed', height: '30px', display: 'flex', alignItems: 'center' }}
-                            >
-                              🔍
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!isEditing}
-                              onClick={() => removeForwarderRow(idx)}
-                              style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center' }}
-                            >✕</button>
-                          </div>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    {/* 수출할 VOLUME 입력 영역 추가 */}
-                    <div style={{ gridColumn: 'span 3', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', background: '#f8fafc', marginBottom: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a' }}>📦 수출할 VOLUME</span>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                            <input
-                              type="radio"
-                              name="shipmentType"
-                              value="LCL"
-                              checked={basicForm.shipmentType === 'LCL'}
-                              disabled={!isEditing}
-                              onChange={() => handleUpdateVolumeDataDirectly('LCL', basicForm.fclSpecs || [])}
-                            /> LCL
-                          </label>
-                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                            <input
-                              type="radio"
-                              name="shipmentType"
-                              value="FCL"
-                              checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
-                              disabled={!isEditing}
-                              onChange={() => handleUpdateVolumeDataDirectly('FCL', basicForm.fclSpecs || [])}
-                            /> FCL
-                          </label>
-                        </div>
-                      </div>
-
-                      {(basicForm.shipmentType === 'FCL' || !basicForm.shipmentType) && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>FCL 컨테이너 상세 정보</span>
-                            {isEditing && (
+                                style={{ padding: '6px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: isEditing ? 'pointer' : 'not-allowed', height: '30px', display: 'flex', alignItems: 'center' }}
+                              >
+                                🔍
+                              </button>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  const current = basicForm.fclSpecs || [];
-                                  handleUpdateVolumeDataDirectly(
-                                    (basicForm.shipmentType || 'FCL') as any,
-                                    [...current, { type: '20GP', qty: 1, containerNo: '', sealNo: '' }]
-                                  );
-                                }}
-                                style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                              >
-                                + 컨테이너 추가
-                              </button>
-                            )}
-                          </div>
-
-                          {(basicForm.fclSpecs || []).length === 0 ? (
-                            <div style={{ padding: '8px', textAlign: 'center', color: '#94a3b8', fontSize: '11px', background: '#fff', borderRadius: '4px', border: '1px dashed #cbd5e1' }}>
-                              컨테이너를 추가해주세요 (FCL 선택됨)
+                                disabled={!isEditing}
+                                onClick={() => removeForwarderRow(idx)}
+                                style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: isEditing ? 'pointer' : 'not-allowed', fontSize: '11.5px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center' }}
+                              >✕</button>
                             </div>
-                          ) : (
-                            (basicForm.fclSpecs || []).map((c, idx) => (
-                              <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <select
-                                  value={c.type}
-                                  disabled={!isEditing}
-                                  onChange={e => {
-                                    const updated = [...(basicForm.fclSpecs || [])];
-                                    updated[idx].type = e.target.value as any;
-                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* 2) 오른쪽 컬럼: 수출할 VOLUME 입력 영역 */}
+                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', background: '#f8fafc' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a' }}>📦 수출할 VOLUME</span>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                              <input
+                                type="radio"
+                                name="shipmentType"
+                                value="LCL"
+                                checked={basicForm.shipmentType === 'LCL'}
+                                disabled={!isEditing}
+                                onChange={() => handleUpdateVolumeDataDirectly('LCL', basicForm.fclSpecs || [])}
+                              /> LCL
+                            </label>
+                            <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                              <input
+                                type="radio"
+                                name="shipmentType"
+                                value="FCL"
+                                checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
+                                disabled={!isEditing}
+                                onChange={() => handleUpdateVolumeDataDirectly('FCL', basicForm.fclSpecs || [])}
+                              /> FCL
+                            </label>
+                          </div>
+                        </div>
+
+                        {(basicForm.shipmentType === 'FCL' || !basicForm.shipmentType) && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>FCL 컨테이너 상세 정보</span>
+                              {isEditing && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const current = basicForm.fclSpecs || [];
+                                    handleUpdateVolumeDataDirectly(
+                                      (basicForm.shipmentType || 'FCL') as any,
+                                      [...current, { type: '20GP', qty: 1, containerNo: '', sealNo: '' }]
+                                    );
                                   }}
-                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff', width: '130px' }}
+                                  style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                                 >
-                                  {['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG'].map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  disabled={!isEditing}
-                                  value={c.qty || 1}
-                                  onChange={e => {
-                                    const updated = [...(basicForm.fclSpecs || [])];
-                                    updated[idx].qty = parseInt(e.target.value) || 1;
-                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
-                                  }}
-                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '60px', textAlign: 'right' }}
-                                />
-                                <span style={{ fontSize: '11px', color: '#64748b', marginRight: '4px' }}>대</span>
+                                  + 컨테이너 추가
+                                </button>
+                              )}
+                            </div>
 
-                                {/* Container No. 및 Seal No. 입력란 추가 */}
-                                <input
-                                  type="text"
-                                  placeholder="Container No."
-                                  disabled={!isEditing}
-                                  value={c.containerNo || ''}
-                                  onChange={e => {
-                                    const updated = [...(basicForm.fclSpecs || [])];
-                                    updated[idx].containerNo = e.target.value;
-                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
-                                  }}
-                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '130px' }}
-                                />
-                                <input
-                                  type="text"
-                                  placeholder="Seal No."
-                                  disabled={!isEditing}
-                                  value={c.sealNo || ''}
-                                  onChange={e => {
-                                    const updated = [...(basicForm.fclSpecs || [])];
-                                    updated[idx].sealNo = e.target.value;
-                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
-                                  }}
-                                  style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '110px' }}
-                                />
-
-                                {isEditing && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
+                            {(basicForm.fclSpecs || []).length === 0 ? (
+                              <div style={{ padding: '8px', textAlign: 'center', color: '#94a3b8', fontSize: '11px', background: '#fff', borderRadius: '4px', border: '1px dashed #cbd5e1' }}>
+                                컨테이너를 추가해주세요 (FCL 선택됨)
+                              </div>
+                            ) : (
+                              (basicForm.fclSpecs || []).map((c, idx) => (
+                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '4px' }}>
+                                  <select
+                                    value={c.type}
+                                    disabled={!isEditing}
+                                    onChange={e => {
+                                      const updated = [...(basicForm.fclSpecs || [])];
+                                      updated[idx].type = e.target.value as any;
                                       handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                     }}
-                                    style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
-                                  >✕</button>
-                                )}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
+                                    style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff', width: '90px' }}
+                                  >
+                                    {['20GP', '20RF', '20DG', '40GP', '40HQ', '40DG'].map(opt => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    disabled={!isEditing}
+                                    value={c.qty || 1}
+                                    onChange={e => {
+                                      const updated = [...(basicForm.fclSpecs || [])];
+                                      updated[idx].qty = parseInt(e.target.value) || 1;
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                    }}
+                                    style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '50px', textAlign: 'right' }}
+                                  />
+                                  <span style={{ fontSize: '11px', color: '#64748b' }}>대</span>
+
+                                  <input
+                                    type="text"
+                                    placeholder="Container No."
+                                    disabled={!isEditing}
+                                    value={c.containerNo || ''}
+                                    onChange={e => {
+                                      const updated = [...(basicForm.fclSpecs || [])];
+                                      updated[idx].containerNo = e.target.value;
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                    }}
+                                    style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '110px' }}
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Seal No."
+                                    disabled={!isEditing}
+                                    value={c.sealNo || ''}
+                                    onChange={e => {
+                                      const updated = [...(basicForm.fclSpecs || [])];
+                                      updated[idx].sealNo = e.target.value;
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                    }}
+                                    style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '90px' }}
+                                  />
+
+                                  {isEditing && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
+                                        handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
+                                      }}
+                                      style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
+                                    >✕</button>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
                     </div>
 
                     {/* Vessel확정(선박명/항차)/DOC CLS/CARGO CLS/ETD/ETA을 한줄로 표시 */}
