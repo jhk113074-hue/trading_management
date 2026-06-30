@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface PreviewItem {
   name: string;
@@ -47,9 +47,20 @@ interface CiPlPreviewModalProps {
 
 export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onClose, data, onExportExcel }) => {
   const [activeTab, setActiveTab] = useState<'CI' | 'PL'>('CI');
-  const [position, setPosition] = useState({ x: window.innerWidth - 900, y: 120 });
+  const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dragStart = useRef({ x: 0, y: 0 });
+  const currentPos = useRef({ x: 100, y: 100 });
+
+  // Reset/Set initial position on opening
+  React.useEffect(() => {
+    if (isOpen) {
+      const initialX = Math.max(20, window.innerWidth - 860);
+      const initialY = 120;
+      setPosition({ x: initialX, y: initialY });
+      currentPos.current = { x: initialX, y: initialY };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -63,33 +74,49 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
   const totalGross = data.totalGrossWeight || data.items.reduce((sum, item) => sum + (item.grossWeight || 0), 0);
   const totalCbm = data.totalCbm || data.items.reduce((sum, item) => sum + (item.cbm || 0), 0);
 
-  // Mouse Drag Events
+  // Mouse Drag Events using window events with useRef to prevent closures
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
   };
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStart.x));
-    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStart.y));
+    const deltaX = e.clientX - dragStart.current.x;
+    const deltaY = e.clientY - dragStart.current.y;
+    
+    const nextX = Math.max(10, Math.min(window.innerWidth - 100, currentPos.current.x + deltaX));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 100, currentPos.current.y + deltaY));
+    
     setPosition({ x: nextX, y: nextY });
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: MouseEvent) => {
+    if (!isDragging) return;
     setIsDragging(false);
+    const deltaX = e.clientX - dragStart.current.x;
+    const deltaY = e.clientY - dragStart.current.y;
+    
+    const finalX = Math.max(10, Math.min(window.innerWidth - 100, currentPos.current.x + deltaX));
+    const finalY = Math.max(10, Math.min(window.innerHeight - 100, currentPos.current.y + deltaY));
+    
+    currentPos.current = { x: finalX, y: finalY };
   };
 
   React.useEffect(() => {
+    const handleMove = (e: MouseEvent) => handleMouseMove(e);
+    const handleUp = (e: MouseEvent) => handleMouseUp(e);
+
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleUp);
     }
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
     };
-  }, [isDragging, dragStart]);
+  }, [isDragging]);
 
   // Styles
   const windowStyle: React.CSSProperties = {
