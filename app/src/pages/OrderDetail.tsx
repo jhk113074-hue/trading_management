@@ -2191,7 +2191,14 @@ export const OrderDetail: React.FC = () => {
       const temp = newItems[indexInMain];
       newItems[indexInMain] = newItems[targetIndex];
       newItems[targetIndex] = temp;
-      return newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      const cleaned = newItems.map((x, idx) => ({ ...x, itemId: (idx + 1).toString() }));
+      
+      if (order) {
+        const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+        setDoc(orderRef, { sourcingItems: cleaned, updatedAt: serverTimestamp() }, { merge: true })
+          .catch(e => console.error("Failed to save sourcingItems order:", e));
+      }
+      return cleaned;
     });
   };
 
