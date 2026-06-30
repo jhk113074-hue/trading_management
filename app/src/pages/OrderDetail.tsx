@@ -2609,7 +2609,8 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
-  const handleSaveSupplierPoDetails = async (supplierName: string) => {
+  /*
+const handleSaveSupplierPoDetails = async (supplierName: string) => {
     if (!order) return;
     try {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
@@ -2692,6 +2693,7 @@ export const OrderDetail: React.FC = () => {
       alert('❌ 발주조건 저장 실패: ' + err.message);
     }
   };
+*/
 
   const handleDeleteSupplierCertFile = async (supplierName: string, idx: number) => {
     if (!order) return;
@@ -5596,15 +5598,7 @@ export const OrderDetail: React.FC = () => {
                                   />
                                 </div>
 
-                                <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSaveSupplierPoDetails(supplierName)}
-                                    style={{ padding: '6px 12px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                  >
-                                    💾 이 공급사의 발주조건 저장 (DB)
-                                  </button>
-                                </div>
+                                
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                 <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
