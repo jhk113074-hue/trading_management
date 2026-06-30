@@ -3625,7 +3625,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
       const currentIssuedDocs = (order as any)?.po_issued_documents || [];
       const version = currentIssuedDocs.filter((d: any) => d.po_number === poNum).length + 1;
-      const safeFileName = `${poNum.replace(/[^a-zA-Z0-9가-힣_-]/g, '_')}_v${version}.pdf`;
+      const dateObj = new Date();
+      const yy = String(dateObj.getFullYear()).substring(2);
+      const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dd = String(dateObj.getDate()).padStart(2, '0');
+      const dateStr = `${yy}${mm}${dd}`;
+      const cleanCi = order.ciNumber || order.id;
+      const safeFileName = `${supplierName}(${cleanCi})_${dateStr}.pdf`;
       const storageRef = ref(storage, `companies/${COMPANY_ID}/orders/${order?.id}/po_issued_docs/${safeFileName}`);
       
       const snapshot = await uploadBytesResumable(storageRef, pdfBlob, { contentType: 'application/pdf' });
