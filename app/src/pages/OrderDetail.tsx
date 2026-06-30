@@ -5610,17 +5610,17 @@ export const OrderDetail: React.FC = () => {
                                 <span><strong>상호:</strong> {order.issuingCompany === 'YS' ? 'YS ACC' : 'YSACC CO., LTD.'}</span>
                                 <span><strong>일자:</strong> {new Date().toISOString().split('T')[0]}</span>
                               </div>
-                              <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
+                              <table style={{ width: '100%', minWidth: '1000px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px', marginTop: '5px' }}>
                                 <thead>
                                   <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
-                                    <th style={{ padding: '6px', textAlign: 'left', minWidth: '150px', lineBreak: 'anywhere' }}>상품코드<br/>+ 품목명</th>
+                                    <th style={{ padding: '6px', textAlign: 'left', width: '230px' }}>상품코드<br/>+ 품목명</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '80px' }}>스펙</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '50px' }}>수량</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '85px', lineBreak: 'anywhere' }}>매입가<br/>(통화/단가)</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '95px', lineBreak: 'anywhere' }}>실매입가<br/>(통화/단가)</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '80px' }}>금액</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '70px' }}>부가세</th>
-                                    <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>합계</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '100px' }}>수량</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>매입가<br/>(통화/단가)</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>실매입가<br/>(통화/단가)</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>금액</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '80px' }}>부가세</th>
+                                    <th style={{ padding: '6px', textAlign: 'right', width: '100px' }}>합계</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '60px' }}>순서/관리</th>
                                   </tr>
                                 </thead>
@@ -5648,13 +5648,13 @@ export const OrderDetail: React.FC = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                               <span style={{ fontSize: '11px', color: '#1e3a8a', fontWeight: 'bold', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', whiteSpace: 'nowrap' }}>{itemCode}</span>
                                               {isEditing ? (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flex: 1 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                   <input
                                                     type="text"
                                                     value={it.name || ''}
                                                     onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'name', e.target.value)}
                                                     placeholder="품목명 직접 입력"
-                                                    style={{ width: '130px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
+                                                    style={{ width: '120px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }}
                                                   />
                                                   <button
                                                     type="button"
