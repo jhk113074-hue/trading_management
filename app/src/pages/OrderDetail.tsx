@@ -1796,6 +1796,30 @@ export const OrderDetail: React.FC = () => {
     });
   }, [groupedSupplierItems, order]);
 
+  // Direct volume update handler to prevent onSnapshot overwrite race-conditions
+  const handleUpdateVolumeDataDirectly = async (shipmentType: 'LCL' | 'FCL', fclSpecs: any[]) => {
+    if (!order) return;
+    setBasicForm(prev => ({
+      ...prev,
+      shipmentType,
+      fclSpecs
+    }));
+    try {
+      const docRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await updateDoc(docRef, {
+        shipmentType,
+        fclSpecs: fclSpecs.map(c => ({
+          type: c.type,
+          qty: Number(c.qty) || 1,
+          containerNo: c.containerNo || '',
+          sealNo: c.sealNo || ''
+        }))
+      });
+    } catch (err) {
+      console.error("Direct volume update error:", err);
+    }
+  };
+
   // Save details changes
   const handleSaveBasic = async (showMsg: boolean = true, tabIdOverride?: string, stepNameOverride?: string) => {
     if (!order) return;
@@ -6285,10 +6309,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value="LCL"
                               checked={basicForm.shipmentType === 'LCL'}
                               disabled={!isEditing}
-                              onChange={() => {
-                                setBasicForm(p => ({ ...p, shipmentType: 'LCL' }));
-                                setTimeout(() => handleSaveBasic(false), 250);
-                              }}
+                              onChange={() => handleUpdateVolumeDataDirectly('LCL', basicForm.fclSpecs || [])}
                             /> LCL
                           </label>
                           <label style={{ fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
@@ -6298,10 +6319,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               value="FCL"
                               checked={basicForm.shipmentType === 'FCL' || !basicForm.shipmentType}
                               disabled={!isEditing}
-                              onChange={() => {
-                                setBasicForm(p => ({ ...p, shipmentType: 'FCL' }));
-                                setTimeout(() => handleSaveBasic(false), 250);
-                              }}
+                              onChange={() => handleUpdateVolumeDataDirectly('FCL', basicForm.fclSpecs || [])}
                             /> FCL
                           </label>
                         </div>
@@ -6316,11 +6334,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 type="button"
                                 onClick={() => {
                                   const current = basicForm.fclSpecs || [];
-                                  setBasicForm(p => ({
-                                    ...p,
-                                    fclSpecs: [...current, { type: '20GP', qty: 1 }]
-                                  }));
-                                  setTimeout(() => handleSaveBasic(false), 250);
+                                  handleUpdateVolumeDataDirectly(
+                                    (basicForm.shipmentType || 'FCL') as any,
+                                    [...current, { type: '20GP', qty: 1, containerNo: '', sealNo: '' }]
+                                  );
                                 }}
                                 style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                               >
@@ -6342,8 +6359,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   onChange={e => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].type = e.target.value as any;
-                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
-                                    setTimeout(() => handleSaveBasic(false), 250);
+                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff', width: '130px' }}
                                 >
@@ -6359,8 +6375,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   onChange={e => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].qty = parseInt(e.target.value) || 1;
-                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
-                                    setTimeout(() => handleSaveBasic(false), 250);
+                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '60px', textAlign: 'right' }}
                                 />
@@ -6375,8 +6390,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   onChange={e => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].containerNo = e.target.value;
-                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
-                                    setTimeout(() => handleSaveBasic(false), 250);
+                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '130px' }}
                                 />
@@ -6388,8 +6402,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   onChange={e => {
                                     const updated = [...(basicForm.fclSpecs || [])];
                                     updated[idx].sealNo = e.target.value;
-                                    setBasicForm(p => ({ ...p, fclSpecs: updated }));
-                                    setTimeout(() => handleSaveBasic(false), 250);
+                                    handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                   }}
                                   style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', width: '110px' }}
                                 />
@@ -6399,8 +6412,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     type="button"
                                     onClick={() => {
                                       const updated = (basicForm.fclSpecs || []).filter((_, i) => i !== idx);
-                                      setBasicForm(p => ({ ...p, fclSpecs: updated }));
-                                      setTimeout(() => handleSaveBasic(false), 250);
+                                      handleUpdateVolumeDataDirectly((basicForm.shipmentType || 'FCL') as any, updated);
                                     }}
                                     style={{ padding: '4px 8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
                                   >✕</button>
