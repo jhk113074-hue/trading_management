@@ -740,24 +740,28 @@ export const Orders: React.FC = () => {
                     </tr>
                   );
                 })}
-                {processedOrders.length > 0 && (() => {
-                  const leftColWidth = colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3];
-                  const rightColWidth = colWidths[5] + colWidths[6] + colWidths[7] + colWidths[8];
-                  return (
-                    <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid #cbd5e1' }}>
-                      <td style={{ padding: '14px 16px', color: '#1e293b', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: leftColWidth, minWidth: leftColWidth, maxWidth: leftColWidth, boxSizing: 'border-box' }}>
-                        합계
-                      </td>
-                      <td style={{ padding: '14px 16px', color: '#0f172a', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }}>
-                        ${processedOrders.reduce((sum, o) => {
-                          const pi = quotations.find(q => q.id === o.quotationId);
-                          return sum + (pi?.totalUsd || o.totalAmount || 0);
-                        }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ width: rightColWidth, minWidth: rightColWidth, maxWidth: rightColWidth }} />
-                    </tr>
-                  );
-                })()}
+                {processedOrders.length > 0 && (
+                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid #cbd5e1' }}>
+                    <td style={{ width: colWidths[0], minWidth: colWidths[0], maxWidth: colWidths[0], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[1], minWidth: colWidths[1], maxWidth: colWidths[1], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
+                    {/* 발주사 열에 '합계' 텍스트 배치 */}
+                    <td style={{ padding: '14px 16px', color: '#1e293b', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }}>
+                      합계
+                    </td>
+                    {/* 발주액 열에 실제 합계 금액 배치 */}
+                    <td style={{ padding: '14px 16px', color: '#0f172a', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[4], minWidth: colWidths[4], maxWidth: colWidths[4], boxSizing: 'border-box' }}>
+                      ${processedOrders.reduce((sum, o) => {
+                        const pi = quotations.find(q => q.id === o.quotationId);
+                        return sum + (pi?.totalUsd || o.totalAmount || 0);
+                      }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
