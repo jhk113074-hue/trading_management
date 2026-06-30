@@ -429,6 +429,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   };
 
   const handleChange = (field: keyof Product, value: any) => {
+    setIsDirty(true);
     setFormData(prev => {
       const next = { ...prev, [field]: value };
       if (field === 'unit' && prev.packingMethods) {
@@ -599,6 +600,16 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     }
   };
 
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleClose = () => {
+    if (isDirty) {
+      const confirmClose = window.confirm("⚠️ 작성 중인 내용이 저장되지 않았습니다. 정말로 창을 닫으시겠습니까?");
+      if (!confirmClose) return;
+    }
+    onClose();
+  };
+
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: '#fff', borderRadius: '14px', width: '96%', maxWidth: '1080px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
@@ -613,7 +624,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
               {initialProduct ? (isCopy ? `기존 상품 정보를 복사하여 신규 상품을 등록합니다.` : `상품 마스터 상세 규격 수정 (${formData.nameKo})`) : '글로벌 상품 정보 및 무역원가 스펙 연동'}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '22px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body */}
@@ -1626,7 +1637,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px' }}>
-          <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
+          <button onClick={handleClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
           <button onClick={handleSave} disabled={isSaving} style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
             {isSaving ? '저장 중...' : '✔ 저장'}
           </button>

@@ -107,6 +107,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
   }, [initialSupplier]);
 
   const handleChange = (field: keyof Supplier, value: any) => {
+    setIsDirty(true);
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -194,6 +195,16 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
     }
   };
 
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleClose = () => {
+    if (isDirty) {
+      const confirmClose = window.confirm("⚠️ 작성 중인 내용이 저장되지 않았습니다. 정말로 창을 닫으시겠습니까?");
+      if (!confirmClose) return;
+    }
+    onClose();
+  };
+
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(3px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: '#fff', borderRadius: '10px', width: '96%', maxWidth: '1100px', maxHeight: '96vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', overflow: 'hidden' }}>
@@ -206,7 +217,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
               {initialSupplier ? '공급업체 정보 수정 (Edit Supplier Master)' : '신규 공급업체 등록 (Register Supplier Master)'}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body Container (Ultra Compact, no scrollbar ideally) */}
@@ -390,7 +401,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
         {/* Footer */}
         <div style={{ padding: '10px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button onClick={onClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
+          <button onClick={handleClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
           <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '5px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '11.5px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>
             {isSaving ? '저장 중...' : '✔ 공급사 정보 저장'}
           </button>
