@@ -2845,29 +2845,62 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
           {fileList.length > 0 ? (
             fileList.map((file, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                <span 
-                  onClick={() => previewFile(file.url, file.name)}
-                  style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px', cursor: 'pointer', textDecoration: 'underline' }} 
-                  title="클릭하여 미리보기"
-                >
-                  {file.name}
-                </span>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                  <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', width: '22px', height: '22px', fontSize: '12px', textDecoration: 'none' }} title="다운로드">
-                    ⬇
-                  </a>
-                  {isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteDoc(fieldName, idx)}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontSize: '11px' }}
-                      title="삭제"
-                    >
-                      ✕
-                    </button>
-                  )}
+              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fff', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span 
+                    onClick={() => previewFile(file.url, file.name)}
+                    style={{ fontSize: '11.5px', color: '#1e3a8a', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px', cursor: 'pointer', textDecoration: 'underline' }} 
+                    title="클릭하여 미리보기"
+                  >
+                    {file.name}
+                  </span>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', width: '22px', height: '22px', fontSize: '12px', textDecoration: 'none' }} title="다운로드">
+                      ⬇
+                    </a>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDoc(fieldName, idx)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', width: '22px', height: '22px', cursor: 'pointer', fontSize: '11px' }}
+                        title="삭제"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
+                
+                {/* 썸네일 미리보기 영역 추가 */}
+                {(() => {
+                  const nameLower = file.name.toLowerCase();
+                  const isImage = nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.gif') || nameLower.endsWith('.webp');
+                  const isPdf = nameLower.endsWith('.pdf');
+
+                  if (isImage) {
+                    return (
+                      <div 
+                        onClick={() => previewFile(file.url, file.name)}
+                        style={{ width: '100%', height: '80px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    );
+                  } else if (isPdf) {
+                    return (
+                      <div 
+                        onClick={() => previewFile(file.url, file.name)}
+                        style={{ width: '100%', height: '80px', borderRadius: '4px', border: '1px dashed #cbd5e1', cursor: 'pointer', backgroundColor: '#faf5ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'all 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = '#7c3aed'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                      >
+                        <span style={{ fontSize: '24px' }}>📄</span>
+                        <span style={{ fontSize: '10px', color: '#7c3aed', fontWeight: 'bold' }}>PDF 문서 미리보기</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             ))
           ) : (
