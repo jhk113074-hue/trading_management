@@ -1557,12 +1557,53 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }
   };
 
+  const [position, setPosition] = useState({ x: 50, y: 50 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+    const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragStartRef.current.y));
+    setPosition({ x: nextX, y: nextY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '90%', maxWidth: '1400px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
+    <div style={{
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      width: '90%',
+      maxWidth: '1400px',
+      zIndex: 1000,
+      userSelect: isDragging ? 'none' : 'auto'
+    }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1' }}>
         
         {/* Header */}
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e8ecf0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0' }}>
+        <div 
+          onMouseDown={handleMouseDown}
+          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0', cursor: 'move', userSelect: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div>
               <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
