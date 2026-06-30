@@ -4813,22 +4813,24 @@ export const OrderDetail: React.FC = () => {
                       if (item.isSourcingOnly) return null;
                       return (
                         <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '6px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>
+                          <td style={{ padding: '4px 4px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
                               <span style={{ fontWeight: 600 }}>{idx + 1}</span>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                              <div style={{ display: 'flex', gap: '1px' }}>
                                 <button
                                   type="button"
                                   onClick={() => moveStep1Item(idx, 'up')}
                                   disabled={idx === 0}
                                   style={{
-                                    border: 'none',
-                                    background: 'none',
-                                    padding: '0 2px',
-                                    fontSize: '9px',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#f8fafc',
+                                    borderRadius: '3px',
+                                    padding: '1px 3px',
+                                    fontSize: '8px',
                                     cursor: idx === 0 ? 'not-allowed' : 'pointer',
-                                    color: idx === 0 ? '#cbd5e1' : '#3b82f6',
-                                    lineHeight: 1
+                                    color: idx === 0 ? '#cbd5e1' : '#475569',
+                                    lineHeight: 1,
+                                    opacity: idx === 0 ? 0.3 : 1
                                   }}
                                   title="위로 이동"
                                 >
@@ -4839,13 +4841,15 @@ export const OrderDetail: React.FC = () => {
                                   onClick={() => moveStep1Item(idx, 'down')}
                                   disabled={idx === orderItems.length - 1}
                                   style={{
-                                    border: 'none',
-                                    background: 'none',
-                                    padding: '0 2px',
-                                    fontSize: '9px',
+                                    border: '1px solid #cbd5e1',
+                                    background: '#f8fafc',
+                                    borderRadius: '3px',
+                                    padding: '1px 3px',
+                                    fontSize: '8px',
                                     cursor: idx === orderItems.length - 1 ? 'not-allowed' : 'pointer',
-                                    color: idx === orderItems.length - 1 ? '#cbd5e1' : '#3b82f6',
-                                    lineHeight: 1
+                                    color: idx === orderItems.length - 1 ? '#cbd5e1' : '#475569',
+                                    lineHeight: 1,
+                                    opacity: idx === orderItems.length - 1 ? 0.3 : 1
                                   }}
                                   title="아래로 이동"
                                 >
