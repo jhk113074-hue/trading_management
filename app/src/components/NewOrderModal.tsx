@@ -949,12 +949,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
                     {/* 스펙 (Spec) */}
                     <td style={{ padding: '4px 4px' }}>
-                      <input
-                        type="text"
+                      <textarea
                         value={item.grade || ''}
                         onChange={e => handleItemChange(idx, 'grade', e.target.value)}
                         placeholder="스펙 (Spec)"
-                        style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                        rows={1}
+                        style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', minHeight: '26px', outline: 'none', resize: 'both', minWidth: '80px', fontFamily: 'inherit', overflow: 'auto' }}
                       />
                     </td>
 

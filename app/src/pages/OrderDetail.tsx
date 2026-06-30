@@ -5610,8 +5610,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           {/* 2. 스펙 */}
                                           <td style={{ padding: '4px', textAlign: 'center', verticalAlign: 'middle' }}>
                                             {isEditing ? (
-                                              <input
-                                                type="text"
+                                              <textarea
                                                 value={it.grade || ''}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
@@ -5624,13 +5623,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                     });
                                                   });
                                                 }}
+                                                rows={1}
                                                 style={{
                                                   width: '120px',
-                                                  padding: '3px 4px',
+                                                  padding: '4px 6px',
                                                   border: '1px solid #cbd5e1',
                                                   borderRadius: '4px',
                                                   fontSize: '15.5px',
-                                                  textAlign: 'center'
+                                                  textAlign: 'left',
+                                                  resize: 'both',
+                                                  minWidth: '80px',
+                                                  minHeight: '29px',
+                                                  fontFamily: 'inherit',
+                                                  overflow: 'auto',
+                                                  boxSizing: 'border-box'
                                                 }}
                                               />
                                             ) : (

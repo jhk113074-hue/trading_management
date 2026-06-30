@@ -1942,7 +1942,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="스펙 (Spec)" 
                           onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
                           rows={1}
-                          style={{ ...gridInputStyle, resize: 'vertical', minHeight: '29px', height: '29px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px' }} 
+                          style={{ ...gridInputStyle, resize: 'both', minHeight: '29px', minWidth: '80px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px', overflow: 'auto' }} 
                         />
                       </div>
                     </td>
