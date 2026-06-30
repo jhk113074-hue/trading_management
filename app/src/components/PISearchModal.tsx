@@ -39,7 +39,9 @@ export const PISearchModal: React.FC<Props> = ({ onClose, onSelect, pis }) => {
         height: '80vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden', border: '1px solid #e2e8f0',
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        resize: 'both',
+        minWidth: '600px', minHeight: '350px'
       }}>
         {/* Header */}
         <div style={{

@@ -38,7 +38,9 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
         height: '75vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
         overflow: 'hidden', border: '1px solid #e2e8f0',
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
+        resize: 'both',
+        minWidth: '550px', minHeight: '300px'
       }}>
         {/* Header */}
         <div style={{
