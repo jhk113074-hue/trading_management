@@ -2849,7 +2849,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                   <span 
                     onClick={() => previewFile(file.url, file.name)}
-                    style={{ fontSize: '10.5px', color: '#1e3a8a', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, cursor: 'pointer', textDecoration: 'underline' }} 
+                    style={{ fontSize: '10.5px', color: '#1e3a8a', fontWeight: 700, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-all', flex: 1, cursor: 'pointer', textDecoration: 'underline', lineHeight: '1.2', maxHeight: '25px' }} 
                     title="클릭하여 미리보기"
                   >
                     {file.name}
