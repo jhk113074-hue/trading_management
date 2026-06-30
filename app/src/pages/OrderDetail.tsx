@@ -6330,13 +6330,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       </div>
                     </div>
 
-                    {/* 거래서류 (거래명세표) 첨부 영역 추가 */}
-                    <div style={{ gridColumn: 'span 3', borderTop: '1px solid #e2e8f0', paddingTop: '14px', marginTop: '8px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '8px' }}>📂 거래서류 첨부 (거래명세표 등)</span>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
-                        {renderFileField("거래서류 (거래명세표)", "transactionFiles", "transaction-file-uploader")}
-                      </div>
-                    </div>
+
                   </div>
 
                   {/* 공통 쉬핑마크 설정 (선적관리 탭 하단으로 이동됨) */}
@@ -9780,6 +9774,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           );
                         })
                       )}
+                    </div>
+                  </div>
+
+                  {/* 포워딩/운송사 세금계산서 아래로 이동된 거래서류 첨부 영역 */}
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', marginTop: '24px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '8px' }}>📂 거래서류 첨부 (거래명세표 등)</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                      {renderFileField("거래서류 (거래명세표)", "transactionFiles", "transaction-file-uploader")}
                     </div>
                   </div>
 
