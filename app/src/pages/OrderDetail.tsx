@@ -5413,7 +5413,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       }
                                     ]);
                                   }}
-                                  style={{ padding: '5px 10px', background: '#7c3aed', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                  style={{ padding: '5px 10px', background: '#f3e8ff', border: '1px solid #d8b4fe', color: '#6b21a8', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                                 >
                                   ＋ 품목 추가
                                 </button>
@@ -5425,7 +5425,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 </button>
                                 <button 
                                   onClick={() => issueAndSavePO(supplierName, items)}
-                                  style={{ padding: '5px 10px', background: '#3b82f6', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
+                                  style={{ padding: '5px 10px', background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '11.5px' }}
                                 >
                                   📥 발주서 발행 및 저장
                                 </button>
