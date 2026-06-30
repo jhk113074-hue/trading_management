@@ -5688,7 +5688,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                     setSourcingItems(prev => prev.filter(x => x !== it));
                                                   }
                                                 }}
-                                                style={{ width: '42px', padding: '1px 0', background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: '3px', fontSize: '9.5px', cursor: 'pointer', fontWeight: 600 }}
+                                                style={{ width: '42px', padding: '1px 0', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#64748b', borderRadius: '3px', fontSize: '9.5px', cursor: 'pointer', fontWeight: 600 }}
                                               >
                                                 삭제
                                               </button>
@@ -5863,7 +5863,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
                                           handleAddPoPreset('generalNotes', currentText);
                                         }}
-                                        style={{ padding: '3px 8px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                        style={{ padding: '3px 8px', background: '#475569', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
                                       >
                                         ➕ 신규 등록 (DB)
                                       </button>
@@ -5877,7 +5877,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             alert("삭제할 템플릿을 목록에서 먼저 선택해 주세요.");
                                           }
                                         }}
-                                        style={{ padding: '3px 8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                        style={{ padding: '3px 8px', background: '#94a3b8', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
                                       >
                                         ❌ 삭제
                                       </button>
