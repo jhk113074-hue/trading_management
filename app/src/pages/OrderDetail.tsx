@@ -1571,9 +1571,9 @@ export const OrderDetail: React.FC = () => {
                   const cbm = Number(((netWeight / 1000) * 1.5).toFixed(2));
                     return {
                       shippingMark: '',
-                      description: `P#${idx + 1}. ${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
+                      description: `${it.name || ''} - ${(it.qty || 0).toLocaleString()} ${it.unit || 'EA'}`,
                       supplier: it.supplier || 'General Supplier',
-                      pkgNo: '',
+                      pkgNo: String(idx + 1),
                       pkg: '1',
                       netWeight: String(netWeight),
                       grossWeight: String(grossWeight),
@@ -7192,7 +7192,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     nextContainers[cIdx].items.push({
                                       shippingMark: '',
                                       description: '',
-                                      pkgNo: '',
+                                      pkgNo: String(nextContainers[cIdx].items.length + 1),
                                       pkg: '0',
                                       qty: '0',
                                       netWeight: '0',
@@ -7259,11 +7259,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                             list={`packing_products_datalist_${cIdx}_${itIdx}`}
                                             style={{ padding: '2px 5px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', height: '28px' }}
-                                            value={it.description || ''}
+                                            value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
                                             onChange={e => {
                                               const val = e.target.value;
                                               const nextContainers = [...basicForm.packingList.containers];
-                                              nextContainers[cIdx].items[itIdx].description = val;
+                                              nextContainers[cIdx].items[itIdx].description = val.replace(/^P#\d+\.\s*/i, '');
                                               setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                             }}
                                           />
