@@ -130,6 +130,7 @@ export const OrderDetail: React.FC = () => {
   const [activeDocumentTab, setActiveDocumentTab] = useState<'서류업로드' | 'CI_PL작성'>('서류업로드');
   const [isCiPlPreviewOpen, setIsCiPlPreviewOpen] = useState(false);
   const [showPoDetails, setShowPoDetails] = useState(false);
+  const exportExcelRef = useRef<(() => void) | null>(null);
   const isEditing = true;
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
@@ -1987,6 +1988,31 @@ export const OrderDetail: React.FC = () => {
         
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // ── 동기화: 사용자가 입력한 HS CODE를 상품 마스터(DB)에 동적 연동 ──
+      const customerName = basicForm.customer?.trim();
+      if (customerName) {
+        for (const item of orderItems) {
+          const codeVal = item.hsCode?.trim();
+          if (codeVal) {
+            const rawCode = getRawProductCode(item.itemId);
+            const prod = products.find(p => p.productCode === rawCode || p.id === rawCode);
+            if (prod) {
+              const prodRef = doc(db, 'companies', COMPANY_ID, 'products', prod.id);
+              const existingCustomerHsCodes = prod.customerHsCodes || {};
+              // 기존에 저장된 HS Code와 다를 경우에만 DB Write 실행
+              if (existingCustomerHsCodes[customerName] !== codeVal) {
+                await setDoc(prodRef, {
+                  customerHsCodes: {
+                    ...existingCustomerHsCodes,
+                    [customerName]: codeVal
+                  }
+                }, { merge: true });
+              }
+            }
+          }
+        }
+      }
 
       isDirtyRef.current = false;
       if (showMsg) {
@@ -8915,85 +8941,84 @@ export const OrderDetail: React.FC = () => {
                   });
                 }
 
-                const handleExportExcelLocal = () => {
-                  const itemsPayload = orderItems.map(it => {
-                    const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
-                    
-                    // Match container item specs if packing list exists
-                    let itemNetWeight = matchedProd?.palletWeight || 0;
-                    let itemGrossWeight = matchedProd?.palletGrossWeight || 0;
-                    let itemCbm = 0.5;
-                    let itemPkgCount = it.qty;
-                    let itemPkgType = matchedProd?.packageType || 'Pallet';
-
-                    if (basicForm.packingList?.containers) {
-                      basicForm.packingList.containers.forEach((c: any) => {
-                        (c.items || []).forEach((plIt: any) => {
-                          if (plIt.description?.includes(it.name) || plIt.pkgNo?.includes(it.itemId)) {
-                            itemNetWeight = Number(plIt.netWeight) || 0;
-                            itemGrossWeight = Number(plIt.grossWeight) || 0;
-                            itemCbm = Number(plIt.cbm) || 0;
-                            itemPkgCount = Number(plIt.pkg) || 0;
-                            itemPkgType = plIt.packageType || 'Pallet';
-                          }
-                        });
-                      });
-                    }
-
-                    return {
-                      name: it.name || '',
-                      qty: it.qty || 0,
-                      unit: it.unit || 'kg',
-                      unitPrice: it.unitPrice || 0,
-                      amount: it.amount || 0,
-                      hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
-                      netWeight: itemNetWeight,
-                      grossWeight: itemGrossWeight,
-                      cbm: itemCbm,
-                      packageType: itemPkgType,
-                      packagesCount: itemPkgCount
-                    };
-                  });
-
                   // Format shipping mark to string format using basic string concats instead of escaped ticks
                   const compMark = commonShippingMark.company || 'YSACC';
                   const portCountryMark = (commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '');
                   const originMark = commonShippingMark.origin || 'MADE IN KOREA';
                   const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
 
-                  const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
-                  const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
-                  const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT';
+                  exportExcelRef.current = () => {
+                    const itemsPayload = orderItems.map(it => {
+                      const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
+                      
+                      // Match container item specs if packing list exists
+                      let itemNetWeight = matchedProd?.palletWeight || 0;
+                      let itemGrossWeight = matchedProd?.palletGrossWeight || 0;
+                      let itemCbm = 0.5;
+                      let itemPkgCount = it.qty;
+                      let itemPkgType = matchedProd?.packageType || 'Pallet';
 
-                  exportCiPlToExcel({
-                    orderId: order.id,
-                    piNumber: basicForm.piNumber,
-                    customerName: customApplicantVal,
-                    customerAddress: '',
-                    issuingCompany: basicForm.issuingCompany,
-                    invoiceNo: basicForm.piNumber || order.id,
-                    invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
-                    lcNo: basicForm.lcNo,
-                    lcDate: basicForm.lcIssuingDate,
-                    lcIssuingBank: basicForm.lcIssuingBank,
-                    notifyParty: customNotifyVal, 
-                    remarks: basicForm.remark,
-                    portOfLoading: basicForm.portOfLoading,
-                    portOfDischarge: basicForm.portOfDischarge,
-                    vesselName: basicForm.vesselBooking,
-                    etd: basicForm.etd,
-                    paymentTerms: basicForm.paymentTerms,
-                    deliveryTerms: basicForm.incoterms,
-                    shippingMarks: formattedMarkText || 'N/M',
-                    customShipperText: customShipperVal,
-                    items: itemsPayload,
-                    totalPackages: pkCount,
-                    totalNetWeight: plNet,
-                    totalGrossWeight: plGross,
-                    totalCbm: plCbm
-                  });
-                };
+                      if (basicForm.packingList?.containers) {
+                        basicForm.packingList.containers.forEach((c: any) => {
+                          (c.items || []).forEach((plIt: any) => {
+                            if (plIt.description?.includes(it.name) || plIt.pkgNo?.includes(it.itemId)) {
+                              itemNetWeight = Number(plIt.netWeight) || 0;
+                              itemGrossWeight = Number(plIt.grossWeight) || 0;
+                              itemCbm = Number(plIt.cbm) || 0;
+                              itemPkgCount = Number(plIt.pkg) || 0;
+                              itemPkgType = plIt.packageType || 'Pallet';
+                            }
+                          });
+                        });
+                      }
 
+                      return {
+                        name: it.name || '',
+                        qty: it.qty || 0,
+                        unit: it.unit || 'kg',
+                        unitPrice: it.unitPrice || 0,
+                        amount: it.amount || 0,
+                        hsCode: it.hsCode || matchedProd?.customerHsCodes?.[basicForm.customer || ''] || matchedProd?.hsCode || '',
+                        netWeight: itemNetWeight,
+                        grossWeight: itemGrossWeight,
+                        cbm: itemCbm,
+                        packageType: itemPkgType,
+                        packagesCount: itemPkgCount
+                      };
+                    });
+
+                    const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
+                    const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
+                    const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT';
+
+                    exportCiPlToExcel({
+                      orderId: order.id,
+                      piNumber: basicForm.piNumber,
+                      customerName: customApplicantVal,
+                      customerAddress: '',
+                      issuingCompany: basicForm.issuingCompany,
+                      invoiceNo: basicForm.piNumber || order.id,
+                      invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
+                      lcNo: basicForm.lcNo,
+                      lcDate: basicForm.lcIssuingDate,
+                      lcIssuingBank: basicForm.lcIssuingBank,
+                      notifyParty: customNotifyVal, 
+                      remarks: basicForm.remark,
+                      portOfLoading: basicForm.portOfLoading,
+                      portOfDischarge: basicForm.portOfDischarge,
+                      vesselName: basicForm.vesselBooking,
+                      etd: basicForm.etd,
+                      paymentTerms: basicForm.paymentTerms,
+                      deliveryTerms: basicForm.incoterms,
+                      shippingMarks: formattedMarkText || 'N/M',
+                      customShipperText: customShipperVal,
+                      items: itemsPayload,
+                      totalPackages: pkCount,
+                      totalNetWeight: plNet,
+                      totalGrossWeight: plGross,
+                      totalCbm: plCbm
+                    });
+                  };
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -9012,16 +9037,9 @@ export const OrderDetail: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setIsCiPlPreviewOpen(true)}
-                          style={{ padding: '6px 14px', background: '#3b82f6', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          style={{ padding: '6px 18px', background: '#3b82f6', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 4px rgba(59,130,246,0.2)' }}
                         >
-                          🔍 미리보기
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleExportExcelLocal}
-                          style={{ padding: '6px 14px', background: '#10b981', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          📥 Excel 파일 내보내기
+                          🔍 미리보기 후 Excel 내보내기
                         </button>
                       </div>
                     </div>
@@ -11187,16 +11205,17 @@ export const OrderDetail: React.FC = () => {
         <CiPlPreviewModal
           isOpen={isCiPlPreviewOpen}
           onClose={() => setIsCiPlPreviewOpen(false)}
+          onExportExcel={() => exportExcelRef.current?.()}
           data={{
             piNumber: basicForm.piNumber,
             invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
-            customerName: basicForm.customer,
-            customerAddress: basicForm.customerAddress || '',
+            customerName: basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer),
+            customerAddress: '',
             issuingCompany: basicForm.issuingCompany,
             lcNo: basicForm.lcNo,
             lcDate: basicForm.lcIssuingDate,
             lcIssuingBank: basicForm.lcIssuingBank,
-            notifyParty: basicForm.lcRemark || 'SAME AS APPLICANT', 
+            notifyParty: basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT', 
             remarks: basicForm.remark,
             portOfLoading: basicForm.portOfLoading,
             portOfDischarge: basicForm.portOfDischarge,
@@ -11205,6 +11224,7 @@ export const OrderDetail: React.FC = () => {
             paymentTerms: basicForm.paymentTerms,
             deliveryTerms: basicForm.incoterms,
             shippingMarks: (commonShippingMark.company || 'YSACC') + '\n' + ((commonShippingMark.port || '') + ', ' + (commonShippingMark.country || '')) + '\n' + (commonShippingMark.origin || 'MADE IN KOREA'),
+            customShipperText: basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany),
             items: orderItems.map(it => {
               const matchedProd = products.find(p => p.productCode === it.itemId || p.id === it.itemId);
               let itemNetWeight = matchedProd?.palletWeight || 0;

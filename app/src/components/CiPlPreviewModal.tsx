@@ -40,10 +40,12 @@ interface CiPlPreviewModalProps {
     totalNetWeight?: number;
     totalGrossWeight?: number;
     totalCbm?: number;
+    customShipperText?: string;
   };
+  onExportExcel?: () => void;
 }
 
-export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onClose, data }) => {
+export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onClose, data, onExportExcel }) => {
   const [activeTab, setActiveTab] = useState<'CI' | 'PL'>('CI');
 
   if (!isOpen) return null;
@@ -121,7 +123,22 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               Packing List 미리보기
             </button>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}>✕</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {onExportExcel && (
+              <button
+                type="button"
+                onClick={onExportExcel}
+                style={{
+                  padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer',
+                  border: 'none', backgroundColor: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', gap: '4px',
+                  boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
+                }}
+              >
+                📥 Excel 파일 내보내기
+              </button>
+            )}
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}>✕</button>
+          </div>
         </div>
 
         {/* Paper Container */}
@@ -139,7 +156,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                   <tr>
                     <td style={tdHeaderStyle}>
                       <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>Shipper / Beneficiary / Manufacturer</div>
-                      <div style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{shipperAddress}</div>
+                      <div style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{data.customShipperText || shipperAddress}</div>
                     </td>
                     <td style={tdHeaderStyle}>
                       <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>
