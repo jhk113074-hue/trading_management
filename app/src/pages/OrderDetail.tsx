@@ -8961,18 +8961,22 @@ export const OrderDetail: React.FC = () => {
                   const originMark = commonShippingMark.origin || 'MADE IN KOREA';
                   const formattedMarkText = compMark + '\n' + portCountryMark + '\n' + originMark;
 
+                  const customShipperVal = basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany);
+                  const customApplicantVal = basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer);
+                  const customNotifyVal = basicForm.packingList?.notifyParty || basicForm.lcRemark || 'SAME AS APPLICANT';
+
                   exportCiPlToExcel({
                     orderId: order.id,
                     piNumber: basicForm.piNumber,
-                    customerName: basicForm.customer,
-                    customerAddress: basicForm.customerAddress || '',
+                    customerName: customApplicantVal,
+                    customerAddress: '',
                     issuingCompany: basicForm.issuingCompany,
                     invoiceNo: basicForm.piNumber || order.id,
                     invoiceDate: basicForm.poDate || new Date().toISOString().split('T')[0],
                     lcNo: basicForm.lcNo,
                     lcDate: basicForm.lcIssuingDate,
                     lcIssuingBank: basicForm.lcIssuingBank,
-                    notifyParty: basicForm.lcRemark || 'SAME AS APPLICANT', 
+                    notifyParty: customNotifyVal, 
                     remarks: basicForm.remark,
                     portOfLoading: basicForm.portOfLoading,
                     portOfDischarge: basicForm.portOfDischarge,
@@ -8981,6 +8985,7 @@ export const OrderDetail: React.FC = () => {
                     paymentTerms: basicForm.paymentTerms,
                     deliveryTerms: basicForm.incoterms,
                     shippingMarks: formattedMarkText || 'N/M',
+                    customShipperText: customShipperVal,
                     items: itemsPayload,
                     totalPackages: pkCount,
                     totalNetWeight: plNet,
@@ -9083,18 +9088,36 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Shipper (송신인/제조사)</span>
                           <textarea 
-                            value={basicForm.issuingCompany === 'YSACC' ? 'YSACC CO., LTD.\nSuite 408, Dae-il Bldg, 12, Mapo-daero 4-gil,\nMapo-gu, Seoul, 04175, Korea' : 'YS CO., LTD.\nSuite 408, Dae-il Bldg, 12, Mapo-daero 4-gil,\nMapo-gu, Seoul, 04175, Korea'} 
-                            disabled 
+                            value={basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany)} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  shipper: textVal
+                                }
+                              }));
+                            }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '12px', background: '#f8fafc', color: '#64748b', fontFamily: 'monospace', resize: 'none' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#1e293b', fontFamily: 'monospace', resize: 'none' }} 
                           />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Applicant (바이어 주소)</span>
                           <textarea 
-                            value={basicForm.customerAddress || ''} 
-                            onChange={e => setBasicForm(p => ({ ...p, customerAddress: e.target.value }))} 
+                            value={basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer)} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  applicant: textVal
+                                }
+                              }));
+                            }}
                             rows={3} 
                             style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#1e293b', fontFamily: 'monospace', resize: 'none' }} 
                           />
@@ -9105,8 +9128,18 @@ export const OrderDetail: React.FC = () => {
                           <input 
                             type="text" 
                             placeholder="미입력 시 SAME AS APPLICANT로 지정됨" 
-                            value={basicForm.lcRemark || ''} 
-                            onChange={e => setBasicForm(p => ({ ...p, lcRemark: e.target.value }))} 
+                            value={basicForm.packingList?.notifyParty || basicForm.lcRemark || ''} 
+                            onChange={e => {
+                              const textVal = e.target.value;
+                              setBasicForm(p => ({
+                                ...p,
+                                lcRemark: textVal,
+                                packingList: {
+                                  ...(p.packingList || {}),
+                                  notifyParty: textVal
+                                }
+                              }));
+                            }}
                             style={inputStyle(true)} 
                           />
                         </div>
