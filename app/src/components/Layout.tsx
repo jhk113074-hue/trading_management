@@ -195,8 +195,10 @@ export const Layout: React.FC = () => {
                   <a 
                     key={item.path} 
                     href={item.path} 
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={e => {
+                      e.preventDefault();
+                      window.open(item.path, '_blank', 'width=1100,height=800,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no,status=no');
+                    }}
                     className="nav-item"
                   >
                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
