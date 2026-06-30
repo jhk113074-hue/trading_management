@@ -8888,7 +8888,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                   {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}
                   <div style={{ gridColumn: 'span 3', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '10px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                       {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
                       {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
@@ -8896,13 +8896,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     </div>
                   </div>
 
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
+                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', borderTop: '1px dashed #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
                     {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
                     {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
                   </div>
 
                   {/* 컨테이너 작업 및 운송 사진 */}
-                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
+                  <div style={{ gridColumn: 'span 3', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '12px' }}>
                     {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
                     {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
                   </div>
