@@ -5645,7 +5645,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             {(() => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
                                               const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
-                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}&emsp;${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'} ${vatAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
                                           {/* 8. 합계 */}
@@ -5654,7 +5654,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               const taxType = basicForm.supplierTaxTypes[supplierName] || '과세';
                                               const vatAmt = taxType === '영세' ? 0 : (purchaseCurrency === 'KRW' ? Math.round(totalPurchaseAmount * 0.1) : parseFloat((totalPurchaseAmount * 0.1).toFixed(2)));
                                               const grandAmt = totalPurchaseAmount + vatAmt;
-                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'}&emsp;${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
+                                              return `${purchaseCurrency === 'KRW' ? '₩' : '$'} ${grandAmt.toLocaleString(undefined, purchaseCurrency === 'KRW' ? {} : { minimumFractionDigits: 2 })}`;
                                             })()}
                                           </td>
                                           {/* 9. 순서/관리 */}
