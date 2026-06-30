@@ -12,6 +12,37 @@ interface Props {
 }
 
 export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, products, initialSearchTerm = '' }) => {
+
+  // Modeless Drag-to-move state
+  const [position, setPosition] = useState({ x: 100, y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = React.useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const nextX = Math.max(0, Math.min(window.innerWidth - 300, e.clientX - dragStartRef.current.x));
+      const nextY = Math.max(0, Math.min(window.innerHeight - 150, e.clientY - dragStartRef.current.y));
+      setPosition({ x: nextX, y: nextY });
+    };
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSupplier, setSelectedSupplier] = useState('All');
@@ -56,10 +87,12 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
 
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'none',
-      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000,
-      pointerEvents: 'none'
+      position: 'fixed',
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      zIndex: 2000,
+      pointerEvents: 'none',
+      userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{
         background: '#fff', borderRadius: '16px', width: '90%', maxWidth: '1000px',
@@ -71,11 +104,15 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
         minWidth: '600px', minHeight: '350px'
       }}>
         {/* Header */}
-        <div style={{
-          padding: '20px 24px', borderBottom: '1px solid #e2e8f0',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: '#f8fafc'
-        }}>
+        <div 
+          onMouseDown={handleMouseDown}
+          style={{
+            padding: '20px 24px', borderBottom: '1px solid #e2e8f0',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: '#f8fafc',
+            cursor: 'move',
+            userSelect: 'none'
+          }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
               🔍 상품 검색 및 불러오기 (Subwindow)
