@@ -1771,7 +1771,25 @@ export const OrderDetail: React.FC = () => {
     if (!order) return [];
     const itemSuppliers = Object.keys(groupedSupplierItems).filter(s => s !== 'General Supplier');
     const additional = order.additionalSuppliers || [];
-    return Array.from(new Set([...itemSuppliers, ...additional]));
+    const list = Array.from(new Set([...itemSuppliers, ...additional]));
+
+    const SUPPLIER_SORT_ORDER = [
+      '주식회사 켐베이스',
+      '태성기술',
+      '주식회사 하영에스엠씨',
+      '(주)아이오트레이딩',
+      '(주)투에이취엠',
+      '주식회사 정도'
+    ];
+
+    return list.sort((a, b) => {
+      const idxA = SUPPLIER_SORT_ORDER.indexOf(a);
+      const idxB = SUPPLIER_SORT_ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
   }, [groupedSupplierItems, order]);
 
   // Save details changes
