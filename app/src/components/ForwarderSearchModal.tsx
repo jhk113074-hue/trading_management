@@ -29,14 +29,16 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(6px)',
-      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+      background: 'none',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000,
+      pointerEvents: 'none'
     }}>
       <div style={{
         background: '#fff', borderRadius: '14px', width: '92%', maxWidth: '850px',
         height: '75vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
-        overflow: 'hidden', border: '1px solid #e2e8f0'
+        overflow: 'hidden', border: '1px solid #e2e8f0',
+        pointerEvents: 'auto'
       }}>
         {/* Header */}
         <div style={{

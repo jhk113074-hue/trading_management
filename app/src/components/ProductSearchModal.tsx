@@ -57,14 +57,16 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)',
-      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+      background: 'none',
+      display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000,
+      pointerEvents: 'none'
     }}>
       <div style={{
         background: '#fff', borderRadius: '16px', width: '90%', maxWidth: '1000px',
         height: '80vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        overflow: 'hidden', border: '1px solid #e2e8f0'
+        overflow: 'hidden', border: '1px solid #e2e8f0',
+        pointerEvents: 'auto'
       }}>
         {/* Header */}
         <div style={{
