@@ -1601,7 +1601,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       zIndex: 1000,
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: isMaximized ? '0px' : '14px', width: '100%', height: isMaximized ? '100vh' : 'auto', maxHeight: isMaximized ? '100vh' : '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: isMaximized ? 'none' : '2px solid #cbd5e1' }}>
+      <div style={{
+        background: '#fff',
+        borderRadius: isMaximized ? '0px' : '14px',
+        width: '100%',
+        height: isMaximized ? '100vh' : 'auto',
+        maxHeight: isMaximized ? '100vh' : '92vh',
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 20px 40px rgba(15,23,42,0.3)',
+        border: isMaximized ? 'none' : '2px solid #cbd5e1',
+        resize: isMaximized ? 'none' : 'both',
+        overflow: 'hidden',
+        minWidth: isMaximized ? 'none' : '800px',
+        minHeight: isMaximized ? 'none' : '400px'
+      }}>
         
         {/* Header */}
         <div 
