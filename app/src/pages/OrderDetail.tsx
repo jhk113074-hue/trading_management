@@ -5443,7 +5443,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
                                     <th style={{ padding: '6px', textAlign: 'left', width: '230px' }}>품목명</th>
                                     <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>스펙</th>
-                                    <th style={{ padding: '6px', textAlign: 'center', width: '100px' }}>수량</th>
+                                    <th style={{ padding: '6px', textAlign: 'center', width: '140px' }}>수량</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>매입가<br/>(통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '130px' }}>실매입가<br/>(통화/단가)</th>
                                     <th style={{ padding: '6px', textAlign: 'right', width: '90px' }}>금액</th>
@@ -5534,10 +5534,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             {isEditing ? (
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
                                                 <input
-                                                  type="number"
+                                                  type="text"
+                                                  inputMode="numeric"
+                                                  pattern="[0-9]*"
                                                   value={it.qty || 0}
-                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'qty', e.target.value)}
-                                                  style={{ width: '42px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                                    handleSourcingItemChange(itemIndexInMain, 'qty', val === '' ? 0 : parseInt(val, 10));
+                                                  }}
+                                                  style={{ width: '70px', padding: '3px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right' }}
                                                 />
                                                 <input
                                                   type="text"
