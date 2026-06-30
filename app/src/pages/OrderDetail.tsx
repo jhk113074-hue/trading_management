@@ -3031,8 +3031,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           <table class="items-table">
             <thead>
               <tr>
-                <th style="width: 100px;">상품코드</th>
-                <th style="width: 200px;">품 명</th>
+                <th style="width: 50px;">No.</th>
+                <th style="width: 250px;">품 명</th>
                 <th style="width: 120px;">스 펙</th>
                 <th style="width: 60px;">수량</th>
                 <th style="width: 80px;">단 가</th>
@@ -3042,15 +3042,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               </tr>
             </thead>
             <tbody>
-              ${items.map((it) => {
-                const { purchasePrice, purchaseCurrency, itemCode, itemName } = getSupplierPurchaseInfo(it);
+              ${items.map((it, idx) => {
+                const { purchasePrice, purchaseCurrency, itemName } = getSupplierPurchaseInfo(it);
                 const isKrw = purchaseCurrency === 'KRW';
                 const currencySymbol = isKrw ? '₩' : '$';
                 const rawAmt = purchasePrice * (it.qty || 0);
                 const vatAmt = taxType === '영세' ? 0 : (isKrw ? Math.round(rawAmt * 0.1) : parseFloat((rawAmt * 0.1).toFixed(2)));
                 return `
                   <tr>
-                    <td class="center">${itemCode}</td>
+                    <td class="center">${idx + 1}</td>
                     <td><strong>${itemName}</strong></td>
                     <td class="center">${it.grade || '-'}</td>
                     <td class="right">${(it.qty || 0).toLocaleString()}</td>
@@ -5472,6 +5472,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           {/* 1. 상품코드 + 품목명 (병합 열) */}
                                           <td style={{ padding: '4px', verticalAlign: 'middle' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', minWidth: '18px' }}>{idx + 1}.</span>
                                               {isEditing ? (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                                                   <input
