@@ -1458,10 +1458,18 @@ export const OrderDetail: React.FC = () => {
         }
       }
     };
-
     window.addEventListener('message', handlePackerMessage);
     return () => window.removeEventListener('message', handlePackerMessage);
   }, []);
+
+  // ── activeStep 변경 감지 → PO 상세 접기/보기 제어 ──
+  useEffect(() => {
+    if (activeStep === '수주정보') {
+      setShowPoDetails(true);
+    } else {
+      setShowPoDetails(false);
+    }
+  }, [activeStep]);
 
   // Load Order document
   useEffect(() => {
