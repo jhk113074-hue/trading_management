@@ -9127,8 +9127,8 @@ export const OrderDetail: React.FC = () => {
                           <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Notify Party (통지처)</span>
                           <input 
                             type="text" 
-                            placeholder="미입력 시 SAME AS APPLICANT로 지정됨" 
-                            value={basicForm.packingList?.notifyParty || basicForm.lcRemark || ''} 
+                            placeholder="SAME AS APPLICANT" 
+                            value={basicForm.packingList?.notifyParty !== undefined ? basicForm.packingList.notifyParty : (basicForm.lcRemark || 'SAME AS APPLICANT')} 
                             onChange={e => {
                               const textVal = e.target.value;
                               setBasicForm(p => ({
