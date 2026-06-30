@@ -10464,54 +10464,72 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {activeSettlementTab === '정산현황' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {/* 상단 기본정보 카드 */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문 금액 (USD)</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                          ${orderAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                    {/* 상단 기본정보 카드 (3행 분류 구성) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {/* Line 1: 주문금액(USD) / 적용 수출면장환율 / 주문금액(KRW) */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문 금액 (USD)</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                            ${orderAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD
+                          </div>
+                        </div>
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>적용 수출면장환율</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                            ₩{customsRate.toLocaleString()} KRW
+                          </div>
+                          <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                            {basicForm.customsExchangeRate ? '수출면장 환율 적용됨' : 'PI 환율 또는 기본 환율 적용됨'}
+                          </div>
+                        </div>
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문금액 (KRW)</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
+                            ₩{Math.round(orderAmountKrw).toLocaleString()} KRW
+                          </div>
                         </div>
                       </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>적용 수출면장환율</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                          ₩{customsRate.toLocaleString()} KRW
+
+                      {/* Line 2: 매입금액 / 운송비 / BANK CHARGES : 비용계 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>매입금액</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
+                            ₩{consolidatedPurchaseKrw.toLocaleString()} KRW
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
+                            ${(customsRate > 0 ? consolidatedPurchaseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                          </div>
                         </div>
-                        <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
-                          {basicForm.customsExchangeRate ? '수출면장 환율 적용됨' : 'PI 환율 또는 기본 환율 적용됨'}
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
+                            ₩{forwarderExpenseKrw.toLocaleString()} KRW
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
+                            ${(customsRate > 0 ? forwarderExpenseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>주문금액 (KRW)</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', marginTop: '4px' }}>
-                          ₩{Math.round(orderAmountKrw).toLocaleString()} KRW
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>BANK CHARGES</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
+                            ₩{totalBankChargesKrw.toLocaleString()} KRW
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
+                            ${totalBankChargesUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                          </div>
                         </div>
-                      </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>매입금액</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
-                          ₩{consolidatedPurchaseKrw.toLocaleString()} KRW
-                        </div>
-                        <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
-                          ${(customsRate > 0 ? consolidatedPurchaseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
-                        </div>
-                      </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>운송비</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
-                          ₩{forwarderExpenseKrw.toLocaleString()} KRW
-                        </div>
-                        <div style={{ fontSize: '10px', color: '#b91c1c', marginTop: '2px' }}>
-                          ${(customsRate > 0 ? forwarderExpenseKrw / customsRate : 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
-                        </div>
-                      </div>
-                      <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#fff1f2', borderColor: '#fecdd3', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div style={{ fontSize: '11px', color: '#be123c', fontWeight: 700 }}>BANK CHARGES</div>
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#9f1239', marginTop: '4px' }}>
-                          ₩{totalBankChargesKrw.toLocaleString()} KRW
-                        </div>
-                        <div style={{ fontSize: '10px', color: '#e11d48', marginTop: '2px' }}>
-                          ${totalBankChargesUsd.toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                        
+                        {/* 비용계 신설 */}
+                        <div style={{ border: '1px solid #c084fc', borderRadius: '8px', padding: '12px', background: '#faf5ff', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                          <div style={{ fontSize: '11px', color: '#7e22ce', fontWeight: 700 }}>비용계</div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#6b21a8', marginTop: '4px' }}>
+                            ₩{(consolidatedPurchaseKrw + forwarderExpenseKrw + totalBankChargesKrw).toLocaleString()} KRW
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#7e22ce', marginTop: '2px' }}>
+                            ${(totalCostUsd + totalBankChargesUsd).toLocaleString(undefined, { minimumFractionDigits: 2 })} USD 상당
+                          </div>
                         </div>
                       </div>
                     </div>
