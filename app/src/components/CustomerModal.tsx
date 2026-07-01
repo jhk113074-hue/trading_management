@@ -194,6 +194,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       width: '96%',
       maxWidth: '1100px',
       zIndex: 3000,
+      pointerEvents: 'auto',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{ background: '#fff', borderRadius: '10px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1', overflow: 'hidden' }}>
