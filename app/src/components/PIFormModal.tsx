@@ -2077,10 +2077,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center', width: '100%' }}
                         >
                           <option value="none">없음</option>
+                          <option value="-2">-2</option>
+                          <option value="-1">-1</option>
                           <option value="0">0</option>
                           <option value="1">1</option>
                           <option value="2">2</option>
-                          <option value="-1">10</option>
                         </select>
                       </div>
                     </td>
@@ -2698,8 +2699,9 @@ const getRawProductCode = (code: string | undefined): string => {
 };
 
 const ceilValue = (value: number, digits: number): number => {
-  if (digits === -1) {
-    return Math.ceil(value / 10) * 10;
+  if (digits < 0) {
+    const scale = Math.pow(10, Math.abs(digits));
+    return Math.ceil(value / scale) * scale;
   }
   const factor = Math.pow(10, digits);
   return Math.ceil(value * factor) / factor;
