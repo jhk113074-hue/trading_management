@@ -649,6 +649,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       width: '96%',
       maxWidth: '1080px',
       zIndex: 1000,
+      pointerEvents: 'auto',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1' }}>
