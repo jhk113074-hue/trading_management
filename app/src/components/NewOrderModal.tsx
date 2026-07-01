@@ -1011,8 +1011,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           onChange={e => handleItemChange(idx, 'currency', e.target.value)}
                           style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                         >
-                          <option value="USD">USD ($)</option>
-                          <option value="KRW">KRW (₩)</option>
+                          <option value="USD">USD</option>
+                          <option value="KRW">KRW</option>
                         </select>
                         <input
                           type="number"
@@ -1033,8 +1033,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           onChange={e => handleItemChange(idx, 'purchaseUnitCurrency', e.target.value)}
                           style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
                         >
-                          <option value="USD">USD ($)</option>
-                          <option value="KRW">KRW (₩)</option>
+                          <option value="USD">USD</option>
+                          <option value="KRW">KRW</option>
                         </select>
                         <input
                           type="number"

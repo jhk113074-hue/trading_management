@@ -5148,8 +5148,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               onChange={e => handleItemChange(idx, 'currency', e.target.value)}
                               style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15.5px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             >
-                              <option value="USD">USD ($)</option>
-                              <option value="KRW">KRW (₩)</option>
+                              <option value="USD">USD</option>
+                              <option value="KRW">KRW</option>
                             </select>
                             <input
                               type="number"

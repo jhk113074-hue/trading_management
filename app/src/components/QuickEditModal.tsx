@@ -571,8 +571,8 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           onChange={(e) => handleItemChange(idx, 'currency', e.target.value)}
                           style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
                         >
-                          <option value="USD">USD ($)</option>
-                          <option value="KRW">KRW (₩)</option>
+                          <option value="USD">USD</option>
+                          <option value="KRW">KRW</option>
                         </select>
                       </td>
                       <td style={{ padding: '4px' }}>
