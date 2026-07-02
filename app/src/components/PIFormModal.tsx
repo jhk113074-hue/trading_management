@@ -1805,11 +1805,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
             <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
-              <table style={{ width: '100%', minWidth: '1070px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+              <table style={{ width: '100%', minWidth: '1066px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '8px 4px', width: '280px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', width: '150px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
+                  <th style={{ padding: '8px 4px', width: '336px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
                   <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>수량 / 단위</th>
                   <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>매입가</th>
                   <th style={{ padding: '8px 4px', width: '65px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>마진/올림</th>
