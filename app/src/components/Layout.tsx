@@ -532,7 +532,6 @@ export const Layout: React.FC = () => {
               fontSize: '13.5px',
               fontWeight: 700,
               color: '#475569',
-              fontFamily: 'Courier New, Courier, monospace',
               marginRight: '6px',
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
