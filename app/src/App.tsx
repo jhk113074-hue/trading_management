@@ -22,7 +22,28 @@ import { IssueBoard } from './pages/IssueBoard';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
+import { useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from './firebase';
+
 const App: React.FC = () => {
+  useEffect(() => {
+    async function printIssues() {
+      try {
+        const snap = await getDocs(collection(db, 'companies', 'YSACC', 'issues'));
+        console.log(`%c=== YSACC Issues Diagnostic (${snap.size}) ===`, 'background: #3b82f6; color: #fff; padding: 4px; font-weight: bold;');
+        snap.forEach(doc => {
+          const data = doc.data();
+          console.log(`[%c${data.status || '미해결'}%c] [${data.category}] ${data.title}\n내용: ${data.content}`, 
+            data.status === '해결됨' ? 'color: green' : 'color: red; font-weight: bold', 'color: inherit');
+        });
+      } catch (e) {
+        console.error("Failed to print diagnostic issues:", e);
+      }
+    }
+    printIssues();
+  }, []);
+
   return (
     <AuthProvider>
       <TaskProvider>
