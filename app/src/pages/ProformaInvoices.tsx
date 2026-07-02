@@ -795,22 +795,6 @@ export const ProformaInvoices: React.FC = () => {
                     </td>
                     <td style={{ padding: '6px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }} onClick={e => e.stopPropagation()}>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
-                        <button 
-                          onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
-                          style={{ 
-                            background: 'none', 
-                            border: 'none', 
-                            padding: '4px', 
-                            fontSize: '15px', 
-                            cursor: 'pointer', 
-                            transition: 'transform 0.15s' 
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                          title="수정"
-                        >
-                          ✏️
-                        </button>
                         {linkedOrder ? (
                           <button
                             onClick={() => navigate(`/orders/${linkedOrder.id}?step=수주정보`)}
@@ -840,6 +824,22 @@ export const ProformaInvoices: React.FC = () => {
                             주문생성
                           </button>
                         )}
+                        <button 
+                          onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
+                          style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            padding: '4px', 
+                            fontSize: '15px', 
+                            cursor: 'pointer', 
+                            transition: 'transform 0.15s' 
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="수정"
+                        >
+                          ✏️
+                        </button>
                         <button 
                           onClick={() => handleCopy(p)} 
                           style={{ 
