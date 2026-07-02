@@ -2093,7 +2093,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                        <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 500 }}>USD</span>
                         <SalePriceInput
                           value={it.salePriceUsd}
                           onChange={(val) => updateItem(idx, 'salePriceUsd', val)}
