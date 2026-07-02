@@ -759,9 +759,11 @@ export const ProformaInvoices: React.FC = () => {
                     <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }}>{issuerBadge}</td>
                     <td style={{ padding: '9px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
                       {(() => {
-                        const name = p.createdByName || '-';
-                        if (name === 'jhkim1130' || name === '대표이사 김주한') return '김주한';
-                        return name.replace('대표이사 ', '');
+                        let name = p.createdByName || '-';
+                        if (name === 'jhkim1130' || name.includes('김주한')) return '김주한';
+                        if (name === 'jhk010624' || name.includes('김하은')) return '김하은';
+                        if (name === 'alexpark' || name.includes('박현')) return '박현';
+                        return name.replace(/대표이사|차장|사원|과장|대리/g, '').trim();
                       })()}
                     </td>
                     {/* STATUS 배지 */}

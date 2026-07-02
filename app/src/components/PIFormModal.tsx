@@ -2151,12 +2151,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             {/* Freight Charges (USD) */}
             <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '12px 16px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
-                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
+                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Freight Headers */}
-                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '9.5px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '12px', color: '#475569', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   <div style={{ flex: 1.5 }}>Container Type</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
                   <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
@@ -2180,7 +2180,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             updateFreightCharge(fcIdx, 'type', e.target.value);
                           }
                         }}
-                        style={{ width: '100%', padding: '5px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', background: '#fff' }}
+                        style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', background: '#fff' }}
                       >
                         <optgroup label="컨테이너">
                           <option value="LCL">LCL</option>
@@ -2211,7 +2211,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="항목명 직접 입력"
                           value={fc.type || ''}
                           onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)}
-                          style={{ width: '100%', padding: '5px 6px', border: '1px solid #0d9488', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                          style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid #0d9488', borderRadius: '4px', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                           autoFocus
                         />
                       )}
@@ -2221,7 +2221,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="수량" 
                       value={fc.qty ?? 1} 
                       onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                      style={{ flex: 1, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
                     />
                     <input 
                       type="number" 
@@ -2229,9 +2229,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="금액 (USD)" 
                       value={fc.price ?? 0} 
                       onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }} 
+                      style={{ flex: 1.5, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
                     />
-                    <div style={{ flex: 1, textAlign: 'right', fontSize: '12px', fontWeight: 600, color: '#0f172a' }}>
+                    <div style={{ flex: 1, textAlign: 'right', fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
                       ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <input 
@@ -2239,13 +2239,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="비고" 
                       value={fc.remarks || ''} 
                       onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
-                      style={{ flex: 3.5, padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }} 
+                      style={{ flex: 3.5, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px' }} 
                     />
-                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                    <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
                   </div>
                 ))}
               </div>
-              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '13px', color: '#0f172a', marginTop: '4px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '16px', color: '#0f172a', marginTop: '4px', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
                 운송비 합계: <span style={{ color: '#0f172a' }}>${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -2254,19 +2254,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
           {/* Remarks */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Remarks</label>
-            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', color: '#334155', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5', fontFamily: 'monospace' }}></textarea>
+            <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Remarks</label>
+            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', color: '#334155', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5', fontFamily: 'monospace' }}></textarea>
           </div>
 
           {initialPI && (
             <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', padding: '12px 16px', borderRadius: '8px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#b45309', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>⚠️ Revision Reason (변경 사유) ★</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>⚠️ Revision Reason (변경 사유) ★</div>
               <input
                 type="text"
                 value={revisionReason}
                 onChange={(e) => setRevisionReason(e.target.value)}
                 placeholder="예: 고객 단가 인하 요청 수용"
-                style={{ width: '100%', padding: '6px 10px', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '12.5px', color: '#78350f', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', height: '32px', padding: '6px 10px', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '15.5px', color: '#78350f', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           )}
