@@ -95,7 +95,7 @@ export const ProformaInvoices: React.FC = () => {
 
   const auth = getAuth();
   let currentUser = auth.currentUser?.email?.split('@')[0] || 'Unknown';
-  if (currentUser === 'jhkim1130') {
+  if (currentUser === 'jhkim1130' || currentUser === 'jhk010624') {
     currentUser = '대표이사 김주한';
   }
 
