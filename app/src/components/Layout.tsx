@@ -62,7 +62,7 @@ export const Layout: React.FC = () => {
     };
   }, [isDragging, resize, stopResizing]);
 
-  // 2 Hours Session Timeout Monitor Hook
+  // 8 Hours Session Timeout Monitor Hook
   React.useEffect(() => {
     if (!userProfile) return;
 
@@ -81,8 +81,8 @@ export const Layout: React.FC = () => {
       const now = Date.now();
       const inactiveTime = now - lastActivity;
 
-      // 115 Minutes Inactive (6900000 ms) -> Trigger Warning Countdown
-      if (inactiveTime >= 6900000) {
+      // 475 Minutes Inactive (28500000 ms) -> Trigger Warning Countdown
+      if (inactiveTime >= 28500000) {
         setShowTimeoutWarning(true);
       } else {
         setShowTimeoutWarning(false);
