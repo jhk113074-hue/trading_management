@@ -378,42 +378,42 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
     setEditingMethod(null);
   };
 
-  const handleSetDefaultPacking = (id: string) => {
-    const list = (formData.packingMethods || []).map(m => ({
-      ...m,
-      isDefault: m.id === id
-    }));
-    
-    const defaultMethod = list.find(m => m.isDefault);
-    if (defaultMethod) {
-      const isPallet = defaultMethod.packageType.toLowerCase().includes('pallet');
-      setFormData(prev => ({
-        ...prev,
-        packingMethods: list,
-        packageType: defaultMethod.packageType,
-        qtyPerPallet: defaultMethod.qtyPerPallet || 0,
-        unitWidth: defaultMethod.unitWidth || 0,
-        unitLength: defaultMethod.unitLength || 0,
-        unitHeight: defaultMethod.unitHeight || 0,
-        unitWeight: defaultMethod.unitWeight || 0,
-        unitGrossWeight: defaultMethod.unitGrossWeight || 0,
-        palletWidth: defaultMethod.palletWidth || 0,
-        palletLength: defaultMethod.palletLength || 0,
-        palletHeight: defaultMethod.palletHeight || 0,
-        palletWeight: defaultMethod.palletWeight || 0,
-        palletGrossWeight: defaultMethod.palletGrossWeight || 0,
-        specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
-        specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
-        specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
-        weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
-        grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
-        stackable: defaultMethod.stackable || 'Y',
-        rotation: defaultMethod.rotation || 'Y',
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, packingMethods: list }));
-    }
-  };
+  // const handleSetDefaultPacking = (id: string) => {
+  //   const list = (formData.packingMethods || []).map(m => ({
+  //     ...m,
+  //     isDefault: m.id === id
+  //   }));
+  //   
+  //   const defaultMethod = list.find(m => m.isDefault);
+  //   if (defaultMethod) {
+  //     const isPallet = defaultMethod.packageType.toLowerCase().includes('pallet');
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       packingMethods: list,
+  //       packageType: defaultMethod.packageType,
+  //       qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+  //       unitWidth: defaultMethod.unitWidth || 0,
+  //       unitLength: defaultMethod.unitLength || 0,
+  //       unitHeight: defaultMethod.unitHeight || 0,
+  //       unitWeight: defaultMethod.unitWeight || 0,
+  //       unitGrossWeight: defaultMethod.unitGrossWeight || 0,
+  //       palletWidth: defaultMethod.palletWidth || 0,
+  //       palletLength: defaultMethod.palletLength || 0,
+  //       palletHeight: defaultMethod.palletHeight || 0,
+  //       palletWeight: defaultMethod.palletWeight || 0,
+  //       palletGrossWeight: defaultMethod.palletGrossWeight || 0,
+  //       specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+  //       specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+  //       specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+  //       weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+  //       grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+  //       stackable: defaultMethod.stackable || 'Y',
+  //       rotation: defaultMethod.rotation || 'Y',
+  //     }));
+  //   } else {
+  //     setFormData(prev => ({ ...prev, packingMethods: list }));
+  //   }
+  // };
 
   const handleDeletePackingMethod = (id: string) => {
     const method = (formData.packingMethods || []).find(m => m.id === id);
@@ -1405,21 +1405,20 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
                   <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
                     <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
-                      <thead>
+                       <thead>
                         <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e8ecf0', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>포장 형태</th>
                           <th style={{ padding: '8px' }}>단위</th>
                           <th style={{ padding: '8px' }}>포장 규격 (WxLxH, 적재수량/중량, 순중량, 총중량)</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>다단 적재</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>회전 허용</th>
-                          <th style={{ padding: '8px', textAlign: 'center' }}>기본 설정</th>
                           <th style={{ padding: '8px', textAlign: 'center' }}>작업</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(formData.packingMethods || []).length === 0 ? (
                           <tr>
-                            <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
                               등록된 패킹 방법이 없습니다. 우측 상단의 버튼을 눌러 첫 번째 패킹 방법을 추가해 주세요.
                             </td>
                           </tr>
@@ -1433,17 +1432,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             return (
                               <tr key={m.id} style={{ borderBottom: '1px solid #e8ecf0', background: m.isDefault ? '#eff6ff' : 'transparent' }}>
                                 <td style={{ padding: '8px', fontWeight: m.isDefault ? 700 : 500 }}>
-                                  {m.name} {m.isDefault && <span style={{ fontSize: '10px', background: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px' }}>기본</span>}
+                                  {m.name}
                                 </td>
                                 <td style={{ padding: '8px' }}>{m.unit}</td>
                                 <td style={{ padding: '8px', color: '#475569' }}>{specStr}</td>
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.stackable || 'Y'}</td>
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.rotation || 'Y'}</td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>
-                                  {!m.isDefault && (
-                                    <button type="button" onClick={() => handleSetDefaultPacking(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fff', border: '1px solid #e8ecf0', borderRadius: '4px', cursor: 'pointer' }}>기본 지정</button>
-                                  )}
-                                </td>
                                 <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                                   <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
                                   <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>

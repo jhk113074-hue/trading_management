@@ -1953,11 +1953,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const methods = getProductPackingMethods(prod);
                           return (
                             <select
-                              value={it.selectedPackingMethodId || ''}
+                              value={it.selectedPackingMethodId || 'default'}
                               onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
                               style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center' }}
                             >
-                              <option value="">-- 기본 규격 --</option>
                               {methods.map((m: any) => (
                                 <option key={m.id} value={m.id}>
                                   {m.name}
