@@ -95,8 +95,12 @@ export const ProformaInvoices: React.FC = () => {
 
   const auth = getAuth();
   let currentUser = auth.currentUser?.email?.split('@')[0] || 'Unknown';
-  if (currentUser === 'jhkim1130' || currentUser === 'jhk010624') {
+  if (currentUser === 'jhkim1130') {
     currentUser = '대표이사 김주한';
+  } else if (currentUser === 'jhk010624') {
+    currentUser = '김하은 사원';
+  } else if (currentUser === 'alexpark') {
+    currentUser = '박현 차장';
   }
 
   // Resizable column widths state

@@ -101,7 +101,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       deliveryTerm: '8weeks from payment confirmation', origin: 'KOREA', yourRef: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
-      status: 'draft', currentVersion: 1, createdByName: (currentUser === 'jhk010624' ? '대표이사 김주한' : currentUser),
+      status: 'draft', currentVersion: 1, createdByName: (currentUser === 'jhk010624' ? '김하은 사원' : currentUser === 'alexpark' ? '박현 차장' : currentUser === 'jhkim1130' ? '대표이사 김주한' : currentUser),
       attachments: []
     };
 
@@ -127,7 +127,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       }
       
       // Force correct creator name mapping if it is raw ID
-      if (defaults.createdByName === 'jhk010624' || defaults.createdByName === 'jhkim1130' || !['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리'].includes(defaults.createdByName || '')) {
+      if (defaults.createdByName === 'jhk010624') {
+        defaults.createdByName = '김하은 사원';
+      } else if (defaults.createdByName === 'alexpark') {
+        defaults.createdByName = '박현 차장';
+      } else if (defaults.createdByName === 'jhkim1130') {
+        defaults.createdByName = '대표이사 김주한';
+      } else if (!['대표이사 김주한', '박현 차장', '김하은 사원'].includes(defaults.createdByName || '')) {
         defaults.createdByName = '대표이사 김주한';
       }
       // Handle arrays separately
@@ -1731,7 +1737,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '8px', alignItems: 'end' }}>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
-              <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리']} />
+              <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
               <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
               <CompactInput label="Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
