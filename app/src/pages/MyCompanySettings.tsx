@@ -102,6 +102,20 @@ const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) =
   const lowerUrl = url.toLowerCase();
   const isPdf = lowerUrl.includes('.pdf') || lowerUrl.includes('pdf');
 
+  const handleDownload = () => {
+    const downloadUrl = url.includes('?') 
+      ? `${url}&response-content-disposition=attachment` 
+      : `${url}?response-content-disposition=attachment`;
+    
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.target = '_blank';
+    link.setAttribute('download', name);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div
       style={{
@@ -136,21 +150,41 @@ const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) =
         <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>
           📄 {name} 미리보기
         </span>
-        <button
-          onClick={onClose}
-          style={{
-            background: '#ef4444',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            fontSize: '0.75rem',
-            cursor: 'pointer',
-            fontWeight: 600
-          }}
-        >
-          닫기
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={handleDownload}
+            style={{
+              background: '#0ea5e9',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 10px',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            💾 저장
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#ef4444',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              fontSize: '0.75rem',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
+            닫기
+          </button>
+        </div>
       </div>
 
       <div style={{ flex: 1, backgroundColor: '#f1f5f9', padding: '8px' }}>
