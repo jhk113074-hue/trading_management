@@ -597,44 +597,44 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
           <div
-            style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
+            style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', padding: '8px 12px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
             onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
             onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
             onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
             onPaste={e => { const files = e.clipboardData?.files; if (files && files.length > 0) { e.preventDefault(); handleFileUpload(files); } }}
             tabIndex={0}
           >
-            <div style={{ color: '#64748b', fontSize: '13px', marginBottom: '10px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+            <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
             <input type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="task-file-upload" />
-            <label htmlFor="task-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '7px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+            <label htmlFor="task-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
               {isUploading ? '업로드 중...' : '파일 선택하기'}
             </label>
 
             {attachments.length > 0 && (
-              <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+              <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
                 {attachments.map((att, idx) => {
                   const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(att.name);
                   const isPdf = /\.pdf$/i.test(att.name);
                   const isExcel = /\.(xls|xlsx)$/i.test(att.name);
                   return (
-                    <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                    <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                       <div onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ cursor: 'pointer' }} title="클릭하여 미리보기">
                         {isImg ? (
-                          <img src={att.url} alt={att.name} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                          <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                         ) : (
-                          <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                          <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
                             {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                           </span>
                         )}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-                        <span onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ color: '#1e293b', fontWeight: 600, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} title="클릭하여 미리보기">{att.name}</span>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
+                        <span onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ color: '#1e293b', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} title="클릭하여 미리보기">{att.name}</span>
+                        <span style={{ color: '#64748b', fontSize: '9px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
                       </div>
-                      <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
-                        <button type="button" onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px' }} title="미리보기">🔍</button>
-                        <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', textDecoration: 'none' }} title="다운로드">⬇</a>
-                        <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px' }} title="삭제">✕</button>
+                      <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }}>
+                        <button type="button" onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }} title="미리보기">🔍</button>
+                        <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px', textDecoration: 'none' }} title="다운로드">⬇</a>
+                        <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }} title="삭제">✕</button>
                       </div>
                     </div>
                   );
@@ -645,7 +645,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* Comments (Only for existing tasks) */}
           {initialTask && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
 
               {/* Comments */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -674,7 +674,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     </select>
                   </div>
                 </div>
-                <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
+                <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {comments.map(c => (
                     <div key={c.id}>
                       <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>
