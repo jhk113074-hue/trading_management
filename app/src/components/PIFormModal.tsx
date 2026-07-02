@@ -940,36 +940,36 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     const [isNewMode, setIsNewMode] = useState(false);
     const [newVal, setNewVal] = useState('');
     const selectStyle: React.CSSProperties = required
-      ? { padding: '2px 4px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
-      : { padding: '2px 4px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', color: '#334155', height: '25px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
+      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
+      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13.5px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
 
     if (isNewMode) {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <label style={{ fontSize: '9.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+          <label style={{ fontSize: '11.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
             {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
           </label>
-          <div style={{ display: 'flex', gap: '3px', height: '25px' }}>
+          <div style={{ display: 'flex', gap: '3px', height: '32px' }}>
             <input
               type="text"
               value={newVal}
               onChange={e => setNewVal(e.target.value)}
               placeholder="직접 입력..."
-              style={{ flex: 1, padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '12px', height: '25px', boxSizing: 'border-box', outline: 'none' }}
+              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '13.5px', height: '32px', boxSizing: 'border-box', outline: 'none' }}
               autoFocus
             />
             <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
             <button type="button" onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 6px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
         </div>
       );
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <label style={{ fontSize: '9.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        <label style={{ fontSize: '11.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
           {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
         </label>
         <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
@@ -1724,7 +1724,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '5px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '8px', alignItems: 'end' }}>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
@@ -1738,11 +1738,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0', marginTop: '4px' }}>고객 및 거래 조건</div>
 
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '5px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '8px', alignItems: 'end' }}>
               {/* Customer search input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
-                <div style={{ position: 'relative', height: '25px', display: 'flex', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
+                <div style={{ position: 'relative', height: '32px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={formData.customerName || ''}
@@ -1750,18 +1750,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     readOnly
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
-                      width: '100%', height: '25px', padding: '1px 32px 1px 6px',
-                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a',
+                      width: '100%', height: '32px', padding: '1px 32px 1px 8px',
+                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
                   {formData.customerId && (
                     <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
-                      style={{ position: 'absolute', right: '18px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                      style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
                       title="비우기">✕</button>
                   )}
                   <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
-                    style={{ position: 'absolute', right: '3px', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                    style={{ position: 'absolute', right: '4px', background: 'transparent', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', padding: '1px', display: 'flex', alignItems: 'center' }}
                     title="고객 검색">🔍</button>
                 </div>
               </div>
@@ -1773,7 +1773,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* ── Row 4: Departure | Packing | Shipping | Delivery | Origin ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1.5fr 1fr', gap: '5px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1.5fr 1fr', gap: '8px', alignItems: 'end' }}>
               <CompactComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
               <CompactComboSelect label="Packing Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
               <CompactComboSelect label="Shipping" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
@@ -2636,20 +2636,20 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 };
 
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => {
-  // A급(필수★): 13px bold #0f172a 테두리 강조
-  // C급(읽기전용/자동): 11px #94a3b8 배경 흐리게
+  // A급(필수★): 14px bold #0f172a 테두리 강조
+  // C급(읽기전용/자동): 12px #94a3b8 배경 흐리게
   const isRequired = label?.includes('★');
   const isReadOnly = disabled;
   const inputStyle: React.CSSProperties = isReadOnly
-    ? { padding: '2px 6px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '11px', color: '#94a3b8', background: '#f8fafc', height: '25px', boxSizing: 'border-box', width: '100%' }
+    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '12px', color: '#94a3b8', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
     : isRequired
-      ? { padding: '2px 6px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '13px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '25px', boxSizing: 'border-box', width: '100%', outline: 'none' }
-      : { padding: '2px 6px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '12px', color: '#334155', background: '#fff', height: '25px', boxSizing: 'border-box', width: '100%', outline: 'none' };
+      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
+      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13.5px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      <label style={{ fontSize: '9.5px', fontWeight: 700, color: isReadOnly ? '#b0bcc8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+      <label style={{ fontSize: '11.5px', fontWeight: 700, color: isReadOnly ? '#94a3b8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
         {label?.replace(' ★', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>★</span>}
-        {isReadOnly && <span style={{ color: '#b0bcc8', fontWeight: 400 }}> (자동)</span>}
+        {isReadOnly && <span style={{ color: '#94a3b8', fontWeight: 400 }}> (자동)</span>}
       </label>
       <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
     </div>
@@ -2657,7 +2657,7 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
 };
 
 
-const gridInputStyle = { width: '100%', height: '28px', padding: '0 7px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '12px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
+const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '13.5px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
