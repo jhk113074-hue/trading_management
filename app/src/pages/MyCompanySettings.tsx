@@ -21,6 +21,41 @@ export interface MyCompany {
   bankForeignName?: string;
 }
 
+const renderFileThumbnail = (url: string, name: string) => {
+  if (!url) return null;
+  const lowerUrl = url.toLowerCase();
+  
+  // PDF 판별 (확장자 혹은 contentType)
+  const isPdf = lowerUrl.includes('.pdf') || lowerUrl.includes('pdf');
+  
+  if (isPdf) {
+    return (
+      <iframe 
+        src={`${url}#toolbar=0&navpanes=0&scrollbar=0`} 
+        title={name} 
+        style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none', backgroundColor: '#ffffff' }} 
+      />
+    );
+  }
+  
+  // 디폴트로 이미지 렌더링 시도
+  return (
+    <img 
+      src={url} 
+      alt={name} 
+      style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+      onError={(e) => {
+        // 이미지 로딩 실패 시 파일 아이콘과 텍스트로 보조 출력
+        const target = e.target as HTMLElement;
+        const parent = target.parentElement;
+        if (parent) {
+          parent.innerHTML = `<div style="padding: 10px; text-align: center; font-size: 0.75rem; color: #475569; font-weight: 600;">📄 ${name || '첨부파일'}</div>`;
+        }
+      }}
+    />
+  );
+};
+
 export const MyCompanySettings: React.FC = () => {
   const [companies, setCompanies] = useState<MyCompany[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,7 +295,7 @@ export const MyCompanySettings: React.FC = () => {
                         </div>
                         {editForm.bizLicenseUrl ? (
                           <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <img src={editForm.bizLicenseUrl} alt="사업자등록증 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                            {renderFileThumbnail(editForm.bizLicenseUrl, editForm.bizLicenseName || '사업자등록증')}
                           </div>
                         ) : (
                           <div>
@@ -283,7 +318,7 @@ export const MyCompanySettings: React.FC = () => {
                         </div>
                         {editForm.bankKrwUrl ? (
                           <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <img src={editForm.bankKrwUrl} alt="통장사본(원화) 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                            {renderFileThumbnail(editForm.bankKrwUrl, editForm.bankKrwName || '통장사본(원화)')}
                           </div>
                         ) : (
                           <div>
@@ -306,7 +341,7 @@ export const MyCompanySettings: React.FC = () => {
                         </div>
                         {editForm.bankForeignUrl ? (
                           <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <img src={editForm.bankForeignUrl} alt="통장사본(외화) 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                            {renderFileThumbnail(editForm.bankForeignUrl, editForm.bankForeignName || '통장사본(외화)')}
                           </div>
                         ) : (
                           <div>
@@ -364,7 +399,7 @@ export const MyCompanySettings: React.FC = () => {
                         {comp.bizLicenseUrl ? (
                           <a href={comp.bizLicenseUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <img src={comp.bizLicenseUrl} alt="사업자등록증 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                              {renderFileThumbnail(comp.bizLicenseUrl, comp.bizLicenseName || '사업자등록증')}
                             </div>
                           </a>
                         ) : (
@@ -380,7 +415,7 @@ export const MyCompanySettings: React.FC = () => {
                         {comp.bankKrwUrl ? (
                           <a href={comp.bankKrwUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <img src={comp.bankKrwUrl} alt="통장사본(원화) 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                              {renderFileThumbnail(comp.bankKrwUrl, comp.bankKrwName || '통장사본(원화)')}
                             </div>
                           </a>
                         ) : (
@@ -396,7 +431,7 @@ export const MyCompanySettings: React.FC = () => {
                         {comp.bankForeignUrl ? (
                           <a href={comp.bankForeignUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <img src={comp.bankForeignUrl} alt="통장사본(외화) 미리보기" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                              {renderFileThumbnail(comp.bankForeignUrl, comp.bankForeignName || '통장사본(외화)')}
                             </div>
                           </a>
                         ) : (
