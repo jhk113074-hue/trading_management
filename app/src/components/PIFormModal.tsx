@@ -101,7 +101,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       deliveryTerm: '8weeks from payment confirmation', origin: 'KOREA', yourRef: '',
       handlingFee: 0, freightCharges: [], freightTotal: 0, insurance: 0,
       subtotalUsd: 0, extrasUsd: 0, totalUsd: 0, totalKrw: 0,
-      status: 'draft', currentVersion: 1, createdByName: currentUser,
+      status: 'draft', currentVersion: 1, createdByName: (currentUser === 'jhk010624' ? '대표이사 김주한' : currentUser),
       attachments: []
     };
 
@@ -124,6 +124,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             (defaults as any)[key] = val;
           }
         }
+      }
+      
+      // Force correct creator name mapping if it is raw ID
+      if (defaults.createdByName === 'jhk010624' || defaults.createdByName === 'jhkim1130' || !['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리'].includes(defaults.createdByName || '')) {
+        defaults.createdByName = '대표이사 김주한';
       }
       // Handle arrays separately
       const rawFreight = Array.isArray(pi.freightCharges) ? pi.freightCharges : [];
@@ -940,13 +945,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     const [isNewMode, setIsNewMode] = useState(false);
     const [newVal, setNewVal] = useState('');
     const selectStyle: React.CSSProperties = required
-      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
-      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13.5px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
+      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
+      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '15px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
 
     if (isNewMode) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <label style={{ fontSize: '11.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+          <label style={{ fontSize: '13px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
             {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
           </label>
           <div style={{ display: 'flex', gap: '3px', height: '32px' }}>
@@ -955,7 +960,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               value={newVal}
               onChange={e => setNewVal(e.target.value)}
               placeholder="직접 입력..."
-              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '13.5px', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '15px', height: '32px', boxSizing: 'border-box', outline: 'none' }}
               autoFocus
             />
             <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
@@ -969,14 +974,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        <label style={{ fontSize: '11.5px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+        <label style={{ fontSize: '13px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
           {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
         </label>
         <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
           <option value="">{placeholder || '-- 선택 --'}</option>
           {options.map((opt: string) => (<option key={opt} value={opt}>{opt}</option>))}
-          {value && !options.includes(value) && (<option value={value}>{value}</option>)}
-          <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록</option>
+          {field !== 'createdByName' && value && !options.includes(value) && (<option value={value}>{value}</option>)}
+          {field !== 'createdByName' && <option value="__NEW__" style={{ color: '#2563eb', fontWeight: 'bold' }}>➕ 신규 등록</option>}
         </select>
       </div>
     );
@@ -1721,7 +1726,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
             {/* ── 섹션: 발행 정보 ── */}
-            <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '8px', alignItems: 'end' }}>
@@ -1735,13 +1740,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* ── 섹션: 고객 및 거래 조건 ── */}
-            <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0', marginTop: '4px' }}>고객 및 거래 조건</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0', marginTop: '4px' }}>고객 및 거래 조건</div>
 
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '8px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
                 <div style={{ position: 'relative', height: '32px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -1751,7 +1756,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
                       width: '100%', height: '32px', padding: '1px 32px 1px 8px',
-                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a',
+                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
@@ -1797,15 +1802,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <table style={{ width: '100%', minWidth: '1070px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '8px 4px', width: '280px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', width: '150px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>매입가</th>
-                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>마진/올림</th>
-                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>단가(USD)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>이익($)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '10px', letterSpacing: '0.04em' }}>비고</th>
+                  <th style={{ padding: '8px 4px', width: '280px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '8px 4px', width: '150px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
+                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>수량 / 단위</th>
+                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>매입가</th>
+                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>마진/올림</th>
+                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>단가(USD)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>총액($)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>이익($)</th>
+                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>비고</th>
                   <th style={{ padding: '8px 4px', width: '40px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
                 </tr>
               </thead>
@@ -1978,7 +1983,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
                                 style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                               />
-                              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
+                              <span style={{ fontSize: '13.5px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
                             </div>
                           );
                         })()}
@@ -2040,7 +2045,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           if (curCurrency === 'KRW') {
                             return (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <span style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap' }}>기준환율:</span>
+                                <span style={{ fontSize: '12.5px', color: '#64748b', whiteSpace: 'nowrap' }}>기준환율:</span>
                                 <input 
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
@@ -2064,7 +2069,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
                             style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                           />
-                          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>%</span>
+                          <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: 600 }}>%</span>
                         </div>
                         <select 
                           value={it.roundDigits ?? 'none'} 
@@ -2082,17 +2087,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     </td>
                     <td style={{ padding: '4px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                        <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>USD</span>
+                        <span style={{ fontSize: '14px', color: '#64748b', fontWeight: 500 }}>USD</span>
                         <SalePriceInput
                           value={it.salePriceUsd}
                           onChange={(val) => updateItem(idx, 'salePriceUsd', val)}
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
                       ${((it.salePriceUsd || 0) * (it.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '13px', color: '#16a34a' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
@@ -2636,18 +2641,18 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 };
 
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => {
-  // A급(필수★): 14px bold #0f172a 테두리 강조
-  // C급(읽기전용/자동): 12px #94a3b8 배경 흐리게
+  // A급(필수★): 15.5px bold #0f172a 테두리 강조
+  // C급(읽기전용/자동): 13.5px #94a3b8 배경 흐리게
   const isRequired = label?.includes('★');
   const isReadOnly = disabled;
   const inputStyle: React.CSSProperties = isReadOnly
-    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '12px', color: '#94a3b8', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
+    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: '#94a3b8', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
     : isRequired
-      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '14px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
-      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '13.5px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
+      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
+      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-      <label style={{ fontSize: '11.5px', fontWeight: 700, color: isReadOnly ? '#94a3b8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+      <label style={{ fontSize: '13px', fontWeight: 700, color: isReadOnly ? '#94a3b8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
         {label?.replace(' ★', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>★</span>}
         {isReadOnly && <span style={{ color: '#94a3b8', fontWeight: 400 }}> (자동)</span>}
       </label>
@@ -2657,7 +2662,7 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
 };
 
 
-const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '13.5px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
+const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '15px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
