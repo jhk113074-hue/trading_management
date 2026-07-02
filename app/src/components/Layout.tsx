@@ -31,28 +31,6 @@ export const Layout: React.FC = () => {
   });
   const [isDragging, setIsDragging] = useState(false);
 
-  // 실시간 시계 상태 (서버 부하 없는 브라우저 로컬 타이머)
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  React.useEffect(() => {
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, []);
-
-  const formatHeaderTime = (date: Date) => {
-    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-    const yy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    const day = weekdays[date.getDay()];
-    const hh = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-    const ss = String(date.getSeconds()).padStart(2, '0');
-    return `${yy}.${mm}.${dd}(${day}) ${hh}:${min}:${ss}`;
-  };
-
   const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
     setIsDragging(true);
@@ -84,7 +62,7 @@ export const Layout: React.FC = () => {
     };
   }, [isDragging, resize, stopResizing]);
 
-  // 8 Hours Session Timeout Monitor Hook
+  // 2 Hours Session Timeout Monitor Hook
   React.useEffect(() => {
     if (!userProfile) return;
 
@@ -103,8 +81,8 @@ export const Layout: React.FC = () => {
       const now = Date.now();
       const inactiveTime = now - lastActivity;
 
-      // 475 Minutes Inactive (28500000 ms) -> Trigger Warning Countdown
-      if (inactiveTime >= 28500000) {
+      // 115 Minutes Inactive (6900000 ms) -> Trigger Warning Countdown
+      if (inactiveTime >= 6900000) {
         setShowTimeoutWarning(true);
       } else {
         setShowTimeoutWarning(false);
@@ -144,6 +122,28 @@ export const Layout: React.FC = () => {
     setLastActivity(Date.now());
     setShowTimeoutWarning(false);
     setTimeLeft(300);
+  };
+
+  // 2시간 (7200000 ms) 중 남은 세션 시간(초 단위) 계산 상태
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(7200); // 2 hours = 7200 seconds
+
+  React.useEffect(() => {
+    if (!userProfile) return;
+
+    const timerId = setInterval(() => {
+      const elapsed = Date.now() - lastActivity;
+      const remainingMs = Math.max(0, 7200000 - elapsed);
+      setSessionTimeLeft(Math.floor(remainingMs / 1000));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [lastActivity, userProfile]);
+
+  const formatCountdown = (totalSeconds: number) => {
+    const hh = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const ss = String(totalSeconds % 60).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
   };
 
   React.useEffect(() => {
@@ -520,22 +520,43 @@ export const Layout: React.FC = () => {
               </div>
             )}
 
-            {/* 실시간 시계 표시 영역 */}
+            {/* 세션 남은 시간 카운트다운 표시 영역 */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '8px 14px',
+              gap: '8px',
+              padding: '6px 12px',
               borderRadius: '6px',
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
-              fontSize: '14px',
+              fontSize: '13.5px',
               fontWeight: 700,
-              color: '#334155',
+              color: '#475569',
               fontFamily: 'Courier New, Courier, monospace',
               marginRight: '6px',
-              letterSpacing: '0.05em'
             }}>
-              ⏰ {formatHeaderTime(currentTime)}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                🔒 남은시간: <span style={{ color: sessionTimeLeft <= 300 ? '#ef4444' : '#0f172a' }}>{formatCountdown(sessionTimeLeft)}</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleExtendSession}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: '#4f46e5',
+                  color: '#ffffff',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#4338ca'}
+                onMouseLeave={e => e.currentTarget.style.background = '#4f46e5'}
+              >
+                연장
+              </button>
             </div>
 
             <Link to="/profile" className="btn" style={{
