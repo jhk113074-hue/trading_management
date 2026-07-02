@@ -17,6 +17,11 @@ export const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeNotificationTask, setActiveNotificationTask] = useState<Task | null>(null);
 
+  // Session Timeout (2 hours) States
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes countdown
+
   // Drag-to-resize sidebar width states
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     return window.innerWidth <= 1100 ? 180 : 240;
@@ -56,6 +61,68 @@ export const Layout: React.FC = () => {
       window.removeEventListener('mouseup', stopResizing);
     };
   }, [isDragging, resize, stopResizing]);
+
+  // 2 Hours Session Timeout Monitor Hook
+  React.useEffect(() => {
+    if (!userProfile) return;
+
+    const updateActivity = () => {
+      setLastActivity(Date.now());
+    };
+
+    // Activity Listeners
+    window.addEventListener('mousemove', updateActivity);
+    window.addEventListener('mousedown', updateActivity);
+    window.addEventListener('keydown', updateActivity);
+    window.addEventListener('scroll', updateActivity);
+    window.addEventListener('touchstart', updateActivity);
+
+    const timeoutInterval = setInterval(() => {
+      const now = Date.now();
+      const inactiveTime = now - lastActivity;
+
+      // 115 Minutes Inactive (6900000 ms) -> Trigger Warning Countdown
+      if (inactiveTime >= 6900000) {
+        setShowTimeoutWarning(true);
+      } else {
+        setShowTimeoutWarning(false);
+        setTimeLeft(300); // Reset timer if activity was updated
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('mousedown', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+      window.removeEventListener('touchstart', updateActivity);
+      clearInterval(timeoutInterval);
+    };
+  }, [lastActivity, userProfile]);
+
+  // Countdown decrement hook when warning modal is active
+  React.useEffect(() => {
+    if (!showTimeoutWarning) return;
+
+    const countdownInterval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          logout(); // Session Expired -> Trigger Logout
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, [showTimeoutWarning, logout]);
+
+  const handleExtendSession = () => {
+    setLastActivity(Date.now());
+    setShowTimeoutWarning(false);
+    setTimeLeft(300);
+  };
 
   React.useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -497,6 +564,81 @@ export const Layout: React.FC = () => {
           onClose={() => setActiveNotificationTask(null)}
           onSave={handleSaveNotificationTask}
         />
+      )}
+
+      {showTimeoutWarning && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          pointerEvents: 'auto'
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '420px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            textAlign: 'center',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ fontSize: '36px' }}>⏰</div>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: 0 }}>보안 자동 로그아웃 안내</h3>
+            <p style={{ fontSize: '14.5px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+              장시간 활동이 감지되지 않아 <strong>{Math.floor(timeLeft / 60)}분 {timeLeft % 60}초</strong> 후 보안을 위해 자동으로 로그아웃됩니다.
+              <br />
+              로그인 상태를 유지하시겠습니까?
+            </p>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button
+                type="button"
+                onClick={logout}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                즉시 로그아웃
+              </button>
+              <button
+                type="button"
+                onClick={handleExtendSession}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: '#4f46e5',
+                  color: '#ffffff',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.3)'
+                }}
+              >
+                로그인 연장
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
