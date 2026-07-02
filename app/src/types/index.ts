@@ -44,6 +44,7 @@ export interface Task {
   recurrence?: string;
   recurrenceEndDate?: string;
   externalFileLink?: string;
+  externalFileLinks?: string[];
   visibility: Visibility;
   allowedUserIds?: string[];
   isPrivateNoteSeparated?: boolean;
