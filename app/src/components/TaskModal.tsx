@@ -478,8 +478,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
             <textarea
-              rows={6} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
-              style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', minHeight: '120px' }}
+              rows={12} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
+              style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', minHeight: '220px' }}
               onFocus={e => e.target.style.borderColor = '#0d9488'}
               onBlur={e => e.target.style.borderColor = '#cbd5e1'}
             />
@@ -649,7 +649,31 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
               {/* Comments */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
+                    <select
+                      value={reviewAssigneeId}
+                      onChange={e => setReviewAssigneeId(e.target.value)}
+                      style={{
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '0.72rem',
+                        outline: 'none',
+                        background: '#fff',
+                        color: '#475569',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">(지정 안함)</option>
+                      {users.filter(u => u.id !== userProfile?.id).map(u => (
+                        <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
                   {comments.map(c => (
                     <div key={c.id}>
@@ -669,28 +693,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }} />
                   <button onClick={handleAddComment} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
-                  <select
-                    value={reviewAssigneeId}
-                    onChange={e => setReviewAssigneeId(e.target.value)}
-                    style={{
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.72rem',
-                      outline: 'none',
-                      background: '#fff',
-                      color: '#475569',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="">(지정 안함)</option>
-                    {users.filter(u => u.id !== userProfile?.id).map(u => (
-                      <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>
