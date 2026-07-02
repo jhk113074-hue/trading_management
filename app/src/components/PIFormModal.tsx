@@ -1632,22 +1632,22 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         <div 
           onMouseDown={handleMouseDown}
           style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: isMaximized ? '0px' : '14px 14px 0 0', cursor: isMaximized ? 'default' : 'move', userSelect: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#111827' }}>
                 {initialPI ? 'Edit Proforma Invoice' : 'New Proforma Invoice'}
               </div>
-              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+              <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '2px' }}>
                 신규 견적서 작성 · Firebase Firestore 저장
               </div>
             </div>
             {initialPI && revisions.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', padding: '6px 12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#eff6ff', padding: '8px 16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
                 <select
                   value={dropdownRevId}
                   onChange={(e) => setDropdownRevId(e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
                 >
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
@@ -1669,8 +1669,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     border: '1px solid #c7d2fe',
                     color: '#4338ca',
                     borderRadius: '6px',
-                    padding: '4px 8px',
-                    fontSize: '11px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
                     fontWeight: 700,
                     cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer'
                   }}
@@ -1688,8 +1688,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     border: '1px solid #fee2e2',
                     color: '#ef4444',
                     borderRadius: '6px',
-                    padding: '4px 8px',
-                    fontSize: '11px',
+                    padding: '6px 12px',
+                    fontSize: '13px',
                     fontWeight: 700,
                     cursor: savingType !== null ? 'not-allowed' : 'pointer'
                   }}
