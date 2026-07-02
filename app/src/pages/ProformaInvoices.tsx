@@ -799,18 +799,17 @@ export const ProformaInvoices: React.FC = () => {
                           onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }} 
                           style={{ 
                             background: 'none', 
-                            color: '#3b82f6', 
                             border: 'none', 
-                            padding: '2px 4px', 
-                            fontSize: '12px', 
-                            fontWeight: 700, 
+                            padding: '4px', 
+                            fontSize: '15px', 
                             cursor: 'pointer', 
-                            transition: 'color 0.2s' 
+                            transition: 'transform 0.15s' 
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.color = '#1d4ed8'; }}
-                          onMouseLeave={e => { e.currentTarget.style.color = '#3b82f6'; }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="수정"
                         >
-                          수정
+                          ✏️
                         </button>
                         {linkedOrder ? (
                           <button
@@ -845,43 +844,33 @@ export const ProformaInvoices: React.FC = () => {
                           onClick={() => handleCopy(p)} 
                           style={{ 
                             background: 'none', 
-                            color: '#10b981', 
                             border: 'none', 
-                            padding: '2px 4px', 
-                            fontSize: '12px', 
-                            fontWeight: 700, 
+                            padding: '4px', 
+                            fontSize: '15px', 
                             cursor: 'pointer', 
-                            transition: 'color 0.2s'
+                            transition: 'transform 0.15s' 
                           }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = '#047857';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = '#10b981';
-                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="복사"
                         >
-                          복사
+                          📋
                         </button>
                         <button 
                           onClick={() => handleDelete(p.id, p.piNumber)}
                           style={{ 
                             background: 'none', 
-                            color: '#ef4444', 
                             border: 'none', 
-                            padding: '2px 4px', 
-                            fontSize: '12px', 
-                            fontWeight: 700, 
+                            padding: '4px', 
+                            fontSize: '15px', 
                             cursor: 'pointer', 
-                            transition: 'color 0.2s'
+                            transition: 'transform 0.15s' 
                           }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = '#b91c1c';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = '#ef4444';
-                          }}
+                          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.15)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                          title="삭제"
                         >
-                          삭제
+                          🗑️
                         </button>
                       </div>
                     </td>
