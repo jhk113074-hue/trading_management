@@ -1723,15 +1723,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             {/* ── 섹션: 발행 정보 ── */}
             <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
 
-            {/* ── Row 1: 발행사 | 작성자 | 작성일 (PI Date) ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px', alignItems: 'end' }}>
+            {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '5px', alignItems: 'end' }}>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박지은 과장', '심창우 과장', '한성규 대리']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
-            </div>
-
-            {/* ── Row 2: PI Number | Your Ref | Validity | Valid Until ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 0.8fr 1fr', gap: '5px', alignItems: 'end' }}>
               <CompactInput label="PI Number ★" value={formData.piNumber} onChange={(v: any) => setFormData(prev => ({...prev, piNumber: v}))} />
               <CompactInput label="Your Ref (PO No.)" value={formData.yourRef || ''} onChange={(v: any) => setFormData(prev => ({...prev, yourRef: v}))} />
               <CompactInput label="Validity(d)" type="number" value={formData.validityDays} onChange={(v: any) => setFormData(prev => ({...prev, validityDays: parseInt(v)||0}))} />
