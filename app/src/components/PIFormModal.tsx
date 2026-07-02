@@ -2414,71 +2414,72 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             )}
           </div>
-        </div>
 
-        {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
-          <div style={{ marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📦 3D Container Loading Plan 시뮬레이션 첨부
-            </h3>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-            {/* .json file upload */}
-            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 프로젝트 파일 (.json)</div>
-              {formData.containerSimulation?.simulationFileUrl ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#0f766e', fontWeight: 600 }}>📁 {formData.containerSimulation.simulationFileName || '프로젝트 파일 완료'}</span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: '#e2e8f0', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    accept=".json"
-                    id="sim-json-file"
-                    onChange={e => e.target.files && handleSimFileUpload(e.target.files[0])}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="sim-json-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
-                    {isSimFileUploading ? '업로드 중...' : '프로젝트 파일 첨부'}
-                  </label>
-                </div>
-              )}
+          {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
+            <div style={{ marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                📦 3D Container Loading Plan 시뮬레이션 첨부
+              </h3>
             </div>
 
-            {/* image upload */}
-            <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 결과 스크린샷 이미지 (.png/.jpg)</div>
-              {formData.containerSimulation?.simulationImageUrl ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: '#e2e8f0', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+              {/* .json file upload */}
+              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 프로젝트 파일 (.json)</div>
+                {formData.containerSimulation?.simulationFileUrl ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#0f766e', fontWeight: 600 }}>📁 {formData.containerSimulation.simulationFileName || '프로젝트 파일 완료'}</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: '#e2e8f0', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    id="sim-image-file"
-                    onChange={e => e.target.files && handleSimImageUpload(e.target.files[0])}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="sim-image-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
-                    {isSimImageUploading ? '업로드 중...' : '이미지 첨부'}
-                  </label>
-                </div>
-              )}
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept=".json"
+                      id="sim-json-file"
+                      onChange={e => e.target.files && handleSimFileUpload(e.target.files[0])}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="sim-json-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+                      {isSimFileUploading ? '업로드 중...' : '프로젝트 파일 첨부'}
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* image upload */}
+              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 결과 스크린샷 이미지 (.png/.jpg)</div>
+                {formData.containerSimulation?.simulationImageUrl ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: '#e2e8f0', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="sim-image-file"
+                      onChange={e => e.target.files && handleSimImageUpload(e.target.files[0])}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="sim-image-file" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+                      {isSimImageUploading ? '업로드 중...' : '이미지 첨부'}
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
         </div>
 
         {/* Footer */}
