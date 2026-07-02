@@ -31,6 +31,28 @@ export const Layout: React.FC = () => {
   });
   const [isDragging, setIsDragging] = useState(false);
 
+  // 실시간 시계 상태 (서버 부하 없는 브라우저 로컬 타이머)
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  React.useEffect(() => {
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
+  const formatHeaderTime = (date: Date) => {
+    const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+    const yy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const day = weekdays[date.getDay()];
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const ss = String(date.getSeconds()).padStart(2, '0');
+    return `${yy}.${mm}.${dd}(${day}) ${hh}:${min}:${ss}`;
+  };
+
   const startResizing = React.useCallback((mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
     setIsDragging(true);
@@ -497,6 +519,24 @@ export const Layout: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* 실시간 시계 표시 영역 */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '8px 14px',
+              borderRadius: '6px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#334155',
+              fontFamily: 'Courier New, Courier, monospace',
+              marginRight: '6px',
+              letterSpacing: '0.05em'
+            }}>
+              ⏰ {formatHeaderTime(currentTime)}
+            </div>
 
             <Link to="/profile" className="btn" style={{
               textDecoration: 'none',
