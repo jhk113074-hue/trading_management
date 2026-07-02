@@ -56,12 +56,127 @@ const renderFileThumbnail = (url: string, name: string) => {
   );
 };
 
+interface ModelessWindowProps {
+  name: string;
+  url: string;
+  onClose: () => void;
+}
+
+const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) => {
+  const [position, setPosition] = useState({ x: window.innerWidth - 550, y: 150 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const lowerUrl = url.toLowerCase();
+  const isPdf = lowerUrl.includes('.pdf') || lowerUrl.includes('pdf');
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: '500px',
+        height: '600px',
+        backgroundColor: '#ffffff',
+        border: '1px solid #cbd5e1',
+        borderRadius: '12px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}
+    >
+      <div
+        onMouseDown={handleMouseDown}
+        style={{
+          padding: '12px 16px',
+          background: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          cursor: 'move',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          userSelect: 'none'
+        }}
+      >
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>
+          📄 {name} 미리보기
+        </span>
+        <button
+          onClick={onClose}
+          style={{
+            background: '#ef4444',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            fontSize: '0.75rem',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+        >
+          닫기
+        </button>
+      </div>
+
+      <div style={{ flex: 1, backgroundColor: '#f1f5f9', padding: '8px' }}>
+        {isPdf ? (
+          <iframe
+            src={url}
+            title={name}
+            style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#ffffff' }}
+          />
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
+            <img src={url} alt={name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const MyCompanySettings: React.FC = () => {
   const [companies, setCompanies] = useState<MyCompany[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<MyCompany | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [modelessFile, setModelessFile] = useState<{ name: string; url: string } | null>(null);
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -294,7 +409,7 @@ export const MyCompanySettings: React.FC = () => {
                           )}
                         </div>
                         {editForm.bizLicenseUrl ? (
-                          <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bizLicenseName || '사업자등록증', url: editForm.bizLicenseUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bizLicenseUrl, editForm.bizLicenseName || '사업자등록증')}
                           </div>
                         ) : (
@@ -317,7 +432,7 @@ export const MyCompanySettings: React.FC = () => {
                           )}
                         </div>
                         {editForm.bankKrwUrl ? (
-                          <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bankKrwName || '통장사본(원화)', url: editForm.bankKrwUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bankKrwUrl, editForm.bankKrwName || '통장사본(원화)')}
                           </div>
                         ) : (
@@ -340,7 +455,7 @@ export const MyCompanySettings: React.FC = () => {
                           )}
                         </div>
                         {editForm.bankForeignUrl ? (
-                          <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bankForeignName || '통장사본(외화)', url: editForm.bankForeignUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bankForeignUrl, editForm.bankForeignName || '통장사본(외화)')}
                           </div>
                         ) : (
@@ -391,13 +506,13 @@ export const MyCompanySettings: React.FC = () => {
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.manager || '-'}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 미리보기 (클릭 시 새 탭에서 원본 보기)</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 미리보기 (클릭 시 화면에서 바로 볼 수 있는 창 띄우기)</div>
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                       {/* 사업자등록증 */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>사업자등록증</div>
                         {comp.bizLicenseUrl ? (
-                          <a href={comp.bizLicenseUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                          <a href={comp.bizLicenseUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bizLicenseName || '사업자등록증', url: comp.bizLicenseUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bizLicenseUrl, comp.bizLicenseName || '사업자등록증')}
                             </div>
@@ -413,7 +528,7 @@ export const MyCompanySettings: React.FC = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (원화)</div>
                         {comp.bankKrwUrl ? (
-                          <a href={comp.bankKrwUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                          <a href={comp.bankKrwUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bankKrwName || '통장사본(원화)', url: comp.bankKrwUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bankKrwUrl, comp.bankKrwName || '통장사본(원화)')}
                             </div>
@@ -429,7 +544,7 @@ export const MyCompanySettings: React.FC = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (외화)</div>
                         {comp.bankForeignUrl ? (
-                          <a href={comp.bankForeignUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                          <a href={comp.bankForeignUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bankForeignName || '통장사본(외화)', url: comp.bankForeignUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
                             <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bankForeignUrl, comp.bankForeignName || '통장사본(외화)')}
                             </div>
@@ -455,6 +570,15 @@ export const MyCompanySettings: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 모달리스 드래그 미리보기 창 */}
+      {modelessFile && (
+        <ModelessWindow
+          name={modelessFile.name}
+          url={modelessFile.url}
+          onClose={() => setModelessFile(null)}
+        />
+      )}
     </div>
   );
 };
