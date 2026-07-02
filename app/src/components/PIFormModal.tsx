@@ -2270,10 +2270,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           )}
 
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '12px 20px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
-              <span style={{ color: '#4ade80', fontSize: '16px', fontWeight: 700 }}>{(() => {
+          <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', border: '1.5px solid #334155', padding: '14px 22px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
+              <span style={{ color: '#4ade80', fontSize: '20px', fontWeight: 800, textShadow: '0 0 10px rgba(74,222,128,0.2)' }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
                   const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
                   const profit = (it.salePriceUsd || 0) - costUsd;
@@ -2285,17 +2285,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               })()}</span>
             </div>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-              <div>
-                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subtotal</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', marginLeft: '6px' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subtotal</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginLeft: '8px' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extras</span>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.75)', marginLeft: '6px' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extras</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginLeft: '8px' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '9.5px', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grand Total</span>
-                <span style={{ fontSize: '18px', fontWeight: 700, color: '#60a5fa', marginLeft: '8px' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grand Total</span>
+                <span style={{ fontSize: '24px', fontWeight: 900, color: '#facc15', marginLeft: '10px', textShadow: '0 0 10px rgba(250,252,21,0.2)' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
