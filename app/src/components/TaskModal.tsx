@@ -363,17 +363,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             />
           </div>
 
-          {/* Description */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
-            <textarea
-              rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
-              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit' }}
-              onFocus={e => e.target.style.borderColor = '#0d9488'}
-              onBlur={e => e.target.style.borderColor = '#cbd5e1'}
-            />
-          </div>
-
           {/* Priority Box */}
           <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -423,73 +412,77 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             </div>
           </div>
 
-          {/* Details Row 1 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* Details Compact Row (8 Columns Grid) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px', alignItems: 'end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>위임자 (요청자)</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem', backgroundColor: '#fff' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>위임자</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
                 <option value="">선택안함</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name} {u.position || ''}</option>)}
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>수임자 (담당자)</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem', backgroundColor: '#fff' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
-                <option value="">담당자 지정</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.name} {u.position || ''}</option>)}
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>수임자</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+                <option value="">지정안함</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
-          </div>
-
-          {/* Details Row 2 */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>등록일</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>등록일</label>
               <input
                 type="text"
                 readOnly
-                value={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }) : '저장 시 자동 기입'}
-                style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.82rem', background: '#f8fafc', color: '#94a3b8', cursor: 'default' }}
+                value={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR', { month:'2-digit', day:'2-digit' }) : '자동'}
+                title={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR') : '저장 시 자동 기입'}
+                style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.78rem', background: '#f8fafc', color: '#94a3b8', cursor: 'default', height: '30px', textAlign: 'center' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>시작일</label>
-              <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>시작일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>마감일</label>
-              <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>마감일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무 유형</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>업무유형</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
                 <option value="PROJECT">📁 프로젝트</option>
                 <option value="DAILY">📝 일상업무</option>
                 <option value="PERIODIC">🔄 주기업무</option>
                 <option value="DELEGATED">🤝 위임업무</option>
               </select>
             </div>
-          </div>
-
-          {/* Settings Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>공개범위</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
-                <option value="PUBLIC">🌐 전체 공개</option>
-                <option value="RESTRICTED">👥 관련자 공개</option>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>공개범위</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
+                <option value="PUBLIC">🌐 전체공개</option>
+                <option value="RESTRICTED">👥 관련자공개</option>
                 <option value="PRIVATE">🔒 비공개</option>
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>상태</label>
-              <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem', fontWeight: 600, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#0f172a' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
-                <option value="TODO">시작 안 함</option>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>상태</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', fontWeight: 600, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#0f172a', height: '30px' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
+                <option value="TODO">시작안함</option>
                 <option value="IN_PROGRESS">진행중</option>
                 <option value="HOLDING">Holding</option>
                 <option value="DONE">완료</option>
               </select>
             </div>
+          </div>
+
+          {/* Description */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
+            <textarea
+              rows={6} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
+              style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', minHeight: '120px' }}
+              onFocus={e => e.target.style.borderColor = '#0d9488'}
+              onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+            />
           </div>
 
           {/* Conditional Rows */}
