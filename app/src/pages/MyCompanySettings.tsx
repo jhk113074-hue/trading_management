@@ -27,6 +27,7 @@ export const MyCompanySettings: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<MyCompany | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string } | null>(null);
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -248,14 +249,14 @@ export const MyCompanySettings: React.FC = () => {
                     <input name="manager" value={editForm.manager || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
                   </div>
                   <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 관리</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 관리 (클릭 시 미리보기)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {/* 사업자등록증 */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>사업자등록증</div>
                         {editForm.bizLicenseUrl ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <a href={editForm.bizLicenseUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{editForm.bizLicenseName || '첨부파일'}</a>
+                            <a href={editForm.bizLicenseUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: editForm.bizLicenseName || '사업자등록증', url: editForm.bizLicenseUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{editForm.bizLicenseName || '첨부파일'}</a>
                             <button onClick={() => handleFileDelete('bizLicense')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
                           </div>
                         ) : (
@@ -272,7 +273,7 @@ export const MyCompanySettings: React.FC = () => {
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>통장사본 (원화)</div>
                         {editForm.bankKrwUrl ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <a href={editForm.bankKrwUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{editForm.bankKrwName || '첨부파일'}</a>
+                            <a href={editForm.bankKrwUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: editForm.bankKrwName || '통장사본(원화)', url: editForm.bankKrwUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{editForm.bankKrwName || '첨부파일'}</a>
                             <button onClick={() => handleFileDelete('bankKrw')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
                           </div>
                         ) : (
@@ -289,7 +290,7 @@ export const MyCompanySettings: React.FC = () => {
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>통장사본 (외화)</div>
                         {editForm.bankForeignUrl ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <a href={editForm.bankForeignUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{editForm.bankForeignName || '첨부파일'}</a>
+                            <a href={editForm.bankForeignUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: editForm.bankForeignName || '통장사본(외화)', url: editForm.bankForeignUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{editForm.bankForeignName || '첨부파일'}</a>
                             <button onClick={() => handleFileDelete('bankForeign')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
                           </div>
                         ) : (
@@ -339,24 +340,36 @@ export const MyCompanySettings: React.FC = () => {
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.manager || '-'}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 (클릭 시 미리보기)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>사업자등록증</div>
                         <div>
-                          {comp.bizLicenseUrl ? <a href={comp.bizLicenseUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{comp.bizLicenseName || '다운로드'}</a> : <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>}
+                          {comp.bizLicenseUrl ? (
+                            <a href={comp.bizLicenseUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: comp.bizLicenseName || '사업자등록증', url: comp.bizLicenseUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{comp.bizLicenseName || '사업자등록증 보기'}</a>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>통장사본 (원화)</div>
                         <div>
-                          {comp.bankKrwUrl ? <a href={comp.bankKrwUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{comp.bankKrwName || '다운로드'}</a> : <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>}
+                          {comp.bankKrwUrl ? (
+                            <a href={comp.bankKrwUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: comp.bankKrwName || '통장사본(원화)', url: comp.bankKrwUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{comp.bankKrwName || '통장사본(원화) 보기'}</a>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '140px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>통장사본 (외화)</div>
                         <div>
-                          {comp.bankForeignUrl ? <a href={comp.bankForeignUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline' }}>{comp.bankForeignName || '다운로드'}</a> : <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>}
+                          {comp.bankForeignUrl ? (
+                            <a href={comp.bankForeignUrl} onClick={e => { e.preventDefault(); setPreviewFile({ name: comp.bankForeignName || '통장사본(외화)', url: comp.bankForeignUrl! }); }} style={{ fontSize: '0.85rem', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>{comp.bankForeignName || '통장사본(외화) 보기'}</a>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>등록 안됨</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -374,6 +387,81 @@ export const MyCompanySettings: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 첨부파일 미리보기 모달 */}
+      {previewFile && (
+        <div 
+          onClick={() => setPreviewFile(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '24px'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '850px',
+              height: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+              overflow: 'hidden'
+            }}
+          >
+            {/* 모달 헤더 */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+              <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '1rem' }}>
+                📄 {previewFile.name} 미리보기
+              </div>
+              <button 
+                onClick={() => setPreviewFile(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontWeight: 600,
+                  color: '#475569',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem'
+                }}
+              >
+                닫기
+              </button>
+            </div>
+            
+            {/* 모달 본문 */}
+            <div style={{ flex: 1, padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f1f5f9', overflow: 'auto' }}>
+              {previewFile.url.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp|svg)/) || previewFile.url.includes('firebasestorage.googleapis.com') ? (
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name} 
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} 
+                />
+              ) : (
+                <iframe 
+                  src={previewFile.url} 
+                  title={previewFile.name}
+                  style={{ width: '100%', height: '100%', border: 'none', borderRadius: '4px', backgroundColor: '#fff' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
