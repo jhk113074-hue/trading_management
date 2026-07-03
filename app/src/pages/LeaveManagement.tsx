@@ -347,7 +347,15 @@ export const LeaveManagement: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {users.map(u => {
+                      {users.slice().sort((a, b) => {
+                        const getRank = (pos: string = '') => {
+                          if (pos.includes('대표')) return 1;
+                          if (pos.includes('차장')) return 2;
+                          if (pos.includes('사원')) return 3;
+                          return 99;
+                        };
+                        return getRank(a.position) - getRank(b.position);
+                      }).map(u => {
                         const joinDate = u.joinDate || u.createdAt?.split('T')[0] || '';
                         const accruals = calculateLeave(joinDate, u.id);
                         return (

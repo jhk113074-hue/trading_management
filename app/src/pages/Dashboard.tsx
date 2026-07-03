@@ -940,7 +940,7 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '10px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '12px', alignItems: 'stretch' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '10px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '260px 1fr', gap: '12px', alignItems: 'stretch' }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
@@ -995,112 +995,202 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* 일정 목록 영역 */}
-              <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                    📋 <span>{currentMonth + 1}월 전체 일정 ({calendarEvents.filter(e => {
-                      const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-                      return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
-                    }).length}건)</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const defaultDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
-                      setSelectedDateForEvent(defaultDate);
-                      setEventForm({
-                        title: '',
-                        type: '개인일정',
-                        startDate: defaultDate,
-                        startTime: '09:00',
-                        endDate: defaultDate,
-                        endTime: '18:00',
-                        isPublic: true,
-                        participants: '',
-                        description: ''
-                      });
-                    }}
-                    style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
-                  >
-                    ＋ 등록
-                  </button>
+              {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
+                
+                {/* 1. 오늘의 일정 */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#be123c', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                      📌 <span>오늘의 일정 ({
+                        calendarEvents.filter(e => {
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          const start = e.startDate;
+                          const end = e.endDate || start;
+                          return todayStr >= start && todayStr <= end;
+                        }).length
+                      }건)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        setSelectedDateForEvent(todayStr);
+                        setEventForm({
+                          title: '',
+                          type: '개인일정',
+                          startDate: todayStr,
+                          startTime: '09:00',
+                          endDate: todayStr,
+                          endTime: '18:00',
+                          isPublic: true,
+                          participants: '',
+                          description: ''
+                        });
+                      }}
+                      style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
+                    >
+                      ＋ 등록
+                    </button>
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '175px', paddingRight: '4px' }}>
+                    {calendarEvents.filter(e => {
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      const start = e.startDate;
+                      const end = e.endDate || start;
+                      return todayStr >= start && todayStr <= end;
+                    }).length === 0 ? (
+                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        오늘 등록된 일정이 없습니다.
+                      </div>
+                    ) : (
+                      calendarEvents.filter(e => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const start = e.startDate;
+                        const end = e.endDate || start;
+                        return todayStr >= start && todayStr <= end;
+                      })
+                      .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+                      .map(e => {
+                        const colors = getEventBadgeColor(e.type);
+                        return (
+                          <div
+                            key={e.id}
+                            onClick={() => {
+                              setSelectedEventForView(e);
+                              setEventForm({
+                                title: e.title,
+                                type: e.type,
+                                startDate: e.startDate,
+                                startTime: e.startTime || '09:00',
+                                endDate: e.endDate || e.startDate,
+                                endTime: e.endTime || '18:00',
+                                isPublic: e.isPublic !== undefined ? e.isPublic : true,
+                                participants: e.participants || '',
+                                description: e.description || ''
+                              });
+                            }}
+                            style={{
+                              padding: '5px 8px',
+                              background: colors.bg,
+                              color: colors.text,
+                              border: `1px solid ${colors.border}`,
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              transition: 'all 0.1s'
+                            }}
+                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
+                            onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: '#0f172a' }}>
+                                {!e.isPublic && <span>🔒</span>}
+                                <strong>{e.title}</strong>
+                              </span>
+                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                                {e.type}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '9.5px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                              <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
+                              <span>👤 {e.creatorName}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '175px', paddingRight: '4px' }}>
-                  {calendarEvents.filter(e => {
-                    const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-                    return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
-                  }).length === 0 ? (
-                    <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      이번 달에 등록된 일정이 없습니다.
-                    </div>
-                  ) : (
-                    calendarEvents.filter(e => {
+                {/* 2. 이번달 전체 일정 */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                      📋 <span>{currentMonth + 1}월 전체 일정 ({
+                        calendarEvents.filter(e => {
+                          const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                          return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                        }).length
+                      }건)</span>
+                    </span>
+                  </div>
+
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '175px', paddingRight: '4px' }}>
+                    {calendarEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
-                    })
-                    .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
-                    .map(e => {
-                      const colors = getEventBadgeColor(e.type);
-                      return (
-                        <div
-                          key={e.id}
-                          onClick={() => {
-                            setSelectedEventForView(e);
-                            setEventForm({
-                              title: e.title,
-                              type: e.type,
-                              startDate: e.startDate,
-                              startTime: e.startTime || '09:00',
-                              endDate: e.endDate || e.startDate,
-                              endTime: e.endTime || '18:00',
-                              isPublic: e.isPublic !== undefined ? e.isPublic : true,
-                              participants: e.participants || '',
-                              description: e.description || ''
-                            });
-                          }}
-                          style={{
-                            padding: '5px 8px',
-                            background: colors.bg,
-                            color: colors.text,
-                            border: `1px solid ${colors.border}`,
-                            borderRadius: '6px',
-                            fontSize: '11.5px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '2px',
-                            transition: 'all 0.1s'
-                          }}
-                          onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
-                          onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#0f172a' }}>
-                              {!e.isPublic && <span>🔒</span>}
-                              <strong>{e.title}</strong>
-                            </span>
-                            <span style={{ fontSize: '9.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
-                              {e.type}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
-                            <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
-                            <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
-                            <span>👤 {e.creatorName}</span>
-                          </div>
-                          {e.description && (
-                            <div style={{ fontSize: '11px', color: '#475569', borderTop: '1px dashed rgba(0,0,0,0.06)', paddingTop: '4px', marginTop: '4px', whiteSpace: 'pre-wrap', fontWeight: 'normal' }}>
-                              {e.description}
+                    }).length === 0 ? (
+                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        이번 달에 등록된 일정이 없습니다.
+                      </div>
+                    ) : (
+                      calendarEvents.filter(e => {
+                        const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                        return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                      })
+                      .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
+                      .map(e => {
+                        const colors = getEventBadgeColor(e.type);
+                        return (
+                          <div
+                            key={e.id}
+                            onClick={() => {
+                              setSelectedEventForView(e);
+                              setEventForm({
+                                title: e.title,
+                                type: e.type,
+                                startDate: e.startDate,
+                                startTime: e.startTime || '09:00',
+                                endDate: e.endDate || e.startDate,
+                                endTime: e.endTime || '18:00',
+                                isPublic: e.isPublic !== undefined ? e.isPublic : true,
+                                participants: e.participants || '',
+                                description: e.description || ''
+                              });
+                            }}
+                            style={{
+                              padding: '5px 8px',
+                              background: colors.bg,
+                              color: colors.text,
+                              border: `1px solid ${colors.border}`,
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              transition: 'all 0.1s'
+                            }}
+                            onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
+                            onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: '#0f172a' }}>
+                                {!e.isPublic && <span>🔒</span>}
+                                <strong>{e.title}</strong>
+                              </span>
+                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                                {e.type}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+                            <div style={{ fontSize: '9.5px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                              <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
+                              <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
+                
               </div>
 
             </div>
