@@ -66,6 +66,9 @@ export const ApprovalSystem: React.FC = () => {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
+  // Floating Slash Command Menu state
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+
   const editorRef = useRef<HTMLDivElement>(null);
 
   const fetchApprovalData = async () => {
@@ -347,6 +350,7 @@ export const ApprovalSystem: React.FC = () => {
     }
   };
 
+  // Editor toolbar actions
   const format = (command: string) => {
     document.execCommand(command, false);
   };
@@ -376,6 +380,148 @@ export const ApprovalSystem: React.FC = () => {
       </table>
     `;
     document.execCommand('insertHTML', false, tableHTML);
+  };
+
+  // One-click corporate document templates
+  const applyTemplate = (templateType: 'expense' | 'draft') => {
+    let templateHTML = '';
+    if (templateType === 'expense') {
+      templateHTML = `
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">지출결의 상세 보고</h2>
+        <p style="margin: 8px 0; color: #475569;">아래와 같이 지출결의 내역을 품의하오니 승인하여 주시기 바랍니다.</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
+          <thead>
+            <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; color: #334155;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">구분 (품목)</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 60px;">수량</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">단가</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">공급가액</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">예: 해외 바이어 초청 식대</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">120.00</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">120.00</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">예: 샘플 제작 배송비</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">85.00</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">85.00</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; font-weight: bold; color: #1e293b;">
+          ※ 총 합계: USD 205.00
+        </div>
+        <p><br></p>
+      `;
+    } else {
+      templateHTML = `
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기안 협조 품의</h2>
+        <p style="margin: 8px 0; color: #475569;">의안사항에 대하여 아래와 같이 기안하오니 재가하여 주시기 바랍니다.</p>
+        
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">1. 기안 배경 및 목적</h3>
+        <p style="margin: 4px 0 12px 0; color: #334155;">여기에 기안 배경을 상세히 기술하세요.</p>
+        
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">2. 주요 실행 과제</h3>
+        <ul style="margin: 4px 0 12px 20px; padding: 0; color: #334155;">
+          <li style="margin-bottom: 4px;">주요 세부 실행 내용을 항목별로 작성하세요.</li>
+          <li style="margin-bottom: 4px;">협조 부서 및 일정 계획을 포함하세요.</li>
+        </ul>
+        
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">3. 기대 효과</h3>
+        <blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 8px 0;">
+          "업무 효율성 증대 및 무역 프로세스 단축 기대"
+        </blockquote>
+        <p><br></p>
+      `;
+    }
+
+    if (editorRef.current) {
+      editorRef.current.innerHTML = templateHTML;
+      setContentHTML(templateHTML);
+    }
+  };
+
+  // Keyboard Slash menu & Markdown parsing handler
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === '/') {
+      setShowSlashMenu(true);
+    } else if (e.key === 'Escape') {
+      setShowSlashMenu(false);
+    } else if (e.key === ' ' && editorRef.current) {
+      // Spacebar triggers Markdown shortcut parsing
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      const range = selection.getRangeAt(0);
+      const text = range.startContainer.textContent || '';
+      
+      // Parse markdown shortcuts
+      if (text.startsWith('#')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^#\s*/, '');
+        format('formatBlock'); // transform to Heading
+        document.execCommand('formatBlock', false, '<h2>');
+      } else if (text.startsWith('##')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^##\s*/, '');
+        document.execCommand('formatBlock', false, '<h3>');
+      } else if (text.startsWith('-') || text.startsWith('*')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^[-*]\s*/, '');
+        document.execCommand('insertUnorderedList', false);
+      } else if (text.startsWith('>')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^>\s*/, '');
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        // replace content
+        range.startContainer.textContent = '';
+        document.execCommand('insertHTML', false, calloutHTML);
+      }
+    }
+  };
+
+  const handleEditorInput = () => {
+    const text = editorRef.current?.innerText || '';
+    if (!text.includes('/')) {
+      setShowSlashMenu(false);
+    }
+    if (editorRef.current) {
+      setContentHTML(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleSelectSlashCommand = (command: string) => {
+    setShowSlashMenu(false);
+    
+    // Remove the trailing '/' trigger
+    if (editorRef.current) {
+      let html = editorRef.current.innerHTML;
+      html = html.replace(/\/$/, '') || html;
+      editorRef.current.innerHTML = html;
+    }
+
+    if (command === 'table') {
+      insertTable();
+    } else if (command === 'callout') {
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
+      document.execCommand('insertHTML', false, calloutHTML);
+    } else if (command === 'divider') {
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      document.execCommand('insertHTML', false, hrHTML);
+    } else if (command === 'quote') {
+      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
+      document.execCommand('insertHTML', false, quoteHTML);
+    }
+    
+    if (editorRef.current) {
+      setContentHTML(editorRef.current.innerHTML);
+    }
   };
 
   const formatCurrency = (amount: number, curr?: string) => {
@@ -530,7 +676,7 @@ export const ApprovalSystem: React.FC = () => {
       {/* New Draft Creation Modal */}
       {showDraftModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '640px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '15px', fontWeight: 800 }}>📝 새 결재 문서 기안 상신</span>
               <button onClick={() => setShowDraftModal(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
@@ -539,11 +685,14 @@ export const ApprovalSystem: React.FC = () => {
             <form onSubmit={handleCreateDraft} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결재 양식</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결재 양식 및 템플릿 로드</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
-                    onClick={() => setDocType('DRAFT')}
+                    onClick={() => {
+                      setDocType('DRAFT');
+                      applyTemplate('draft');
+                    }}
                     style={{
                       flex: 1,
                       padding: '8px 0',
@@ -555,11 +704,14 @@ export const ApprovalSystem: React.FC = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    일반 기안서
+                    일반 기안서 (템플릿 적용)
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDocType('EXPENSE')}
+                    onClick={() => {
+                      setDocType('EXPENSE');
+                      applyTemplate('expense');
+                    }}
                     style={{
                       flex: 1,
                       padding: '8px 0',
@@ -571,7 +723,7 @@ export const ApprovalSystem: React.FC = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    지출 결의서
+                    지출 결의서 (템플릿 적용)
                   </button>
                 </div>
               </div>
@@ -616,8 +768,8 @@ export const ApprovalSystem: React.FC = () => {
                 </div>
               )}
 
-              {/* HTML Editor Component with Paste Listener */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {/* HTML Editor Component with Paste, KeyDown, Input events */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>기안 내용 ★</label>
                 
                 <div style={{ display: 'flex', gap: '6px', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', flexWrap: 'wrap' }}>
@@ -632,12 +784,11 @@ export const ApprovalSystem: React.FC = () => {
                 <div
                   contentEditable
                   ref={editorRef}
+                  onKeyDown={handleEditorKeyDown}
+                  onInput={handleEditorInput}
                   onPaste={handlePaste}
-                  onBlur={() => {
-                    if (editorRef.current) setContentHTML(editorRef.current.innerHTML);
-                  }}
                   style={{
-                    minHeight: '200px',
+                    minHeight: '220px',
                     border: '1px solid #cbd5e1',
                     borderBottomLeftRadius: '6px',
                     borderBottomRightRadius: '6px',
@@ -646,9 +797,41 @@ export const ApprovalSystem: React.FC = () => {
                     backgroundColor: '#fff',
                     overflowY: 'auto',
                     fontSize: '13px',
-                    lineHeight: 1.6
+                    lineHeight: 1.7
                   }}
                 />
+
+                {/* Floating Slash Quick Command Menu */}
+                {showSlashMenu && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '280px',
+                    left: '12px',
+                    background: '#fff',
+                    border: '1px solid #cbd5e1',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    borderRadius: '8px',
+                    zIndex: 10000,
+                    width: '180px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px 0'
+                  }}>
+                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                      <span>田</span> <b>표 삽입</b>
+                    </button>
+                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                      <span>💡</span> <b>콜아웃 상자</b>
+                    </button>
+                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                      <span>➖</span> <b>구분선</b>
+                    </button>
+                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                      <span>✍️</span> <b>인용구 블록</b>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Drag & Drop Attachments Section */}
@@ -942,7 +1125,7 @@ export const ApprovalSystem: React.FC = () => {
               )}
             </div>
 
-            {/* Footer */}
+            {/* Actions Footer */}
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               {selectedDoc.status === 'PENDING' && selectedDoc.approverId === userProfile?.id && !showRejectInput && (
                 <>
