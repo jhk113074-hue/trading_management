@@ -649,30 +649,49 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
               {/* Comments */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
-                    <select
-                      value={reviewAssigneeId}
-                      onChange={e => setReviewAssigneeId(e.target.value)}
-                      style={{
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.72rem',
-                        outline: 'none',
-                        background: '#fff',
-                        color: '#475569',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="">(지정 안함)</option>
-                      {users.filter(u => u.id !== userProfile?.id).map(u => (
-                        <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
-                      ))}
-                    </select>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
+                      <select
+                        value={reviewAssigneeId}
+                        onChange={e => setReviewAssigneeId(e.target.value)}
+                        style={{
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '0.72rem',
+                          outline: 'none',
+                          background: '#fff',
+                          color: '#475569',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="">(지정 안함)</option>
+                        {users.filter(u => u.id !== userProfile?.id).map(u => (
+                          <option key={u.id} value={u.id}>{u.name} {u.position || u.role || ''}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                  
+                  {/* 등록 버튼 */}
+                  <button
+                    onClick={handleAddComment}
+                    style={{
+                      background: '#0d9488',
+                      color: '#fff',
+                      border: 'none',
+                      padding: '5px 14px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.78rem'
+                    }}
+                  >
+                    등록
+                  </button>
                 </div>
                 
                 {/* 댓글 입력창 (첨부파일 및 댓글 타이틀 바로 아래 배치, 크기 조절 가능한 textarea) */}
@@ -697,23 +716,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     onFocus={e => e.target.style.borderColor = '#0d9488'}
                     onBlur={e => e.target.style.borderColor = '#cbd5e1'}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={handleAddComment}
-                      style={{
-                        background: '#0d9488',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '6px 16px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontWeight: 600,
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      등록
-                    </button>
-                  </div>
                 </div>
 
                 {/* 댓글 목록 */}
