@@ -43,6 +43,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [meetingPerson, setMeetingPerson] = useState(initialTask?.meetingPerson || '');
   const [projectName] = useState(initialTask?.projectName || '');
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [activeModelessLink, setActiveModelessLink] = useState<string | null>(null);
   const [modelessPosition, setModelessPosition] = useState({ x: 150, y: 100 });
@@ -122,7 +123,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         console.error("Customers fetch error in TaskModal:", error);
       }
     };
+    const loadSuppliers = async () => {
+      try {
+        const supSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'suppliers'));
+        setSuppliers(supSnap.docs.map(d => ({ id: d.id, ...d.data() } as any)));
+      } catch (error) {
+        console.error("Suppliers fetch error in TaskModal:", error);
+      }
+    };
     loadCustomers();
+    loadSuppliers();
   }, []);
 
   const handleModelessMouseDown = (e: React.MouseEvent) => {
@@ -888,11 +898,29 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         {/* 고객 검색 모달 */}
         {isCustomerSearchOpen && (
           <CustomerSearchModal
-            customers={customers}
+            customers={([
+              ...customers.map(c => ({
+                ...c,
+                name: `[고객사] ${c.name || ''}`,
+                nameKo: `[고객사] ${c.nameKo || c.name || ''}`,
+                isSupplier: false
+              })),
+              ...suppliers.map(s => ({
+                id: s.id,
+                name: `[공급사] ${s.name || ''}`,
+                nameKo: `[공급사] ${s.name || ''}`,
+                customerCode: s.supplierCode || s.id,
+                countryName: '공급업체',
+                contactPerson: s.managerName || '',
+                email: s.purchaseEmail || '',
+                isSupplier: true
+              }))
+            ] as any as Customer[])}
             onClose={() => setIsCustomerSearchOpen(false)}
-            onSelect={(cust) => {
-              setCustomerName(cust.name || cust.nameKo || '');
-              setCustomerId(cust.id);
+            onSelect={(item: any) => {
+              const cleanName = item.name.replace(/^\[고객사\]\s*/, '').replace(/^\[공급사\]\s*/, '');
+              setCustomerName(cleanName);
+              setCustomerId(item.id);
               setIsCustomerSearchOpen(false);
             }}
           />
