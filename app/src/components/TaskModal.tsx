@@ -90,7 +90,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       fetched.sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateA - dateB;
+        return dateB - dateA;
       });
       setComments(fetched);
     }, (error) => {
@@ -136,8 +136,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     // 1. 입력창 즉시 초기화
     setNewComment('');
     setReviewAssigneeId('');
-    // 2. 화면(로컬 상태)에 즉시 반영 (Optimistic UI)
-    setComments(prev => [...prev, { id: 'temp-' + Date.now(), ...commentObj }]);
+    // 2. 화면(로컬 상태)에 즉시 반영 (Optimistic UI) - 최신 글이 위로 가도록 prepend
+    setComments(prev => [{ id: 'temp-' + Date.now(), ...commentObj }, ...prev]);
 
     try {
       const docRef = await addDoc(collection(db, 'taskComments'), commentObj);
