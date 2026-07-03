@@ -40,6 +40,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [dueDate, setDueDate] = useState(initialTask?.dueDate || '');
   const [customerName, setCustomerName] = useState(initialTask?.customerName || '');
   const [customerId, setCustomerId] = useState((initialTask as any)?.customerId || '');
+  const [meetingPerson, setMeetingPerson] = useState(initialTask?.meetingPerson || '');
   const [projectName] = useState(initialTask?.projectName || '');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
@@ -288,6 +289,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       dueDate: autoDueDate,
       customerName,
       customerId: customerId || null,
+      meetingPerson: meetingPerson || '',
       projectName,
       requesterId,
       requesterName: reqName,
@@ -494,43 +496,66 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 고객사:</span>
-                {customerName ? (
-                  <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {customerName}
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {/* 고객사 지정 영역 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 고객사:</span>
+                  {customerName ? (
+                    <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={customerName}>
+                      {customerName}
+                      <button
+                        type="button"
+                        onClick={() => { setCustomerName(''); setCustomerId(''); }}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', fontWeight: 'bold' }}
+                        title="고객사 지정 취소"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => { setCustomerName(''); setCustomerId(''); }}
-                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', fontWeight: 'bold' }}
-                      title="고객사 지정 취소"
+                      onClick={() => setIsCustomerSearchOpen(true)}
+                      style={{
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        padding: '2px 8px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: '#475569',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
                     >
-                      ✕
+                      🔍 고객 찾기
                     </button>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomerSearchOpen(true)}
+                  )}
+                </div>
+
+                {/* 미팅자 입력 영역 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>👥 미팅자:</span>
+                  <input
+                    type="text"
+                    value={meetingPerson}
+                    onChange={e => setMeetingPerson(e.target.value)}
+                    placeholder="미팅 참석자 입력..."
                     style={{
-                      background: '#f1f5f9',
-                      border: '1px solid #cbd5e1',
+                      padding: '2px 6px',
                       borderRadius: '4px',
-                      padding: '2px 8px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      color: '#475569',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s'
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.72rem',
+                      outline: 'none',
+                      width: '120px'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
-                  >
-                    🔍 고객 찾기
-                  </button>
-                )}
+                  />
+                </div>
               </div>
             </div>
             <textarea
@@ -833,7 +858,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             customers={customers}
             onClose={() => setIsCustomerSearchOpen(false)}
             onSelect={(cust) => {
-              setCustomerName(cust.nameKo || cust.name || '');
+              setCustomerName(cust.name || cust.nameKo || '');
               setCustomerId(cust.id);
               setIsCustomerSearchOpen(false);
             }}

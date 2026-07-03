@@ -36,6 +36,7 @@ export interface Task {
   requesterId?: string;
   requesterName?: string;
   customerName?: string;
+  meetingPerson?: string;
   importance: string; // 'A' | 'B' | 'C'
   urgency: number; // 1-10
   quadrant: Quadrant;
