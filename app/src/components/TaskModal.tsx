@@ -674,6 +674,49 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     </select>
                   </div>
                 </div>
+                
+                {/* 댓글 입력창 (첨부파일 및 댓글 타이틀 바로 아래 배치, 크기 조절 가능한 textarea) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <textarea
+                    rows={3}
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    placeholder="댓글 입력..."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid #cbd5e1',
+                      outline: 'none',
+                      fontSize: '0.85rem',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      minHeight: '60px',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#0d9488'}
+                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={handleAddComment}
+                      style={{
+                        background: '#0d9488',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '6px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 600,
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      등록
+                    </button>
+                  </div>
+                </div>
+
+                {/* 댓글 목록 */}
                 <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {comments.map(c => (
                     <div key={c.id}>
@@ -689,10 +732,6 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     </div>
                   ))}
                   {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
-                </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') handleAddComment(); }} />
-                  <button onClick={handleAddComment} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
                 </div>
               </div>
             </div>
