@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { User } from '../types';
 
+interface Attachment {
+  name: string;
+  size: number;
+  data: string; // Base64 Data URL
+  type: string;
+}
+
+interface ApprovalComment {
+  senderName: string;
+  content: string;
+  createdAt: string;
+}
+
 interface ApprovalDoc {
   id: string;
   title: string;
   docType: 'DRAFT' | 'EXPENSE' | 'LEAVE';
-  content: string;
+  content: string; // HTML content
   amount?: number;
   requesterId: string;
   requesterName: string;
@@ -18,6 +31,8 @@ interface ApprovalDoc {
   rejectReason?: string;
   createdAt: string;
   approvedBy?: string;
+  attachments?: Attachment[];
+  comments?: ApprovalComment[];
 }
 
 export const ApprovalSystem: React.FC = () => {
@@ -31,20 +46,25 @@ export const ApprovalSystem: React.FC = () => {
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [docType, setDocType] = useState<'DRAFT' | 'EXPENSE'>('DRAFT');
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [contentHTML, setContentHTML] = useState('');
   const [amount, setAmount] = useState<string>('');
   const [selectedApproverId, setSelectedApproverId] = useState('');
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // View Document Modal
   const [selectedDoc, setSelectedDoc] = useState<ApprovalDoc | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+  
+  // Comment State inside View Modal
+  const [newComment, setNewComment] = useState('');
+
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const fetchApprovalData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch users to choose approver
       const usersSnap = await getDocs(collection(db, 'users'));
       const usersList: User[] = [];
       usersSnap.forEach(d => {
@@ -52,13 +72,11 @@ export const ApprovalSystem: React.FC = () => {
       });
       setUsers(usersList);
 
-      // 2. Fetch approvals
       const docSnap = await getDocs(collection(db, 'approvals'));
       const docList: ApprovalDoc[] = [];
       docSnap.forEach(d => {
         docList.push({ id: d.id, ...d.data() } as ApprovalDoc);
       });
-      // Sort by newest
       docList.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       setDocuments(docList);
     } catch (e) {
@@ -83,17 +101,28 @@ export const ApprovalSystem: React.FC = () => {
     const targetApprover = users.find(u => u.id === selectedApproverId);
     if (!targetApprover) return;
 
+    // Read current HTML from contenteditable
+    const draftBody = editorRef.current ? editorRef.current.innerHTML : contentHTML;
+    if (!draftBody || draftBody.trim() === '<br>' || draftBody.trim() === '') {
+      alert("기안 내용을 입력해 주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'approvals'), {
         title,
         docType,
-        content,
+        content: draftBody,
         amount: docType === 'EXPENSE' ? Number(amount) : null,
         requesterId: userProfile.id,
         requesterName: userProfile.name,
         approverId: selectedApproverId,
         approverName: targetApprover.name,
+        status: 'PENDING',
+        attachments,
+        comments: [],
+        createdAt: new Date().toISOString()
       });
 
       await addDoc(collection(db, 'mails'), {
@@ -108,8 +137,10 @@ export const ApprovalSystem: React.FC = () => {
       });
 
       setTitle('');
-      setContent('');
+      setContentHTML('');
       setAmount('');
+      setAttachments([]);
+      if (editorRef.current) editorRef.current.innerHTML = '';
       setSelectedApproverId('');
       setShowDraftModal(false);
       fetchApprovalData();
@@ -120,6 +151,34 @@ export const ApprovalSystem: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      if (file.size > 500 * 1024) {
+        alert(`500KB 이하의 파일만 업로드할 수 있습니다. (${file.name})`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachments(prev => [...prev, {
+          name: file.name,
+          size: file.size,
+          data: reader.result as string,
+          type: file.type
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== index));
   };
 
   const handleApprove = async (docId: string) => {
@@ -194,18 +253,86 @@ export const ApprovalSystem: React.FC = () => {
     }
   };
 
+  const handleAddComment = async () => {
+    if (!userProfile || !newComment.trim() || !selectedDoc) return;
+
+    const commentObj: ApprovalComment = {
+      senderName: userProfile.name,
+      content: newComment.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedComments = [...(selectedDoc.comments || []), commentObj];
+
+    try {
+      await updateDoc(doc(db, 'approvals', selectedDoc.id), {
+        comments: updatedComments
+      });
+
+      // Send mail alert to the counterpart
+      const receiverId = userProfile.id === selectedDoc.requesterId ? selectedDoc.approverId : selectedDoc.requesterId;
+      const receiverName = userProfile.id === selectedDoc.requesterId ? selectedDoc.approverName : selectedDoc.requesterName;
+      
+      await addDoc(collection(db, 'mails'), {
+        senderId: userProfile.id,
+        senderName: userProfile.name,
+        receiverId,
+        receiverName,
+        title: `[알림] 결재 기안에 새로운 의견이 등록되었습니다: ${selectedDoc.title}`,
+        content: `${userProfile.name}님이 기안서 "${selectedDoc.title}"에 새로운 의견(댓글)을 남겼습니다:\n\n"${newComment.trim()}"\n\n전자결재 메뉴에서 상세 확인을 해주시기 바랍니다.`,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+
+      setSelectedDoc(prev => prev ? { ...prev, comments: updatedComments } : null);
+      setNewComment('');
+      fetchApprovalData();
+    } catch (e) {
+      console.error(e);
+      alert("댓글 등록에 실패했습니다.");
+    }
+  };
+
+  // Editor toolbar actions
+  const format = (command: string) => {
+    document.execCommand(command, false);
+  };
+
+  const insertTable = () => {
+    const tableHTML = `
+      <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+        <thead>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">구분</th>
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">상세 내역</th>
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    document.execCommand('insertHTML', false, tableHTML);
+  };
+
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>데이터를 불러오는 중...</div>;
   }
 
-  // Filter lists based on roles and tabs
   const pendingDocs = documents.filter(d => d.approverId === userProfile?.id && d.status === 'PENDING');
   const submittedDocs = documents.filter(d => d.requesterId === userProfile?.id);
   const archiveDocs = documents.filter(d => d.status !== 'PENDING' && (d.requesterId === userProfile?.id || d.approverId === userProfile?.id || userProfile?.role === '관리자'));
-
   const activeList = activeTab === 'pending' ? pendingDocs : activeTab === 'submitted' ? submittedDocs : archiveDocs;
-
-  // Potential approvers list (managers, admins, or other users)
   const potentialApprovers = users.filter(u => u.id !== userProfile?.id && (u.role === '관리자' || u.role === '매니저'));
 
   return (
@@ -217,7 +344,7 @@ export const ApprovalSystem: React.FC = () => {
           <h2 style={{ fontSize: '1.4rem', fontWeight: 850, color: 'var(--primary-color)', margin: 0 }}>✍️ 전자결재 시스템</h2>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>온라인 기안 상신, 결재선 지정, 실시간 품의서 결재 및 반려 보관 시스템입니다.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowDraftModal(true)}>
+        <button className="btn btn-primary" onClick={() => { setAttachments([]); setShowDraftModal(true); }}>
           📝 새 결재 기안서 작성
         </button>
       </div>
@@ -345,7 +472,7 @@ export const ApprovalSystem: React.FC = () => {
       {/* New Draft Creation Modal */}
       {showDraftModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '520px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '640px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '15px', fontWeight: 800 }}>📝 새 결재 문서 기안 상신</span>
               <button onClick={() => setShowDraftModal(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
@@ -417,16 +544,62 @@ export const ApprovalSystem: React.FC = () => {
                 </div>
               )}
 
+              {/* HTML Editor Component */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>기안 내용 ★</label>
-                <textarea
-                  rows={6}
-                  required
-                  placeholder="상세 내용을 적어주세요. 사유, 품목 및 예산 등을 세부 기술하십시오."
-                  value={content}
-                  onChange={e => setContent(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                
+                <div style={{ display: 'flex', gap: '6px', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
+                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
+                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
+                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    田 표 삽입
+                  </button>
+                </div>
+
+                <div
+                  contentEditable
+                  ref={editorRef}
+                  onBlur={() => {
+                    if (editorRef.current) setContentHTML(editorRef.current.innerHTML);
+                  }}
+                  style={{
+                    minHeight: '200px',
+                    border: '1px solid #cbd5e1',
+                    borderBottomLeftRadius: '6px',
+                    borderBottomRightRadius: '6px',
+                    padding: '12px',
+                    outline: 'none',
+                    backgroundColor: '#fff',
+                    overflowY: 'auto',
+                    fontSize: '13px',
+                    lineHeight: 1.6
+                  }}
                 />
+              </div>
+
+              {/* Attachments Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '8px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <span>📎 첨부파일 추가</span>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <div style={{ fontSize: '10px', color: '#94a3b8' }}>기안 증빙 자료를 선택해 주세요. (개당 최대 500KB)</div>
+                {attachments.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                    {attachments.map((file, idx) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '15px', padding: '4px 12px', fontSize: '11.5px' }}>
+                        <span style={{ color: '#475569', fontWeight: 600 }}>{file.name} ({Math.round(file.size / 1024)} KB)</span>
+                        <button type="button" onClick={() => removeAttachment(idx)} style={{ border: 'none', background: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -472,7 +645,7 @@ export const ApprovalSystem: React.FC = () => {
       {/* Document View Details Modal */}
       {selectedDoc && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '640px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
             {/* Modal Header */}
             <div style={{ padding: '16px 20px', background: '#1e293b', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -480,10 +653,10 @@ export const ApprovalSystem: React.FC = () => {
               <button onClick={() => setSelectedDoc(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
 
-            {/* Document Body (Traditional Corporate Stamp Look) */}
-            <div style={{ padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '70vh', overflowY: 'auto' }}>
+            {/* Document Body */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '65vh', overflowY: 'auto' }}>
               
-              {/* Document Stamp Box Header */}
+              {/* Stamp Table Grid */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px' }}>
                 <div>
                   <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
@@ -492,7 +665,6 @@ export const ApprovalSystem: React.FC = () => {
                   <span style={{ fontSize: '11px', color: '#64748b' }}>등록번호: {selectedDoc.id.substring(0, 8).toUpperCase()}</span>
                 </div>
                 
-                {/* Visual Approval Box Table */}
                 <table style={{ border: '1px solid #cbd5e1', borderCollapse: 'collapse', textAlign: 'center', fontSize: '11px' }}>
                   <tbody>
                     <tr>
@@ -535,12 +707,42 @@ export const ApprovalSystem: React.FC = () => {
                 )}
               </div>
 
-              {/* Draft Description Content */}
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '20px', minHeight: '120px', background: '#fff', fontSize: '13.5px', lineHeight: 1.6, whiteSpace: 'pre-wrap', color: '#334155' }}>
-                {selectedDoc.content}
-              </div>
+              {/* Content Box (HTML Rendered) */}
+              <div
+                dangerouslySetInnerHTML={{ __html: selectedDoc.content }}
+                style={{
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  minHeight: '120px',
+                  background: '#fff',
+                  fontSize: '13.5px',
+                  lineHeight: 1.6,
+                  color: '#334155',
+                  overflowX: 'auto'
+                }}
+              />
 
-              {/* Rejection comments */}
+              {/* View Attachments */}
+              {selectedDoc.attachments && selectedDoc.attachments.length > 0 && (
+                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>📎 기안 증빙 첨부파일 ({selectedDoc.attachments.length}개)</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {selectedDoc.attachments.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={file.data}
+                        download={file.name}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '12px', textDecoration: 'none', color: '#1e293b', fontWeight: 700 }}
+                      >
+                        📥 {file.name} ({Math.round(file.size / 1024)} KB)
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection Feedback */}
               {selectedDoc.status === 'REJECTED' && selectedDoc.rejectReason && (
                 <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '14px 18px' }}>
                   <div style={{ fontSize: '12px', fontWeight: 800, color: '#991b1b' }}>반려 피드백/의견:</div>
@@ -548,7 +750,51 @@ export const ApprovalSystem: React.FC = () => {
                 </div>
               )}
 
-              {/* Reject Input Field */}
+              {/* Comments / Opinions Section (결재 의견) */}
+              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#334155', margin: 0 }}>💬 결재 의견 / 댓글 ({selectedDoc.comments?.length || 0}개)</h4>
+                
+                {/* List Comments */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                  {(!selectedDoc.comments || selectedDoc.comments.length === 0) ? (
+                    <div style={{ padding: '12px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '6px', textAlign: 'center' }}>
+                      등록된 의견이 없습니다.
+                    </div>
+                  ) : (
+                    selectedDoc.comments.map((comm, idx) => (
+                      <div key={idx} style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12.5px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <strong style={{ color: '#475569' }}>{comm.senderName}</strong>
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>{new Date(comm.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div style={{ color: '#1e293b', whiteSpace: 'pre-wrap' }}>{comm.content}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Comment Input Form */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    placeholder="결재 관련 의견 또는 보완 필요 사유 등을 입력하세요..."
+                    value={newComment}
+                    onChange={e => setNewComment(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleAddComment();
+                    }}
+                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }}
+                  />
+                  <button
+                    onClick={handleAddComment}
+                    style={{ padding: '8px 14px', background: '#475569', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    의견 등록
+                  </button>
+                </div>
+              </div>
+
+              {/* Reject Reason input */}
               {showRejectInput && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fffbeb', border: '1px dashed #ca8a04', padding: '12px', borderRadius: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#854d0e' }}>반려 사유 작성 ★</label>
@@ -578,7 +824,7 @@ export const ApprovalSystem: React.FC = () => {
               )}
             </div>
 
-            {/* Approval Action Footer Buttons (Only for the designated approver when pending) */}
+            {/* Actions Footer */}
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               {selectedDoc.status === 'PENDING' && selectedDoc.approverId === userProfile?.id && !showRejectInput && (
                 <>
