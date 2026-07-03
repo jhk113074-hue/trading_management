@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment, getDocs } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase';
+import { db, storage, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { Task, Visibility, Quadrant, TaskType, ScheduleType, TaskStatus, User } from '../types';
 import { validateTask } from '../utils/businessRules';
+import { CustomerSearchModal } from './CustomerSearchModal';
+import type { Customer } from '../types/customer';
 
 // ── Dropbox 링크 자동 변환 ─────────────────────────────────────────
 const convertDropboxLink = (url: string): string => {
@@ -36,8 +38,11 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [importance, setImportance] = useState<string>(initialTask?.importance ? String(initialTask.importance) : 'B');
   const [urgency, setUrgency] = useState(initialTask?.urgency || 5);
   const [dueDate, setDueDate] = useState(initialTask?.dueDate || '');
+  const [customerName, setCustomerName] = useState(initialTask?.customerName || '');
+  const [customerId, setCustomerId] = useState((initialTask as any)?.customerId || '');
   const [projectName] = useState(initialTask?.projectName || '');
-  const [customerName] = useState(initialTask?.customerName || '');
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   
   const [requesterName] = useState(initialTask?.requesterName || '');
   const [requesterId, setRequesterId] = useState(initialTask?.requesterId || '');
@@ -102,6 +107,18 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       unsubscribeComments();
     };
   }, [initialTask?.id]);
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        const custSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'customers'));
+        setCustomers(custSnap.docs.map(d => ({ id: d.id, ...d.data() } as Customer)));
+      } catch (error) {
+        console.error("Customers fetch error in TaskModal:", error);
+      }
+    };
+    loadCustomers();
+  }, []);
 
   // Backwards compatibility for old tasks without IDs
   useEffect(() => {
@@ -269,8 +286,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       urgency,
       quadrant: currentQuadrant,
       dueDate: autoDueDate,
-      projectName,
       customerName,
+      customerId: customerId || null,
+      projectName,
       requesterId,
       requesterName: reqName,
       assigneeId,
@@ -476,7 +494,45 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 고객사:</span>
+                {customerName ? (
+                  <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {customerName}
+                    <button
+                      type="button"
+                      onClick={() => { setCustomerName(''); setCustomerId(''); }}
+                      style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', fontWeight: 'bold' }}
+                      title="고객사 지정 취소"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomerSearchOpen(true)}
+                    style={{
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      padding: '2px 8px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: '#475569',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+                  >
+                    🔍 고객 찾기
+                  </button>
+                )}
+              </div>
+            </div>
             <textarea
               rows={12} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
               style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', minHeight: '220px' }}
@@ -769,6 +825,19 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </div>
             </div>
           </div>
+        )}
+
+        {/* 고객 검색 모달 */}
+        {isCustomerSearchOpen && (
+          <CustomerSearchModal
+            customers={customers}
+            onClose={() => setIsCustomerSearchOpen(false)}
+            onSelect={(cust) => {
+              setCustomerName(cust.nameKo || cust.name || '');
+              setCustomerId(cust.id);
+              setIsCustomerSearchOpen(false);
+            }}
+          />
         )}
 
         {/* Footer */}
