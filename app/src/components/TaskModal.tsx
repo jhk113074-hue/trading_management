@@ -976,6 +976,11 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 </button>
               </div>
             </div>
+            {/* 드롭박스 보안 정책 우회 설명 배너 */}
+            <div style={{ background: '#fffbeb', borderBottom: '1px solid #fef3c7', padding: '8px 16px', fontSize: '0.75rem', color: '#b45309', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', zIndex: 1 }}>
+              <span>⚠️ 드롭박스의 보안 제한(X-Frame-Options)으로 인해 화면 안에서 직접 열리지 않을 수 있습니다. 왼쪽과 같이 연결 거부 화면이 뜨는 경우 우측 버튼을 눌러주세요.</span>
+              <a href={activeModelessLink} target="_blank" rel="noopener noreferrer" style={{ background: '#d97706', color: '#fff', padding: '4px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>새 창으로 열기 ↗</a>
+            </div>
             {/* 미리보기 본문 (Iframe) */}
             <div style={{ flex: 1, background: '#f1f5f9' }}>
               <iframe
