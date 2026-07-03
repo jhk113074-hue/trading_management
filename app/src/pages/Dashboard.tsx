@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 
@@ -78,6 +78,283 @@ export const Dashboard: React.FC = () => {
       unsubOrders();
     };
   }, [currentUser]);
+
+  // ── Calendar States & Subscription ──
+  const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0 ~ 11
+  const [selectedDateForEvent, setSelectedDateForEvent] = useState<string | null>(null);
+  const [selectedEventForView, setSelectedEventForView] = useState<any | null>(null);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    type: '개인일정' as '개인일정' | '미팅' | '출장' | '기타',
+    startDate: '',
+    startTime: '09:00',
+    endDate: '',
+    endTime: '18:00',
+    isPublic: true,
+    participants: '',
+    description: ''
+  });
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const COMPANY_ID = "YSACC";
+
+    const unsubEvents = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "calendar_events"), (snapshot) => {
+      const events: any[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.isPublic || data.creatorId === currentUser.uid) {
+          events.push({ id: docSnap.id, ...data });
+        }
+      });
+      setCalendarEvents(events);
+    }, (err) => {
+      console.error("Calendar events subscription error:", err);
+    });
+
+    return () => unsubEvents();
+  }, [currentUser]);
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(prev => {
+      if (prev === 0) {
+        setCurrentYear(y => y - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(prev => {
+      if (prev === 11) {
+        setCurrentYear(y => y + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
+  };
+
+  const handleGoToToday = () => {
+    const today = new Date();
+    setCurrentYear(today.getFullYear());
+    setCurrentMonth(today.getMonth());
+  };
+
+  const getEventBadgeColor = (type: string) => {
+    switch (type) {
+      case '개인일정': return { bg: '#eff6ff', text: '#1e40af', border: '#bfdbfe' };
+      case '미팅': return { bg: '#f0fdf4', text: '#166534', border: '#bbf7d0' };
+      case '출장': return { bg: '#faf5ff', text: '#5b21b6', border: '#e9d5ff' };
+      default: return { bg: '#fff7ed', text: '#9a3412', border: '#fed7aa' };
+    }
+  };
+
+  const renderCalendarDays = () => {
+    const startDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+    const dayCells: React.ReactNode[] = [];
+
+    // 1. Previous month padding days
+    for (let i = startDayOfWeek - 1; i >= 0; i--) {
+      const prevDay = daysInPrevMonth - i;
+      const targetYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      const targetMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(prevDay).padStart(2, '0')}`;
+      dayCells.push(renderDayCell(prevDay, dateStr, false));
+    }
+
+    // 2. Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      dayCells.push(renderDayCell(day, dateStr, true));
+    }
+
+    // 3. Next month padding days
+    const totalCellsSoFar = dayCells.length;
+    const remainingCells = (totalCellsSoFar % 7 === 0) ? 0 : 7 - (totalCellsSoFar % 7);
+    for (let i = 1; i <= remainingCells; i++) {
+      const targetYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+      const targetMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+      const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+      dayCells.push(renderDayCell(i, dateStr, false));
+    }
+
+    return dayCells;
+  };
+
+  const renderDayCell = (dayNum: number, dateStr: string, isCurrentMonth: boolean) => {
+    const isToday = new Date().toISOString().split('T')[0] === dateStr;
+    const dayOfWeek = new Date(dateStr).getDay();
+
+    const dayEvents = calendarEvents.filter(e => {
+      const start = e.startDate;
+      const end = e.endDate || start;
+      return dateStr >= start && dateStr <= end;
+    });
+
+    return (
+      <div
+        key={dateStr}
+        onClick={() => {
+          setSelectedDateForEvent(dateStr);
+          setSelectedEventForView(null);
+          setEventForm({
+            title: '',
+            type: '개인일정',
+            startDate: dateStr,
+            startTime: '09:00',
+            endDate: dateStr,
+            endTime: '18:00',
+            isPublic: true,
+            participants: '',
+            description: ''
+          });
+        }}
+        style={{
+          minHeight: '100px',
+          background: isCurrentMonth ? '#fff' : '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+          padding: '6px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          cursor: 'pointer',
+          transition: 'all 0.1s',
+          boxShadow: isToday ? 'inset 0 0 0 2px #3b82f6' : 'none'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 800,
+            color: isToday ? '#fff' : (!isCurrentMonth ? '#cbd5e1' : dayOfWeek === 0 ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#475569'),
+            background: isToday ? '#3b82f6' : 'transparent',
+            borderRadius: isToday ? '50%' : 'none',
+            width: isToday ? '20px' : 'auto',
+            height: isToday ? '20px' : 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {dayNum}
+          </span>
+          {isToday && <span style={{ fontSize: '9px', fontWeight: 800, color: '#3b82f6' }}>오늘</span>}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', overflowY: 'auto', flex: 1, maxHeight: '72px' }}>
+          {dayEvents.map(e => {
+            const colors = getEventBadgeColor(e.type);
+            return (
+              <div
+                key={e.id}
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  setSelectedEventForView(e);
+                  setSelectedDateForEvent(null);
+                  setEventForm({
+                    title: e.title,
+                    type: e.type,
+                    startDate: e.startDate,
+                    startTime: e.startTime || '09:00',
+                    endDate: e.endDate || e.startDate,
+                    endTime: e.endTime || '18:00',
+                    isPublic: e.isPublic !== undefined ? e.isPublic : true,
+                    participants: e.participants || '',
+                    description: e.description || ''
+                  });
+                }}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: colors.bg,
+                  color: colors.text,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '4px',
+                  padding: '2px 4px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px'
+                }}
+                title={`${e.title} (${e.creatorName})`}
+              >
+                {!e.isPublic && <span style={{ fontSize: '9px' }}>🔒</span>}
+                {e.title}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const handleSaveEvent = async () => {
+    if (!eventForm.title.trim()) {
+      alert('일정 제목을 입력해주세요.');
+      return;
+    }
+    if (!currentUser || !userProfile) return;
+
+    const COMPANY_ID = "YSACC";
+    const eventPayload = {
+      title: eventForm.title,
+      type: eventForm.type,
+      startDate: eventForm.startDate,
+      startTime: eventForm.startTime,
+      endDate: eventForm.endDate,
+      endTime: eventForm.endTime,
+      isPublic: eventForm.isPublic,
+      participants: eventForm.participants,
+      description: eventForm.description,
+      creatorId: currentUser.uid,
+      creatorName: userProfile.name || currentUser.displayName || '이름없음',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      if (selectedEventForView) {
+        const docRef = doc(db, 'companies', COMPANY_ID, 'calendar_events', selectedEventForView.id);
+        await setDoc(docRef, {
+          ...eventPayload,
+          creatorId: selectedEventForView.creatorId,
+          creatorName: selectedEventForView.creatorName
+        }, { merge: true });
+        alert('✅ 일정이 수정되었습니다.');
+      } else {
+        await addDoc(collection(doc(db, 'companies', COMPANY_ID), 'calendar_events'), eventPayload);
+        alert('✅ 일정이 등록되었습니다.');
+      }
+      setSelectedDateForEvent(null);
+      setSelectedEventForView(null);
+    } catch (e: any) {
+      console.error(e);
+      alert('일정 저장 중 오류가 발생했습니다: ' + e.message);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!selectedEventForView) return;
+    if (!window.confirm('이 일정을 정말 삭제하시겠습니까?')) return;
+    const COMPANY_ID = "YSACC";
+    try {
+      await deleteDoc(doc(db, 'companies', COMPANY_ID, 'calendar_events', selectedEventForView.id));
+      alert('🗑️ 일정이 삭제되었습니다.');
+      setSelectedEventForView(null);
+      setSelectedDateForEvent(null);
+    } catch (e: any) {
+      console.error(e);
+      alert('일정 삭제 중 오류가 발생했습니다: ' + e.message);
+    }
+  };
 
   // ── 일간, 주간 및 기간 검색 기준 ──────────────────────────────────────────────
   const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
@@ -636,6 +913,384 @@ export const Dashboard: React.FC = () => {
 
 
         </>
+      )}
+
+      {/* ── 회사 및 개인 일정 캘린더 ── */}
+      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '24px', marginTop: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <span>📅 YSACC 스케줄러 & 일정 관리</span>
+            </h2>
+            <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' }}>날짜 칸을 클릭하여 일정을 등록하세요. (🔵 개인일정, 🟢 미팅, 🟣 출장, 🟡 기타)</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={handlePrevMonth}
+              style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              ◀ 이전달
+            </button>
+            <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#0f172a', minWidth: '90px', textAlign: 'center' }}>
+              {currentYear}년 {currentMonth + 1}월
+            </span>
+            <button
+              onClick={handleNextMonth}
+              style={{ padding: '6px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              다음달 ▶
+            </button>
+            <button
+              onClick={handleGoToToday}
+              style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              오늘
+            </button>
+          </div>
+        </div>
+
+        {/* 캘린더 요일 헤더 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '8px' }}>
+          {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
+            <span key={day} style={{ fontSize: '12.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
+              {day}
+            </span>
+          ))}
+        </div>
+
+        {/* 캘린더 일자 그리드 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(110px, auto)', gap: '4px' }}>
+          {renderCalendarDays()}
+        </div>
+      </div>
+
+      {/* 일정 등록 모달 */}
+      {selectedDateForEvent && (
+        <div
+          onClick={() => setSelectedDateForEvent(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '480px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+          >
+            <div style={{ padding: '16px 20px', background: '#3b82f6', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800 }}>📅 일정 등록 ({selectedDateForEvent})</span>
+              <button
+                onClick={() => setSelectedDateForEvent(null)}
+                style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 제목 ★</label>
+                <input
+                  type="text"
+                  placeholder="일정 제목을 입력하세요"
+                  value={eventForm.title}
+                  onChange={e => setEventForm(prev => ({ ...prev, title: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 구분</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['개인일정', '미팅', '출장', '기타'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEventForm(prev => ({ ...prev, type: t as any }))}
+                      style={{
+                        flex: 1,
+                        padding: '6px 0',
+                        borderRadius: '6px',
+                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                        background: eventForm.type === t ? '#eff6ff' : '#fff',
+                        color: eventForm.type === t ? '#1e40af' : '#475569',
+                        fontWeight: 700,
+                        fontSize: '12.5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작일</label>
+                  <input
+                    type="date"
+                    value={eventForm.startDate}
+                    onChange={e => setEventForm(prev => ({ ...prev, startDate: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작시간</label>
+                  <input
+                    type="time"
+                    value={eventForm.startTime}
+                    onChange={e => setEventForm(prev => ({ ...prev, startTime: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료일</label>
+                  <input
+                    type="date"
+                    value={eventForm.endDate}
+                    onChange={e => setEventForm(prev => ({ ...prev, endDate: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료시간</label>
+                  <input
+                    type="time"
+                    value={eventForm.endTime}
+                    onChange={e => setEventForm(prev => ({ ...prev, endTime: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={eventForm.isPublic}
+                  onChange={e => setEventForm(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                <label htmlFor="isPublic" style={{ fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                  📢 부서/회사 전체에 공유 (체크 시 모든 멤버에게 보임)
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자/미팅 대상</label>
+                <input
+                  type="text"
+                  placeholder="참석 멤버 또는 바이어 명"
+                  value={eventForm.participants}
+                  onChange={e => setEventForm(prev => ({ ...prev, participants: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>상세 내용/메모</label>
+                <textarea
+                  rows={3}
+                  placeholder="상세한 일정을 기록하세요"
+                  value={eventForm.description}
+                  onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedDateForEvent(null)}
+                style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEvent}
+                style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 일정 상세 및 수정 모달 */}
+      {selectedEventForView && (
+        <div
+          onClick={() => setSelectedEventForView(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '480px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+          >
+            <div style={{ padding: '16px 20px', background: '#0f172a', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800 }}>📅 일정 상세 및 편집</span>
+              <button
+                onClick={() => setSelectedEventForView(null)}
+                style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer', fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
+                <span>등록자: <strong>{selectedEventForView.creatorName}</strong></span>
+                <span>{selectedEventForView.isPublic ? '📢 회사 공유 일정' : '🔒 개인 일정'}</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 제목 ★</label>
+                <input
+                  type="text"
+                  value={eventForm.title}
+                  onChange={e => setEventForm(prev => ({ ...prev, title: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 구분</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {['개인일정', '미팅', '출장', '기타'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEventForm(prev => ({ ...prev, type: t as any }))}
+                      style={{
+                        flex: 1,
+                        padding: '6px 0',
+                        borderRadius: '6px',
+                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                        background: eventForm.type === t ? '#eff6ff' : '#fff',
+                        color: eventForm.type === t ? '#1e40af' : '#475569',
+                        fontWeight: 700,
+                        fontSize: '12.5px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작일</label>
+                  <input
+                    type="date"
+                    value={eventForm.startDate}
+                    onChange={e => setEventForm(prev => ({ ...prev, startDate: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작시간</label>
+                  <input
+                    type="time"
+                    value={eventForm.startTime}
+                    onChange={e => setEventForm(prev => ({ ...prev, startTime: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료일</label>
+                  <input
+                    type="date"
+                    value={eventForm.endDate}
+                    onChange={e => setEventForm(prev => ({ ...prev, endDate: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료시간</label>
+                  <input
+                    type="time"
+                    value={eventForm.endTime}
+                    onChange={e => setEventForm(prev => ({ ...prev, endTime: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
+                <input
+                  type="checkbox"
+                  id="isPublicEdit"
+                  checked={eventForm.isPublic}
+                  onChange={e => setEventForm(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                />
+                <label htmlFor="isPublicEdit" style={{ fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                  📢 부서/회사 전체에 공유 (체크 시 모든 멤버에게 보임)
+                </label>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자/미팅 대상</label>
+                <input
+                  type="text"
+                  value={eventForm.participants}
+                  onChange={e => setEventForm(prev => ({ ...prev, participants: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>상세 내용/메모</label>
+                <textarea
+                  rows={3}
+                  value={eventForm.description}
+                  onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+              <div>
+                {(selectedEventForView.creatorId === currentUser?.uid || userProfile?.role === 'admin') && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteEvent}
+                    style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    일정 삭제
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEventForView(null)}
+                  style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  닫기
+                </button>
+                {(selectedEventForView.creatorId === currentUser?.uid || userProfile?.role === 'admin') && (
+                  <button
+                    type="button"
+                    onClick={handleSaveEvent}
+                    style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    수정 완료
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '32px 0 24px 0' }} />
