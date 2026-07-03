@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, TaskStatus } from '../types';
+import { useAuth } from './AuthContext';
 
 interface TaskContextType {
   tasks: Task[];
@@ -27,9 +28,17 @@ const TaskContext = createContext<TaskContextType | undefined>(undefined);
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
 
   // Firestore 실시간 업무 데이터 구독
   useEffect(() => {
+    if (!currentUser) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -46,7 +55,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [currentUser]);
 
   const getOccurrenceDates = (startStr: string, endStr: string, cycle: string): string[] => {
     const dates: string[] = [];

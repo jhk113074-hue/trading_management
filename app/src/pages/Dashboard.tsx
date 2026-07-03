@@ -11,7 +11,7 @@ export const Dashboard: React.FC = () => {
   const location = useLocation();
   const { tasks, addTask, updateTask, loading } = useTasks();
   const [users, setUsers] = useState<User[]>([]);
-  const { userProfile } = useAuth();
+  const { userProfile, currentUser } = useAuth();
 
   const isCommentNew = (lastCommentAt?: string): boolean => {
     if (!lastCommentAt) return false;
@@ -29,6 +29,7 @@ export const Dashboard: React.FC = () => {
   const [tradingLoading, setTradingLoading] = useState(true);
   
   useEffect(() => {
+    if (!currentUser) return;
     const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
       const usersData: User[] = [];
       snapshot.forEach(doc => {
@@ -42,10 +43,11 @@ export const Dashboard: React.FC = () => {
       setUsers(usersData);
     });
     return () => unsubscribe();
-  }, []);
+  }, [currentUser]);
 
   // ── Trading Real-time Subscriptions ──
   useEffect(() => {
+    if (!currentUser) return;
     const COMPANY_ID = "YSACC";
 
     const unsubPIs = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"), (snapshot) => {
@@ -75,7 +77,7 @@ export const Dashboard: React.FC = () => {
       unsubPIs();
       unsubOrders();
     };
-  }, []);
+  }, [currentUser]);
 
   // ── 일간, 주간 및 기간 검색 기준 ──────────────────────────────────────────────
   const [dateMode, setDateMode] = useState<'daily' | 'weekly' | 'range'>('weekly');
