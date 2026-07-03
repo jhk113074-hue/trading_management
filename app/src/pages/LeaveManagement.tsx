@@ -224,11 +224,10 @@ export const LeaveManagement: React.FC = () => {
       </div>
 
       {/* 2-Column Dashboard */}
-      <div style={{ display: 'grid', gridTemplateColumns: userProfile?.role === '관리자' ? '1fr' : '360px 1fr', gap: '20px', alignItems: 'stretch' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '20px', alignItems: 'stretch' }}>
         
         {/* Left Column: Accrual Card & Application Form */}
-        {userProfile?.role !== '관리자' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
             {/* Accrual Card */}
             <div style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', color: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
@@ -321,7 +320,6 @@ export const LeaveManagement: React.FC = () => {
               </form>
             </div>
           </div>
-        )}
 
         {/* Right Column: User Leave History or Admin Management Dashboard */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
