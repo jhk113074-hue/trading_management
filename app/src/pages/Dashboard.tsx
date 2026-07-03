@@ -850,14 +850,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '24px 30px' }}>
-      <div className="top-section" style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.025em' }}>
-          <span>📊 무역 실시간 매출 및 PI 현황</span>
-          <span style={{ fontSize: '0.7rem', background: 'var(--primary-color)', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
-        </h1>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>YSACC CO., LTD. 실시간 Proforma Invoice 통계 및 매출 지표</p>
-      </div>
-
       {tradingLoading ? (
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
