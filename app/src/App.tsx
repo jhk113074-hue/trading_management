@@ -19,6 +19,7 @@ import { AuthCallback } from './pages/AuthCallback';
 import { Orders } from './pages/Orders';
 import { OrderDetail } from './pages/OrderDetail';
 import { IssueBoard } from './pages/IssueBoard';
+import { LeaveManagement } from './pages/LeaveManagement';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -65,6 +66,7 @@ const App: React.FC = () => {
               <Route path="profile" element={<ProfileSettings />} />
               <Route path="my-company" element={<MyCompanySettings />} />
               <Route path="issues" element={<IssueBoard />} />
+              <Route path="leave-management" element={<LeaveManagement />} />
             </Route>
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />

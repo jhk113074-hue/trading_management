@@ -14,6 +14,7 @@ export interface User {
   department?: string;
   position?: string;
   createdAt?: string;
+  joinDate?: string;
 }
 
 export interface Project {

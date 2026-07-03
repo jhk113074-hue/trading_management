@@ -10,7 +10,7 @@ export const TeamManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newMember, setNewMember] = useState({ name: '', email: '', role: '팀원', department: '', position: '' });
+  const [newMember, setNewMember] = useState({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState({ text: '', type: '' });
   
@@ -45,14 +45,21 @@ export const TeamManagement: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setNewMember({ name: '', email: '', role: '팀원', department: '', position: '' });
+    setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: new Date().toISOString().split('T')[0] });
     setModalMessage({ text: '', type: '' });
     setShowModal(true);
   };
 
   const handleOpenEdit = (member: any) => {
     setEditingId(member.id);
-    setNewMember({ name: member.name, email: member.email, role: member.role, department: member.department || '', position: member.position || '' });
+    setNewMember({
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department || '',
+      position: member.position || '',
+      joinDate: member.joinDate || member.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0]
+    });
     setModalMessage({ text: '', type: '' });
     setShowModal(true);
   };
@@ -68,7 +75,8 @@ export const TeamManagement: React.FC = () => {
           name: newMember.name,
           role: newMember.role,
           department: newMember.department,
-          position: newMember.position
+          position: newMember.position,
+          joinDate: newMember.joinDate
         });
         setShowModal(false);
         fetchMembers();
@@ -90,6 +98,7 @@ export const TeamManagement: React.FC = () => {
           role: newMember.role,
           department: newMember.department,
           position: newMember.position,
+          joinDate: newMember.joinDate,
           createdAt: new Date().toISOString(),
           status: '활성'
         });
@@ -97,7 +106,7 @@ export const TeamManagement: React.FC = () => {
         await secondaryAuth.signOut();
 
         setShowModal(false);
-        setNewMember({ name: '', email: '', role: '팀원', department: '', position: '' });
+        setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '' });
         fetchMembers();
         window.alert(`성공적으로 생성되었습니다.\n기본 비밀번호: ${defaultPassword}`); // Try to use alert for success, but it's okay if blocked because modal closes
       }
@@ -156,6 +165,7 @@ export const TeamManagement: React.FC = () => {
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이메일</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>부서</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>직위</th>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>입사일</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>권한</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>가입일</th>
                 <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 'bold' }}>관리</th>
@@ -163,13 +173,14 @@ export const TeamManagement: React.FC = () => {
             </thead>
             <tbody>
               {members.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
+                <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
               ) : members.map(member => (
                 <tr key={member.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                   <td style={{ padding: '16px 24px', fontWeight: 'bold', color: '#1e293b' }}>{member.name}</td>
                   <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.email}</td>
                   <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.department || '-'}</td>
                   <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.position || '-'}</td>
+                  <td style={{ padding: '16px 24px', color: '#0f172a', fontWeight: 600 }}>{member.joinDate || member.createdAt?.split('T')[0] || '-'}</td>
                   <td style={{ padding: '16px 24px' }}>
                     <span className={`q-badge ${member.role === '관리자' ? 'q1' : 'q2'}`}>
                       {member.role}
@@ -218,6 +229,10 @@ export const TeamManagement: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>직급 / 직위</label>
                 <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 대표이사, 부장, 사원 등" value={newMember.position} onChange={e => setNewMember({...newMember, position: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>입사일</label>
+                <input type="date" style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.joinDate} onChange={e => setNewMember({...newMember, joinDate: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>권한 설정</label>
