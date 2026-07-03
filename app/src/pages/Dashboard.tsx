@@ -285,8 +285,12 @@ export const Dashboard: React.FC = () => {
             {dayNum}
           </span>
           {holiday && (
-            <span style={{ fontSize: '7px', fontWeight: 850, color: holiday.country === 'KR' ? '#ef4444' : '#0d9488', transform: 'scale(0.85)', lineHeight: 1, whiteSpace: 'nowrap' }} title={holiday.name}>
-              {holiday.country === 'KR' ? `🇰🇷 ${holiday.name.slice(0, 4)}` : `🇦🇪 ${holiday.name.split(' ')[0]}`}
+            <span
+              className="holiday-badge"
+              style={{ color: holiday.country === 'KR' ? '#ef4444' : '#0d9488' }}
+              title={holiday.name}
+            >
+              {holiday.country === 'KR' ? `🇰🇷 ${holiday.name}` : `🇦🇪 ${holiday.name}`}
             </span>
           )}
         </div>
@@ -850,6 +854,23 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={{ padding: '24px 30px' }}>
+      <style>{`
+        .holiday-badge {
+          display: inline-block;
+          font-size: 9.5px !important;
+          font-weight: 850 !important;
+          line-height: 1;
+          white-space: nowrap;
+          transition: transform 0.12s ease-in-out, text-shadow 0.12s ease-in-out;
+          cursor: help;
+        }
+        .holiday-badge:hover {
+          transform: scale(1.4) !important;
+          z-index: 100 !important;
+          text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+          position: relative;
+        }
+      `}</style>
       {tradingLoading ? (
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
