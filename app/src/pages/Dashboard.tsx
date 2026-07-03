@@ -905,7 +905,7 @@ export const Dashboard: React.FC = () => {
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
-    <div style={{ padding: '4px 30px 24px 30px' }}>
+    <div style={{ padding: '4px 30px 10px 30px', height: 'calc(100vh - 95px)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
       <style>{`
         .holiday-badge {
           display: inline-block;
@@ -1485,10 +1485,10 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '32px 0 24px 0' }} />
+      <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '12px 0 10px 0' }} />
 
       {/* Date Navigation & Kanban Header */}
-      <div className="top-section" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+      <div className="top-section" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>📋 오늘 해야 할 일을 바로 시작하는 화면</span>
@@ -1648,10 +1648,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Kanban Container: Sidebar on left + Board on right */}
-      <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch' }}>
+      <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         
         {/* Left Side Panel (담당자별 배당 현황 & 미배당 업무) */}
-        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px', borderRight: '1px solid #e2e8f0', paddingRight: '20px' }}>
+        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px', borderRight: '1px solid #e2e8f0', paddingRight: '16px', overflowY: 'auto' }}>
           <div>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
             <div style={{ fontSize: '0.78rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
@@ -1766,8 +1766,8 @@ export const Dashboard: React.FC = () => {
           <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
 
           {/* Unassigned Tasks Section */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '150px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#475569', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>✉</span> 미배당 — 드래그하여 배정
             </div>
             
@@ -1780,13 +1780,13 @@ export const Dashboard: React.FC = () => {
                 border: '1px solid #cbd5e1',
                 borderRadius: '8px',
                 background: '#fff',
-                padding: '10px',
+                padding: '8px',
                 overflowY: 'auto',
-                minHeight: '180px',
-                maxHeight: '400px',
+                minHeight: '100px',
+                maxHeight: '280px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '8px'
+                gap: '6px'
               }}
             >
               {unassignedTasks.length === 0 ? (
@@ -1815,7 +1815,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Right Main Area (Selected Assignee profile + Info banner + 4 Baskets) */}
-        <div className="kanban-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0, width: '100%' }}>
+        <div className="kanban-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0, width: '100%', overflow: 'hidden' }}>
           
           {/* Active Assignee Info Header & Filters */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '12px 16px', flexWrap: 'wrap', gap: '12px' }}>
@@ -1855,7 +1855,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {/* 4 Baskets Kanban Board */}
-          <div className="board-container kanban-board-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'start' }}>
+          <div className="board-container kanban-board-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'stretch', flex: 1, minHeight: 0, overflow: 'hidden' }}>
             {baskets.map(basket => (
               <div
                 key={basket.id}
@@ -1873,10 +1873,13 @@ export const Dashboard: React.FC = () => {
                   background: dragOverBasketId === basket.id ? 'var(--primary-light, #eff6ff)' : basket.columnBg,
                   border: `2px solid ${basket.countBg}40`,
                   borderRadius: '12px',
-                  padding: '10px',
-                  minHeight: '400px',
+                  padding: '8px',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                   transition: 'all 0.15s',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                  overflow: 'hidden'
                 }}
               >
                 <div style={{
@@ -1914,8 +1917,8 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto', paddingRight: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minHeight: 0, overflow: 'hidden', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
                     {filteredTasks.filter(t => {
                       const s = t.status?.toUpperCase();
                       if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
