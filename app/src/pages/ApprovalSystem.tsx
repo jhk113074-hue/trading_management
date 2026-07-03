@@ -23,6 +23,7 @@ interface ApprovalDoc {
   docType: 'DRAFT' | 'EXPENSE' | 'LEAVE';
   content: string; // HTML content
   amount?: number;
+  currency?: string; // e.g. USD, KRW, MYR
   requesterId: string;
   requesterName: string;
   approverId: string;
@@ -48,6 +49,7 @@ export const ApprovalSystem: React.FC = () => {
   const [title, setTitle] = useState('');
   const [contentHTML, setContentHTML] = useState('');
   const [amount, setAmount] = useState<string>('');
+  const [currency, setCurrency] = useState('USD');
   const [selectedApproverId, setSelectedApproverId] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +61,10 @@ export const ApprovalSystem: React.FC = () => {
   
   // Comment State inside View Modal
   const [newComment, setNewComment] = useState('');
+
+  // Drag and Drop & Clipboard states
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -101,7 +107,6 @@ export const ApprovalSystem: React.FC = () => {
     const targetApprover = users.find(u => u.id === selectedApproverId);
     if (!targetApprover) return;
 
-    // Read current HTML from contenteditable
     const draftBody = editorRef.current ? editorRef.current.innerHTML : contentHTML;
     if (!draftBody || draftBody.trim() === '<br>' || draftBody.trim() === '') {
       alert("기안 내용을 입력해 주세요.");
@@ -115,6 +120,7 @@ export const ApprovalSystem: React.FC = () => {
         docType,
         content: draftBody,
         amount: docType === 'EXPENSE' ? Number(amount) : null,
+        currency: docType === 'EXPENSE' ? currency : null,
         requesterId: userProfile.id,
         requesterName: userProfile.name,
         approverId: selectedApproverId,
@@ -131,7 +137,7 @@ export const ApprovalSystem: React.FC = () => {
         receiverId: selectedApproverId,
         receiverName: targetApprover.name,
         title: `[알림] 결재 기안서가 상신되었습니다: ${title}`,
-        content: `${userProfile.name}님이 결재 기안서 "${title}"를 상신했습니다.\n\n구분: ${docType === 'EXPENSE' ? '지출결의서' : '일반기안서'}\n\n전자결재 메뉴에서 결재해 주시기 바랍니다.`,
+        content: `${userProfile.name}님이 결재 기안서 "${title}"를 상신했습니다.\n\n구분: ${docType === 'EXPENSE' ? `지출결의서 (${currency})` : '일반기안서'}\n\n전자결재 메뉴에서 결재해 주시기 바랍니다.`,
         isRead: false,
         createdAt: new Date().toISOString()
       });
@@ -153,10 +159,7 @@ export const ApprovalSystem: React.FC = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-
+  const processFiles = (files: FileList) => {
     Array.from(files).forEach(file => {
       if (file.size > 500 * 1024) {
         alert(`500KB 이하의 파일만 업로드할 수 있습니다. (${file.name})`);
@@ -174,11 +177,63 @@ export const ApprovalSystem: React.FC = () => {
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
     e.target.value = '';
   };
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Drag & Drop Handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingFile(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingFile(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    if (e.dataTransfer.files) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
+  // Clipboard Paste Handler (Ctrl+V for Capture/Screenshots)
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          if (file.size > 500 * 1024) {
+            alert("캡처 파일 크기가 너무 큽니다. 500KB 이하로 복사해 주세요.");
+            continue;
+          }
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setAttachments(prev => [...prev, {
+              name: `screenshot_${Date.now()}.png`,
+              size: file.size,
+              data: reader.result as string,
+              type: file.type
+            }]);
+          };
+          reader.readAsDataURL(file);
+          e.preventDefault();
+        }
+      }
+    }
   };
 
   const handleApprove = async (docId: string) => {
@@ -269,7 +324,6 @@ export const ApprovalSystem: React.FC = () => {
         comments: updatedComments
       });
 
-      // Send mail alert to the counterpart
       const receiverId = userProfile.id === selectedDoc.requesterId ? selectedDoc.approverId : selectedDoc.requesterId;
       const receiverName = userProfile.id === selectedDoc.requesterId ? selectedDoc.approverName : selectedDoc.requesterName;
       
@@ -293,7 +347,6 @@ export const ApprovalSystem: React.FC = () => {
     }
   };
 
-  // Editor toolbar actions
   const format = (command: string) => {
     document.execCommand(command, false);
   };
@@ -323,6 +376,11 @@ export const ApprovalSystem: React.FC = () => {
       </table>
     `;
     document.execCommand('insertHTML', false, tableHTML);
+  };
+
+  const formatCurrency = (amount: number, curr?: string) => {
+    const symbol = curr === 'KRW' ? '₩' : curr === 'MYR' ? 'RM ' : '$';
+    return `${symbol}${amount.toLocaleString()}`;
   };
 
   if (loading) {
@@ -444,7 +502,7 @@ export const ApprovalSystem: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ padding: '12px', fontWeight: 800, color: '#0f172a' }}>
-                      {doc.title} {doc.docType === 'EXPENSE' && `($${doc.amount?.toLocaleString()})`}
+                      {doc.title} {doc.docType === 'EXPENSE' && `(${formatCurrency(doc.amount || 0, doc.currency)})`}
                     </td>
                     <td style={{ padding: '12px', color: '#475569' }}>{doc.requesterName}</td>
                     <td style={{ padding: '12px', color: '#64748b' }}>👤 {doc.approverName}</td>
@@ -531,20 +589,34 @@ export const ApprovalSystem: React.FC = () => {
               </div>
 
               {docType === 'EXPENSE' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결의 금액 ($) ★</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="결의 총 금액을 입력하세요"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                  />
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결의 금액 ★</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="금액을 입력하세요"
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '120px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>통화 선택</label>
+                    <select
+                      value={currency}
+                      onChange={e => setCurrency(e.target.value)}
+                      style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: '#fff' }}
+                    >
+                      <option value="USD">USD ($)</option>
+                      <option value="KRW">KRW (₩)</option>
+                      <option value="MYR">MYR (RM)</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
-              {/* HTML Editor Component */}
+              {/* HTML Editor Component with Paste Listener */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>기안 내용 ★</label>
                 
@@ -560,6 +632,7 @@ export const ApprovalSystem: React.FC = () => {
                 <div
                   contentEditable
                   ref={editorRef}
+                  onPaste={handlePaste}
                   onBlur={() => {
                     if (editorRef.current) setContentHTML(editorRef.current.innerHTML);
                   }}
@@ -578,10 +651,25 @@ export const ApprovalSystem: React.FC = () => {
                 />
               </div>
 
-              {/* Attachments Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '8px' }}>
-                <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                  <span>📎 첨부파일 추가</span>
+              {/* Drag & Drop Attachments Section */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  background: isDraggingFile ? '#eff6ff' : '#f8fafc',
+                  border: isDraggingFile ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                  <span>📁 파일을 드래그하여 놓거나 클릭하여 선택</span>
                   <input
                     type="file"
                     multiple
@@ -589,13 +677,31 @@ export const ApprovalSystem: React.FC = () => {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <div style={{ fontSize: '10px', color: '#94a3b8' }}>기안 증빙 자료를 선택해 주세요. (개당 최대 500KB)</div>
+                <div style={{ fontSize: '10px', color: '#94a3b8' }}>화면 캡처를 에디터 안에 붙여넣기(Ctrl+V) 하여 첨부할 수도 있습니다. (개당 최대 500KB)</div>
                 {attachments.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', justifyContent: 'center' }}>
                     {attachments.map((file, idx) => (
-                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '15px', padding: '4px 12px', fontSize: '11.5px' }}>
-                        <span style={{ color: '#475569', fontWeight: 600 }}>{file.name} ({Math.round(file.size / 1024)} KB)</span>
-                        <button type="button" onClick={() => removeAttachment(idx)} style={{ border: 'none', background: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', padding: 0 }}>✕</button>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', position: 'relative' }}>
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={file.data}
+                            alt={file.name}
+                            onClick={() => setPreviewImageUrl(file.data)}
+                            style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer' }}
+                          />
+                        ) : (
+                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold', color: '#64748b' }}>
+                            FILE
+                          </div>
+                        )}
+                        <span style={{ fontSize: '10px', maxWidth: '80px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(idx)}
+                          style={{ position: 'absolute', top: '-4px', right: '-4px', border: 'none', background: '#ef4444', color: '#fff', borderRadius: '50%', width: '14px', height: '14px', fontSize: '9px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -702,12 +808,12 @@ export const ApprovalSystem: React.FC = () => {
                 <div><strong>결재 권한:</strong> {selectedDoc.approverName}</div>
                 {selectedDoc.docType === 'EXPENSE' && (
                   <div style={{ gridColumn: '1 / span 2', color: '#b45309', fontWeight: 'bold', fontSize: '13.5px', marginTop: '4px' }}>
-                    지출 결의 총액: ${selectedDoc.amount?.toLocaleString()}
+                    지출 결의 총액: {formatCurrency(selectedDoc.amount || 0, selectedDoc.currency)}
                   </div>
                 )}
               </div>
 
-              {/* Content Box (HTML Rendered) */}
+              {/* Content Box */}
               <div
                 dangerouslySetInnerHTML={{ __html: selectedDoc.content }}
                 style={{
@@ -723,20 +829,34 @@ export const ApprovalSystem: React.FC = () => {
                 }}
               />
 
-              {/* View Attachments */}
+              {/* View/Preview Attachments */}
               {selectedDoc.attachments && selectedDoc.attachments.length > 0 && (
                 <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '12px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>📎 기안 증빙 첨부파일 ({selectedDoc.attachments.length}개)</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {selectedDoc.attachments.map((file, idx) => (
-                      <a
-                        key={idx}
-                        href={file.data}
-                        download={file.name}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '20px', fontSize: '12px', textDecoration: 'none', color: '#1e293b', fontWeight: 700 }}
-                      >
-                        📥 {file.name} ({Math.round(file.size / 1024)} KB)
-                      </a>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 10px' }}>
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={file.data}
+                            alt={file.name}
+                            onClick={() => setPreviewImageUrl(file.data)}
+                            style={{ width: '60px', height: '60px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                          />
+                        ) : (
+                          <div style={{ width: '60px', height: '60px', borderRadius: '4px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
+                            FILE
+                          </div>
+                        )}
+                        <a
+                          href={file.data}
+                          download={file.name}
+                          style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 700, textDecoration: 'none', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          title="다운로드"
+                        >
+                          📥 {file.name}
+                        </a>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -750,11 +870,10 @@ export const ApprovalSystem: React.FC = () => {
                 </div>
               )}
 
-              {/* Comments / Opinions Section (결재 의견) */}
+              {/* Comments Section */}
               <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#334155', margin: 0 }}>💬 결재 의견 / 댓글 ({selectedDoc.comments?.length || 0}개)</h4>
                 
-                {/* List Comments */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                   {(!selectedDoc.comments || selectedDoc.comments.length === 0) ? (
                     <div style={{ padding: '12px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '6px', textAlign: 'center' }}>
@@ -773,7 +892,6 @@ export const ApprovalSystem: React.FC = () => {
                   )}
                 </div>
 
-                {/* Comment Input Form */}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                   <input
                     type="text"
@@ -794,7 +912,7 @@ export const ApprovalSystem: React.FC = () => {
                 </div>
               </div>
 
-              {/* Reject Reason input */}
+              {/* Reject Input */}
               {showRejectInput && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#fffbeb', border: '1px dashed #ca8a04', padding: '12px', borderRadius: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#854d0e' }}>반려 사유 작성 ★</label>
@@ -824,7 +942,7 @@ export const ApprovalSystem: React.FC = () => {
               )}
             </div>
 
-            {/* Actions Footer */}
+            {/* Footer */}
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               {selectedDoc.status === 'PENDING' && selectedDoc.approverId === userProfile?.id && !showRejectInput && (
                 <>
@@ -851,6 +969,35 @@ export const ApprovalSystem: React.FC = () => {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* Image Preview Overlay Modal */}
+      {previewImageUrl && (
+        <div
+          onClick={() => setPreviewImageUrl(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.85)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'zoom-out',
+            padding: '20px'
+          }}
+        >
+          <img
+            src={previewImageUrl}
+            alt="Preview"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              borderRadius: '8px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
+            }}
+          />
         </div>
       )}
 
