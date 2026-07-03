@@ -1011,26 +1011,24 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       let piId = initialPI?.id;
       let piNum = formData.piNumber;
 
-      // New PI Number generation logic if not editing, fallback if empty
-      if (!initialPI && !piNum) {
-        const yy = new Date().getFullYear();
-        const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
-        
-        // Find latest number
-        const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
-        const existingNums = snap.docs
-          .map(d => d.data().piNumber)
-          .filter(n => n && n.includes(`PI-${prefix}-${yy}`))
-          .map(n => parseInt(n.split('-').pop() || '0'))
-          .filter(n => !isNaN(n));
-        
-        const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
-        piNum = `PI-${prefix}-${yy}-${nextNum.toString().padStart(4, '0')}`;
-        piId = piNum;
-      }
-      
-      if (!piId && piNum) {
-          piId = piNum;
+      if (!initialPI) {
+        const newDocRef = doc(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+        piId = newDocRef.id;
+
+        if (!piNum) {
+          const yy = new Date().getFullYear();
+          const prefix = formData.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+          
+          const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+          const existingNums = snap.docs
+            .map(d => d.data().piNumber)
+            .filter(n => n && n.includes(`PI-${prefix}-${yy}`))
+            .map(n => parseInt(n.split('-').pop() || '0'))
+            .filter(n => !isNaN(n));
+          
+          const nextNum = existingNums.length > 0 ? Math.max(...existingNums) + 1 : 1;
+          piNum = `PI-${prefix}-${yy}-${nextNum.toString().padStart(4, '0')}`;
+        }
       }
 
       if (!piId) throw new Error("Invalid PI ID");

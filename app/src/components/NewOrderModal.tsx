@@ -398,7 +398,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
     setIsSaving(true);
     try {
-      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', formData.poId);
+      const orderRef = doc(collection(db, 'companies', COMPANY_ID, 'orders'));
       
       const hasUsd = items.some(it => it.currency === 'USD');
       const hasKrw = items.some(it => it.currency === 'KRW');
@@ -410,7 +410,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       }
       
       const orderPayload: Order = {
-        id: formData.poId,
+        id: orderRef.id,
         ciNumber: formData.poId,
         custPo: formData.custPo,
         quotationId: formData.quotationId,
