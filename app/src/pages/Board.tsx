@@ -195,7 +195,7 @@ export const Board: React.FC = () => {
               <div><span style={{ color: '#6b7280' }}>유형:</span> {selectedTask.type}</div>
               <div><span style={{ color: '#6b7280' }}>사분면:</span> {selectedTask.quadrant}</div>
               {selectedTask.projectName && <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#6b7280' }}>프로젝트:</span> {selectedTask.projectName}</div>}
-              {selectedTask.description && <div style={{ gridColumn: 'span 2', color: '#475569', marginTop: '8px' }}>{selectedTask.description}</div>}
+              {selectedTask.description && <div dangerouslySetInnerHTML={{ __html: selectedTask.description }} style={{ gridColumn: 'span 2', color: '#475569', marginTop: '8px', overflowX: 'auto' }} />}
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment, getDocs, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage, COMPANY_ID } from '../firebase';
@@ -76,6 +76,116 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [editingCommentContent, setEditingCommentContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { userProfile } = useAuth();
+
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (editorRef.current && initialTask?.description) {
+      editorRef.current.innerHTML = initialTask.description;
+    }
+  }, [initialTask]);
+
+  const format = (command: string) => {
+    document.execCommand(command, false);
+  };
+
+  const insertTable = () => {
+    const tableHTML = `
+      <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+        <thead>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">구분</th>
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">상세 내역</th>
+            <th style="border: 1px solid #cbd5e1; padding: 8px;">비고</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    document.execCommand('insertHTML', false, tableHTML);
+  };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === '/') {
+      setShowSlashMenu(true);
+    } else if (e.key === 'Escape') {
+      setShowSlashMenu(false);
+    } else if (e.key === ' ' && editorRef.current) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      const range = selection.getRangeAt(0);
+      const text = range.startContainer.textContent || '';
+      
+      if (text.startsWith('#')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^#\s*/, '');
+        document.execCommand('formatBlock', false, '<h2>');
+      } else if (text.startsWith('##')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^##\s*/, '');
+        document.execCommand('formatBlock', false, '<h3>');
+      } else if (text.startsWith('-') || text.startsWith('*')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^[-*]\s*/, '');
+        document.execCommand('insertUnorderedList', false);
+      } else if (text.startsWith('>')) {
+        e.preventDefault();
+        range.startContainer.textContent = text.replace(/^>\s*/, '');
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        range.startContainer.textContent = '';
+        document.execCommand('insertHTML', false, calloutHTML);
+      }
+    }
+  };
+
+  const handleEditorInput = () => {
+    const text = editorRef.current?.innerText || '';
+    if (!text.includes('/')) {
+      setShowSlashMenu(false);
+    }
+    if (editorRef.current) {
+      setDescription(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleSelectSlashCommand = (command: string) => {
+    setShowSlashMenu(false);
+    
+    if (editorRef.current) {
+      let html = editorRef.current.innerHTML;
+      html = html.replace(/\/$/, '') || html;
+      editorRef.current.innerHTML = html;
+    }
+
+    if (command === 'table') {
+      insertTable();
+    } else if (command === 'callout') {
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
+      document.execCommand('insertHTML', false, calloutHTML);
+    } else if (command === 'divider') {
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      document.execCommand('insertHTML', false, hrHTML);
+    } else if (command === 'quote') {
+      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
+      document.execCommand('insertHTML', false, quoteHTML);
+    }
+    
+    if (editorRef.current) {
+      setDescription(editorRef.current.innerHTML);
+    }
+  };
 
   // 파일 첨부
   const [attachments, setAttachments] = useState<Array<{ name: string; url: string; size: number; path: string }>>(
@@ -630,12 +740,66 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 </div>
               </div>
             </div>
-            <textarea
-              rows={12} value={description} onChange={e => setDescription(e.target.value)} placeholder="상세 설명이나 메모를 입력하세요..."
-              style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.88rem', resize: 'vertical', fontFamily: 'inherit', minHeight: '220px' }}
-              onFocus={e => e.target.style.borderColor = '#0d9488'}
-              onBlur={e => e.target.style.borderColor = '#cbd5e1'}
-            />
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: '6px', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', flexWrap: 'wrap' }}>
+                <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
+                <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
+                <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
+                <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  田 표 삽입
+                </button>
+              </div>
+
+              <div
+                contentEditable
+                ref={editorRef}
+                onKeyDown={handleEditorKeyDown}
+                onInput={handleEditorInput}
+                style={{
+                  minHeight: '220px',
+                  border: '1px solid #cbd5e1',
+                  borderBottomLeftRadius: '6px',
+                  borderBottomRightRadius: '6px',
+                  padding: '12px',
+                  outline: 'none',
+                  backgroundColor: '#fff',
+                  overflowY: 'auto',
+                  fontSize: '0.88rem',
+                  lineHeight: 1.6
+                }}
+              />
+
+              {showSlashMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '250px',
+                  left: '12px',
+                  background: '#fff',
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  borderRadius: '8px',
+                  zIndex: 10000,
+                  width: '180px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '4px 0'
+                }}>
+                  <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                  <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <span>田</span> <b>표 삽입</b>
+                  </button>
+                  <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <span>💡</span> <b>콜아웃 상자</b>
+                  </button>
+                  <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <span>➖</span> <b>구분선</b>
+                  </button>
+                  <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <span>✍️</span> <b>인용구 블록</b>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Conditional Rows */}
