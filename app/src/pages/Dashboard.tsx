@@ -7,6 +7,52 @@ import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } fro
 import { db } from '../firebase';
 import type { Task, User } from '../types';
 
+const getHoliday = (dateStr: string) => {
+  const holidays: Record<string, { name: string; country: 'KR' | 'AE' }> = {
+    // 2026 Korean Holidays
+    '2026-01-01': { name: '신정', country: 'KR' },
+    '2026-02-16': { name: '설날', country: 'KR' },
+    '2026-02-17': { name: '설날', country: 'KR' },
+    '2026-02-18': { name: '설날', country: 'KR' },
+    '2026-03-01': { name: '삼일절', country: 'KR' },
+    '2026-03-02': { name: '대체공휴일', country: 'KR' },
+    '2026-05-05': { name: '어린이날', country: 'KR' },
+    '2026-05-24': { name: '부처님오신날', country: 'KR' },
+    '2026-05-25': { name: '대체공휴일', country: 'KR' },
+    '2026-06-03': { name: '지방선거일', country: 'KR' },
+    '2026-06-06': { name: '현충일', country: 'KR' },
+    '2026-08-15': { name: '광복절', country: 'KR' },
+    '2026-08-17': { name: '대체공휴일', country: 'KR' },
+    '2026-09-24': { name: '추석', country: 'KR' },
+    '2026-09-25': { name: '추석', country: 'KR' },
+    '2026-09-26': { name: '추석', country: 'KR' },
+    '2026-10-03': { name: '개천절', country: 'KR' },
+    '2026-10-05': { name: '대체공휴일', country: 'KR' },
+    '2026-10-09': { name: '한글날', country: 'KR' },
+    '2026-12-25': { name: '성탄절', country: 'KR' },
+    
+    // 2026 UAE Holidays
+    '2026-03-19': { name: 'Eid Al Fitr', country: 'AE' },
+    '2026-03-20': { name: 'Eid Al Fitr', country: 'AE' },
+    '2026-03-21': { name: 'Eid Al Fitr', country: 'AE' },
+    '2026-03-22': { name: 'Eid Al Fitr', country: 'AE' },
+    '2026-05-26': { name: 'Arafat Day', country: 'AE' },
+    '2026-05-27': { name: 'Eid Al Adha', country: 'AE' },
+    '2026-05-28': { name: 'Eid Al Adha', country: 'AE' },
+    '2026-05-29': { name: 'Eid Al Adha', country: 'AE' },
+    '2026-06-15': { name: 'Islamic New Year', country: 'AE' },
+    '2026-08-25': { name: 'Prophet Birthday', country: 'AE' },
+    '2026-12-02': { name: 'National Day', country: 'AE' },
+    '2026-12-03': { name: 'National Day', country: 'AE' },
+  };
+
+  if (dateStr === '2026-01-01') {
+    return { name: '신정 / New Year', country: 'KR' };
+  }
+
+  return holidays[dateStr] || null;
+};
+
 export const Dashboard: React.FC = () => {
   const location = useLocation();
   const { tasks, addTask, updateTask, loading } = useTasks();
@@ -191,6 +237,8 @@ export const Dashboard: React.FC = () => {
   const renderDayCell = (dayNum: number, dateStr: string, isCurrentMonth: boolean) => {
     const isToday = new Date().toISOString().split('T')[0] === dateStr;
     const dayOfWeek = new Date(dateStr).getDay();
+    const holiday = getHoliday(dateStr);
+    const isKrHoliday = holiday?.country === 'KR';
 
     const dayEvents = calendarEvents.filter(e => {
       const start = e.startDate;
@@ -221,20 +269,27 @@ export const Dashboard: React.FC = () => {
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#94a3b8'; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; }}
       >
-        <span style={{
-          fontSize: '11px',
-          fontWeight: 800,
-          color: isToday ? '#fff' : (!isCurrentMonth ? '#cbd5e1' : dayOfWeek === 0 ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#475569'),
-          background: isToday ? '#3b82f6' : 'transparent',
-          borderRadius: isToday ? '50%' : 'none',
-          width: isToday ? '18px' : 'auto',
-          height: isToday ? '18px' : 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          {dayNum}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1px' }}>
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 800,
+            color: isToday ? '#fff' : (!isCurrentMonth ? '#cbd5e1' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#475569'),
+            background: isToday ? '#3b82f6' : 'transparent',
+            borderRadius: isToday ? '50%' : 'none',
+            width: isToday ? '18px' : 'auto',
+            height: isToday ? '18px' : 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {dayNum}
+          </span>
+          {holiday && (
+            <span style={{ fontSize: '7px', fontWeight: 850, color: holiday.country === 'KR' ? '#ef4444' : '#0d9488', transform: 'scale(0.85)', lineHeight: 1, whiteSpace: 'nowrap' }} title={holiday.name}>
+              {holiday.country === 'KR' ? `🇰🇷 ${holiday.name.slice(0, 4)}` : `🇦🇪 ${holiday.name.split(' ')[0]}`}
+            </span>
+          )}
+        </div>
 
         {/* Dot indicators */}
         <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', minHeight: '6px', marginBottom: '2px' }}>
@@ -861,18 +916,22 @@ export const Dashboard: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                  📋 <span>{activeDateEventsList} 일정</span>
+                  📋 <span>{currentMonth + 1}월 전체 일정 ({calendarEvents.filter(e => {
+                    const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                    return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                  }).length}건)</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedDateForEvent(activeDateEventsList);
+                    const defaultDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
+                    setSelectedDateForEvent(defaultDate);
                     setEventForm({
                       title: '',
                       type: '개인일정',
-                      startDate: activeDateEventsList,
+                      startDate: defaultDate,
                       startTime: '09:00',
-                      endDate: activeDateEventsList,
+                      endDate: defaultDate,
                       endTime: '18:00',
                       isPublic: true,
                       participants: '',
@@ -886,12 +945,20 @@ export const Dashboard: React.FC = () => {
               </div>
 
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '270px', paddingRight: '4px' }}>
-                {calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).length === 0 ? (
+                {calendarEvents.filter(e => {
+                  const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                  return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                }).length === 0 ? (
                   <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    등록된 일정이 없습니다.
+                    이번 달에 등록된 일정이 없습니다.
                   </div>
                 ) : (
-                  calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).map(e => {
+                  calendarEvents.filter(e => {
+                    const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                    return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
+                  })
+                  .sort((a, b) => a.startDate.localeCompare(b.startDate) || (a.startTime || '').localeCompare(b.startTime || ''))
+                  .map(e => {
                     const colors = getEventBadgeColor(e.type);
                     return (
                       <div
@@ -936,7 +1003,8 @@ export const Dashboard: React.FC = () => {
                             {e.type}
                           </span>
                         </div>
-                        <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '1px' }}>
+                        <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                          <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
                           <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                           <span>👤 {e.creatorName}</span>
                         </div>
