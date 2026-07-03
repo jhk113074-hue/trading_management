@@ -44,6 +44,10 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [projectName] = useState(initialTask?.projectName || '');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [activeModelessLink, setActiveModelessLink] = useState<string | null>(null);
+  const [modelessPosition, setModelessPosition] = useState({ x: 150, y: 100 });
+  const [isDraggingModeless, setIsDraggingModeless] = useState(false);
+  const modelessDragStartRef = React.useRef({ x: 0, y: 0 });
   
   const [requesterName] = useState(initialTask?.requesterName || '');
   const [requesterId, setRequesterId] = useState(initialTask?.requesterId || '');
@@ -120,6 +124,32 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     };
     loadCustomers();
   }, []);
+
+  const handleModelessMouseDown = (e: React.MouseEvent) => {
+    setIsDraggingModeless(true);
+    modelessDragStartRef.current = { x: e.clientX - modelessPosition.x, y: e.clientY - modelessPosition.y };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingModeless) return;
+      const nextX = Math.max(0, Math.min(window.innerWidth - 650, e.clientX - modelessDragStartRef.current.x));
+      const nextY = Math.max(0, Math.min(window.innerHeight - 550, e.clientY - modelessDragStartRef.current.y));
+      setModelessPosition({ x: nextX, y: nextY });
+    };
+    const handleMouseUp = () => {
+      setIsDraggingModeless(false);
+    };
+
+    if (isDraggingModeless) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingModeless]);
 
   // Backwards compatibility for old tasks without IDs
   useEffect(() => {
@@ -641,10 +671,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }}
                     />
                     {link && (
-                      <a href={link} target="_blank" rel="noopener noreferrer"
-                        style={{ padding: '6px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveModelessLink(link)}
+                        style={{ padding: '6px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', border: 'none', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}
+                      >
                         🔗 열기
-                      </a>
+                      </button>
                     )}
                     <button
                       type="button"
@@ -863,6 +896,96 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               setIsCustomerSearchOpen(false);
             }}
           />
+        )}
+
+        {/* 드롭박스 폴더/파일 모달레스 미리보기 뷰어 */}
+        {activeModelessLink && (
+          <div style={{
+            position: 'fixed',
+            left: `${modelessPosition.x}px`,
+            top: `${modelessPosition.y}px`,
+            zIndex: 9999,
+            width: '750px',
+            height: '600px',
+            background: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
+            border: '1px solid #cbd5e1',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* 드래그 헤더 */}
+            <div
+              onMouseDown={handleModelessMouseDown}
+              style={{
+                padding: '10px 16px',
+                background: '#f8fafc',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'move',
+                userSelect: 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📂</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>외부 공유 링크 미리보기 (드래그하여 이동 가능)</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <a
+                  href={activeModelessLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '4px 10px',
+                    background: '#eff6ff',
+                    color: '#1d4ed8',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  새 창으로 열기 ↗
+                </a>
+                <button
+                  onClick={() => setActiveModelessLink(null)}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '4px',
+                    background: '#fee2e2',
+                    color: '#ef4444',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title="닫기"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            {/* 미리보기 본문 (Iframe) */}
+            <div style={{ flex: 1, background: '#f1f5f9' }}>
+              <iframe
+                src={activeModelessLink}
+                title="Dropbox File Modeless Viewer"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                allow="autoplay"
+              />
+            </div>
+          </div>
         )}
 
         {/* Footer */}
