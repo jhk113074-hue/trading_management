@@ -6,6 +6,56 @@ import { TaskModal } from './TaskModal';
 import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
+import { useEffect } from 'react';
+
+const WorldClocks: React.FC = () => {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (timeZone: string) => {
+    try {
+      return time.toLocaleTimeString('ko-KR', {
+        timeZone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch {
+      return '';
+    }
+  };
+
+  const clocks = [
+    { flag: '🇰🇷', label: '한국', zone: 'Asia/Seoul' },
+    { flag: '🇨🇳', label: '중국', zone: 'Asia/Shanghai' },
+    { flag: '🇲🇾', label: '말레이', zone: 'Asia/Kuala_Lumpur' },
+    { flag: '🇮🇳', label: '인도', zone: 'Asia/Kolkata' },
+    { flag: '🇦🇪', label: 'UAE', zone: 'Asia/Dubai' },
+    { flag: '🇰🇼', label: '쿠웨이트', zone: 'Asia/Kuwait' },
+    { flag: '🇸🇦', label: '사우디', zone: 'Asia/Riyadh' },
+    { flag: '🇹🇷', label: '터키', zone: 'Europe/Istanbul' },
+    { flag: '🇦🇺', label: '호주', zone: 'Australia/Sydney' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 14px', borderRadius: '20px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.02)' }}>
+      {clocks.map((c, idx) => (
+        <React.Fragment key={c.zone}>
+          {idx > 0 && <span style={{ color: '#cbd5e1', fontSize: '10px' }}>|</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 800, color: '#334155' }}>
+            <span>{c.flag}</span>
+            <span style={{ color: '#64748b', fontSize: '10px', fontWeight: 600 }}>{c.label}</span>
+            <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11.5px' }}>{formatTime(c.zone)}</span>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
 
 export const Layout: React.FC = () => {
   const location = useLocation();
@@ -373,7 +423,9 @@ export const Layout: React.FC = () => {
               <span style={{ color: '#334155' }}>업무포탈</span>
             </div>
           </div>
-          <div style={{ flex: 1 }} />
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', padding: '0 20px', overflow: 'hidden' }}>
+            <WorldClocks />
+          </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
               <span className="header-user-text" style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
