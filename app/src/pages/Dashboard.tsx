@@ -857,18 +857,22 @@ export const Dashboard: React.FC = () => {
       <style>{`
         .holiday-badge {
           display: inline-block;
-          font-size: 9.5px !important;
+          font-size: 7.5px !important;
           font-weight: 850 !important;
           line-height: 1;
           white-space: nowrap;
-          transition: transform 0.12s ease-in-out, text-shadow 0.12s ease-in-out;
+          transition: transform 0.12s ease-in-out, text-shadow 0.12s ease-in-out, background-color 0.12s, box-shadow 0.12s;
           cursor: help;
         }
         .holiday-badge:hover {
-          transform: scale(1.4) !important;
+          transform: scale(1.6) !important;
           z-index: 100 !important;
-          text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+          text-shadow: 0 1px 3px rgba(0,0,0,0.2);
           position: relative;
+          background-color: #fff !important;
+          padding: 2px 4px !important;
+          border-radius: 4px !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
         }
       `}</style>
       {tradingLoading ? (
