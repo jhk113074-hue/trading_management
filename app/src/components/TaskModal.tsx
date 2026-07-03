@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, increment, getDocs, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -72,6 +72,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [reviewAssigneeId, setReviewAssigneeId] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { userProfile } = useAuth();
 
@@ -226,6 +228,38 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     } catch (e) {
       console.error(e);
       alert('댓글 등록 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleUpdateComment = async (commentId: string, updatedContent: string) => {
+    if (!updatedContent.trim()) return;
+    try {
+      await updateDoc(doc(db, 'taskComments', commentId), {
+        content: updatedContent,
+        updatedAt: new Date().toISOString()
+      });
+      setEditingCommentId(null);
+    } catch (e) {
+      console.error(e);
+      alert('댓글 수정에 실패했습니다.');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm('댓글을 정말 삭제하시겠습니까?')) return;
+    try {
+      await deleteDoc(doc(db, 'taskComments', commentId));
+      
+      if (initialTask?.id) {
+        const taskRef = doc(db, 'tasks', initialTask.id);
+        await updateDoc(taskRef, {
+          commentCount: increment(-1),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      alert('댓글 삭제에 실패했습니다.');
     }
   };
 
@@ -844,19 +878,97 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
                 {/* 댓글 목록 */}
                 <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
-                  {comments.map(c => (
-                    <div key={c.id}>
-                      <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>
-                        {c.creatorName} • {new Date(c.createdAt).toLocaleDateString()}
-                        {c.reviewAssigneeName && (
-                          <span style={{ marginLeft: '8px', padding: '1px 6px', borderRadius: '4px', background: '#fee2e2', color: '#dc2626', fontSize: '0.65rem', fontWeight: 600 }}>
-                            📢 검토요청: {c.reviewAssigneeName}
-                          </span>
+                  {comments.map(c => {
+                    const isOwnComment = c.createdBy === userProfile?.id;
+                    const isEditing = editingCommentId === c.id;
+
+                    return (
+                      <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong>{c.creatorName}</strong> • {new Date(c.createdAt).toLocaleDateString()}
+                            {c.reviewAssigneeName && (
+                              <span style={{ marginLeft: '8px', padding: '1px 6px', borderRadius: '4px', background: '#fee2e2', color: '#dc2626', fontSize: '0.65rem', fontWeight: 600 }}>
+                                📢 검토요청: {c.reviewAssigneeName}
+                              </span>
+                            )}
+                          </div>
+                          {isOwnComment && !isEditing && (
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingCommentId(c.id);
+                                  setEditingCommentContent(c.content);
+                                }}
+                                style={{ background: 'none', border: 'none', color: '#0d9488', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                수정
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteComment(c.id)}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                            <textarea
+                              rows={2}
+                              value={editingCommentContent}
+                              onChange={e => setEditingCommentContent(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #0d9488',
+                                outline: 'none',
+                                fontSize: '0.8rem',
+                                fontFamily: 'inherit',
+                                resize: 'vertical'
+                              }}
+                            />
+                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                              <button
+                                type="button"
+                                onClick={() => setEditingCommentId(null)}
+                                style={{ padding: '2px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer' }}
+                              >
+                                취소
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateComment(c.id, editingCommentContent)}
+                                style={{ padding: '2px 8px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 'bold' }}
+                              >
+                                저장
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#0f172a',
+                            background: '#fff',
+                            padding: '6px 8px',
+                            borderRadius: '0 6px 6px 6px',
+                            border: '1px solid #e2e8f0',
+                            display: 'inline-block',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            maxWidth: '100%',
+                            textAlign: 'left'
+                          }}>
+                            {c.content}
+                          </div>
                         )}
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#0f172a', background: '#fff', padding: '6px 8px', borderRadius: '0 6px 6px 6px', border: '1px solid #e2e8f0', display: 'inline-block' }}>{c.content}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
                 </div>
               </div>
