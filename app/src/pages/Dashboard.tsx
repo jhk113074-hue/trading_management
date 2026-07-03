@@ -85,7 +85,7 @@ export const Dashboard: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0 ~ 11
   const [selectedDateForEvent, setSelectedDateForEvent] = useState<string | null>(null);
   const [selectedEventForView, setSelectedEventForView] = useState<any | null>(null);
-  const [activeDateEventsList, setActiveDateEventsList] = useState<string | null>(null);
+  const [activeDateEventsList, setActiveDateEventsList] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [eventForm, setEventForm] = useState({
     title: '',
     type: '개인일정' as '개인일정' | '미팅' | '출장' | '기타',
@@ -206,7 +206,7 @@ export const Dashboard: React.FC = () => {
         }}
         style={{
           minHeight: '48px',
-          background: isCurrentMonth ? '#fff' : '#f8fafc',
+          background: dateStr === activeDateEventsList ? '#f0fdf4' : (isCurrentMonth ? '#fff' : '#f8fafc'),
           border: '1px solid #e2e8f0',
           borderRadius: '6px',
           padding: '4px',
@@ -216,7 +216,7 @@ export const Dashboard: React.FC = () => {
           justifyContent: 'space-between',
           cursor: 'pointer',
           transition: 'all 0.1s',
-          boxShadow: isToday ? 'inset 0 0 0 1.5px #3b82f6' : 'none'
+          boxShadow: dateStr === activeDateEventsList ? 'inset 0 0 0 2px #10b981' : (isToday ? 'inset 0 0 0 1.5px #3b82f6' : 'none')
         }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = '#94a3b8'; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; }}
@@ -806,125 +806,225 @@ export const Dashboard: React.FC = () => {
       {tradingLoading ? (
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
-          
-          {/* ── 왼쪽: 회사 및 개인 일정 캘린더 (Compact) ── */}
-          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
-                📅 YSACC 스케줄러
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <button
-                  onClick={handlePrevMonth}
-                  style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                >
-                  ◀
-                </button>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
-                  {currentYear}년 {currentMonth + 1}월
-                </span>
-                <button
-                  onClick={handleNextMonth}
-                  style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                >
-                  ▶
-                </button>
-                <button
-                  onClick={handleGoToToday}
-                  style={{ padding: '3px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                >
-                  오늘
-                </button>
-              </div>
-            </div>
-
-            {/* 요일 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
-              {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                <span key={day} style={{ fontSize: '10.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
-                  {day}
-                </span>
-              ))}
-            </div>
-
-            {/* 그리드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(45px, auto)', gap: '2px', flex: 1 }}>
-              {renderCalendarDays()}
-            </div>
-          </div>
-
-          {/* ── 오른쪽: 대시보드 매출 현황 (Stats Cards) ── */}
-          <div style={{ display: 'grid', gridTemplateRows: 'repeat(3, 1fr)', gap: '10px' }}>
+        <>
+          {/* 상단: 무역 실시간 매출 및 PI 현황 (Full-Width Row) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '20px' }}>
             
             {/* 1. 이번달 PI 건수 */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }} />
                 이번달 PI 건수
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '4px', borderBottom: '1px solid #f1f5f9' }}>
                   <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>영성ACC</span>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#3b82f6' }}>{tradingKPIs.piYsCount} <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>건</span></span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#3b82f6' }}>{tradingKPIs.piYsCount} <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>건</span></span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
                   <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>(주)YSACC</span>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#3b82f6' }}>{tradingKPIs.piYsaccCount} <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>건</span></span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#3b82f6' }}>{tradingKPIs.piYsaccCount} <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>건</span></span>
                 </div>
               </div>
             </div>
 
             {/* 2. 수주 금액 (발주일 기준) */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
                 수주 금액 (발주일 기준)
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '4px', borderBottom: '1px solid #f1f5f9' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>영성ACC</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{tradingKPIs.orderYsCount}건</span>
                   </div>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#10b981' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#10b981' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>(주)YSACC</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{tradingKPIs.orderYsaccCount}건</span>
                   </div>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#10b981' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#10b981' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
 
             {/* 3. 매출금액 (ETD기준) */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b' }} />
                 매출금액 (ETD기준)
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '4px', borderBottom: '1px solid #f1f5f9' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>영성ACC</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{tradingKPIs.salesYsCount}건</span>
                   </div>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#f59e0b' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#f59e0b' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '2px' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>(주)YSACC</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{tradingKPIs.salesYsaccCount}건</span>
                   </div>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#f59e0b' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span style={{ fontSize: '21px', fontWeight: 900, color: '#f59e0b' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
 
           </div>
-        </div>
+
+          {/* 하단: 달력 및 일정 목록 (50:50 Split Row) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
+            
+            {/* ── 왼쪽: 회사 및 개인 일정 캘린더 (Compact) ── */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                  📅 YSACC 스케줄러
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button
+                    onClick={handlePrevMonth}
+                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ◀
+                  </button>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
+                    {currentYear}년 {currentMonth + 1}월
+                  </span>
+                  <button
+                    onClick={handleNextMonth}
+                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ▶
+                  </button>
+                  <button
+                    onClick={handleGoToToday}
+                    style={{ padding: '3px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    오늘
+                  </button>
+                </div>
+              </div>
+
+              {/* 요일 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
+                {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
+                  <span key={day} style={{ fontSize: '10.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
+                    {day}
+                  </span>
+                ))}
+              </div>
+
+              {/* 그리드 */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(45px, auto)', gap: '2px', flex: 1 }}>
+                {renderCalendarDays()}
+              </div>
+            </div>
+
+            {/* ── 오른쪽: 대시보드 등록 일정 목록 (Event List Panel) ── */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📋 <span>{activeDateEventsList} 일정 목록</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedDateForEvent(activeDateEventsList);
+                    setEventForm({
+                      title: '',
+                      type: '개인일정',
+                      startDate: activeDateEventsList,
+                      startTime: '09:00',
+                      endDate: activeDateEventsList,
+                      endTime: '18:00',
+                      isPublic: true,
+                      participants: '',
+                      description: ''
+                    });
+                  }}
+                  style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  ＋ 새 일정 등록
+                </button>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '310px', paddingRight: '4px' }}>
+                {calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).length === 0 ? (
+                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '12px', padding: '40px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                    이 날짜에 등록된 일정이 없습니다.
+                  </div>
+                ) : (
+                  calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).map(e => {
+                    const colors = getEventBadgeColor(e.type);
+                    return (
+                      <div
+                        key={e.id}
+                        onClick={() => {
+                          setSelectedEventForView(e);
+                          setEventForm({
+                            title: e.title,
+                            type: e.type,
+                            startDate: e.startDate,
+                            startTime: e.startTime || '09:00',
+                            endDate: e.endDate || e.startDate,
+                            endTime: e.endTime || '18:00',
+                            isPublic: e.isPublic !== undefined ? e.isPublic : true,
+                            participants: e.participants || '',
+                            description: e.description || ''
+                          });
+                        }}
+                        style={{
+                          padding: '10px 12px',
+                          background: colors.bg,
+                          color: colors.text,
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: '8px',
+                          fontSize: '12.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '3px',
+                          transition: 'all 0.1s'
+                        }}
+                        onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
+                        onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0f172a' }}>
+                            {!e.isPublic && <span>🔒</span>}
+                            <strong>{e.title}</strong>
+                          </span>
+                          <span style={{ fontSize: '10.5px', background: '#fff', padding: '1px 5px', borderRadius: '4px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                            {e.type}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '10px', marginTop: '1px' }}>
+                          <span>⏱ {e.startTime || '09:00'} ~ {e.endTime || '18:00'}</span>
+                          <span>👤 등록자: {e.creatorName}</span>
+                          {e.participants && <span>👥 참석자: {e.participants}</span>}
+                        </div>
+                        {e.description && (
+                          <div style={{ fontSize: '11px', color: '#475569', borderTop: '1px dashed rgba(0,0,0,0.06)', paddingTop: '4px', marginTop: '4px', whiteSpace: 'pre-wrap', fontWeight: 'normal' }}>
+                            {e.description}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+          </div>
+        </>
       )}
 
       {/* 일정 등록 모달 */}
@@ -1251,104 +1351,6 @@ export const Dashboard: React.FC = () => {
                   </button>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 일별 일정 목록 간이 팝업 모달 */}
-      {activeDateEventsList && (
-        <div
-          onClick={() => setActiveDateEventsList(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9998, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '360px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-          >
-            <div style={{ padding: '14px 18px', background: '#475569', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '14px', fontWeight: 800 }}>📅 {activeDateEventsList} 일정 목록</span>
-              <button
-                onClick={() => setActiveDateEventsList(null)}
-                style={{ background: 'none', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', fontWeight: 700 }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh', overflowY: 'auto' }}>
-              {calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).length === 0 ? (
-                <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>등록된 일정이 없습니다.</div>
-              ) : (
-                calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).map(e => {
-                  const colors = getEventBadgeColor(e.type);
-                  return (
-                    <div
-                      key={e.id}
-                      onClick={() => {
-                        setSelectedEventForView(e);
-                        setEventForm({
-                          title: e.title,
-                          type: e.type,
-                          startDate: e.startDate,
-                          startTime: e.startTime || '09:00',
-                          endDate: e.endDate || e.startDate,
-                          endTime: e.endTime || '18:00',
-                          isPublic: e.isPublic !== undefined ? e.isPublic : true,
-                          participants: e.participants || '',
-                          description: e.description || ''
-                        });
-                        setActiveDateEventsList(null);
-                      }}
-                      style={{
-                        padding: '10px 12px',
-                        background: colors.bg,
-                        color: colors.text,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {!e.isPublic && <span>🔒</span>}
-                        {e.title}
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>
-                        {e.creatorName}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div style={{ padding: '12px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedDateForEvent(activeDateEventsList);
-                  setEventForm({
-                    title: '',
-                    type: '개인일정',
-                    startDate: activeDateEventsList,
-                    startTime: '09:00',
-                    endDate: activeDateEventsList,
-                    endTime: '18:00',
-                    isPublic: true,
-                    participants: '',
-                    description: ''
-                  });
-                  setActiveDateEventsList(null);
-                }}
-                style={{ padding: '6px 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', cursor: 'pointer', fontWeight: 700 }}
-              >
-                ＋ 새 일정 등록
-              </button>
             </div>
           </div>
         </div>
