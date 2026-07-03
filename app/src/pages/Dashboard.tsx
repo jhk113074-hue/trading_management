@@ -905,7 +905,7 @@ export const Dashboard: React.FC = () => {
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
   return (
-    <div style={{ padding: '24px 30px' }}>
+    <div style={{ padding: '4px 30px 24px 30px' }}>
       <style>{`
         .holiday-badge {
           display: inline-block;
