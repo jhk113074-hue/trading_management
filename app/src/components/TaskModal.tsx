@@ -540,9 +540,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {/* 고객사 지정 영역 */}
+                {/* 거래처 지정 영역 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 고객사:</span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 거래처:</span>
                   {customerName ? (
                     <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={customerName}>
                       {customerName}
@@ -550,7 +550,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                         type="button"
                         onClick={() => { setCustomerName(''); setCustomerId(''); }}
                         style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', fontWeight: 'bold' }}
-                        title="고객사 지정 취소"
+                        title="거래처 지정 취소"
                       >
                         ✕
                       </button>
@@ -573,7 +573,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
                       onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
                     >
-                      🔍 고객 찾기
+                      🔍 거래처 찾기
                     </button>
                   )}
                 </div>
@@ -895,7 +895,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           </div>
         )}
 
-        {/* 고객 검색 모달 */}
+        {/* 거래처 검색 모달 */}
         {isCustomerSearchOpen && (
           <CustomerSearchModal
             customers={([
