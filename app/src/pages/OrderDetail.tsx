@@ -137,34 +137,27 @@ export const OrderDetail: React.FC = () => {
   type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
   const defaultStageCompletion: Record<StageKey, Record<string, boolean>> = {
     수주정보: {
-      '인코텀즈/결제조건 확인': false,
-      '고객 PO 접수 확인': false,
-      'L/C 정보 입력': false,
-      '수주 품목 및 금액 확정': false,
+      '확정 CI 번호 입력': false,
+      '인코텀즈/결제조건 입력': false,
+      'L/C 거래 상세 정보 입력': false,
     },
     소싱발주: {
-      '공급사 배정 완료': false,
-      '발주서 발행 및 발송': false,
-      '공급사 납기일 확정': false,
-      '카고 레디 확인': false,
+      '발주서 발행 및 저장': false,
     },
     물류선적: {
-      '포워더/운송사 확정': false,
-      'Vessel(선박명) 확정': false,
-      'CFS 입고일 확정': false,
-      '선적 완료 확인': false,
+      '포워딩/운송사 및 수출 Volume 선택': false,
+      'Vessel, ETD, ETA 입력': false,
+      '도착보고 발송 완료': false,
     },
     서류관리: {
-      'CI/PL 작성 완료': false,
-      '수출신고 완료': false,
-      'B/L 수령': false,
-      '서류 발송/은행 제출': false,
+      '수출신고번호 입력': false,
+      'CI, PL, COO, BL 서류 업로드 완료': false,
     },
     정산결제: {
-      '전금(선금) 수령': false,
-      '잔금 수령 완료': false,
-      '공급사 대금 지급': false,
-      '세금계산서 처리': false,
+      '세금계산서 발행 완료': false,
+      '입금 진행 완료': false,
+      '공급업체 대금 결제 완료': false,
+      '수금 관리 완료': false,
     },
   };
   const [stageCompletion, setStageCompletion] = useState<Record<StageKey, Record<string, boolean>>>(defaultStageCompletion);
@@ -982,70 +975,72 @@ export const OrderDetail: React.FC = () => {
 
     // ── 수주정보 ──
     const po수주: Record<string, boolean> = {};
+    if (basicForm.ciNumber)
+      po수주['확정 CI 번호 입력'] = true;
     if (basicForm.incoterms && basicForm.paymentTerms)
-      po수주['인코텀즈/결제조건 확인'] = true;
-    if (basicForm.custPo || basicForm.poDate)
-      po수주['고객 PO 접수 확인'] = true;
-    if (basicForm.isLc === 'Y' ? !!basicForm.lcNo : basicForm.isLc === 'N')
-      po수주['L/C 정보 입력'] = true;
-    if (orderItems.length > 0 && orderItems.every(it => (it.qty || 0) > 0 && it.name))
-      po수주['수주 품목 및 금액 확정'] = true;
+      po수주['인코텀즈/결제조건 입력'] = true;
+    if (basicForm.isLc === 'Y') {
+      if (basicForm.lcNo && basicForm.lcIssuingBank && basicForm.lcIssuingDate) {
+        po수주['L/C 거래 상세 정보 입력'] = true;
+      }
+    } else {
+      po수주['L/C 거래 상세 정보 입력'] = true;
+    }
     autoDetect['수주정보'] = po수주;
 
     // ── 소싱/발주 ──
     const po소싱: Record<string, boolean> = {};
-    if (orderItems.length > 0 && orderItems.every(it => !!it.supplier))
-      po소싱['공급사 배정 완료'] = true;
-    if (issuedDocs && issuedDocs.length > 0)
-      po소싱['발주서 발행 및 발송'] = true;
-    if (basicForm.cargoReadyDate)
-      po소싱['공급사 납기일 확정'] = true;
-    if (basicForm.supplierPoSent && Object.values(basicForm.supplierPoSent).length > 0 && Object.values(basicForm.supplierPoSent).every(v => v === true))
-      po소싱['카고 레디 확인'] = true;
+    const donePoCount = allOrderSuppliers.filter(s =>
+      issuedDocs.some(d => d.status === 'active' && (d.supplier_name === s || d.po_number.includes(s.replace(/\s+/g, '').substring(0,3).toUpperCase())))
+    ).length;
+    if (allOrderSuppliers.length > 0 && donePoCount === allOrderSuppliers.length) {
+      po소싱['발주서 발행 및 저장'] = true;
+    }
     autoDetect['소싱발주'] = po소싱;
 
     // ── 물류/선적 ──
     const po물류: Record<string, boolean> = {};
-    if (forwardersList.length > 0 || basicForm.forwarderConfirmed)
-      po물류['포워더/운송사 확정'] = true;
-    if (basicForm.vesselBooking)
-      po물류['Vessel(선박명) 확정'] = true;
-    if (basicForm.cfsEntryDate)
-      po물류['CFS 입고일 확정'] = true;
-    if (basicForm.shipmentCompleted === 'Y' || basicForm.etd)
-      po물류['선적 완료 확인'] = true;
+    const hasForwarder = forwardersList.length > 0 && forwardersList.some(fw => !!fw.name);
+    const hasVolume = !!basicForm.shipmentType;
+    if (hasForwarder && hasVolume)
+      po물류['포워딩/운송사 및 수출 Volume 선택'] = true;
+    if (basicForm.vesselBooking && basicForm.etd && basicForm.eta)
+      po물류['Vessel, ETD, ETA 입력'] = true;
+    if (issuedDocs.some(d => d.status === 'active' && d.fileName.startsWith('도착보고서')))
+      po물류['도착보고 발송 완료'] = true;
     autoDetect['물류선적'] = po물류;
 
     // ── 서류관리 ──
     const po서류: Record<string, boolean> = {};
-    if (basicForm.ciPlStatus === 'Y' || (order.ciFiles && order.ciFiles.length > 0))
-      po서류['CI/PL 작성 완료'] = true;
-    if (basicForm.exportDeclarationNo && order.exportDeclarationFiles && order.exportDeclarationFiles.length > 0)
-      po서류['수출신고 완료'] = true;
-    if (basicForm.blStatus === 'Y' || (order.blFiles && order.blFiles.length > 0))
-      po서류['B/L 수령'] = true;
-    if (basicForm.shippingDocsSentStatus === 'Y' || basicForm.bankSubmissionDate)
-      po서류['서류 발송/은행 제출'] = true;
+    if (basicForm.exportDeclarationNo)
+      po서류['수출신고번호 입력'] = true;
+    const isDocsUploaded = (order.ciFiles && order.ciFiles.length > 0) &&
+                           (order.plFiles && order.plFiles.length > 0) &&
+                           (order.cooFiles && order.cooFiles.length > 0) &&
+                           (order.blFiles && order.blFiles.length > 0);
+    if (isDocsUploaded)
+      po서류['CI, PL, COO, BL 서류 업로드 완료'] = true;
     autoDetect['서류관리'] = po서류;
 
     // ── 정산/결제 ──
     const po정산: Record<string, boolean> = {};
-    const installments = basicForm.paymentCollectedInstallments || [];
-    const firstInstallment = installments[0];
-    if (firstInstallment && (firstInstallment.amount || 0) > 0)
-      po정산['전금(선금) 수령'] = true;
-    if (basicForm.paymentCollectedDate)
-      po정산['잔금 수령 완료'] = true;
-    if (basicForm.supplierPayments && Object.values(basicForm.supplierPayments).some((v: any) => v?.status === '결제완료'))
-      po정산['공급사 대금 지급'] = true;
     if (basicForm.supplierTaxInvoiceDetails) {
       const taxKeys = Object.keys(basicForm.supplierTaxInvoiceDetails);
       if (taxKeys.length > 0 && taxKeys.some(k => {
         const d = basicForm.supplierTaxInvoiceDetails[k];
         if (Array.isArray(d)) return d.some((x: any) => !!x.invoiceNo);
         return !!(d as any)?.invoiceNo;
-      })) po정산['세금계산서 처리'] = true;
+      })) po정산['세금계산서 발행 완료'] = true;
     }
+    if (basicForm.paymentCollectedDate || (basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.some((inst: any) => (inst.amount || 0) > 0)))
+      po정산['입금 진행 완료'] = true;
+    const donePaymentCount = allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료').length;
+    if (allOrderSuppliers.length > 0 && donePaymentCount === allOrderSuppliers.length) {
+      po정산['공급업체 대금 결제 완료'] = true;
+    }
+    const totalCollectedAmount = (basicForm.paymentCollectedInstallments || []).reduce((sum: number, inst: any) => sum + (Number(inst.amount) || 0), 0);
+    if (totalCollectedAmount > 0)
+      po정산['수금 관리 완료'] = true;
     autoDetect['정산결제'] = po정산;
 
     // manualOverride 보호 + 기존 수동 체크 유지하며 merge
@@ -1083,7 +1078,7 @@ export const OrderDetail: React.FC = () => {
   const getStageProgress = (stage: StageKey) => {
     let items = { ...(stageCompletion[stage] || {}) };
     if (stage === '수주정보' && basicForm.isLc !== 'Y') {
-      delete items['L/C 정보 입력'];
+      delete items['L/C 거래 상세 정보 입력'];
     }
     const total = Object.keys(items).length;
     const done = Object.values(items).filter(Boolean).length;
@@ -4529,7 +4524,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 const isActive = activeStep === tabTarget;
                 let items = { ...(stageCompletion[key] || {}) };
                 if (key === '수주정보' && basicForm.isLc !== 'Y') {
-                  delete items['L/C 정보 입력'];
+                  delete items['L/C 거래 상세 정보 입력'];
                 }
 
                 // 단계 상태 색상
@@ -4605,7 +4600,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               textDecoration: isOverridden ? 'line-through' : 'none',
                               lineHeight: 1.3, flex: 1,
                             }}>
-                              {itemKey}
+                              {itemKey === '발주서 발행 및 저장' ? (
+                                `발주서 발행 및 저장 (${allOrderSuppliers.filter(s => issuedDocs.some(d => d.status === 'active' && (d.supplier_name === s || d.po_number.includes(s.replace(/\s+/g, '').substring(0,3).toUpperCase())))).length}/${allOrderSuppliers.length}건)`
+                              ) : itemKey === '공급업체 대금 결제 완료' ? (
+                                `공급업체 대금 결제 완료 (${allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료').length}/${allOrderSuppliers.length}건)`
+                              ) : itemKey}
                             </span>
                             {/* 자동감지 표시 아이콘 */}
                             {checked && !isOverridden && (
