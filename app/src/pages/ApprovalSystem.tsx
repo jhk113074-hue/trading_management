@@ -94,7 +94,16 @@ export const ApprovalSystem: React.FC = () => {
         requesterName: userProfile.name,
         approverId: selectedApproverId,
         approverName: targetApprover.name,
-        status: 'PENDING',
+      });
+
+      await addDoc(collection(db, 'mails'), {
+        senderId: userProfile.id,
+        senderName: userProfile.name,
+        receiverId: selectedApproverId,
+        receiverName: targetApprover.name,
+        title: `[알림] 결재 기안서가 상신되었습니다: ${title}`,
+        content: `${userProfile.name}님이 결재 기안서 "${title}"를 상신했습니다.\n\n구분: ${docType === 'EXPENSE' ? '지출결의서' : '일반기안서'}\n\n전자결재 메뉴에서 결재해 주시기 바랍니다.`,
+        isRead: false,
         createdAt: new Date().toISOString()
       });
 
@@ -118,10 +127,25 @@ export const ApprovalSystem: React.FC = () => {
     if (!window.confirm("이 기안을 승인하시겠습니까?")) return;
 
     try {
+      const targetDoc = documents.find(d => d.id === docId);
       await updateDoc(doc(db, 'approvals', docId), {
         status: 'APPROVED',
         approvedBy: userProfile.name
       });
+
+      if (targetDoc) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: targetDoc.requesterId,
+          receiverName: targetDoc.requesterName,
+          title: `[알림] 기안 결재 승인: ${targetDoc.title}`,
+          content: `${userProfile.name}님이 기안서 "${targetDoc.title}"를 승인하였습니다.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
       setSelectedDoc(null);
       fetchApprovalData();
       alert("기안이 최종 승인되었습니다.");
@@ -139,11 +163,26 @@ export const ApprovalSystem: React.FC = () => {
     }
 
     try {
+      const targetDoc = documents.find(d => d.id === docId);
       await updateDoc(doc(db, 'approvals', docId), {
         status: 'REJECTED',
         rejectReason,
         approvedBy: userProfile.name
       });
+
+      if (targetDoc) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: targetDoc.requesterId,
+          receiverName: targetDoc.requesterName,
+          title: `[알림] 기안 결재 반려: ${targetDoc.title}`,
+          content: `${userProfile.name}님이 기안서 "${targetDoc.title}"를 반려하였습니다.\n\n반려 사유: "${rejectReason}"`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
       setSelectedDoc(null);
       setRejectReason('');
       setShowRejectInput(false);

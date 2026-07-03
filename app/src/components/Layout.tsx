@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
@@ -8,6 +8,7 @@ import { db } from '../firebase';
 import type { Task, User } from '../types';
 export const Layout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { userProfile, logout } = useAuth();
   const { tasks, addTask } = useTasks();
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
@@ -158,7 +159,7 @@ export const Layout: React.FC = () => {
 
   React.useEffect(() => {
     if (!userProfile?.id) return;
-    const q = query(collection(db, 'notifications'), where('receiverId', '==', userProfile.id));
+    const q = query(collection(db, 'mails'), where('receiverId', '==', userProfile.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched: any[] = [];
       snapshot.forEach(doc => {
@@ -181,7 +182,7 @@ export const Layout: React.FC = () => {
     try {
       const batch = writeBatch(db);
       unread.forEach(n => {
-        batch.update(doc(db, 'notifications', n.id), { isRead: true });
+        batch.update(doc(db, 'mails', n.id), { isRead: true });
       });
       await batch.commit();
     } catch (e) {
@@ -193,17 +194,21 @@ export const Layout: React.FC = () => {
     setShowNotifications(false);
     try {
       if (!notif.isRead) {
-        await updateDoc(doc(db, 'notifications', notif.id), { isRead: true });
+        await updateDoc(doc(db, 'mails', notif.id), { isRead: true });
       }
-      const taskSnap = await getDoc(doc(db, 'tasks', notif.taskId));
-      if (taskSnap.exists()) {
-        setActiveNotificationTask({ id: taskSnap.id, ...taskSnap.data() } as Task);
+      if (notif.taskId) {
+        const taskSnap = await getDoc(doc(db, 'tasks', notif.taskId));
+        if (taskSnap.exists()) {
+          setActiveNotificationTask({ id: taskSnap.id, ...taskSnap.data() } as Task);
+        } else {
+          alert('존재하지 않거나 이미 삭제된 업무입니다.');
+        }
       } else {
-        alert('존재하지 않거나 이미 삭제된 업무입니다.');
+        navigate('/mails');
       }
     } catch (e) {
       console.error("Failed to process notification click:", e);
-      alert('업무 정보를 불러오지 못했습니다.');
+      alert('데이터를 불러오지 못했습니다.');
     }
   };
 
@@ -227,7 +232,8 @@ export const Layout: React.FC = () => {
       { section: '업무관리', items: [
         { path: '/list', label: '📋 전체 업무 리스트' },
         { path: '/leave-management', label: '📅 연월차 관리' },
-        { path: '/approvals', label: '✍️ 전자결재' }
+        { path: '/approvals', label: '✍️ 전자결재' },
+        { path: '/mails', label: '✉️ 사내 메일' }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리', external: false },

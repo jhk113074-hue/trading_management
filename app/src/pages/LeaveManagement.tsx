@@ -162,6 +162,22 @@ export const LeaveManagement: React.FC = () => {
         createdAt: new Date().toISOString()
       });
 
+      // Send mail to all admins/managers
+      const admins = users.filter(u => u.id !== userProfile.id && (u.role === '관리자' || u.roleCode === 'ADMIN' || u.role === '매니저'));
+      const mailPromises = admins.map(admin => 
+        addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: admin.id,
+          receiverName: admin.name,
+          title: `[알림] ${userProfile.name}님의 휴가 신청 결재 요청`,
+          content: `${userProfile.name}님이 휴가를 신청했습니다.\n\n구분: ${leaveType === 'FULL' ? '종일' : '반차'}\n기간: ${startDate} ~ ${leaveType === 'FULL' ? endDate : startDate}\n사유: ${reason}\n\n연월차 관리 메뉴에서 결재해 주시기 바랍니다.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        })
+      );
+      await Promise.all(mailPromises);
+
       setReason('');
       fetchLeaveData();
       alert("휴가 신청서가 정상적으로 제출되었습니다.");
@@ -178,10 +194,25 @@ export const LeaveManagement: React.FC = () => {
     if (!window.confirm("이 휴가 신청을 승인하시겠습니까?")) return;
 
     try {
+      const targetReq = requests.find(r => r.id === reqId);
       await updateDoc(doc(db, 'leave_requests', reqId), {
         status: 'APPROVED',
         approvedBy: userProfile.name
       });
+
+      if (targetReq) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: targetReq.userId,
+          receiverName: targetReq.userName,
+          title: `[알림] 휴가 신청이 승인되었습니다.`,
+          content: `${userProfile.name}님이 신청하신 휴가를 승인하였습니다.\n\n기간: ${targetReq.startDate} ~ ${targetReq.endDate}\n구분: ${targetReq.leaveType === 'FULL' ? '종일' : '반차'} (${targetReq.totalDays}일)\n\n즐거운 휴가 보내시기 바랍니다.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
       fetchLeaveData();
     } catch (e) {
       console.error(e);
@@ -192,11 +223,26 @@ export const LeaveManagement: React.FC = () => {
   const handleReject = async () => {
     if (!showRejectModal || !userProfile || userProfile.role !== '관리자') return;
     try {
+      const targetReq = requests.find(r => r.id === showRejectModal);
       await updateDoc(doc(db, 'leave_requests', showRejectModal), {
         status: 'REJECTED',
         rejectReason,
         approvedBy: userProfile.name
       });
+
+      if (targetReq) {
+        await addDoc(collection(db, 'mails'), {
+          senderId: 'SYSTEM',
+          senderName: '시스템 알림',
+          receiverId: targetReq.userId,
+          receiverName: targetReq.userName,
+          title: `[알림] 휴가 신청이 반려되었습니다.`,
+          content: `${userProfile.name}님이 신청하신 휴가를 반려하였습니다.\n\n기간: ${targetReq.startDate} ~ ${targetReq.endDate}\n반려 사유: "${rejectReason}"\n\n확인 후 재신청해 주시기 바랍니다.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+
       setShowRejectModal(null);
       setRejectReason('');
       fetchLeaveData();

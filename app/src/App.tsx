@@ -21,6 +21,7 @@ import { OrderDetail } from './pages/OrderDetail';
 import { IssueBoard } from './pages/IssueBoard';
 import { LeaveManagement } from './pages/LeaveManagement';
 import { ApprovalSystem } from './pages/ApprovalSystem';
+import { Mails } from './pages/Mails';
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
               <Route path="issues" element={<IssueBoard />} />
               <Route path="leave-management" element={<LeaveManagement />} />
               <Route path="approvals" element={<ApprovalSystem />} />
+              <Route path="mails" element={<Mails />} />
             </Route>
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" />} />

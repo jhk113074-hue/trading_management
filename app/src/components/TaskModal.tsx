@@ -200,7 +200,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     setComments(prev => [{ id: 'temp-' + Date.now(), ...commentObj }, ...prev]);
 
     try {
-      const docRef = await addDoc(collection(db, 'taskComments'), commentObj);
+      await addDoc(collection(db, 'taskComments'), commentObj);
       
       const taskRef = doc(db, 'tasks', initialTask.id);
       await updateDoc(taskRef, {
@@ -210,17 +210,15 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       });
 
       if (targetReviewAssigneeId) {
-        await addDoc(collection(db, 'notifications'), {
-          type: 'TASK_REVIEW',
-          taskId: initialTask.id,
-          taskTitle: initialTask.title || '제목 없음',
-          commentId: docRef.id,
-          commentContent: commentObj.content,
+        await addDoc(collection(db, 'mails'), {
           senderId: userProfile.id,
           senderName: userProfile.name,
           receiverId: targetReviewAssigneeId,
           receiverName: targetReviewAssigneeName,
+          title: `[알림] "${initialTask.title || '업무'}"에 리뷰 댓글이 등록되었습니다.`,
+          content: `${userProfile.name}님이 댓글을 등록했습니다:\n\n"${commentObj.content}"`,
           isRead: false,
+          taskId: initialTask.id,
           createdAt: new Date().toISOString()
         });
       }
