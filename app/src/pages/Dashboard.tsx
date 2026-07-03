@@ -861,6 +861,9 @@ export const Dashboard: React.FC = () => {
           font-weight: 850 !important;
           line-height: 1;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
           transition: transform 0.12s ease-in-out, text-shadow 0.12s ease-in-out, background-color 0.12s, box-shadow 0.12s;
           cursor: help;
         }
@@ -873,6 +876,9 @@ export const Dashboard: React.FC = () => {
           padding: 2px 4px !important;
           border-radius: 4px !important;
           box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+          max-width: none !important;
         }
       `}</style>
       {tradingLoading ? (
@@ -915,7 +921,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 요일 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
                 {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
                   <span key={day} style={{ fontSize: '11px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
                     {day}
@@ -924,7 +930,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 그리드 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(42px, auto)', gap: '2px', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridAutoRows: 'minmax(42px, auto)', gap: '2px', flex: 1 }}>
                 {renderCalendarDays()}
               </div>
             </div>
