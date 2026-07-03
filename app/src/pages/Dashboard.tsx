@@ -808,34 +808,34 @@ export const Dashboard: React.FC = () => {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
           
-          {/* ── 왼쪽 (50%): 달력 및 일정 목록 ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'stretch' }}>
             
-            {/* ── 회사 및 개인 일정 캘린더 ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+            {/* 달력 영역 */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
                   📅 YSACC 스케줄러
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   <button
                     onClick={handlePrevMonth}
-                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ padding: '2px 4px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '9px', cursor: 'pointer', fontWeight: 700 }}
                   >
                     ◀
                   </button>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a', minWidth: '55px', textAlign: 'center' }}>
                     {currentYear}년 {currentMonth + 1}월
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    style={{ padding: '3px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ padding: '2px 4px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '9px', cursor: 'pointer', fontWeight: 700 }}
                   >
                     ▶
                   </button>
                   <button
                     onClick={handleGoToToday}
-                    style={{ padding: '3px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ padding: '2px 4px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '9px', cursor: 'pointer', fontWeight: 700 }}
                   >
                     오늘
                   </button>
@@ -845,23 +845,23 @@ export const Dashboard: React.FC = () => {
               {/* 요일 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
                 {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                  <span key={day} style={{ fontSize: '10.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
+                  <span key={day} style={{ fontSize: '10px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
                     {day}
                   </span>
                 ))}
               </div>
 
               {/* 그리드 */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(45px, auto)', gap: '2px', flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(42px, auto)', gap: '2px', flex: 1 }}>
                 {renderCalendarDays()}
               </div>
             </div>
 
-            {/* ── 대시보드 등록 일정 목록 (Event List Panel) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+            {/* 일정 목록 영역 */}
+            <div style={{ display: 'flex', flexDirection: 'column', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  📋 <span>{activeDateEventsList} 일정 목록</span>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                  📋 <span>{activeDateEventsList} 일정</span>
                 </span>
                 <button
                   type="button"
@@ -879,16 +879,16 @@ export const Dashboard: React.FC = () => {
                       description: ''
                     });
                   }}
-                  style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '10.5px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
                 >
-                  ＋ 새 일정 등록
+                  ＋ 등록
                 </button>
               </div>
 
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '200px', paddingRight: '4px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '270px', paddingRight: '4px' }}>
                 {calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).length === 0 ? (
-                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '12px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
-                    이 날짜에 등록된 일정이 없습니다.
+                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    등록된 일정이 없습니다.
                   </div>
                 ) : (
                   calendarEvents.filter(e => activeDateEventsList >= e.startDate && activeDateEventsList <= (e.endDate || e.startDate)).map(e => {
@@ -911,35 +911,34 @@ export const Dashboard: React.FC = () => {
                           });
                         }}
                         style={{
-                          padding: '10px 12px',
+                          padding: '8px 10px',
                           background: colors.bg,
                           color: colors.text,
                           border: `1px solid ${colors.border}`,
-                          borderRadius: '8px',
-                          fontSize: '12.5px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
                           fontWeight: 700,
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '3px',
+                          gap: '2px',
                           transition: 'all 0.1s'
                         }}
                         onMouseEnter={ev => { ev.currentTarget.style.transform = 'translateY(-1px)'; ev.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.03)'; }}
                         onMouseLeave={ev => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.boxShadow = 'none'; }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#0f172a' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#0f172a' }}>
                             {!e.isPublic && <span>🔒</span>}
                             <strong>{e.title}</strong>
                           </span>
-                          <span style={{ fontSize: '10.5px', background: '#fff', padding: '1px 5px', borderRadius: '4px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                          <span style={{ fontSize: '9.5px', background: '#fff', padding: '1px 4px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
                             {e.type}
                           </span>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', gap: '10px', marginTop: '1px' }}>
-                          <span>⏱ {e.startTime || '09:00'} ~ {e.endTime || '18:00'}</span>
-                          <span>👤 등록자: {e.creatorName}</span>
-                          {e.participants && <span>👥 참석자: {e.participants}</span>}
+                        <div style={{ fontSize: '10px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '1px' }}>
+                          <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
+                          <span>👤 {e.creatorName}</span>
                         </div>
                         {e.description && (
                           <div style={{ fontSize: '11px', color: '#475569', borderTop: '1px dashed rgba(0,0,0,0.06)', paddingTop: '4px', marginTop: '4px', whiteSpace: 'pre-wrap', fontWeight: 'normal' }}>
