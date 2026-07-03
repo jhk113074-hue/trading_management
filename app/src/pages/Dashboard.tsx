@@ -87,17 +87,17 @@ const WorldClocks: React.FC = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center' }}>
-      <span style={{ fontSize: '12px', fontWeight: 900, color: '#475569', marginRight: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-        🌐 실시간 세계 시각:
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center' }}>
+      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        🌐 세계 시각:
       </span>
       {clocks.map((c, idx) => (
         <React.Fragment key={c.zone}>
-          {idx > 0 && <span style={{ color: '#cbd5e1', fontSize: '12px' }}>|</span>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+          {idx > 0 && <span style={{ color: '#e2e8f0', fontSize: '10px' }}>|</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
             <span>{c.flag}</span>
-            <span style={{ color: '#64748b', fontSize: '10.5px', fontWeight: 600 }}>{c.label}</span>
-            <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '12px' }}>{formatTime(c.zone)}</span>
+            <span style={{ color: '#64748b', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
+            <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
           </div>
         </React.Fragment>
       ))}
@@ -937,46 +937,48 @@ export const Dashboard: React.FC = () => {
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
         <>
-          {/* 세계 시각 정보 (헤더와 그리드 사이 배치) */}
-          <div style={{ marginBottom: '20px' }}>
-            <WorldClocks />
-          </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '300px 1fr', gap: '16px', alignItems: 'stretch' }}>
               
-              {/* 달력 영역 */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e293b' }}>
-                    📅 YSACC 스케줄러
+              {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
+              <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  📅 YSACC 스케줄러
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <button
+                    onClick={handlePrevMonth}
+                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ◀
+                  </button>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
+                    {currentYear}년 {currentMonth + 1}월
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <button
-                      onClick={handlePrevMonth}
-                      style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                    >
-                      ◀
-                    </button>
-                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
-                      {currentYear}년 {currentMonth + 1}월
-                    </span>
-                    <button
-                      onClick={handleNextMonth}
-                      style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                    >
-                      ▶
-                    </button>
-                    <button
-                      onClick={handleGoToToday}
-                      style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
-                    >
-                      오늘
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleNextMonth}
+                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    ▶
+                  </button>
+                  <button
+                    onClick={handleGoToToday}
+                    style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    오늘
+                  </button>
                 </div>
+              </div>
+
+              {/* 제목 바로 밑에 배치되는 세계 시각 영역 (양쪽 컬럼 통합) */}
+              <div style={{ gridColumn: '1 / span 2', marginTop: '-4px', marginBottom: '4px' }}>
+                <WorldClocks />
+              </div>
+
+              {/* 달력 영역 (왼쪽 300px) */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
 
                 {/* 요일 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
