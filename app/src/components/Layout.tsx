@@ -226,7 +226,8 @@ export const Layout: React.FC = () => {
       ] as any },
       { section: '업무관리', items: [
         { path: '/list', label: '📋 전체 업무 리스트' },
-        { path: '/leave-management', label: '📅 연월차 관리' }
+        { path: '/leave-management', label: '📅 연월차 관리' },
+        { path: '/approvals', label: '✍️ 전자결재' }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리', external: false },
