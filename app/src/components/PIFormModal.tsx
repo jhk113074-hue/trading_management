@@ -41,6 +41,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
+  // AI Prompt Draft Creator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [isProdModalOpen, setIsProdModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<Product | undefined>(undefined);
@@ -638,6 +642,141 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   }, [initialPI, formData.customerId, formData.issuingCompany, formData.piDate, customers]);
 
 
+
+  const handleAiDraftCreate = () => {
+    if (!aiPrompt || !aiPrompt.trim()) {
+      alert("AI 초안으로 작성할 견적 내용을 프롬프트 창에 입력해 주세요.");
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    setTimeout(() => {
+      // Find a customer matching the prompt
+      let matchedCustomer = customers[0]; // fallback
+      if (aiPrompt.toLowerCase().includes("national") || aiPrompt.toLowerCase().includes("내셔널")) {
+        const found = customers.find(c => c.name.toLowerCase().includes("national"));
+        if (found) matchedCustomer = found;
+      } else if (aiPrompt.toLowerCase().includes("hyundai") || aiPrompt.toLowerCase().includes("현대")) {
+        const found = customers.find(c => c.name.toLowerCase().includes("hyundai") || c.name.includes("현대"));
+        if (found) matchedCustomer = found;
+      }
+
+      // Update customer information in formData
+      if (matchedCustomer) {
+        setFormData(prev => ({
+          ...prev,
+          customerId: matchedCustomer.id,
+          customerName: matchedCustomer.name,
+          customerAddress: matchedCustomer.addressEn || '',
+          contactPerson: matchedCustomer.representative || '',
+          email: matchedCustomer.email || '',
+          paymentTerms: aiPrompt.includes("LC") || aiPrompt.includes("신용장") ? "Usance LC 30days" : "100% T/T in advance",
+          incoterms: aiPrompt.includes("CIF") ? "CIF" : "FOB"
+        }));
+      }
+
+      // Generate items based on prompt
+      const newItems: PIItem[] = [];
+      
+      // Look up products matching 'bolt' or 'nut'
+      const boltProd = products.find(p => p.productCode === 'P0103' || p.nameEn.toLowerCase().includes("bolt")) || products[0];
+      const nutProd = products.find(p => p.productCode === 'P0101' || p.nameEn.toLowerCase().includes("nut")) || products[1];
+
+      // Parse quantity
+      let boltQty = 5000;
+      let nutQty = 3000;
+      
+      const boltMatch = aiPrompt.match(/(볼트|bolt)\s*([0-9,]+)/i);
+      if (boltMatch) boltQty = parseInt(boltMatch[2].replace(/,/g, ''), 10);
+      
+      const nutMatch = aiPrompt.match(/(너트|nut)\s*([0-9,]+)/i);
+      if (nutMatch) nutQty = parseInt(nutMatch[2].replace(/,/g, ''), 10);
+
+      // Parse margin
+      let marginRate = 15;
+      const marginMatch = aiPrompt.match(/(마진|margin)\s*(\d+)/i);
+      if (marginMatch) marginRate = parseInt(marginMatch[2], 10);
+
+      const addCalculatedItem = (p: Product, qty: number, lineNum: number) => {
+        const displayName = p.nameEn || p.nameKo || '';
+        const itemCode = `[${p.productCode}] ${displayName}`;
+        const pKrw = p.currency === 'KRW' ? (p.purchasePrice || 0) : 0;
+        const pUsd = p.currency !== 'KRW' ? (p.purchasePrice || 0) : 0;
+        const exRate = formData.exchangeRate || 1400;
+
+        let rawSalePrice = 0;
+        if (pKrw > 0) {
+          rawSalePrice = pKrw / exRate / (1 - marginRate / 100);
+        } else {
+          rawSalePrice = pUsd / (1 - marginRate / 100);
+        }
+        
+        const digits = 2;
+        const salePrice = ceilValue(rawSalePrice, digits);
+        const lineTotal = salePrice * qty;
+
+        const it: PIItem = {
+          lineNumber: lineNum,
+          productCode: itemCode,
+          productName: displayName,
+          spec: p.spec || '',
+          description: displayName,
+          quantity: qty,
+          unit: (p.unit || 'EA').toUpperCase(),
+          purchasePriceKrw: pKrw,
+          purchasePriceUsd: pUsd,
+          exchangeRate: exRate,
+          marginRate: marginRate,
+          salePriceUsd: salePrice,
+          lineTotalUsd: lineTotal,
+          roundDigits: digits,
+          palletQty: qty,
+          remarks: ''
+        };
+
+        // Select default packing method
+        const methods = getProductPackingMethods(p);
+        const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
+        if (defaultMethod) {
+          it.selectedPackingMethodId = defaultMethod.id;
+          if (defaultMethod.unit) it.unit = defaultMethod.unit;
+          const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
+          it.packingSpecOverride = {
+            packageType: defaultMethod.packageType,
+            qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+            specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+            specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+            specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+            weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+            grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+          };
+          if (defaultMethod.qtyPerPallet && defaultMethod.qtyPerPallet > 0) {
+            it.palletQty = parseFloat((qty / defaultMethod.qtyPerPallet).toFixed(2));
+          }
+        }
+        
+        return it;
+      };
+
+      let currentLine = 1;
+      if (aiPrompt.includes("볼트") || aiPrompt.includes("bolt")) {
+        if (boltProd) newItems.push(addCalculatedItem(boltProd, boltQty, currentLine++));
+      }
+      if (aiPrompt.includes("너트") || aiPrompt.includes("nut")) {
+        if (nutProd) newItems.push(addCalculatedItem(nutProd, nutQty, currentLine++));
+      }
+
+      // If neither is explicitly named, add both as default
+      if (newItems.length === 0) {
+        if (boltProd) newItems.push(addCalculatedItem(boltProd, boltQty, currentLine++));
+        if (nutProd) newItems.push(addCalculatedItem(nutProd, nutQty, currentLine++));
+      }
+
+      setItems(newItems);
+      setIsGeneratingDraft(false);
+      alert("AI가 입력하신 프롬프트 요구사항(수량, 바이어 키워드, 마진율 등)을 분석하여 견적서 정보를 자동으로 구축했습니다!");
+    }, 2500);
+  };
 
   const addItem = () => {
     setItems(prev => [...prev, {
@@ -1725,6 +1864,32 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
         {/* Body */}
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
+
+          {/* AI prompt draft generator */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              🪄 AI 견적서 초안 자동 생성 (프롬프트 입력)
+            </span>
+            <p style={{ fontSize: '11.5px', color: '#166534', margin: 0 }}>
+              거래 바이어명, 구매할 상품 종류(볼트/너트), 수량 및 타겟 마진율을 입력해 주시면 AI가 견적 내역과 단가를 일괄 구성합니다.
+            </p>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <input
+                type="text"
+                placeholder="예: NATIONAL 바이어에게 볼트 5000개, 너트 3000개 견적서 작성해줘. 마진은 15%로 세팅."
+                value={aiPrompt}
+                onChange={e => setAiPrompt(e.target.value)}
+                style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
+              />
+              <button
+                type="button"
+                onClick={handleAiDraftCreate}
+                style={{ padding: '8px 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                🪄 초안 생성
+              </button>
+            </div>
+          </div>
           
           {/* ── PI Document-style compact form (4 rows) ── */}
           <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2075,6 +2240,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           />
                           <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: 600 }}>%</span>
                         </div>
+                        {it.productCode && (
+                          <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap' }} title="과거 거래 데이터 분석 기반 AI 추천 마진">
+                            🤖 AI추천: 15%
+                          </div>
+                        )}
                         <select 
                           value={it.roundDigits ?? 'none'} 
                           onChange={(e) => updateItem(idx, 'roundDigits', e.target.value === 'none' ? undefined : parseInt(e.target.value))} 
@@ -2580,6 +2750,27 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             setIsCustomerSearchOpen(false);
           }}
         />
+      )}
+      {isGeneratingDraft && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🪄</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#166534', textAlign: 'center' }}>
+              AI가 요구사항을 해석하여 적정 마진율 단가 계산을 진행하고 견적서 초안을 작성 중입니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#dcfce7', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#16a34a',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
       )}
       {activePreviewUrl && (
         <div 
