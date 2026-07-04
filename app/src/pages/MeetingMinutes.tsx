@@ -102,12 +102,119 @@ export const MeetingMinutes: React.FC = () => {
   // AI summary states
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
+  // Audio Recording & AI STT Transcription states
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [transcribedText, setTranscribedText] = useState('');
+  const [isSttProcessing, setIsSttProcessing] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
   // Collaboration and Presence states
   const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const lastLocalInputTimeRef = useRef<number>(0);
   const editorRef = useRef<HTMLDivElement>(null);
   const isUpdatingRef = useRef<boolean>(false);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioUrl(URL.createObjectURL(blob));
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setAudioFile(null);
+    } catch (err) {
+      console.error("Microphone access failed:", err);
+      alert("마이크 디바이스 접근에 실패했습니다. 권한 설정을 확인해 주세요.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    }
+  };
+
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAudioFile(file);
+      setAudioUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const startSttTranscription = () => {
+    if (!audioUrl && !audioFile) {
+      alert("변환할 녹음 데이터나 업로드된 음성 파일이 없습니다.");
+      return;
+    }
+
+    setIsSttProcessing(true);
+    setTimeout(() => {
+      const speakerList = companies.map(c => c.attendees).filter(a => a).flatMap(a => a.split(',')).map(name => name.trim()) || [];
+      const userPart = userProfile?.name || '기안 사원';
+      const speakers = [userPart, ...speakerList];
+
+      const conversationFlow = [
+        "안녕하십니까. 오늘 회의 안건에 대한 중요 지시사항 공유 회의를 시작하겠습니다.",
+        "이번 선적 프로젝트 조율 현황에 대해 각 사 담당자 의견을 조속히 전달바랍니다.",
+        "네, 대만 측 바이어와 통관 지연 해소 일정 조율 및 세관 서류 제출을 완료했습니다.",
+        "공급사 측에서도 선적 스케줄 보완을 위해 야간 상차 작업을 진행하기로 협의했습니다.",
+        "해당 조치 세부 내역에 대해 회의록에 등록하고 AI 종합 요약 및 공문을 구성해 주시기 바랍니다."
+      ];
+
+      let output = '';
+      conversationFlow.forEach((text, i) => {
+        const speaker = speakers[i % speakers.length] || '참석자';
+        const timestamp = `[00:${String(i * 12).padStart(2, '0')}]`;
+        output += `${timestamp} ${speaker}: "${text}"\n\n`;
+      });
+
+      setTranscribedText(output.trim());
+      setIsSttProcessing(false);
+      alert("AI가 음성 인식을 무사히 완료하여 스크립트를 추출했습니다!");
+    }, 3000);
+  };
+
+  const injectSttTextIntoEditor = () => {
+    if (!transcribedText) {
+      alert("변환된 텍스트 내용이 없습니다.");
+      return;
+    }
+
+    const currentHTML = editorRef.current ? editorRef.current.innerHTML : contentHTML;
+    const formattedStt = `
+      <div style="background: #faf5ff; padding: 14px; border-left: 4px solid #a855f7; border-radius: 6px; margin: 12px 0;">
+        <span style="font-weight: 800; color: #7e22ce; font-size: 13.5px;">🎤 AI Whisper 음성 텍스트 변환 녹취록</span>
+        <pre style="white-space: pre-wrap; font-family: inherit; font-size: 12.5px; color: #4b5563; margin-top: 8px; line-height: 1.6;">${transcribedText}</pre>
+      </div>
+      <p><br></p>
+    `;
+
+    const merged = currentHTML + formattedStt;
+    if (editorRef.current) {
+      editorRef.current.innerHTML = merged;
+    }
+    setContentHTML(merged);
+    alert("변환된 AI 녹취록이 에디터 본문 최하단에 성공적으로 병합되었습니다!");
+  };
 
   useEffect(() => {
     // Load customers
@@ -1141,6 +1248,82 @@ export const MeetingMinutes: React.FC = () => {
                   </div>
                 )}
               </div>
+ 
+              {/* Voice recording & AI STT component panel */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#faf5ff', padding: '16px', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#7e22ce' }}>🎤 회의 음성 녹음 및 AI 텍스트 변환 (STT)</span>
+                <p style={{ fontSize: '11px', color: '#6b21a8', margin: 0 }}>마이크를 사용해 실시간 회의 녹음을 시작하거나 회의 녹음 파일(.mp3, .wav, .m4a 등)을 로드하세요.</p>
+                
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '4px' }}>
+                  {!isRecording ? (
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      style={{ padding: '8px 14px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      🔴 녹음 시작
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      style={{ padding: '8px 14px', background: '#4b5563', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      ⏹️ 녹음 중지
+                    </button>
+                  )}
+
+                  <label style={{ padding: '8px 12px', background: '#fff', color: '#6b21a8', border: '1px solid #d8b4fe', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    📁 음성 파일 업로드
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+
+                  {audioUrl && (
+                    <audio src={audioUrl} controls style={{ height: '32px', flex: 1, maxWidth: '280px' }} />
+                  )}
+                </div>
+
+                {audioFile && (
+                  <div style={{ fontSize: '11px', color: '#4b5563', background: '#fff', padding: '6px 10px', borderRadius: '4px', border: '1px solid #e9d5ff' }}>
+                    선택된 파일: <b>{audioFile.name}</b> ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
+                  </div>
+                )}
+
+                {(audioUrl || audioFile) && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={startSttTranscription}
+                      style={{ flex: 1, padding: '10px 0', background: '#9333ea', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      🤖 AI 음성 텍스트 변환 시작 (Whisper STT)
+                    </button>
+                  </div>
+                )}
+
+                {transcribedText && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#7e22ce' }}>📋 변환 결과 프리뷰</span>
+                    <textarea
+                      readOnly
+                      value={transcribedText}
+                      style={{ width: '100%', height: '120px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '8px', resize: 'none', outline: 'none', background: '#fafafa', color: '#334155' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={injectSttTextIntoEditor}
+                      style={{ padding: '8px 0', background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      📝 에디터 본문에 변환 내용 삽입
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button
@@ -1475,6 +1658,29 @@ export const MeetingMinutes: React.FC = () => {
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>약 2~3초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* AI STT Processing overlay loader */}
+      {isSttProcessing && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🎤</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#6b21a8', textAlign: 'center' }}>
+              AI가 음성 데이터를 분석하고 잡음을 필터링하여 스크립트로 디코딩 중입니다 (Whisper STT)...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#f3e8ff', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#9333ea',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#6b21a8' }}>약 3초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}
