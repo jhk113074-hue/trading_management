@@ -86,6 +86,33 @@ const COMMON_TIMEZONES = [
   { value: 'America/Los_Angeles', label: '미국/LA (UTC-8)' },
 ];
 
+const PRESET_COUNTRIES = [
+  { label: '한국 (Korea)', code: 'kr', zone: 'Asia/Seoul' },
+  { label: '중국 (China)', code: 'cn', zone: 'Asia/Shanghai' },
+  { label: '말레이시아 (Malaysia)', code: 'my', zone: 'Asia/Kuala_Lumpur' },
+  { label: '인도 (India)', code: 'in', zone: 'Asia/Kolkata' },
+  { label: 'UAE (두바이)', code: 'ae', zone: 'Asia/Dubai' },
+  { label: '쿠웨이트 (Kuwait)', code: 'kw', zone: 'Asia/Kuwait' },
+  { label: '사우디 (Saudi Arabia)', code: 'sa', zone: 'Asia/Riyadh' },
+  { label: '터키 (Turkey)', code: 'tr', zone: 'Europe/Istanbul' },
+  { label: '호주 (Sydney)', code: 'au', zone: 'Asia/Sydney' },
+  { label: '일본 (Japan)', code: 'jp', zone: 'Asia/Tokyo' },
+  { label: '베트남 (Vietnam)', code: 'vn', zone: 'Asia/Ho_Chi_Minh' },
+  { label: '대만 (Taiwan)', code: 'tw', zone: 'Asia/Taipei' },
+  { label: '홍콩 (Hong Kong)', code: 'hk', zone: 'Asia/Hong_Kong' },
+  { label: '싱가포르 (Singapore)', code: 'sg', zone: 'Asia/Singapore' },
+  { label: '태국 (Thailand)', code: 'th', zone: 'Asia/Bangkok' },
+  { label: '인도네시아 (Indonesia)', code: 'id', zone: 'Asia/Jakarta' },
+  { label: '필리핀 (Philippines)', code: 'ph', zone: 'Asia/Manila' },
+  { label: '영국 (UK)', code: 'gb', zone: 'Europe/London' },
+  { label: '독일 (Germany)', code: 'de', zone: 'Europe/Berlin' },
+  { label: '네덜란드 (Netherlands)', code: 'nl', zone: 'Europe/Amsterdam' },
+  { label: '미국 동부 (US East)', code: 'us', zone: 'America/New_York' },
+  { label: '미국 서부 (US West)', code: 'us', zone: 'America/Los_Angeles' },
+  { label: '캐나다 (Canada)', code: 'ca', zone: 'America/Toronto' },
+  { label: '브라질 (Brazil)', code: 'br', zone: 'America/Sao_Paulo' },
+];
+
 const WorldClocks: React.FC = () => {
   const COMPANY_ID = "YSACC";
   const [time, setTime] = useState(new Date());
@@ -220,6 +247,29 @@ const WorldClocks: React.FC = () => {
 
           {/* Add Form */}
           <form onSubmit={handleAddCountry} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr auto', gap: '8px', alignItems: 'end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: '1 / span 4', marginBottom: '4px' }}>
+              <label style={{ fontSize: '11.5px', color: '#3b82f6', fontWeight: 800 }}>🌐 빠른 국가/지역 프리셋 선택</label>
+              <select 
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val) {
+                    const preset = PRESET_COUNTRIES[parseInt(val)];
+                    if (preset) {
+                      setNewLabel(preset.label.split(' (')[0]);
+                      setNewCode(preset.code);
+                      setNewZone(preset.zone);
+                    }
+                  }
+                }}
+                style={{ padding: '6px 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff', color: '#1e3a8a', fontWeight: 700, cursor: 'pointer' }}
+              >
+                <option value="">-- 주요 국가/도시 목록에서 선택 --</option>
+                {PRESET_COUNTRIES.map((p, idx) => (
+                  <option key={idx} value={idx}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>국가 한글명</label>
               <input 
