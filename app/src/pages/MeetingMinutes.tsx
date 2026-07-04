@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 
@@ -93,10 +93,10 @@ export const MeetingMinutes: React.FC = () => {
     // Load customers
     const fetchCustomers = async () => {
       try {
-        const snap = await getDocs(collection(db, 'customers'));
+        const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'customers'));
         const list: Customer[] = [];
         snap.forEach(d => {
-          list.push({ id: d.id, name: d.data().name || '' });
+          list.push({ id: d.id, ...d.data() } as Customer);
         });
         setCustomers(list);
       } catch (err) {
@@ -108,7 +108,7 @@ export const MeetingMinutes: React.FC = () => {
     // Load suppliers
     const fetchSuppliers = async () => {
       try {
-        const snap = await getDocs(collection(db, 'suppliers'));
+        const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
         const list: Supplier[] = [];
         snap.forEach(d => {
           const data = d.data();
