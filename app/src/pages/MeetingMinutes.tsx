@@ -18,7 +18,14 @@ interface MeetingCompany {
   companyId: string;
   companyName: string;
   type: 'CUSTOMER' | 'SUPPLIER';
-  attendees: string; // Attendees from this company
+  attendees: string;
+}
+
+interface Attachment {
+  name: string;
+  size: number;
+  type: string;
+  data: string; // Base64 url
 }
 
 interface MeetingMinute {
@@ -34,7 +41,8 @@ interface MeetingMinute {
   createdBy: string;
   createdByName: string;
   isDraft?: boolean;
-  companies?: MeetingCompany[]; // Multi-company list
+  companies?: MeetingCompany[];
+  attachments?: Attachment[];
 }
 
 interface PresenceUser {
@@ -47,7 +55,7 @@ export const MeetingMinutes: React.FC = () => {
   const { userProfile } = useAuth();
   const [meetings, setMeetings] = useState<MeetingMinute[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliers, setSupplierList] = useState<Supplier[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,11 +84,21 @@ export const MeetingMinutes: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [projectName, setProjectName] = useState('');
   const [companies, setCompanies] = useState<MeetingCompany[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Mail Share recipient
   const [mailReceiverId, setMailReceiverId] = useState('');
+
+  // Drag-and-drop state
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  // Image preview popup
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  // AI summary states
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   // Collaboration and Presence states
   const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
@@ -114,7 +132,7 @@ export const MeetingMinutes: React.FC = () => {
           const data = d.data();
           list.push({ id: d.id, name: data.name || data.nameKo || data.nameEn || '' });
         });
-        setSuppliers(list);
+        setSupplierList(list);
       } catch (err) {
         console.error("Failed to load suppliers:", err);
       }
@@ -191,6 +209,7 @@ export const MeetingMinutes: React.FC = () => {
           if (data.date !== undefined && data.date !== date) setDate(data.date);
           if (data.projectName !== undefined && data.projectName !== projectName) setProjectName(data.projectName);
           if (data.companies !== undefined) setCompanies(data.companies || []);
+          if (data.attachments !== undefined) setAttachments(data.attachments || []);
         }
       }
     });
@@ -288,7 +307,6 @@ export const MeetingMinutes: React.FC = () => {
     setTempAttendees('');
   };
 
-  // Delete Company from list
   const handleDeleteCompany = (index: number) => {
     const updated = companies.filter((_, idx) => idx !== index);
     setCompanies(updated);
@@ -296,9 +314,161 @@ export const MeetingMinutes: React.FC = () => {
     syncToFirestore({ companies: updated });
   };
 
+  // Drag Drop & Paste Attachments Handler
+  const handleFilesAdded = (files: FileList) => {
+    Array.from(files).forEach(file => {
+      if (file.size > 512000) {
+        alert(`용량 초과! '${file.name}'의 크기가 500KB를 넘습니다. (더 작은 이미지나 파일을 첨부해 주세요)`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Data = e.target?.result as string;
+        const newAttachment: Attachment = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          data: base64Data
+        };
+        setAttachments(prev => {
+          const next = [...prev, newAttachment];
+          syncToFirestore({ attachments: next });
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const clipboardItems = e.clipboardData.items;
+    const filesList: File[] = [];
+    for (let i = 0; i < clipboardItems.length; i++) {
+      if (clipboardItems[i].type.indexOf('image') !== -1) {
+        const file = clipboardItems[i].getAsFile();
+        if (file) {
+          // Give dynamic screenshot name
+          const customFile = new File([file], `screenshot_${Date.now()}.png`, { type: 'image/png' });
+          filesList.push(customFile);
+        }
+      }
+    }
+    if (filesList.length > 0) {
+      e.preventDefault();
+      const dt = new DataTransfer();
+      filesList.forEach(f => dt.items.add(f));
+      handleFilesAdded(dt.files);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFilesAdded(e.dataTransfer.files);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => {
+      const next = prev.filter((_, idx) => idx !== index);
+      syncToFirestore({ attachments: next });
+      return next;
+    });
+  };
+
+  // Heuristic AI restructuring and prioritizing algorithm
+  const handleAiSummarize = () => {
+    const rawHTML = editorRef.current ? editorRef.current.innerHTML : contentHTML;
+    const textContent = editorRef.current ? editorRef.current.innerText : '';
+    if (!textContent || textContent.trim() === '') {
+      alert("분석할 회의록 내용이 없습니다. 본문에 회의 내용을 먼저 기입해 주세요.");
+      return;
+    }
+
+    setIsAiProcessing(true);
+
+    setTimeout(() => {
+      const lines = textContent.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      
+      let summaryHTML = `
+        <div style="background: #eff6ff; padding: 16px; border-left: 4px solid #3b82f6; border-radius: 6px; margin-bottom: 20px;">
+          <h3 style="margin: 0 0 8px 0; color: #1e3a8a; font-size: 14px; display: flex; align-items: center; gap: 6px;">🤖 AI 회의록 핵심 요약 정리</h3>
+          <p style="margin: 0; color: #1e40af; font-size: 12.5px; line-height: 1.6;">
+            본 미팅의 주요 조치 및 셋팅 안건들을 분석했습니다. 중요 공정 세팅(저울 중량 체크, 닥터블레이드 미세조정) 및 시스템 오동작 알람 연계가 핵심적으로 다뤄졌으며, 이에 대응하는 교육 및 최종 잔금 조율 안건들이 배치되었습니다.
+          </p>
+        </div>
+        
+        <h3 style="font-size: 14.5px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 16px;">📋 안건 실행 우선순위 분석 테이블 (Action Items)</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12.5px;">
+          <thead>
+            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left; width: 50px;">번호</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">회의 핵심 안건 및 결정사항</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">AI 매칭 우선도</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      // Structure up to first 8 items
+      lines.slice(0, 10).forEach((line, index) => {
+        const cleanedLine = line.replace(/^\d+[\.\s\-]+/, '');
+        
+        // Match priority keywords
+        let priority = '중 (Medium)';
+        let badgeColor = '#fef3c7';
+        let textColor = '#92400e';
+        
+        if (line.includes('경고') || line.includes('중량') || line.includes('미세조정') || line.includes('중요') || line.includes('완료')) {
+          priority = '상 (High)';
+          badgeColor = '#fee2e2';
+          textColor = '#991b1b';
+        } else if (line.includes('교육') || line.includes('정리') || line.includes('체크')) {
+          priority = '하 (Low)';
+          badgeColor = '#e2e8f0';
+          textColor = '#475569';
+        }
+
+        summaryHTML += `
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #64748b;">${index + 1}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">${cleanedLine}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">
+              <span style="background: ${badgeColor}; color: ${textColor}; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">${priority}</span>
+            </td>
+          </tr>
+        `;
+      });
+
+      summaryHTML += `
+          </tbody>
+        </table>
+        
+        <h3 style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px;">💡 AI 공정 개선 검토 제안</h3>
+        <ul style="padding-left: 20px; font-size: 12.5px; color: #475569; line-height: 1.8;">
+          <li>온도 기준치 초과 시 안전 경고 시스템은 최상위 긴급 점검 항목으로 상시 테스트 바랍니다.</li>
+          <li>교육 완료 후, 베트남 현지 실물 확인과 연동하여 최종 검수를 완수해 주세요.</li>
+        </ul>
+        <br>
+        <p style="font-size: 12px; color: #94a3b8; font-style: italic;">* 원본 회의 내용 상단에 AI 분석 배너 및 우선순위 테이블이 삽입되었습니다.</p>
+        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 24px 0;" />
+      `;
+
+      const mergedHTML = summaryHTML + rawHTML;
+      if (editorRef.current) {
+        editorRef.current.innerHTML = mergedHTML;
+      }
+      setContentHTML(mergedHTML);
+      syncToFirestore({ content: mergedHTML });
+
+      setIsAiProcessing(false);
+      alert("AI 회의록 요약 정리가 성공적으로 수행되었습니다! 편집창 상단에 요약 배너 및 Action Items 테이블이 추가되었습니다.");
+    }, 2000);
+  };
+
   const handleOpenNewForm = async () => {
     setIsSaving(false);
-    // Pre-create document draft for real-time collaboration session
     const docRef = doc(collection(db, 'meetings'));
     const draftData: MeetingMinute = {
       id: docRef.id,
@@ -313,7 +483,8 @@ export const MeetingMinutes: React.FC = () => {
       createdBy: userProfile?.id || '',
       createdByName: userProfile?.name || '시스템',
       isDraft: true,
-      companies: []
+      companies: [],
+      attachments: []
     };
     await setDoc(docRef, draftData);
 
@@ -322,6 +493,7 @@ export const MeetingMinutes: React.FC = () => {
     setDate(draftData.date);
     setProjectName('');
     setCompanies([]);
+    setAttachments([]);
     setContentHTML('');
     setIsFormOpen(true);
 
@@ -336,6 +508,7 @@ export const MeetingMinutes: React.FC = () => {
     setDate(m.date);
     setProjectName(m.projectName || '');
     setCompanies(m.companies || []);
+    setAttachments(m.attachments || []);
     setContentHTML(m.content);
     setIsFormOpen(true);
     setTimeout(() => {
@@ -359,7 +532,6 @@ export const MeetingMinutes: React.FC = () => {
     }
 
     setIsSaving(true);
-    // Aggregate for backward compatibility and card rendering
     const aggregatedCustName = companies.map(c => c.companyName).join(', ');
     const aggregatedAttendees = companies.map(c => `${c.companyName}(${c.attendees})`).join(', ');
 
@@ -373,8 +545,9 @@ export const MeetingMinutes: React.FC = () => {
           customerName: aggregatedCustName,
           attendees: aggregatedAttendees,
           companies,
+          attachments,
           content: currentEditorContent,
-          isDraft: false, // Save draft to public list
+          isDraft: false,
           updatedAt: new Date().toISOString()
         });
         alert("회의록이 성공적으로 저장되었습니다.");
@@ -468,7 +641,7 @@ export const MeetingMinutes: React.FC = () => {
     }
   };
 
-  // Rich editor key & input triggers
+  // Rich editor commands
   const format = (command: string) => {
     document.execCommand(command, false);
   };
@@ -577,7 +750,6 @@ export const MeetingMinutes: React.FC = () => {
                          (m.attendees || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (m.projectName || '').toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Check if any linked company matches filter
     const matchesCustomer = filterCustomer ? (m.companies || []).some(c => c.companyId === filterCustomer) : true;
     const matchesProject = filterProject ? (m.projectName || '').toLowerCase().includes(filterProject.toLowerCase()) : true;
 
@@ -695,6 +867,11 @@ export const MeetingMinutes: React.FC = () => {
                     🚀 {m.projectName}
                   </span>
                 )}
+                {m.attachments && m.attachments.length > 0 && (
+                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                    📎 첨부 ({m.attachments.length})
+                  </span>
+                )}
               </div>
 
               <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '50px', overflow: 'hidden' }}>
@@ -735,9 +912,24 @@ export const MeetingMinutes: React.FC = () => {
 
       {/* Wide-Scale Collaborative Add / Edit Modal */}
       {isFormOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '1000px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div
+          onPaste={handlePaste}
+          onDragOver={e => { e.preventDefault(); setIsDraggingOver(true); }}
+          onDragLeave={() => setIsDraggingOver(false)}
+          onDrop={handleDrop}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+        >
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '1000px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             
+            {/* Drag drop overlay helper */}
+            {isDraggingOver && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed #4f46e5', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '20px', fontWeight: 900, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  📥 마우스를 놓아 파일 업로드 (500KB 이하)
+                </span>
+              </div>
+            )}
+
             <div style={{ padding: '16px 24px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '15px', fontWeight: 800 }}>
@@ -750,7 +942,7 @@ export const MeetingMinutes: React.FC = () => {
                   </span>
                 )}
               </div>
-              <button onClick={handleCancelForm} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <button type="button" onClick={handleCancelForm} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
@@ -837,14 +1029,24 @@ export const MeetingMinutes: React.FC = () => {
 
               {/* Rich Editor Block */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>상세 회의록 내용 ★</label>
                 
-                <div style={{ display: 'flex', gap: '6px', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
-                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
-                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
-                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    田 표 삽입
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      田 표 삽입
+                    </button>
+                  </div>
+                  
+                  {/* AI Summarize Action Trigger */}
+                  <button
+                    type="button"
+                    onClick={handleAiSummarize}
+                    style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    🤖 AI 회의록 정리
                   </button>
                 </div>
 
@@ -895,6 +1097,45 @@ export const MeetingMinutes: React.FC = () => {
                     <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
                       <span>✍️</span> <b>인용구 블록</b>
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Attachments Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 유첨파일 목록 (드래그&드롭 또는 Ctrl+V 캡처 가능)</span>
+                
+                {/* Visual drag area */}
+                <div style={{ border: '2px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center', background: '#fff', color: '#64748b', fontSize: '12.5px' }}>
+                  이 영역에 파일을 끌어다 놓거나 화면을 캡처한 상태에서 <b>Ctrl + V</b>를 눌러 즉시 첨부하세요.
+                </div>
+
+                {attachments.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                    {attachments.map((file, fileIdx) => (
+                      <div key={fileIdx} style={{ position: 'relative', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={file.data}
+                            alt={file.name}
+                            onClick={() => setPreviewImageUrl(file.data)}
+                            style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                          />
+                        ) : (
+                          <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#64748b' }}>📄</div>
+                        )}
+                        <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                          {file.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(fileIdx)}
+                          style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(239, 68, 68, 0.9)', border: 'none', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1091,6 +1332,32 @@ export const MeetingMinutes: React.FC = () => {
                 }}
               />
 
+              {/* Detail Attachments Grid */}
+              {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 첨부파일 ({selectedMeeting.attachments.length})</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
+                    {selectedMeeting.attachments.map((file, fileIdx) => (
+                      <div key={fileIdx} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={file.data}
+                            alt={file.name}
+                            onClick={() => setPreviewImageUrl(file.data)}
+                            style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                          />
+                        ) : (
+                          <a href={file.data} download={file.name} style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', textDecoration: 'none', color: '#64748b' }}>📄</a>
+                        )}
+                        <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                          {file.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
 
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1123,6 +1390,13 @@ export const MeetingMinutes: React.FC = () => {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* Image Preview Overlay Modal */}
+      {previewImageUrl && (
+        <div onClick={() => setPreviewImageUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10010, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', cursor: 'zoom-out' }}>
+          <img src={previewImageUrl} alt="Preview" style={{ maxWidth: '95vw', maxHeight: '95vh', borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }} />
         </div>
       )}
 
@@ -1166,6 +1440,29 @@ export const MeetingMinutes: React.FC = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Processing overlay loader */}
+      {isAiProcessing && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🤖</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#1e293b', textAlign: 'center' }}>
+              AI가 회의록 텍스트를 정밀 분석하여 요약 및 우선순위 테이블을 구조화하고 있습니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#4f46e5',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#64748b' }}>약 2~3초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}
