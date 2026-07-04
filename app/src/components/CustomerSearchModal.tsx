@@ -80,7 +80,7 @@ export const CustomerSearchModal: React.FC<Props> = ({ onClose, onSelect, custom
       position: 'fixed',
       left: `${position.x}px`,
       top: `${position.y}px`,
-      zIndex: 2000,
+      zIndex: 20000,
       pointerEvents: 'none',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
