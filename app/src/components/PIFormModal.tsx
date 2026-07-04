@@ -12,7 +12,17 @@ import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 
 const getProductPackingMethods = (product: any): any[] => {
-  if (!product) return [];
+  if (!product) return [{
+    id: 'default_injected',
+    name: 'Default',
+    packageType: '단품',
+    unit: 'EA',
+    isDefault: true,
+    unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0,
+    qtyPerPallet: 1,
+    palletWidth: 0, palletLength: 0, palletHeight: 0, palletWeight: 0, palletGrossWeight: 0,
+    stackable: 'Y', rotation: 'Y'
+  }];
   const list = product.packingMethods ? JSON.parse(JSON.stringify(product.packingMethods)) : [];
   const hasDefault = list.some((m: any) => m.name === 'Default');
   if (!hasDefault) {
@@ -993,6 +1003,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             it.quantity = it.quantity || 0;
           }
         }
+      } else {
+        it.productName = productCodeVal;
+        it.description = productCodeVal;
       }
     }
 
