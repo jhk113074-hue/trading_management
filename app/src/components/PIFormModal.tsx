@@ -655,12 +655,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       const piMatch = aiPrompt.match(/(PI-[A-Za-z0-9-]+)/);
       if (piMatch) {
         const targetPiNum = piMatch[1].toUpperCase().trim();
+        const normalizedTarget = targetPiNum.replace(/R\d+$/, "");
         
         // Fetch all proforma invoices
         const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
         const targetDoc = snap.docs.find(d => {
           const num = d.data().piNumber;
-          return num && num.toUpperCase().trim() === targetPiNum;
+          if (!num) return false;
+          const cleanNum = num.toUpperCase().trim();
+          return cleanNum === targetPiNum || cleanNum === normalizedTarget;
         });
 
         if (targetDoc) {
