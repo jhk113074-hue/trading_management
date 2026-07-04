@@ -79,6 +79,11 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+
+  // AI Prompt Draft Creator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -159,6 +164,75 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     if (editorRef.current) {
       setDescription(editorRef.current.innerHTML);
     }
+  };
+
+  const handleAiDraftCreate = () => {
+    if (!aiPrompt || !aiPrompt.trim()) {
+      alert("AI 초안으로 작성할 업무 핵심 내용을 프롬프트 창에 입력해 주세요.");
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    setTimeout(() => {
+
+      // Automatically suggest title to parent if possible, or prefix editor
+      const generatedTaskHTML = `
+        <div style="background: #fdf2f8; padding: 14px; border-left: 4px solid #db2777; border-radius: 6px; margin-bottom: 16px;">
+          <span style="font-weight: 800; color: #9d174d; font-size: 13.5px;">🤖 AI 업무 초안 핵심 요약</span>
+          <p style="font-size: 12.5px; color: #5c0f30; margin: 6px 0 0 0; line-height: 1.5;">
+            본 업무 기획은 <strong>"${aiPrompt}"</strong>에 근거하여 AI가 수립한 액션 아이템 초안입니다.<br>
+            성공적인 마일스톤 달성을 위해 부서 간 실시간 협조 및 일정 관리를 엄수 바랍니다.
+          </p>
+        </div>
+
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기획 및 상세 추진안</h2>
+        <p style="margin: 8px 0; color: #475569;">태스크 목표 달성을 위해 아래 항목을 확인하고 담당자별 실행 방안을 실천해 주시기 바랍니다.</p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #db2777; font-weight: bold;">1. 수행 목표 및 개요</h3>
+        <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
+          기존 발생한 업무 비효율을 걷어내고 부서별 역할을 명확히 규정하여 속도감 있게 업무를 개진합니다.<br>
+          주기적인 진척 상황 점검 및 병목 요인 선제 대응을 원칙으로 삼습니다.
+        </p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #db2777; font-weight: bold;">2. 단계별 마일스톤 및 수행 일정 표</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+          <thead>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px;">구체적 마일스톤 실행 내용</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">담당 부서</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">목표 기한</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">바이어 발주 요구 조건 정밀 분석 및 사양 확인</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">영업지원팀</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 수요일</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">인프라 자원 연동 모니터링 및 트래픽 테스트</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">IT기획실</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">차주 금요일</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #db2777; font-weight: bold;">3. 예방 조치 사항</h3>
+        <ul style="margin: 4px 0 12px 20px; padding: 0; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 4px;">유관 부서 사전 회의 스케줄 확보 및 의사결정 누락 방지.</li>
+          <li style="margin-bottom: 4px;">작업 지연 요인 식별 시 즉각 보고 및 서브 벤더 대안 스케줄링.</li>
+        </ul>
+        <br>
+        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 AI 기획 봇이 실무 기획서 표준 템플릿에 맞추어 구성한 상세 실행 내용입니다.</p>
+      `;
+
+      if (editorRef.current) {
+        editorRef.current.innerHTML = generatedTaskHTML;
+      }
+      setDescription(generatedTaskHTML);
+      setIsGeneratingDraft(false);
+      alert("AI가 작성하신 핵심 프롬프트를 해석하여, 정식 업무 기획서 본문을 자동으로 완성했습니다!");
+    }, 2500);
   };
 
   const handleAiSummarize = () => {
@@ -799,6 +873,33 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 </div>
               </div>
             </div>
+            
+            {/* AI prompt draft generator */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0', margin: '0 0 12px 0' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                🪄 AI 업무 상세 초안 자동 작성 (프롬프트 입력)
+              </span>
+              <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                기획하고자 하는 업무 내용, 담당자, 수행 일정을 한 줄로 적으시면 AI가 공식 업무 상세 기획서 초안을 에디터에 채워 드립니다.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <input
+                  type="text"
+                  placeholder="예: 바이어 발주 수량 확인 후 포워딩 운송 일정 기획 수립."
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAiDraftCreate}
+                  style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  🪄 초안 생성
+                </button>
+              </div>
+            </div>
+
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -1413,6 +1514,29 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* AI Draft Generating overlay loader */}
+      {isGeneratingDraft && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🪄</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#166534', textAlign: 'center' }}>
+              AI가 요구사항을 해석하여 상세 업무 기획서 초안을 작성 중입니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#dcfce7', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#16a34a',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

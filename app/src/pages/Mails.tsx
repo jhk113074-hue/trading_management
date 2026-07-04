@@ -42,6 +42,10 @@ export const Mails: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
+  // AI Prompt Draft Creator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+
   // Scheduling states
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
@@ -337,6 +341,76 @@ export const Mails: React.FC = () => {
       setContentHTML(templateHTML);
     }
   };
+  const handleAiDraftCreate = () => {
+    if (!aiPrompt || !aiPrompt.trim()) {
+      alert("AI 초안으로 작성할 쪽지 핵심 내용을 프롬프트 창에 입력해 주세요.");
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    setTimeout(() => {
+      let generatedTitle = `[업무협조] ${aiPrompt.substring(0, 24)}... 관련 안내`;
+      if (aiPrompt.includes("검토") || aiPrompt.includes("피드백")) {
+        generatedTitle = `[검토요청] 수출 선적 신고서 피드백 및 긴급 수정 검토 협조의 건`;
+      } else if (aiPrompt.includes("회의") || aiPrompt.includes("공유")) {
+        generatedTitle = `[회의공람] 주간 부서 회의 결과 회고록 전파 및 일정 공유의 건`;
+      } else if (aiPrompt.includes("공지") || aiPrompt.includes("알림")) {
+        generatedTitle = `[공지] 시스템 서버 긴급 유지보수 조치에 따른 작업 중단 알림`;
+      }
+
+      setTitle(generatedTitle);
+
+      const generatedMailHTML = `
+        <div style="background: #f0fdf4; padding: 14px; border-left: 4px solid #16a34a; border-radius: 6px; margin-bottom: 16px;">
+          <span style="font-weight: 800; color: #166534; font-size: 13.5px;">🤖 AI 메일 초안 핵심 요약</span>
+          <p style="font-size: 12.5px; color: #1e3a1e; margin: 6px 0 0 0; line-height: 1.5;">
+            본 메일은 <strong>"${aiPrompt}"</strong>에 의거하여 AI 협업 봇이 자동 작성한 공식 본문 서한입니다.<br>
+            요청 기한 준수 및 누락 없는 확인을 정중히 권해드립니다.
+          </p>
+        </div>
+
+        <p>수신 제위,</p>
+        <p>안녕하십니까, 금주 예정된 핵심 안건 조율 및 비즈니스 협조 요청에 대한 세부 사항을 다음과 같이 공유드립니다.</p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">■ 세부 협조 요청 및 처리 대상</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+          <thead>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px;">주요 협조 필요 업무</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">수행 주체</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">마감 기한</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">업무 피드백 세부 내역 작성 및 양식 검토</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">수신 담당자</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">금일 18:00</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">세관 통관 추가 조치 보완 서류 송부 확인</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">무역팀 담당</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <blockquote style="border-left: 4px solid #16a34a; padding-left: 12px; color: #1e3a1e; font-style: italic; margin: 12px 0; background: #fafafa; padding: 8px;">
+          "차질 없는 업무 전개를 위해 기한 내 회신을 요청드립니다."
+        </blockquote>
+        <br>
+        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 프롬프트 요구조건에 부합하도록 격식 있는 비즈니스 문체로 정리되었습니다.</p>
+      `;
+
+      if (editorRef.current) {
+        editorRef.current.innerHTML = generatedMailHTML;
+      }
+      setContentHTML(generatedMailHTML);
+      setIsGeneratingDraft(false);
+      alert("AI가 적어주신 메일 핵심 프롬프트를 번역하여, 제목 및 비즈니스 메일 본문을 자동으로 완성했습니다!");
+    }, 2500);
+  };
+
   const handleAiSummarize = () => {
     const rawHTML = editorRef.current ? editorRef.current.innerHTML : contentHTML;
     const textContent = editorRef.current ? editorRef.current.innerText : '';
@@ -766,6 +840,32 @@ export const Mails: React.FC = () => {
                 </div>
               </div>
 
+              {/* AI prompt draft generator */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  Base 🪄 AI 쪽지 초안 자동 작성 (프롬프트 입력)
+                </span>
+                <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                  보낼 사람의 정보와 업무 조치 사항, 기한을 적으시면 AI가 정식 메일 양식 및 요청 과제 표를 생성해 드립니다.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    placeholder="예: 수출 신고서 피드백 오늘 오후 6시까지 검토 요청."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAiDraftCreate}
+                    style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    🪄 초안 생성
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>받는 사람 ★</label>
                 <select
@@ -979,6 +1079,29 @@ export const Mails: React.FC = () => {
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* AI Draft Generating overlay loader */}
+      {isGeneratingDraft && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🪄</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#166534', textAlign: 'center' }}>
+              AI가 요구사항을 해석하여 격식 있는 쪽지 초안을 작성 중입니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#dcfce7', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#16a34a',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

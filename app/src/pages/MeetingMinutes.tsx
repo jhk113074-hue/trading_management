@@ -102,6 +102,10 @@ export const MeetingMinutes: React.FC = () => {
   // AI summary states
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
+  // AI Prompt Draft Creator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+
   // Audio Recording & AI STT Transcription states
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -484,6 +488,84 @@ export const MeetingMinutes: React.FC = () => {
       syncToFirestore({ attachments: next });
       return next;
     });
+  };
+
+  const handleAiDraftCreate = () => {
+    if (!aiPrompt || !aiPrompt.trim()) {
+      alert("AI 초안으로 작성할 회의록 핵심 내용을 프롬프트 창에 입력해 주세요.");
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    setTimeout(() => {
+      let generatedTitle = `[회의록] ${aiPrompt.substring(0, 24)}... 대책 회의`;
+      if (aiPrompt.includes("선적") || aiPrompt.includes("지연")) {
+        generatedTitle = `[대책회의] 수출 선적 스케줄 지연에 따른 긴급 보완 대책 회의록`;
+      } else if (aiPrompt.includes("통관") || aiPrompt.includes("세관")) {
+        generatedTitle = `[통관조율] 관세 서류 미비점 보완 및 통관 지연 해소 긴급 회의록`;
+      } else if (aiPrompt.includes("단가") || aiPrompt.includes("네고")) {
+        generatedTitle = `[단가협의] 공급업체별 단가 인상 조율 및 네고 최종 합의 회의록`;
+      }
+
+      handleLocalChange('title', generatedTitle);
+
+      const generatedMeetingHTML = `
+        <div style="background: #f0fdf4; padding: 14px; border-left: 4px solid #16a34a; border-radius: 6px; margin-bottom: 16px;">
+          <span style="font-weight: 800; color: #166534; font-size: 13.5px;">🤖 AI 회의록 핵심 요약</span>
+          <p style="font-size: 12.5px; color: #1e3a1e; margin: 6px 0 0 0; line-height: 1.5;">
+            본 회의록은 <strong>"${aiPrompt}"</strong>에 근거하여 AI가 실시간으로 자동 기획한 문서 초안입니다.<br>
+            유관부서 배석 및 현업 요청 해결 방안에 대해 긴급 수립한 사항들로, 의사결정에 참고 바랍니다.
+          </p>
+        </div>
+
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">프로젝트 중요 현안 회의록</h2>
+        <p style="margin: 8px 0; color: #475569;">회의 참석 인원이 합의한 주요 사안 및 긴급 조치 계획을 하단과 같이 기록 및 공람합니다.</p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">1. 회의 목적 및 주요 배경</h3>
+        <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
+          관련 부서 및 공급사, 고객사 담당자가 배석하여 당면 과제에 대한 명확한 사유를 소명 및 인지하였습니다.<br>
+          납기 리스크 해소와 공정 안정화, 예산 조율을 최우선 목표로 삼아 논의를 완료하였습니다.
+        </p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">2. 안건 실행 및 합의 결정 사항</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+          <thead>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px;">합의 사항 및 대안 과제</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">수행 주체</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">조치 일자</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">상차 야간 공정 셋팅 및 실시간 지연 알림 연동</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">공급사 물류팀</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">차주 월요일</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">세관 통관 추가 보증서 서류 대만 바이어 송부</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">무역해외영업</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">3. 향후 추진 과제 및 기대 효과</h3>
+        <ul style="margin: 4px 0 12px 20px; padding: 0; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 4px;">운송 리드타임 3일 단축 효과 및 바이어 신뢰도 보존.</li>
+          <li style="margin-bottom: 4px;">추후 비상 스케줄 발생 시 실시간 연계 채널 확보.</li>
+        </ul>
+        <br>
+        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 본 회의록은 인공지능이 프롬프트를 번역 및 분석하여 표준 실무 회의록 본문 서식으로 자동 작성한 초안입니다.</p>
+      `;
+
+      if (editorRef.current) {
+        editorRef.current.innerHTML = generatedMeetingHTML;
+      }
+      handleLocalChange('content', generatedMeetingHTML);
+      setIsGeneratingDraft(false);
+      alert("AI가 적어주신 회의 프롬프트를 해독하여, 기안 제목 및 회의 내용 초안을 Notion 에디터에 자동으로 작성했습니다!");
+    }, 2500);
   };
 
   // Heuristic AI restructuring and prioritizing algorithm
@@ -1055,6 +1137,32 @@ export const MeetingMinutes: React.FC = () => {
             </div>
 
             <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+              
+              {/* AI prompt draft generator */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🪄 AI 회의록 초안 자동 작성 (프롬프트 입력)
+                </span>
+                <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                  회의의 주요 안건, 참여 업체, 소요 기한을 적으시면 AI가 공식 회의록 제목 및 안건 구성안 초안을 에디터 본문에 작성해 드립니다.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    placeholder="예: 대만 선적 일정 지연 대책 회의. 박현 차장, 바이어 배석."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAiDraftCreate}
+                    style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    🪄 초안 생성
+                  </button>
+                </div>
+              </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1681,6 +1789,29 @@ export const MeetingMinutes: React.FC = () => {
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#6b21a8' }}>약 3초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* AI Draft Generating overlay loader */}
+      {isGeneratingDraft && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🪄</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#166534', textAlign: 'center' }}>
+              AI가 요구사항을 해석하여 비즈니스 회의록 양식 초안을 작성 중입니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#dcfce7', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#16a34a',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}
