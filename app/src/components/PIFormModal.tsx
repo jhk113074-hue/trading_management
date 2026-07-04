@@ -643,14 +643,82 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
 
 
-  const handleAiDraftCreate = () => {
+  const handleAiDraftCreate = async () => {
     if (!aiPrompt || !aiPrompt.trim()) {
       alert("AI 초안으로 작성할 견적 내용을 프롬프트 창에 입력해 주세요.");
       return;
     }
 
     setIsGeneratingDraft(true);
-    setTimeout(() => {
+    try {
+      // 1. Check if prompt refers to an existing PI number (e.g. PI-YS-2026-03R1)
+      const piMatch = aiPrompt.match(/(PI-[A-Za-z0-9-]+)/);
+      if (piMatch) {
+        const targetPiNum = piMatch[1].toUpperCase().trim();
+        
+        // Fetch all proforma invoices
+        const snap = await getDocs(collection(doc(db, "companies", COMPANY_ID), "proforma_invoices"));
+        const targetDoc = snap.docs.find(d => {
+          const num = d.data().piNumber;
+          return num && num.toUpperCase().trim() === targetPiNum;
+        });
+
+        if (targetDoc) {
+          const piData = targetDoc.data();
+          
+          // Load latest revision for this document
+          const revSnap = await getDocs(collection(doc(db, "companies", COMPANY_ID, "proforma_invoices", targetDoc.id), "revisions"));
+          if (!revSnap.empty) {
+            const revList = revSnap.docs.map(d => {
+              const data = d.data() as any;
+              return {
+                id: d.id,
+                ...data,
+                createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date()
+              };
+            }).sort((a: any, b: any) => (b.version || 0) - (a.version || 0));
+
+            const latestRevData = revList[0];
+            const latestRevDoc = revSnap.docs.find(d => d.id === latestRevData.id);
+            
+            if (latestRevDoc) {
+              // Load line items for this revision
+              const liSnap = await getDocs(collection(latestRevDoc.ref, "line_items"));
+              let loadedItems = liSnap.docs.map(d => d.data() as PIItem).sort((a,b) => a.lineNumber - b.lineNumber);
+              if (loadedItems.length === 0 && Array.isArray(latestRevData.items)) {
+                loadedItems = (latestRevData.items as any[]).sort((a,b) => a.lineNumber - b.lineNumber);
+              }
+
+              // Update customer info & trade terms
+              setFormData(prev => ({
+                ...prev,
+                customerId: piData.customerId || prev.customerId,
+                customerName: piData.customerName || prev.customerName,
+                customerAddress: latestRevData.customerAddress || piData.customerAddress || prev.customerAddress,
+                contactPerson: piData.contactPerson || prev.contactPerson,
+                email: piData.email || prev.email,
+                exchangeRate: latestRevData.exchangeRate !== undefined ? latestRevData.exchangeRate : prev.exchangeRate,
+                remarks: latestRevData.remarks !== undefined ? latestRevData.remarks : prev.remarks,
+                incoterms: latestRevData.incoterms !== undefined ? latestRevData.incoterms : prev.incoterms,
+                destinationPort: latestRevData.destinationPort !== undefined ? latestRevData.destinationPort : prev.destinationPort,
+                paymentTerms: latestRevData.paymentTerms !== undefined ? latestRevData.paymentTerms : prev.paymentTerms,
+                shippingMethod: latestRevData.shippingMethod !== undefined ? latestRevData.shippingMethod : prev.shippingMethod,
+                packagingSpec: latestRevData.packagingSpec !== undefined ? latestRevData.packagingSpec : prev.packagingSpec,
+                deliveryTerm: latestRevData.deliveryTerm !== undefined ? latestRevData.deliveryTerm : prev.deliveryTerm,
+                origin: latestRevData.origin !== undefined ? latestRevData.origin : prev.origin,
+                yourRef: latestRevData.yourRef !== undefined ? latestRevData.yourRef : prev.yourRef,
+              }));
+
+              setItems(loadedItems);
+              setIsGeneratingDraft(false);
+              alert(`AI가 요청하신 기존 견적서(${targetPiNum})의 거래 조건과 상품 라인 데이터를 성공적으로 찾아 복사해 왔습니다!`);
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Regular AI heuristic fallback
       // Find a customer matching the prompt
       let matchedCustomer = customers[0]; // fallback
       if (aiPrompt.toLowerCase().includes("national") || aiPrompt.toLowerCase().includes("내셔널")) {
@@ -775,7 +843,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       setItems(newItems);
       setIsGeneratingDraft(false);
       alert("AI가 입력하신 프롬프트 요구사항(수량, 바이어 키워드, 마진율 등)을 분석하여 견적서 정보를 자동으로 구축했습니다!");
-    }, 2500);
+    } catch (error) {
+      console.error(error);
+      setIsGeneratingDraft(false);
+      alert("AI 견적 처리 중 오류가 발생했습니다.");
+    }
   };
 
   const addItem = () => {
