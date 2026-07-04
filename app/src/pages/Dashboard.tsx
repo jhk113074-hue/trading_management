@@ -75,27 +75,34 @@ const WorldClocks: React.FC = () => {
   };
 
   const clocks = [
-    { flag: '🇰🇷', label: '한국', zone: 'Asia/Seoul' },
-    { flag: '🇨🇳', label: '중국', zone: 'Asia/Shanghai' },
-    { flag: '🇲🇾', label: '말레이시아', zone: 'Asia/Kuala_Lumpur' },
-    { flag: '🇮🇳', label: '인도', zone: 'Asia/Kolkata' },
-    { flag: '🇦🇪', label: 'UAE', zone: 'Asia/Dubai' },
-    { flag: '🇰🇼', label: '쿠웨이트', zone: 'Asia/Kuwait' },
-    { flag: '🇸🇦', label: '사우디', zone: 'Asia/Riyadh' },
-    { flag: '🇹🇷', label: '터키', zone: 'Europe/Istanbul' },
-    { flag: '🇦🇺', label: '호주', zone: 'Australia/Sydney' },
+    { code: 'kr', label: '한국', zone: 'Asia/Seoul' },
+    { code: 'cn', label: '중국', zone: 'Asia/Shanghai' },
+    { code: 'my', label: '말레이시아', zone: 'Asia/Kuala_Lumpur' },
+    { code: 'in', label: '인도', zone: 'Asia/Kolkata' },
+    { code: 'ae', label: 'UAE', zone: 'Asia/Dubai' },
+    { code: 'kw', label: '쿠웨이트', zone: 'Asia/Kuwait' },
+    { code: 'sa', label: '사우디', zone: 'Asia/Riyadh' },
+    { code: 'tr', label: '터키', zone: 'Europe/Istanbul' },
+    { code: 'au', label: '호주', zone: 'Asia/Sydney' },
   ];
 
   return (
-    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center' }}>
       <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
         🌐 세계 시각:
       </span>
       {clocks.map((c, idx) => (
         <React.Fragment key={c.zone}>
           {idx > 0 && <span style={{ color: '#e2e8f0', fontSize: '10px' }}>|</span>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
-            <span>{c.flag}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+            <img 
+              src={`https://flagcdn.com/w20/${c.code}.png`}
+              srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
+              width="15" 
+              height="11" 
+              alt={c.label} 
+              style={{ borderRadius: '1.5px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
+            />
             <span style={{ color: '#64748b', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
             <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
           </div>
