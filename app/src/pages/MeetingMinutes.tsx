@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
 
 interface Customer {
   id: string;
@@ -20,6 +21,13 @@ interface MeetingMinute {
   createdAt: string;
   createdBy: string;
   createdByName: string;
+  isDraft?: boolean;
+}
+
+interface PresenceUser {
+  id: string;
+  name: string;
+  lastActive: string;
 }
 
 export const MeetingMinutes: React.FC = () => {
@@ -37,6 +45,7 @@ export const MeetingMinutes: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingMinute | null>(null);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
 
   // Form states
   const [editId, setEditId] = useState<string | null>(null);
@@ -44,13 +53,16 @@ export const MeetingMinutes: React.FC = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [projectName, setProjectName] = useState('');
   const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [attendees, setAttendees] = useState('');
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Rich Editor states
+  const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const lastLocalInputTimeRef = useRef<number>(0);
   const editorRef = useRef<HTMLDivElement>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Load customers
@@ -66,14 +78,16 @@ export const MeetingMinutes: React.FC = () => {
         console.error("Failed to load customers:", err);
       }
     };
-
     fetchCustomers();
 
-    // Load meeting minutes list (realtime sync)
+    // Load meeting minutes list (sync real-time)
     const unsub = onSnapshot(collection(db, 'meetings'), (snap) => {
       const list: MeetingMinute[] = [];
       snap.forEach(d => {
-        list.push({ id: d.id, ...d.data() } as MeetingMinute);
+        const data = d.data() as MeetingMinute;
+        if (!data.isDraft) {
+          list.push({ ...data, id: d.id });
+        }
       });
       list.sort((a, b) => b.date.localeCompare(a.date));
       setMeetings(list);
@@ -86,15 +100,132 @@ export const MeetingMinutes: React.FC = () => {
     return () => unsub();
   }, []);
 
-  const handleOpenNewForm = () => {
-    setEditId(null);
+  // Listen to Firestore document updates for real-time collaborative editing
+  useEffect(() => {
+    if (!isFormOpen || !editId) return;
+
+    const docRef = doc(db, 'meetings', editId);
+    const unsubDoc = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists() && !isUpdatingRef.current) {
+        const data = docSnap.data();
+        
+        // Sync inputs if not typing
+        const now = Date.now();
+        if (now - lastLocalInputTimeRef.current > 1200) {
+          if (editorRef.current && data.content !== editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = data.content || '';
+            setContentHTML(data.content || '');
+          }
+          if (data.title !== undefined && data.title !== title) setTitle(data.title);
+          if (data.date !== undefined && data.date !== date) setDate(data.date);
+          if (data.projectName !== undefined && data.projectName !== projectName) setProjectName(data.projectName);
+          if (data.customerId !== undefined && data.customerId !== customerId) setCustomerId(data.customerId);
+          if (data.customerName !== undefined && data.customerName !== customerName) setCustomerName(data.customerName);
+          if (data.attendees !== undefined && data.attendees !== attendees) setAttendees(data.attendees);
+        }
+      }
+    });
+
+    // Write user presence inside sub-collection for the active document
+    const userPresenceRef = doc(db, 'meetings', editId, 'presence', userProfile?.id || 'anonymous');
+    setDoc(userPresenceRef, {
+      name: userProfile?.name || 'Anonymous',
+      lastActive: new Date().toISOString()
+    }, { merge: true });
+
+    // Periodically update user presence
+    const presenceInterval = setInterval(() => {
+      setDoc(userPresenceRef, {
+        lastActive: new Date().toISOString()
+      }, { merge: true });
+    }, 8000);
+
+    // Read active participants presence list
+    const presenceColRef = collection(db, 'meetings', editId, 'presence');
+    const unsubPresence = onSnapshot(presenceColRef, (presenceSnap) => {
+      const usersList: PresenceUser[] = [];
+      const threshold = Date.now() - 20000; // Active within last 20 seconds
+      presenceSnap.forEach(d => {
+        const data = d.data();
+        if (new Date(data.lastActive).getTime() > threshold) {
+          usersList.push({ id: d.id, name: data.name, lastActive: data.lastActive });
+        }
+      });
+      setActiveUsers(usersList);
+    });
+
+    return () => {
+      unsubDoc();
+      unsubPresence();
+      clearInterval(presenceInterval);
+      // Delete local user presence on leave
+      deleteDoc(userPresenceRef).catch(console.error);
+    };
+  }, [isFormOpen, editId, userProfile]);
+
+  // Throttled/Debounced updates to Firestore to share typing in real-time
+  const syncToFirestore = async (fields: Partial<MeetingMinute>) => {
+    if (!editId) return;
+    isUpdatingRef.current = true;
+    try {
+      await setDoc(doc(db, 'meetings', editId), {
+        ...fields,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.error("Firestore collaborative sync failed:", e);
+    } finally {
+      isUpdatingRef.current = false;
+    }
+  };
+
+  const handleLocalChange = (fieldName: string, value: any) => {
+    lastLocalInputTimeRef.current = Date.now();
+    if (fieldName === 'title') {
+      setTitle(value);
+      syncToFirestore({ title: value });
+    } else if (fieldName === 'date') {
+      setDate(value);
+      syncToFirestore({ date: value });
+    } else if (fieldName === 'projectName') {
+      setProjectName(value);
+      syncToFirestore({ projectName: value });
+    } else if (fieldName === 'attendees') {
+      setAttendees(value);
+      syncToFirestore({ attendees: value });
+    }
+  };
+
+  const handleOpenNewForm = async () => {
+    setIsSaving(false);
+    // Pre-create document draft for real-time collaboration session
+    const docRef = doc(collection(db, 'meetings'));
+    const draftData: MeetingMinute = {
+      id: docRef.id,
+      title: '',
+      date: new Date().toISOString().split('T')[0],
+      projectName: '',
+      customerId: '',
+      customerName: '',
+      attendees: '',
+      content: '',
+      createdAt: new Date().toISOString(),
+      createdBy: userProfile?.id || '',
+      createdByName: userProfile?.name || '시스템',
+      isDraft: true
+    };
+    await setDoc(docRef, draftData);
+
+    setEditId(docRef.id);
     setTitle('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(draftData.date);
     setProjectName('');
     setCustomerId('');
+    setCustomerName('');
     setAttendees('');
     setContentHTML('');
     setIsFormOpen(true);
+
     setTimeout(() => {
       if (editorRef.current) editorRef.current.innerHTML = '';
     }, 100);
@@ -106,6 +237,7 @@ export const MeetingMinutes: React.FC = () => {
     setDate(m.date);
     setProjectName(m.projectName || '');
     setCustomerId(m.customerId || '');
+    setCustomerName(m.customerName || '');
     setAttendees(m.attendees || '');
     setContentHTML(m.content);
     setIsFormOpen(true);
@@ -130,39 +262,44 @@ export const MeetingMinutes: React.FC = () => {
     }
 
     setIsSaving(true);
-    const selectedCust = customers.find(c => c.id === customerId);
-    const docData = {
-      title,
-      date,
-      projectName,
-      customerId,
-      customerName: selectedCust ? selectedCust.name : '',
-      attendees,
-      content: currentEditorContent,
-      updatedAt: new Date().toISOString()
-    };
-
     try {
       if (editId) {
-        // Update
-        await updateDoc(doc(db, 'meetings', editId), docData);
-        alert("회의록이 수정되었습니다.");
-      } else {
-        // Create
-        await addDoc(collection(db, 'meetings'), {
-          ...docData,
-          createdAt: new Date().toISOString(),
-          createdBy: userProfile?.id || '',
-          createdByName: userProfile?.name || '시스템'
+        await updateDoc(doc(db, 'meetings', editId), {
+          title,
+          date,
+          projectName,
+          customerId,
+          customerName,
+          attendees,
+          content: currentEditorContent,
+          isDraft: false, // Save draft to public list
+          updatedAt: new Date().toISOString()
         });
-        alert("회의록이 성공적으로 등록되었습니다.");
+        alert("회의록이 성공적으로 저장되었습니다.");
+        setIsFormOpen(false);
       }
-      setIsFormOpen(false);
     } catch (err) {
       console.error(err);
       alert("회의록 저장에 실패했습니다.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCancelForm = async () => {
+    setIsFormOpen(false);
+    // If it was a newly created draft (not yet saved as non-draft), clean it from Firestore
+    if (editId) {
+      try {
+        const snap = await getDocs(collection(db, 'meetings'));
+        snap.forEach(async (d) => {
+          if (d.id === editId && d.data().isDraft) {
+            await deleteDoc(doc(db, 'meetings', editId));
+          }
+        });
+      } catch (err) {
+        console.error("Failed to clean up draft:", err);
+      }
     }
   };
 
@@ -181,7 +318,7 @@ export const MeetingMinutes: React.FC = () => {
     }
   };
 
-  // Rich editor actions
+  // Rich editor key & input triggers
   const format = (command: string) => {
     document.execCommand(command, false);
   };
@@ -211,6 +348,7 @@ export const MeetingMinutes: React.FC = () => {
       </table>
     `;
     document.execCommand('insertHTML', false, tableHTML);
+    handleEditorInput();
   };
 
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -252,7 +390,10 @@ export const MeetingMinutes: React.FC = () => {
       setShowSlashMenu(false);
     }
     if (editorRef.current) {
-      setContentHTML(editorRef.current.innerHTML);
+      const html = editorRef.current.innerHTML;
+      setContentHTML(html);
+      lastLocalInputTimeRef.current = Date.now();
+      syncToFirestore({ content: html });
     }
   };
 
@@ -278,9 +419,7 @@ export const MeetingMinutes: React.FC = () => {
       document.execCommand('insertHTML', false, quoteHTML);
     }
     
-    if (editorRef.current) {
-      setContentHTML(editorRef.current.innerHTML);
-    }
+    handleEditorInput();
   };
 
   const filteredMeetings = meetings.filter(m => {
@@ -416,53 +555,70 @@ export const MeetingMinutes: React.FC = () => {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Wide-Scale Collaborative Add / Edit Modal */}
       {isFormOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '1000px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
-            <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '15px', fontWeight: 800 }}>{editId ? '📝 회의록 수정' : '✍️ 새 회의록 작성'}</span>
-              <button onClick={() => setIsFormOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            <div style={{ padding: '16px 24px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800 }}>
+                  {editId ? '📝 회의록 협업 작성 중' : '✍️ 새 회의록 협업 작성 중'}
+                </span>
+                {activeUsers.length > 0 && (
+                  <span style={{ fontSize: '11.5px', color: '#a5f3fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#22c55e', borderRadius: '50%' }}></span>
+                    실시간 접속 참석자: {activeUsers.map(u => u.name).join(', ')}
+                  </span>
+                )}
+              </div>
+              <button onClick={handleCancelForm} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
 
-            <form onSubmit={handleSave} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>회의 일자 ★</label>
                   <input
                     type="date"
                     required
                     value={date}
-                    onChange={e => setDate(e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                    onChange={e => handleLocalChange('date', e.target.value)}
+                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
+                
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 고객사</label>
-                  <select
-                    value={customerId}
-                    onChange={e => setCustomerId(e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
-                  >
-                    <option value="">고객사 선택 안 함</option>
-                    {customers.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="고객사를 찾아서 선택해주세요"
+                      value={customerName}
+                      style={{ flex: 1, padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomerSearchOpen(true)}
+                      style={{ padding: '10px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
+                    >
+                      🔍 찾기
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 프로젝트명</label>
                   <input
                     type="text"
                     placeholder="예: 삼익HDS 프로젝트"
                     value={projectName}
-                    onChange={e => setProjectName(e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                    onChange={e => handleLocalChange('projectName', e.target.value)}
+                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -471,8 +627,8 @@ export const MeetingMinutes: React.FC = () => {
                     type="text"
                     placeholder="예: 김과장, 이대리, 바이어"
                     value={attendees}
-                    onChange={e => setAttendees(e.target.value)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                    onChange={e => handleLocalChange('attendees', e.target.value)}
+                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
               </div>
@@ -484,8 +640,8 @@ export const MeetingMinutes: React.FC = () => {
                   required
                   placeholder="회의 핵심 안건 제목을 적어주세요"
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                  onChange={e => handleLocalChange('title', e.target.value)}
+                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
@@ -508,16 +664,16 @@ export const MeetingMinutes: React.FC = () => {
                   onKeyDown={handleEditorKeyDown}
                   onInput={handleEditorInput}
                   style={{
-                    minHeight: '200px',
+                    minHeight: '380px',
                     border: '1px solid #cbd5e1',
                     borderBottomLeftRadius: '6px',
                     borderBottomRightRadius: '6px',
-                    padding: '12px',
+                    padding: '16px',
                     outline: 'none',
                     backgroundColor: '#fff',
                     overflowY: 'auto',
-                    fontSize: '13px',
-                    lineHeight: 1.6
+                    fontSize: '13.5px',
+                    lineHeight: 1.7
                   }}
                 />
 
@@ -553,21 +709,21 @@ export const MeetingMinutes: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button
                   type="submit"
                   disabled={isSaving}
                   className="btn btn-primary"
-                  style={{ flex: 1, padding: '10px 0', fontWeight: 800 }}
+                  style={{ flex: 1, padding: '12px 0', fontWeight: 800 }}
                 >
-                  {isSaving ? '저장 중...' : '회의록 저장'}
+                  {isSaving ? '저장 중...' : '회의록 저장 및 종료'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
-                  style={{ flex: 1, padding: '10px 0', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  onClick={handleCancelForm}
+                  style={{ flex: 1, padding: '12px 0', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                 >
-                  취소
+                  작성 취소 (임시저장 취소)
                 </button>
               </div>
 
@@ -576,10 +732,24 @@ export const MeetingMinutes: React.FC = () => {
         </div>
       )}
 
+      {/* Customer Finder Modal */}
+      {isCustomerSearchOpen && (
+        <CustomerSearchModal
+          onClose={() => setIsCustomerSearchOpen(false)}
+          onSelect={(cust) => {
+            setCustomerId(cust.id);
+            setCustomerName(cust.name);
+            setIsCustomerSearchOpen(false);
+            syncToFirestore({ customerId: cust.id, customerName: cust.name });
+          }}
+          customers={customers as any}
+        />
+      )}
+
       {/* Detail Modal */}
       {isDetailOpen && selectedMeeting && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '900px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
             
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -594,20 +764,20 @@ export const MeetingMinutes: React.FC = () => {
               {/* Badges and metadata */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                 {selectedMeeting.customerName && (
-                  <div style={{ fontSize: '12px', color: '#334155' }}>
+                  <div style={{ fontSize: '12.5px', color: '#334155' }}>
                     <strong>🏢 연계 고객사:</strong> <span style={{ color: '#0369a1', fontWeight: 700 }}>{selectedMeeting.customerName}</span>
                   </div>
                 )}
                 {selectedMeeting.projectName && (
-                  <div style={{ fontSize: '12px', color: '#334155', marginLeft: selectedMeeting.customerName ? '16px' : 0 }}>
+                  <div style={{ fontSize: '12.5px', color: '#334155', marginLeft: selectedMeeting.customerName ? '16px' : 0 }}>
                     <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
                   </div>
                 )}
-                <div style={{ fontSize: '12px', color: '#334155', width: '100%', marginTop: '6px' }}>
+                <div style={{ fontSize: '12.5px', color: '#334155', width: '100%', marginTop: '6px' }}>
                   <strong>👥 참석자:</strong> {selectedMeeting.attendees || '미지정'}
                 </div>
                 <div style={{ fontSize: '12px', color: '#64748b', width: '100%', borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '6px' }}>
-                  작성자: {selectedMeeting.createdByName} | 작성일: {new Date(selectedMeeting.createdAt).toLocaleString()}
+                  작성자: {selectedMeeting.createdByName} | 등록일: {new Date(selectedMeeting.createdAt).toLocaleString()}
                 </div>
               </div>
 
@@ -615,14 +785,14 @@ export const MeetingMinutes: React.FC = () => {
               <div
                 dangerouslySetInnerHTML={{ __html: selectedMeeting.content }}
                 style={{
-                  padding: '16px',
+                  padding: '20px',
                   background: '#fff',
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
                   fontSize: '13.5px',
                   lineHeight: 1.7,
                   color: '#334155',
-                  minHeight: '200px'
+                  minHeight: '260px'
                 }}
               />
 
