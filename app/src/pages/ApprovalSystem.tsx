@@ -70,6 +70,10 @@ export const ApprovalSystem: React.FC = () => {
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
 
+  // AI Prompt Draft Creator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+
   const editorRef = useRef<HTMLDivElement>(null);
 
   const fetchApprovalData = async () => {
@@ -505,6 +509,90 @@ export const ApprovalSystem: React.FC = () => {
       alert("AI가 결재 기안서 본문 분석을 완료하여 상단에 요약 배너 및 자동 구조화 표를 삽입했습니다!");
     }, 2000);
   };
+  const handleAiDraftCreate = () => {
+    if (!aiPrompt || !aiPrompt.trim()) {
+      alert("AI 초안으로 작성할 기안 핵심 내용을 프롬프트 창에 입력해 주세요.");
+      return;
+    }
+
+    setIsGeneratingDraft(true);
+    setTimeout(() => {
+      let generatedTitle = `[품의] ${aiPrompt.substring(0, 24)}... 관련 품의의 건`;
+      if (aiPrompt.includes("노트북") || aiPrompt.includes("PC")) {
+        generatedTitle = `[업무환경개선] 신규 고성능 개발 및 업무용 노트북 교체 품의서`;
+      } else if (aiPrompt.includes("서버") || aiPrompt.includes("개발서버")) {
+        generatedTitle = `[IT지원실] 인프라 확충에 따른 신규 고성능 개발 서버 장비 도입 건`;
+      } else if (aiPrompt.includes("출장") || aiPrompt.includes("해외")) {
+        generatedTitle = `[해외영업부] 해외 바이어 발굴 및 현지 시장 조사를 위한 출장 요청 품의서`;
+      }
+
+      setTitle(generatedTitle);
+
+      const generatedDraftHTML = `
+        <div style="background: #f0fdf4; padding: 14px; border-left: 4px solid #16a34a; border-radius: 6px; margin-bottom: 16px;">
+          <span style="font-weight: 800; color: #166534; font-size: 13.5px;">🤖 AI 결재 기안 핵심 요약</span>
+          <p style="font-size: 12.5px; color: #1e3a1e; margin: 6px 0 0 0; line-height: 1.5;">
+            본 결재 건은 <strong>"${aiPrompt}"</strong> 요청에 따라 AI가 자동 작성한 기안서 초안입니다.<br>
+            사내 주요 업무 효율 극대화를 위한 장비 및 인프라 확보의 건으로, 조속한 재가를 건의드립니다.
+          </p>
+        </div>
+
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기안 품의서</h2>
+        <p style="margin: 8px 0; color: #475569;">사내 업무 경쟁력 확보 및 현업 요청 해결을 위해 아래와 같이 기안하오니 검토 후 최종 재가하여 주시기 바랍니다.</p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">1. 기안 목적 및 도입 배경</h3>
+        <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
+          기존 운영 중인 장비의 감가상각 및 노후화, 또는 비즈니스 스케일업에 따른 용량 부족 등으로 인해 업무 프로세스상 병목 현상이 발생하고 있습니다.<br>
+          이에 신규 필요 자원에 대한 도입을 시급히 완료하여 업무 연속성을 확보하고자 합니다.
+        </p>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">2. 청구 내역 및 세부 품목 단가</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
+          <thead>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
+              <th style="border: 1px solid #cbd5e1; padding: 8px;">도입 대상 세부 품목</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 60px;">수량</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">단가 (USD)</th>
+              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">합계 금액</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">요청 도입 고성능 장비 (A타입 사양)</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">3</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">5,000.00</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">15,000.00</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">기본 셋업 공임 및 라이선스 비용</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">0.00 (지원)</td>
+              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">무상 제공</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #16a34a; border-radius: 4px; font-weight: bold; color: #111827; font-size: 13px;">
+          ※ 예상 소요 예산 총액: USD 15,000.00 (일만 오천 달러 정)
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">3. 도입 기대 효과</h3>
+        <ul style="margin: 4px 0 12px 20px; padding: 0; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 4px;">장비 로딩 속도 단축으로 인한 기획/개발 생산성 약 35% 이상 향상 기대.</li>
+          <li style="margin-bottom: 4px;">최신 OS 보안 업데이트 지원을 통한 기업 정보 보안 유출 사고 선제 차단.</li>
+        </ul>
+        <br>
+        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 프롬프트에 기재해주신 핵심 요구사항을 분석하여 공식 비즈니스 서식으로 요약 작성되었습니다.</p>
+      `;
+
+      if (editorRef.current) {
+        editorRef.current.innerHTML = generatedDraftHTML;
+      }
+      setContentHTML(generatedDraftHTML);
+      setIsGeneratingDraft(false);
+      alert("AI가 작성하신 핵심 프롬프트를 해석하여, 정식 공문서 양식 및 예산 테이블, 그리고 요약 배너까지 결합한 전체 기안서 초안을 작성했습니다!");
+    }, 2500);
+  };
+
   // Keyboard Slash menu & Markdown parsing handler
   const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === '/') {
@@ -781,6 +869,32 @@ export const ApprovalSystem: React.FC = () => {
                     }}
                   >
                     지출 결의서 (템플릿 적용)
+                  </button>
+                </div>
+              </div>
+
+              {/* AI prompt draft generator */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  🪄 AI 기안 자동 작성 (프롬프트 입력)
+                </span>
+                <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                  작성하고 싶은 품목, 수량, 예산, 용도를 한 줄로 적으시면 AI가 정식 결재문서 초안을 통째로 구성해 드립니다.
+                </p>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <input
+                    type="text"
+                    placeholder="예: 개발서버 3대 신규 교체 구매 요청. 소요 예산 15000달러."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAiDraftCreate}
+                    style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    🪄 초안 생성
                   </button>
                 </div>
               </div>
@@ -1269,6 +1383,29 @@ export const ApprovalSystem: React.FC = () => {
               }}></div>
             </div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+          </div>
+        </div>
+      )}
+
+      {/* AI Draft Generating overlay loader */}
+      {isGeneratingDraft && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <span style={{ fontSize: '32px' }}>🪄</span>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: '#166534', textAlign: 'center' }}>
+              AI가 요구사항을 해석하여 비즈니스 공문 기안문 초안을 작성 중입니다...
+            </span>
+            <div style={{ width: '100%', height: '6px', background: '#dcfce7', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                top: 0, left: 0, bottom: 0,
+                width: '60%',
+                background: '#16a34a',
+                borderRadius: '3px',
+                animation: 'pulse 1.5s infinite ease-in-out'
+              }}></div>
+            </div>
+            <span style={{ fontSize: '11px', color: '#166534' }}>약 2.5초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}
