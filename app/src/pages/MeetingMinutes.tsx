@@ -3,6 +3,7 @@ import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, add
 import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { SupplierSearchModal } from '../components/SupplierSearchModal';
 
 interface Customer {
   id: string;
@@ -69,6 +70,7 @@ export const MeetingMinutes: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingMinute | null>(null);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [isMailShareOpen, setIsMailShareOpen] = useState(false);
 
   // Add Company overlay states
@@ -1176,6 +1178,19 @@ export const MeetingMinutes: React.FC = () => {
         />
       )}
 
+      {/* Supplier Finder Modal */}
+      {isSupplierSearchOpen && (
+        <SupplierSearchModal
+          onClose={() => setIsSupplierSearchOpen(false)}
+          onSelect={(sup) => {
+            setTempCompanyId(sup.id);
+            setTempCompanyName(sup.name);
+            setIsSupplierSearchOpen(false);
+          }}
+          suppliers={suppliers as any}
+        />
+      )}
+
       {/* Add Company Sub-Modal Window */}
       {isAddCompanyOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -1222,25 +1237,22 @@ export const MeetingMinutes: React.FC = () => {
                     </button>
                   </div>
                 ) : (
-                  <select
-                    value={tempCompanyId}
-                    onChange={e => {
-                      const selected = suppliers.find(s => s.id === e.target.value);
-                      if (selected) {
-                        setTempCompanyId(selected.id);
-                        setTempCompanyName(selected.name);
-                      } else {
-                        setTempCompanyId('');
-                        setTempCompanyName('');
-                      }
-                    }}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
-                  >
-                    <option value="">공급업체를 선택해 주세요</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="공급업체를 검색해 선택해주세요"
+                      value={tempCompanyName}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsSupplierSearchOpen(true)}
+                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
+                    >
+                      🔍 찾기
+                    </button>
+                  </div>
                 )}
               </div>
 
