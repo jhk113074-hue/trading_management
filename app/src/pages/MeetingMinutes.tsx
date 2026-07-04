@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
@@ -34,6 +34,7 @@ export const MeetingMinutes: React.FC = () => {
   const { userProfile } = useAuth();
   const [meetings, setMeetings] = useState<MeetingMinute[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -46,6 +47,7 @@ export const MeetingMinutes: React.FC = () => {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<MeetingMinute | null>(null);
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [isMailShareOpen, setIsMailShareOpen] = useState(false);
 
   // Form states
   const [editId, setEditId] = useState<string | null>(null);
@@ -58,6 +60,10 @@ export const MeetingMinutes: React.FC = () => {
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Mail Share recipient
+  const [mailReceiverId, setMailReceiverId] = useState('');
+
+  // Collaboration and Presence states
   const [activeUsers, setActiveUsers] = useState<PresenceUser[]>([]);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const lastLocalInputTimeRef = useRef<number>(0);
@@ -80,6 +86,21 @@ export const MeetingMinutes: React.FC = () => {
     };
     fetchCustomers();
 
+    // Load users
+    const fetchUsers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        const list: any[] = [];
+        snap.forEach(d => {
+          list.push({ id: d.id, ...d.data() });
+        });
+        setUsers(list);
+      } catch (err) {
+        console.error("Failed to load users:", err);
+      }
+    };
+    fetchUsers();
+
     // Load meeting minutes list (sync real-time)
     const unsub = onSnapshot(collection(db, 'meetings'), (snap) => {
       const list: MeetingMinute[] = [];
@@ -99,6 +120,21 @@ export const MeetingMinutes: React.FC = () => {
 
     return () => unsub();
   }, []);
+
+  // Parse URL query parameter for direct meeting details linking on mount
+  useEffect(() => {
+    if (meetings.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get('id');
+      if (targetId) {
+        const found = meetings.find(m => m.id === targetId);
+        if (found) {
+          setSelectedMeeting(found);
+          setIsDetailOpen(true);
+        }
+      }
+    }
+  }, [meetings]);
 
   // Listen to Firestore document updates for real-time collaborative editing
   useEffect(() => {
@@ -318,6 +354,55 @@ export const MeetingMinutes: React.FC = () => {
     }
   };
 
+  // Clipboard copy sharing link
+  const handleCopyLink = (m: MeetingMinute) => {
+    const url = `${window.location.origin}/meetings?id=${m.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      alert("회의록 다이렉트 공유 링크가 클립보드에 복사되었습니다!");
+    }).catch(err => {
+      console.error("Link copy failed:", err);
+    });
+  };
+
+  // Send meeting minute via corporate internal email
+  const handleSendMailShare = async () => {
+    if (!selectedMeeting || !mailReceiverId) return;
+    const receiver = users.find(u => u.id === mailReceiverId);
+    if (!receiver) return;
+
+    try {
+      await addDoc(collection(db, 'mails'), {
+        senderId: userProfile?.id || 'SYSTEM',
+        senderName: userProfile?.name || '시스템',
+        receiverId: mailReceiverId,
+        receiverName: receiver.name,
+        title: `[회의록 공유] ${selectedMeeting.title}`,
+        content: `
+          <div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin-bottom: 12px;">
+            <strong>📋 회의록 공유 알림</strong><br>
+            ${userProfile?.name}님이 회의록을 공유했습니다. 아래 회의록 카드를 누르면 상세 화면으로 이동합니다.
+          </div>
+          <h3>제목: ${selectedMeeting.title}</h3>
+          <p>일자: ${selectedMeeting.date} | 참석자: ${selectedMeeting.attendees || '미지정'}</p>
+          ${selectedMeeting.projectName ? `<p>프로젝트: ${selectedMeeting.projectName}</p>` : ''}
+          <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" />
+          <div style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+            ${selectedMeeting.content}
+          </div>
+          <br>
+          <a href="${window.location.origin}/meetings?id=${selectedMeeting.id}" style="display: inline-block; background: #4f46e5; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">회의록으로 바로 이동</a>
+        `,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+      alert(`${receiver.name}님에게 사내 메일로 회의록 공유본이 전송되었습니다.`);
+      setIsMailShareOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("메일 전송에 실패했습니다.");
+    }
+  };
+
   // Rich editor key & input triggers
   const format = (command: string) => {
     document.execCommand(command, false);
@@ -436,6 +521,8 @@ export const MeetingMinutes: React.FC = () => {
     return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>회의록 데이터를 불러오는 중...</div>;
   }
 
+  const addressableUsers = users.filter(u => u.id !== userProfile?.id);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', height: '100%', overflowY: 'auto' }}>
       
@@ -536,19 +623,27 @@ export const MeetingMinutes: React.FC = () => {
                 <span>👥 <strong>참석자:</strong> {m.attendees || '미지정'}</span>
               </div>
 
-              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <button
-                  onClick={e => { e.stopPropagation(); handleOpenEditForm(m); }}
-                  style={{ background: '#f1f5f9', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11.5px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  onClick={e => { e.stopPropagation(); handleCopyLink(m); }}
+                  style={{ background: '#e0f2fe', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#0369a1', cursor: 'pointer' }}
                 >
-                  수정
+                  🔗 링크복사
                 </button>
-                <button
-                  onClick={e => { e.stopPropagation(); handleDelete(m.id); }}
-                  style={{ background: '#fee2e2', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11.5px', fontWeight: 700, color: '#dc2626', cursor: 'pointer' }}
-                >
-                  삭제
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); handleOpenEditForm(m); }}
+                    style={{ background: '#f1f5f9', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); handleDelete(m.id); }}
+                    style={{ background: '#fee2e2', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#dc2626', cursor: 'pointer' }}
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -798,21 +893,79 @@ export const MeetingMinutes: React.FC = () => {
 
             </div>
 
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
-                onClick={() => { handleOpenEditForm(selectedMeeting); setIsDetailOpen(false); }}
-                style={{ padding: '8px 16px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                onClick={() => handleCopyLink(selectedMeeting)}
+                style={{ padding: '8px 16px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
               >
-                수정하기
+                🔗 공유 링크 복사
               </button>
-              <button
-                onClick={() => setIsDetailOpen(false)}
-                style={{ padding: '8px 16px', background: '#cbd5e1', color: '#1e293b', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-              >
-                닫기
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setIsMailShareOpen(true)}
+                  style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  ✉️ 사내 메일로 공유
+                </button>
+                <button
+                  onClick={() => { handleOpenEditForm(selectedMeeting); setIsDetailOpen(false); }}
+                  style={{ padding: '8px 16px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  수정하기
+                </button>
+                <button
+                  onClick={() => setIsDetailOpen(false)}
+                  style={{ padding: '8px 16px', background: '#cbd5e1', color: '#1e293b', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  닫기
+                </button>
+              </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Send Mail Share Recipients Modal Overlay */}
+      {isMailShareOpen && selectedMeeting && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', background: '#10b981', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>✉️ 사내 메일로 공유 발송</span>
+              <button onClick={() => setIsMailShareOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>수신 대상 직원 선택</label>
+                <select
+                  value={mailReceiverId}
+                  onChange={e => setMailReceiverId(e.target.value)}
+                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', backgroundColor: '#fff', outline: 'none' }}
+                >
+                  <option value="">직원을 선택해 주세요</option>
+                  {addressableUsers.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.department || '부서'} / {u.position || '직급'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  onClick={handleSendMailShare}
+                  disabled={!mailReceiverId}
+                  style={{ flex: 1, padding: '10px 0', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '13px' }}
+                >
+                  보내기
+                </button>
+                <button
+                  onClick={() => setIsMailShareOpen(false)}
+                  style={{ flex: 1, padding: '10px 0', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
+                >
+                  취소
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
