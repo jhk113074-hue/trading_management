@@ -53,12 +53,66 @@ const getHoliday = (dateStr: string) => {
   return holidays[dateStr] || null;
 };
 
+const DEFAULT_CLOCKS = [
+  { code: 'kr', label: '한국', zone: 'Asia/Seoul' },
+  { code: 'cn', label: '중국', zone: 'Asia/Shanghai' },
+  { code: 'my', label: '말레이시아', zone: 'Asia/Kuala_Lumpur' },
+  { code: 'in', label: '인도', zone: 'Asia/Kolkata' },
+  { code: 'ae', label: 'UAE', zone: 'Asia/Dubai' },
+  { code: 'kw', label: '쿠웨이트', zone: 'Asia/Kuwait' },
+  { code: 'sa', label: '사우디', zone: 'Asia/Riyadh' },
+  { code: 'tr', label: '터키', zone: 'Europe/Istanbul' },
+  { code: 'au', label: '호주', zone: 'Asia/Sydney' },
+];
+
+const COMMON_TIMEZONES = [
+  { value: 'Asia/Seoul', label: '한국/서울 (UTC+9)' },
+  { value: 'Asia/Tokyo', label: '일본/도쿄 (UTC+9)' },
+  { value: 'Asia/Shanghai', label: '중국/베이징 (UTC+8)' },
+  { value: 'Asia/Kuala_Lumpur', label: '말레이시아/쿠알라룸푸르 (UTC+8)' },
+  { value: 'Asia/Singapore', label: '싱가포르 (UTC+8)' },
+  { value: 'Asia/Taipei', label: '대만/타이베이 (UTC+8)' },
+  { value: 'Asia/Kolkata', label: '인도/뉴델리 (UTC+5:30)' },
+  { value: 'Asia/Dubai', label: 'UAE/두바이 (UTC+4)' },
+  { value: 'Asia/Kuwait', label: '쿠웨이트 (UTC+3)' },
+  { value: 'Asia/Riyadh', label: '사우디/리야드 (UTC+3)' },
+  { value: 'Europe/Istanbul', label: '터키/이스탄불 (UTC+3)' },
+  { value: 'Asia/Ho_Chi_Minh', label: '베트남/호치민 (UTC+7)' },
+  { value: 'Asia/Bangkok', label: '태국/방콕 (UTC+7)' },
+  { value: 'Asia/Jakarta', label: '인도네시아/자카르타 (UTC+7)' },
+  { value: 'Asia/Sydney', label: '호주/시드니 (UTC+10)' },
+  { value: 'Europe/London', label: '영국/런던 (UTC+0)' },
+  { value: 'America/New_York', label: '미국/뉴욕 (UTC-5)' },
+  { value: 'America/Los_Angeles', label: '미국/LA (UTC-8)' },
+];
+
 const WorldClocks: React.FC = () => {
+  const COMPANY_ID = "YSACC";
   const [time, setTime] = useState(new Date());
+  const [clocks, setClocks] = useState<any[]>(DEFAULT_CLOCKS);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // New country form states
+  const [newLabel, setNewLabel] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [newZone, setNewZone] = useState('Asia/Seoul');
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 5000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const docRef = doc(db, "companies", COMPANY_ID, "settings", "world_clocks");
+    const unsub = onSnapshot(docRef, (snap) => {
+      if (snap.exists() && Array.isArray(snap.data().list)) {
+        setClocks(snap.data().list);
+      } else {
+        // Init Firestore with default list
+        setDoc(docRef, { list: DEFAULT_CLOCKS });
+      }
+    });
+    return () => unsub();
   }, []);
 
   const formatTime = (timeZone: string) => {
@@ -74,40 +128,136 @@ const WorldClocks: React.FC = () => {
     }
   };
 
-  const clocks = [
-    { code: 'kr', label: '한국', zone: 'Asia/Seoul' },
-    { code: 'cn', label: '중국', zone: 'Asia/Shanghai' },
-    { code: 'my', label: '말레이시아', zone: 'Asia/Kuala_Lumpur' },
-    { code: 'in', label: '인도', zone: 'Asia/Kolkata' },
-    { code: 'ae', label: 'UAE', zone: 'Asia/Dubai' },
-    { code: 'kw', label: '쿠웨이트', zone: 'Asia/Kuwait' },
-    { code: 'sa', label: '사우디', zone: 'Asia/Riyadh' },
-    { code: 'tr', label: '터키', zone: 'Europe/Istanbul' },
-    { code: 'au', label: '호주', zone: 'Asia/Sydney' },
-  ];
+  const handleAddCountry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLabel.trim() || !newCode.trim()) {
+      alert("국가명과 국가코드를 모두 입력해 주세요.");
+      return;
+    }
+
+    const cleanCode = newCode.trim().toLowerCase();
+    const cleanLabel = newLabel.trim();
+
+    const updated = [...clocks, { code: cleanCode, label: cleanLabel, zone: newZone }];
+    
+    try {
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "world_clocks");
+      await setDoc(docRef, { list: updated });
+      setNewLabel('');
+      setNewCode('');
+      alert(`${cleanLabel} 국가 시각이 성공적으로 추가되었습니다!`);
+    } catch (err) {
+      console.error(err);
+      alert("국가 추가 실패");
+    }
+  };
+
+  const handleRemoveCountry = async (index: number) => {
+    const countryName = clocks[index]?.label;
+    if (!window.confirm(`${countryName} 시각을 세계 시각 표시 목록에서 삭제하시겠습니까?`)) return;
+
+    const updated = clocks.filter((_, i) => i !== index);
+    try {
+      const docRef = doc(db, "companies", COMPANY_ID, "settings", "world_clocks");
+      await setDoc(docRef, { list: updated });
+    } catch (err) {
+      console.error(err);
+      alert("국가 삭제 실패");
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center' }}>
-      <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-        🌐 세계 시각:
-      </span>
-      {clocks.map((c, idx) => (
-        <React.Fragment key={c.zone}>
-          {idx > 0 && <span style={{ color: '#e2e8f0', fontSize: '10px' }}>|</span>}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
-            <img 
-              src={`https://flagcdn.com/w20/${c.code}.png`}
-              srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
-              width="15" 
-              height="11" 
-              alt={c.label} 
-              style={{ borderRadius: '1.5px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
-            />
-            <span style={{ color: '#64748b', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
-            <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center', position: 'relative' }}>
+        <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          🌐 세계 시각:
+        </span>
+        {clocks.map((c, idx) => (
+          <React.Fragment key={c.zone + '_' + idx}>
+            {idx > 0 && <span style={{ color: '#e2e8f0', fontSize: '10px' }}>|</span>}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+              <img 
+                src={`https://flagcdn.com/w20/${c.code}.png`}
+                srcSet={`https://flagcdn.com/w40/${c.code}.png 2x`}
+                width="15" 
+                height="11" 
+                alt={c.label} 
+                style={{ borderRadius: '1.5px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
+              />
+              <span style={{ color: '#64748b', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
+              <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
+            </div>
+          </React.Fragment>
+        ))}
+        <button
+          type="button"
+          onClick={() => setShowSettings(!showSettings)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px', marginLeft: '8px', color: '#64748b' }}
+          title="세계 시각 국가 추가/관리"
+        >
+          ⚙️
+        </button>
+      </div>
+
+      {/* Inline Settings Panel */}
+      {showSettings && (
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>⚙️ 세계 시각 표시 국가 관리</span>
+            <button type="button" onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', color: '#94a3b8' }}>✕ 닫기</button>
           </div>
-        </React.Fragment>
-      ))}
+
+          {/* Current Countries List with delete actions */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+            {clocks.map((c, idx) => (
+              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', background: '#f1f5f9', color: '#334155', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                <img src={`https://flagcdn.com/w20/${c.code}.png`} width="12" height="9" alt={c.label} style={{ objectFit: 'cover' }} />
+                <span>{c.label}</span>
+                <button type="button" onClick={() => handleRemoveCountry(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontSize: '10px', color: '#ef4444', fontWeight: 'bold' }}>✕</button>
+              </span>
+            ))}
+          </div>
+
+          {/* Add Form */}
+          <form onSubmit={handleAddCountry} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr auto', gap: '8px', alignItems: 'end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>국가 한글명</label>
+              <input 
+                type="text" 
+                placeholder="예: 일본" 
+                value={newLabel} 
+                onChange={e => setNewLabel(e.target.value)} 
+                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>국가코드 (ISO 2자리)</label>
+              <input 
+                type="text" 
+                placeholder="예: jp" 
+                value={newCode} 
+                onChange={e => setNewCode(e.target.value)} 
+                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>표준 시간대</label>
+              <select 
+                value={newZone} 
+                onChange={e => setNewZone(e.target.value)} 
+                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', backgroundColor: '#fff' }}
+              >
+                {COMMON_TIMEZONES.map(z => (
+                  <option key={z.value} value={z.value}>{z.label}</option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '31px' }}>
+              ＋ 국가 추가
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
