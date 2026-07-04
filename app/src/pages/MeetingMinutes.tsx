@@ -9,6 +9,18 @@ interface Customer {
   name: string;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
+interface MeetingCompany {
+  companyId: string;
+  companyName: string;
+  type: 'CUSTOMER' | 'SUPPLIER';
+  attendees: string; // Attendees from this company
+}
+
 interface MeetingMinute {
   id: string;
   title: string;
@@ -22,6 +34,7 @@ interface MeetingMinute {
   createdBy: string;
   createdByName: string;
   isDraft?: boolean;
+  companies?: MeetingCompany[]; // Multi-company list
 }
 
 interface PresenceUser {
@@ -34,6 +47,7 @@ export const MeetingMinutes: React.FC = () => {
   const { userProfile } = useAuth();
   const [meetings, setMeetings] = useState<MeetingMinute[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,14 +63,19 @@ export const MeetingMinutes: React.FC = () => {
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
   const [isMailShareOpen, setIsMailShareOpen] = useState(false);
 
+  // Add Company overlay states
+  const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
+  const [tempCompanyType, setTempCompanyType] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER');
+  const [tempCompanyId, setTempCompanyId] = useState('');
+  const [tempCompanyName, setTempCompanyName] = useState('');
+  const [tempAttendees, setTempAttendees] = useState('');
+
   // Form states
   const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [projectName, setProjectName] = useState('');
-  const [customerId, setCustomerId] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [attendees, setAttendees] = useState('');
+  const [companies, setCompanies] = useState<MeetingCompany[]>([]);
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -85,6 +104,22 @@ export const MeetingMinutes: React.FC = () => {
       }
     };
     fetchCustomers();
+
+    // Load suppliers
+    const fetchSuppliers = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'suppliers'));
+        const list: Supplier[] = [];
+        snap.forEach(d => {
+          const data = d.data();
+          list.push({ id: d.id, name: data.name || data.nameKo || data.nameEn || '' });
+        });
+        setSuppliers(list);
+      } catch (err) {
+        console.error("Failed to load suppliers:", err);
+      }
+    };
+    fetchSuppliers();
 
     // Load users
     const fetchUsers = async () => {
@@ -155,9 +190,7 @@ export const MeetingMinutes: React.FC = () => {
           if (data.title !== undefined && data.title !== title) setTitle(data.title);
           if (data.date !== undefined && data.date !== date) setDate(data.date);
           if (data.projectName !== undefined && data.projectName !== projectName) setProjectName(data.projectName);
-          if (data.customerId !== undefined && data.customerId !== customerId) setCustomerId(data.customerId);
-          if (data.customerName !== undefined && data.customerName !== customerName) setCustomerName(data.customerName);
-          if (data.attendees !== undefined && data.attendees !== attendees) setAttendees(data.attendees);
+          if (data.companies !== undefined) setCompanies(data.companies || []);
         }
       }
     });
@@ -226,10 +259,41 @@ export const MeetingMinutes: React.FC = () => {
     } else if (fieldName === 'projectName') {
       setProjectName(value);
       syncToFirestore({ projectName: value });
-    } else if (fieldName === 'attendees') {
-      setAttendees(value);
-      syncToFirestore({ attendees: value });
     }
+  };
+
+  // Add Company to companies state
+  const handleAddCompanySubmit = () => {
+    if (!tempCompanyName) {
+      alert("연계 업체를 선택하거나 입력해 주세요.");
+      return;
+    }
+    const newComp: MeetingCompany = {
+      companyId: tempCompanyId || `temp_${Date.now()}`,
+      companyName: tempCompanyName,
+      type: tempCompanyType,
+      attendees: tempAttendees || '미지정'
+    };
+    const updated = [...companies, newComp];
+    setCompanies(updated);
+    setIsAddCompanyOpen(false);
+
+    // Sync to firestore
+    lastLocalInputTimeRef.current = Date.now();
+    syncToFirestore({ companies: updated });
+
+    // Reset values
+    setTempCompanyId('');
+    setTempCompanyName('');
+    setTempAttendees('');
+  };
+
+  // Delete Company from list
+  const handleDeleteCompany = (index: number) => {
+    const updated = companies.filter((_, idx) => idx !== index);
+    setCompanies(updated);
+    lastLocalInputTimeRef.current = Date.now();
+    syncToFirestore({ companies: updated });
   };
 
   const handleOpenNewForm = async () => {
@@ -248,7 +312,8 @@ export const MeetingMinutes: React.FC = () => {
       createdAt: new Date().toISOString(),
       createdBy: userProfile?.id || '',
       createdByName: userProfile?.name || '시스템',
-      isDraft: true
+      isDraft: true,
+      companies: []
     };
     await setDoc(docRef, draftData);
 
@@ -256,9 +321,7 @@ export const MeetingMinutes: React.FC = () => {
     setTitle('');
     setDate(draftData.date);
     setProjectName('');
-    setCustomerId('');
-    setCustomerName('');
-    setAttendees('');
+    setCompanies([]);
     setContentHTML('');
     setIsFormOpen(true);
 
@@ -272,9 +335,7 @@ export const MeetingMinutes: React.FC = () => {
     setTitle(m.title);
     setDate(m.date);
     setProjectName(m.projectName || '');
-    setCustomerId(m.customerId || '');
-    setCustomerName(m.customerName || '');
-    setAttendees(m.attendees || '');
+    setCompanies(m.companies || []);
     setContentHTML(m.content);
     setIsFormOpen(true);
     setTimeout(() => {
@@ -298,15 +359,20 @@ export const MeetingMinutes: React.FC = () => {
     }
 
     setIsSaving(true);
+    // Aggregate for backward compatibility and card rendering
+    const aggregatedCustName = companies.map(c => c.companyName).join(', ');
+    const aggregatedAttendees = companies.map(c => `${c.companyName}(${c.attendees})`).join(', ');
+
     try {
       if (editId) {
         await updateDoc(doc(db, 'meetings', editId), {
           title,
           date,
           projectName,
-          customerId,
-          customerName,
-          attendees,
+          customerId: companies.length > 0 ? companies[0].companyId : '',
+          customerName: aggregatedCustName,
+          attendees: aggregatedAttendees,
+          companies,
           content: currentEditorContent,
           isDraft: false, // Save draft to public list
           updatedAt: new Date().toISOString()
@@ -324,7 +390,6 @@ export const MeetingMinutes: React.FC = () => {
 
   const handleCancelForm = async () => {
     setIsFormOpen(false);
-    // If it was a newly created draft (not yet saved as non-draft), clean it from Firestore
     if (editId) {
       try {
         const snap = await getDocs(collection(db, 'meetings'));
@@ -511,7 +576,9 @@ export const MeetingMinutes: React.FC = () => {
     const matchesQuery = m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (m.attendees || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                          (m.projectName || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCustomer = filterCustomer ? m.customerId === filterCustomer : true;
+    
+    // Check if any linked company matches filter
+    const matchesCustomer = filterCustomer ? (m.companies || []).some(c => c.companyId === filterCustomer) : true;
     const matchesProject = filterProject ? (m.projectName || '').toLowerCase().includes(filterProject.toLowerCase()) : true;
 
     return matchesQuery && matchesCustomer && matchesProject;
@@ -606,12 +673,23 @@ export const MeetingMinutes: React.FC = () => {
 
               <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b', lineHeight: 1.4 }}>{m.title}</h3>
 
+              {/* Company Badges */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {m.customerName && (
-                  <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                    🏢 {m.customerName}
+                {(m.companies || []).map((c, cIdx) => (
+                  <span
+                    key={cIdx}
+                    style={{
+                      fontSize: '11px',
+                      background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7',
+                      color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontWeight: 700
+                    }}
+                  >
+                    {c.type === 'CUSTOMER' ? '🏢' : '⚙️'} {c.companyName}
                   </span>
-                )}
+                ))}
                 {m.projectName && (
                   <span style={{ fontSize: '11px', background: '#ecfdf5', color: '#047857', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
                     🚀 {m.projectName}
@@ -619,8 +697,13 @@ export const MeetingMinutes: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ fontSize: '12.5px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span>👥 <strong>참석자:</strong> {m.attendees || '미지정'}</span>
+              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '50px', overflow: 'hidden' }}>
+                <strong>참석자 목록:</strong>
+                {(m.companies || []).map((c, cIdx) => (
+                  <span key={cIdx} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    • {c.companyName}: {c.attendees}
+                  </span>
+                ))}
               </div>
 
               <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
@@ -683,29 +766,6 @@ export const MeetingMinutes: React.FC = () => {
                     style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 고객사</label>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      readOnly
-                      placeholder="고객사를 찾아서 선택해주세요"
-                      value={customerName}
-                      style={{ flex: 1, padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomerSearchOpen(true)}
-                      style={{ padding: '10px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
-                    >
-                      🔍 찾기
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 프로젝트명</label>
                   <input
@@ -716,16 +776,51 @@ export const MeetingMinutes: React.FC = () => {
                     style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>회의 참석자</label>
-                  <input
-                    type="text"
-                    placeholder="예: 김과장, 이대리, 바이어"
-                    value={attendees}
-                    onChange={e => handleLocalChange('attendees', e.target.value)}
-                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                  />
+              </div>
+
+              {/* Companies and Attendees list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>👥 연계 참여업체 및 참석자 목록 ({companies.length})</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTempCompanyType('CUSTOMER');
+                      setTempCompanyId('');
+                      setTempCompanyName('');
+                      setTempAttendees('');
+                      setIsAddCompanyOpen(true);
+                    }}
+                    style={{ padding: '4px 10px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    + 업체 추가하기
+                  </button>
                 </div>
+
+                {companies.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '12px 0' }}>등록된 참여업체가 없습니다. 상단 버튼을 클릭하여 추가해 주세요.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {companies.map((c, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
+                            {c.type === 'CUSTOMER' ? '고객사' : '공급사'}
+                          </span>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>{c.companyName}</span>
+                          <span style={{ fontSize: '12.5px', color: '#64748b' }}>(참석자: {c.attendees})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCompany(idx)}
+                          style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -832,13 +927,113 @@ export const MeetingMinutes: React.FC = () => {
         <CustomerSearchModal
           onClose={() => setIsCustomerSearchOpen(false)}
           onSelect={(cust) => {
-            setCustomerId(cust.id);
-            setCustomerName(cust.name);
+            setTempCompanyId(cust.id);
+            setTempCompanyName(cust.name);
             setIsCustomerSearchOpen(false);
-            syncToFirestore({ customerId: cust.id, customerName: cust.name });
           }}
           customers={customers as any}
         />
+      )}
+
+      {/* Add Company Sub-Modal Window */}
+      {isAddCompanyOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '440px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>👥 참여업체 추가</span>
+              <button onClick={() => setIsAddCompanyOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>업체 유형</label>
+                <select
+                  value={tempCompanyType}
+                  onChange={e => {
+                    setTempCompanyType(e.target.value as any);
+                    setTempCompanyId('');
+                    setTempCompanyName('');
+                  }}
+                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
+                >
+                  <option value="CUSTOMER">고객사 (Customer)</option>
+                  <option value="SUPPLIER">공급업체 (Supplier)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>업체 찾기 ★</label>
+                {tempCompanyType === 'CUSTOMER' ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="고객사를 검색해 선택해주세요"
+                      value={tempCompanyName}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomerSearchOpen(true)}
+                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
+                    >
+                      🔍 찾기
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={tempCompanyId}
+                    onChange={e => {
+                      const selected = suppliers.find(s => s.id === e.target.value);
+                      if (selected) {
+                        setTempCompanyId(selected.id);
+                        setTempCompanyName(selected.name);
+                      } else {
+                        setTempCompanyId('');
+                        setTempCompanyName('');
+                      }
+                    }}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
+                  >
+                    <option value="">공급업체를 선택해 주세요</option>
+                    {suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자 명단</label>
+                <input
+                  type="text"
+                  placeholder="예: 김대리, 이과장"
+                  value={tempAttendees}
+                  onChange={e => setTempAttendees(e.target.value)}
+                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleAddCompanySubmit}
+                  style={{ flex: 1, padding: '10px 0', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '13px' }}
+                >
+                  추가
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCompanyOpen(false)}
+                  style={{ flex: 1, padding: '10px 0', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
+                >
+                  취소
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Detail Modal */}
@@ -856,22 +1051,27 @@ export const MeetingMinutes: React.FC = () => {
 
             <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
               
-              {/* Badges and metadata */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                {selectedMeeting.customerName && (
-                  <div style={{ fontSize: '12.5px', color: '#334155' }}>
-                    <strong>🏢 연계 고객사:</strong> <span style={{ color: '#0369a1', fontWeight: 700 }}>{selectedMeeting.customerName}</span>
-                  </div>
-                )}
+              {/* Metadata area */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                 {selectedMeeting.projectName && (
-                  <div style={{ fontSize: '12.5px', color: '#334155', marginLeft: selectedMeeting.customerName ? '16px' : 0 }}>
+                  <div style={{ fontSize: '12.5px', color: '#334155' }}>
                     <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
                   </div>
                 )}
-                <div style={{ fontSize: '12.5px', color: '#334155', width: '100%', marginTop: '6px' }}>
-                  <strong>👥 참석자:</strong> {selectedMeeting.attendees || '미지정'}
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', marginTop: '4px' }}>
+                  <strong>👥 연계 참여업체 및 참석자:</strong>
+                  {(selectedMeeting.companies || []).map((c, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', color: '#334155' }}>
+                      <span style={{ fontWeight: 800, color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
+                        [{c.type === 'CUSTOMER' ? '고객사' : '공급사'}] {c.companyName}
+                      </span>
+                      <span>(참석자: {c.attendees})</span>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b', width: '100%', borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '6px' }}>
+
+                <div style={{ fontSize: '12px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '4px' }}>
                   작성자: {selectedMeeting.createdByName} | 등록일: {new Date(selectedMeeting.createdAt).toLocaleString()}
                 </div>
               </div>
