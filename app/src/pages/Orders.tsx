@@ -630,7 +630,7 @@ export const Orders: React.FC = () => {
                         padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
                         fontWeight: 700, 
                         color: '#475569', 
-                        fontSize: '12px', 
+                        fontSize: '14.5px', 
                         letterSpacing: '0.05em', 
                         textAlign: 'center', 
                         whiteSpace: 'nowrap'
@@ -638,8 +638,8 @@ export const Orders: React.FC = () => {
                     >
                       {h === '단계' ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700 }}>단계</span>
-                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
+                          <span style={{ fontSize: '14.5px', fontWeight: 700 }}>단계</span>
+                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
                             {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
                               <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
                             ))}
