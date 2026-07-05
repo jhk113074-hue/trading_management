@@ -1471,33 +1471,20 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. 이번달 매출금액 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
-                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }} />
-                  이번달 매출금액 (ETD 기준)
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#f59e0b', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#f59e0b', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
-                </div>
-              </div>
-
-              {/* 4. 올해 누적 매출금액 */}
+              {/* 3. 당월 매출 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
-                  올해 누적 매출금액
+                  당월 매출 (ETD 기준)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsYearAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsYearCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
                   <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsaccYearAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccYearCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
                 </div>
               </div>
 
-              {/* 5. 전체 누적 매출금액 */}
+              {/* 4. 전체 누적 매출금액 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626' }} />
