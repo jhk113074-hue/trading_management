@@ -1187,7 +1187,7 @@ export const Dashboard: React.FC = () => {
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '17.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   📅 YSACC 스케줄러
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
@@ -1197,7 +1197,7 @@ export const Dashboard: React.FC = () => {
                   >
                     ◀
                   </button>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', minWidth: '65px', textAlign: 'center' }}>
                     {currentYear}년 {currentMonth + 1}월
                   </span>
                   <button
