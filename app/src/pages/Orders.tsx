@@ -204,22 +204,22 @@ export const Orders: React.FC = () => {
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
     if (dateFilterType !== 'All') {
       result = result.filter(o => {
-        if (!o.poDate) return false;
-        const d = new Date(o.poDate);
+        if (!o.etd) return false;
+        const d = new Date(o.etd);
         if (isNaN(d.getTime())) return false;
         const y = d.getFullYear(), m = d.getMonth() + 1;
         if (dateFilterType === 'Monthly') return y === selectedYear && m === selectedMonth;
         if (dateFilterType === 'Quarterly') return y === selectedYear && Math.floor((m-1)/3)+1 === selectedQuarter;
         if (dateFilterType === 'HalfYearly') return y === selectedYear && (m <= 6 ? 1 : 2) === selectedHalf;
         if (dateFilterType === 'Yearly') return y === selectedYear;
-        if (dateFilterType === 'Range') return o.poDate >= rangeStart && o.poDate <= rangeEnd;
+        if (dateFilterType === 'Range') return o.etd >= rangeStart && o.etd <= rangeEnd;
         return true;
       });
     }
-    const lw = { RED: 3, ORANGE: 2, WHITE: 1 };
     result.sort((a, b) => {
-      const wa = lw[a.nextAction.level] || 0, wb = lw[b.nextAction.level] || 0;
-      if (wb !== wa) return wb - wa;
+      const etdA = a.etd || "";
+      const etdB = b.etd || "";
+      if (etdA !== etdB) return etdB.localeCompare(etdA); // 최신 ETD 우선
       return b.id.localeCompare(a.id);
     });
     return result;
