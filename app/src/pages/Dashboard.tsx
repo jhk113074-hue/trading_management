@@ -1440,60 +1440,60 @@ export const Dashboard: React.FC = () => {
 
             {/* ── 오른쪽 (50%): 무역실시간매출및PI현황 ── */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '8px', order: 1 }}>
-              <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 2px 0' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 2px 0' }}>
                 <span>📊 무역 실시간 매출 및 PI 현황</span>
-                <span style={{ fontSize: '0.72rem', background: 'var(--primary-color)', color: '#fff', padding: '1px 6px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
+                <span style={{ fontSize: '0.85rem', background: 'var(--primary-color)', color: '#fff', padding: '1px 6px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
               </h2>
 
               {/* 1. 이번달 PI 건수 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
                   이번달 PI 건수
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '17px' }}>{tradingKPIs.piYsCount}</span> 건</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
+                  <span>영성ACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsCount}</span> 건</span>
                   <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '17px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
+                  <span>(주)YSACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
                 </div>
               </div>
 
               {/* 2. 수주 금액 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
                   수주 금액
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
+                  <span>영성ACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
                   <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
                 </div>
               </div>
 
               {/* 3. 당월 매출 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
                   당월 매출 (ETD 기준)
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
+                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
                   <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
                 </div>
               </div>
 
               {/* 4. 전체 누적 매출금액 */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
-                <div style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626' }} />
                   전체 누적 매출금액
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '14px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
+                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
                   <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '16px' }}>${tradingKPIs.salesYsaccTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
                 </div>
               </div>
             </div>
