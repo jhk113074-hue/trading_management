@@ -230,6 +230,13 @@ export const Orders: React.FC = () => {
       const pi = quotations.find(q => q.id === o.quotationId);
       return sum + (pi?.totalUsd || o.totalAmount || 0);
     }, 0);
+    
+    const salesOrders = processedOrders.filter(o => (o.etd || "").trim() !== "");
+    const salesTotalUsd = salesOrders.reduce((sum, o) => {
+      const pi = quotations.find(q => q.id === o.quotationId);
+      return sum + (pi?.totalUsd || o.totalAmount || 0);
+    }, 0);
+
     return {
       activeCount: processedOrders.length,
       totalUsd,
@@ -242,6 +249,16 @@ export const Orders: React.FC = () => {
         return sum + (pi?.totalUsd || o.totalAmount || 0);
       }, 0),
       urgentCount: processedOrders.filter(o => o.nextAction.level === 'RED').length,
+      salesCount: salesOrders.length,
+      salesTotalUsd,
+      salesYsaccUsd: salesOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
+        const pi = quotations.find(q => q.id === o.quotationId);
+        return sum + (pi?.totalUsd || o.totalAmount || 0);
+      }, 0),
+      salesYsUsd: salesOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
+        const pi = quotations.find(q => q.id === o.quotationId);
+        return sum + (pi?.totalUsd || o.totalAmount || 0);
+      }, 0),
     };
   }, [processedOrders, quotations]);
 
@@ -810,7 +827,7 @@ export const Orders: React.FC = () => {
       </div>
 
       {/* 스탯 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '10px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '10px' }}>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 중 오더</span>
           <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{stats.activeCount} 건</div>
@@ -821,6 +838,13 @@ export const Orders: React.FC = () => {
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>매출액 (ETD 기준)</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#d97706' }}>${stats.salesTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <span style={{ fontSize: '14px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : '#475569' }}>오늘 처리 필요 (긴급)</span>
