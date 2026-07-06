@@ -4,7 +4,8 @@ import { useTasks } from '../contexts/TaskContext';
 import { useAuth } from '../contexts/AuthContext';
 import { TaskModal } from '../components/TaskModal';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { Task, User } from '../types';
 
 const getHoliday = (dateStr: string) => {
@@ -419,7 +420,8 @@ export const Dashboard: React.FC = () => {
     endTime: '18:00',
     isPublic: true,
     participants: '',
-    description: ''
+    description: '',
+    attachments: [] as Array<{ name: string; url: string; size: number; path: string }>
   });
 
   useEffect(() => {
@@ -599,6 +601,102 @@ export const Dashboard: React.FC = () => {
     );
   };
 
+  const [uploadingEventFile, setUploadingEventFile] = useState(false);
+  const [dragOverEventUpload, setDragOverEventUpload] = useState(false);
+
+  const handleEventFileUpload = async (file: File) => {
+    setUploadingEventFile(true);
+    try {
+      const uniqueFileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `tasks/event_files/${uniqueFileName}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on('state_changed', 
+          null,
+          (error) => {
+            console.error(error);
+            reject(error);
+          },
+          () => resolve()
+        );
+      });
+
+      const downloadUrl = await getDownloadURL(storageRef);
+      const newAttachment = {
+        name: file.name,
+        url: downloadUrl,
+        size: file.size,
+        path: `tasks/event_files/${uniqueFileName}`
+      };
+
+      setEventForm(prev => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), newAttachment]
+      }));
+    } catch (err) {
+      console.error(err);
+      alert('파일 업로드 중 오류가 발생했습니다.');
+    } finally {
+      setUploadingEventFile(false);
+    }
+  };
+
+  const handleEventFilesUpload = async (files: FileList | File[]) => {
+    for (let i = 0; i < files.length; i++) {
+      await handleEventFileUpload(files[i]);
+    }
+  };
+
+  const handleEventDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverEventUpload(true);
+  };
+
+  const handleEventDragLeave = () => {
+    setDragOverEventUpload(false);
+  };
+
+  const handleEventDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverEventUpload(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleEventFilesUpload(e.dataTransfer.files);
+    }
+  };
+
+  const handleEventPaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          e.preventDefault();
+          const screenshotFile = new File([file], `screenshot_${new Date().toISOString().slice(0, 10)}_${Date.now().toString().slice(-4)}.png`, { type: file.type });
+          await handleEventFileUpload(screenshotFile);
+        }
+      }
+    }
+  };
+
+  const handleEventDeleteAttachment = async (idx: number) => {
+    const att = eventForm.attachments[idx];
+    if (confirm(`'${att.name}' 파일을 삭제하시겠습니까?`)) {
+      try {
+        if (att.path) {
+          const fileRef = ref(storage, att.path);
+          await deleteObject(fileRef).catch(console.warn);
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+      setEventForm(prev => ({
+        ...prev,
+        attachments: (prev.attachments || []).filter((_, i) => i !== idx)
+      }));
+    }
+  };
+
   const handleSaveEvent = async () => {
     if (!eventForm.title.trim()) {
       alert('일정 제목을 입력해주세요.');
@@ -617,6 +715,7 @@ export const Dashboard: React.FC = () => {
       isPublic: eventForm.isPublic,
       participants: eventForm.participants,
       description: eventForm.description,
+      attachments: eventForm.attachments || [],
       creatorId: currentUser.uid,
       creatorName: userProfile.name || currentUser.displayName || '이름없음',
       createdAt: new Date().toISOString(),
@@ -1287,7 +1386,8 @@ export const Dashboard: React.FC = () => {
                           endTime: '18:00',
                           isPublic: true,
                           participants: '',
-                          description: ''
+                          description: '',
+                          attachments: []
                         });
                       }}
                       style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}
@@ -1330,7 +1430,8 @@ export const Dashboard: React.FC = () => {
                                 endTime: e.endTime || '18:00',
                                 isPublic: e.isPublic !== undefined ? e.isPublic : true,
                                 participants: e.participants || '',
-                                description: e.description || ''
+                                description: e.description || '',
+                                attachments: e.attachments || []
                               });
                             }}
                             style={{
@@ -1413,7 +1514,8 @@ export const Dashboard: React.FC = () => {
                                 endTime: e.endTime || '18:00',
                                 isPublic: e.isPublic !== undefined ? e.isPublic : true,
                                 participants: e.participants || '',
-                                description: e.description || ''
+                                description: e.description || '',
+                                attachments: e.attachments || []
                               });
                             }}
                             style={{
@@ -1655,6 +1757,116 @@ export const Dashboard: React.FC = () => {
                   style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
+
+              {/* 파일 첨부 영역 */}
+              <div 
+                onDragOver={handleEventDragOver}
+                onDragLeave={handleEventDragLeave}
+                onDrop={handleEventDrop}
+                onPaste={handleEventPaste}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  background: dragOverEventUpload ? '#eff6ff' : '#f8fafc',
+                  transition: 'all 0.15s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
+                  <label 
+                    style={{
+                      fontSize: '11px',
+                      background: '#e2e8f0',
+                      color: '#475569',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 650,
+                      userSelect: 'none'
+                    }}
+                  >
+                    파일 선택
+                    <input 
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          await handleEventFilesUpload(e.target.files);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+                
+                {/* 첨부파일 리스트 */}
+                {eventForm.attachments && eventForm.attachments.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                    {eventForm.attachments.map((file, fIdx) => (
+                      <div 
+                        key={fIdx} 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: '#fff',
+                          border: '1px solid #e2e8f0',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        <a 
+                          href={file.url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{
+                            color: '#2563eb',
+                            textDecoration: 'underline',
+                            fontWeight: 600,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '320px'
+                          }}
+                          title={file.name}
+                        >
+                          📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleEventDeleteAttachment(fIdx)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            padding: '0 4px'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
+                    파일을 드래그해서 여기 놓거나, 캡처 화면을 클릭 후 붙여넣기(Ctrl+V) 하세요.
+                  </div>
+                )}
+                {uploadingEventFile && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#2563eb', fontWeight: 700, marginTop: '4px' }}>
+                    <span>⏳ 파일 업로드 중...</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
@@ -1812,6 +2024,116 @@ export const Dashboard: React.FC = () => {
                   onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
                   style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
                 />
+              </div>
+
+              {/* 파일 첨부 영역 */}
+              <div 
+                onDragOver={handleEventDragOver}
+                onDragLeave={handleEventDragLeave}
+                onDrop={handleEventDrop}
+                onPaste={handleEventPaste}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  background: dragOverEventUpload ? '#eff6ff' : '#f8fafc',
+                  transition: 'all 0.15s ease',
+                  position: 'relative'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
+                  <label 
+                    style={{
+                      fontSize: '11px',
+                      background: '#e2e8f0',
+                      color: '#475569',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 650,
+                      userSelect: 'none'
+                    }}
+                  >
+                    파일 선택
+                    <input 
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          await handleEventFilesUpload(e.target.files);
+                        }
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+                
+                {/* 첨부파일 리스트 */}
+                {eventForm.attachments && eventForm.attachments.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                    {eventForm.attachments.map((file, fIdx) => (
+                      <div 
+                        key={fIdx} 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          background: '#fff',
+                          border: '1px solid #e2e8f0',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        <a 
+                          href={file.url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          style={{
+                            color: '#2563eb',
+                            textDecoration: 'underline',
+                            fontWeight: 600,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '320px'
+                          }}
+                          title={file.name}
+                        >
+                          📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleEventDeleteAttachment(fIdx)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            padding: '0 4px'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
+                    파일을 드래그해서 여기 놓거나, 캡처 화면을 클릭 후 붙여넣기(Ctrl+V) 하세요.
+                  </div>
+                )}
+                {uploadingEventFile && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#2563eb', fontWeight: 700, marginTop: '4px' }}>
+                    <span>⏳ 파일 업로드 중...</span>
+                  </div>
+                )}
               </div>
             </div>
 
