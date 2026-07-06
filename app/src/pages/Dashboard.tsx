@@ -425,6 +425,8 @@ export const Dashboard: React.FC = () => {
     attachments: [] as Array<{ name: string; url: string; size: number; path: string }>
   });
 
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string } | null>(null);
+
   useEffect(() => {
     if (!currentUser) return;
     const COMPANY_ID = "YSACC";
@@ -1824,8 +1826,10 @@ export const Dashboard: React.FC = () => {
                       >
                         <a 
                           href={file.url} 
-                          target="_blank" 
-                          rel="noreferrer" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPreviewFile({ name: file.name, url: file.url });
+                          }}
                           style={{
                             color: '#2563eb',
                             textDecoration: 'underline',
@@ -1833,9 +1837,10 @@ export const Dashboard: React.FC = () => {
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: '320px'
+                            maxWidth: '320px',
+                            cursor: 'pointer'
                           }}
-                          title={file.name}
+                          title={`${file.name} (클릭 시 미리보기)`}
                         >
                           📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                         </a>
@@ -2092,8 +2097,10 @@ export const Dashboard: React.FC = () => {
                       >
                         <a 
                           href={file.url} 
-                          target="_blank" 
-                          rel="noreferrer" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPreviewFile({ name: file.name, url: file.url });
+                          }}
                           style={{
                             color: '#2563eb',
                             textDecoration: 'underline',
@@ -2101,9 +2108,10 @@ export const Dashboard: React.FC = () => {
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: '320px'
+                            maxWidth: '320px',
+                            cursor: 'pointer'
                           }}
-                          title={file.name}
+                          title={`${file.name} (클릭 시 미리보기)`}
                         >
                           📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                         </a>
@@ -2724,6 +2732,128 @@ export const Dashboard: React.FC = () => {
             setEditingTask(null);
           }}
         />
+      )}
+
+      {/* 파일 미리보기 모달 */}
+      {previewFile && (
+        <div
+          onClick={() => setPreviewFile(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            zIndex: 100000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            backdropFilter: 'blur(4px)'
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div
+              style={{
+                padding: '14px 20px',
+                background: '#1e293b',
+                color: '#fff',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <span style={{ fontSize: '14px', fontWeight: 800, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                🔍 파일 미리보기: {previewFile.name}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <a
+                  href={previewFile.url}
+                  download={previewFile.name}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    background: '#3b82f6',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  다운로드
+                </a>
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '18px',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    padding: '0 4px'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f1f5f9', overflowY: 'auto', flex: 1, minHeight: '300px' }}>
+              {/\.(png|jpe?g|gif|webp|bmp)$/i.test(previewFile.name) ? (
+                <img
+                  src={previewFile.url}
+                  alt={previewFile.name}
+                  style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '4px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}
+                />
+              ) : /\.pdf$/i.test(previewFile.name) ? (
+                <iframe
+                  src={previewFile.url}
+                  title={previewFile.name}
+                  style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '4px', background: '#fff' }}
+                />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>📁</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>미리보기를 지원하지 않는 파일 형식입니다.</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>파일을 다운로드하여 로컬 기기에서 확인해 주세요.</div>
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.name}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      background: '#10b981',
+                      color: '#fff',
+                      padding: '8px 20px',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      display: 'inline-block'
+                    }}
+                  >
+                    파일 직접 다운로드
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
