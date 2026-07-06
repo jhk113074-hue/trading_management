@@ -192,6 +192,53 @@ export const Layout: React.FC = () => {
     }
   };
 
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
+  const [newMeetingsCount, setNewMeetingsCount] = useState(0);
+
+  // 1. approvals snapshot listener (approvals pending signature)
+  React.useEffect(() => {
+    if (!userProfile?.id) return;
+    const q = query(
+      collection(db, 'approvals'), 
+      where('approverId', '==', userProfile.id),
+      where('status', '==', 'PENDING')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPendingApprovalsCount(snapshot.size);
+    });
+    return () => unsubscribe();
+  }, [userProfile?.id]);
+
+  // 2. meetings snapshot listener (meetings unread)
+  React.useEffect(() => {
+    if (!userProfile?.id) return;
+    
+    const unsubscribe = onSnapshot(collection(db, 'meetings'), (snapshot) => {
+      const lastVisitedStr = localStorage.getItem(`meetings_last_visited_${userProfile.id}`) || '1970-01-01T00:00:00.000Z';
+      const lastVisited = new Date(lastVisitedStr);
+      
+      let count = 0;
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const createdAt = data.createdAt ? new Date(data.createdAt) : null;
+        if (createdAt && createdAt > lastVisited && data.createdBy !== userProfile.id) {
+          count++;
+        }
+      });
+      setNewMeetingsCount(count);
+    });
+    
+    return () => unsubscribe();
+  }, [userProfile?.id]);
+
+  // 3. reset meeting unread count on page navigation
+  React.useEffect(() => {
+    if (location.pathname === '/meetings' && userProfile?.id) {
+      localStorage.setItem(`meetings_last_visited_${userProfile.id}`, new Date().toISOString());
+      setNewMeetingsCount(0);
+    }
+  }, [location.pathname, userProfile?.id]);
+
   React.useEffect(() => {
     if (!userProfile?.id) return;
     const q = query(collection(db, 'mails'), where('receiverId', '==', userProfile.id));
@@ -287,9 +334,9 @@ export const Layout: React.FC = () => {
       { section: '업무관리', items: [
         { path: '/list', label: '📋 전체 업무 리스트' },
         { path: '/leave-management', label: '📅 연월차 관리' },
-        { path: '/approvals', label: '✍️ 전자결재' },
-        { path: '/mails', label: '✉️ 사내 메일' },
-        { path: '/meetings', label: '📝 회의록 관리' }
+        { path: '/approvals', label: '✍️ 전자결재', badgeCount: pendingApprovalsCount },
+        { path: '/mails', label: '✉️ 사내 메일', badgeCount: notifications.filter(n => !n.isRead).length },
+        { path: '/meetings', label: '📝 회의록 관리', badgeCount: newMeetingsCount }
       ] as any },
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리', external: false },
@@ -316,7 +363,7 @@ export const Layout: React.FC = () => {
     }
 
     return groups;
-  }, [tasks, users, userProfile]);
+  }, [tasks, users, userProfile, pendingApprovalsCount, notifications, newMeetingsCount]);
 
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -361,7 +408,21 @@ export const Layout: React.FC = () => {
                     to={item.path} 
                     className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
                   >
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {item.label}
+                      {item.badgeCount > 0 && (
+                        <span 
+                          style={{ 
+                            width: '6px', 
+                            height: '6px', 
+                            borderRadius: '50%', 
+                            backgroundColor: '#ef4444', 
+                            display: 'inline-block',
+                            boxShadow: '0 0 4px rgba(239, 68, 68, 0.6)'
+                          }} 
+                        />
+                      )}
+                    </span>
                     {item.count ? <span style={{ background: 'rgba(13,148,136,0.3)', color: '#2dd4bf', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', flexShrink: 0 }}>{item.count}</span> : null}
                   </Link>
                 )
