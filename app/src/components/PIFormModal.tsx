@@ -1222,8 +1222,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   const autoRegisterPITask = async (piNum: string, customerName: string, itemsSummary: string[]) => {
     try {
-      const displayName = (currentUser === 'jhk010624' ? '김하은 사원' : currentUser === 'alexpark' ? '박현 차장' : currentUser === 'jhkim1130' ? '대표이사 김주한' : currentUser);
-      
       // Look for an existing incomplete auto task for this PI
       const q = query(
         collection(db, 'tasks'),
@@ -1232,7 +1230,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       );
       const snap = await getDocs(q);
       
-      const taskDescription = `견적서(PI: ${piNum})가 작성 또는 갱신되어 자동으로 연동되었습니다.\n- 품목 요약: ${itemsSummary.join(', ')}\n- 담당자: ${displayName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
+      let assigneeId = 'jhkim1130';
+      let assigneeName = '김주한';
+
+      const normalizedUser = currentUser ? currentUser.trim() : '';
+      if (normalizedUser.includes('김하은') || normalizedUser.includes('jhk010624')) {
+        assigneeId = 'jhk010624';
+        assigneeName = '김하은';
+      } else if (normalizedUser.includes('박현') || normalizedUser.includes('alexpark')) {
+        assigneeId = 'alexpark';
+        assigneeName = '박현';
+      } else if (normalizedUser.includes('김주한') || normalizedUser.includes('jhkim1130')) {
+        assigneeId = 'jhkim1130';
+        assigneeName = '김주한';
+      } else {
+        assigneeId = currentUser || 'system';
+        assigneeName = currentUser || '시스템';
+      }
+
+      const taskDescription = `견적서(PI: ${piNum})가 작성 또는 갱신되어 자동으로 연동되었습니다.\n- 품목 요약: ${itemsSummary.join(', ')}\n- 담당자: ${assigneeName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
       
       if (!snap.empty) {
         // Option A: Update existing incomplete task
@@ -1253,9 +1269,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           importance: 'B',
           urgency: 5,
           quadrant: 'Q2',
-          assigneeId: currentUser,
-          assigneeName: displayName,
-          createdBy: currentUser,
+          assigneeId: assigneeId,
+          assigneeName: assigneeName,
+          createdBy: assigneeId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };

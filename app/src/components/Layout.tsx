@@ -66,10 +66,10 @@ export const Layout: React.FC = () => {
   React.useEffect(() => {
     const cleanUpDuplicates = async () => {
       try {
-        const hasCleaned = localStorage.getItem('has_cleaned_duplicates_ung_05_layout_v1');
+        const hasCleaned = localStorage.getItem('has_cleaned_duplicates_ung_05_layout_v2');
         if (hasCleaned) return;
 
-        const { query, collection, where, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+        const { query, collection, where, getDocs, deleteDoc, updateDoc, doc } = await import('firebase/firestore');
         const { db } = await import('../firebase');
 
         const q = query(
@@ -77,18 +77,27 @@ export const Layout: React.FC = () => {
           where('title', '==', `[자동] 견적서 작성: United Neama Group Gem Trad & Con... (PI: PI-YS-2026-UNG-05)`)
         );
         const snap = await getDocs(q);
-        if (snap.size > 1) {
+        if (!snap.empty) {
           const sortedDocs = snap.docs.sort((a, b) => {
             const dateA = new Date(a.data().createdAt || 0).getTime();
             const dateB = new Date(b.data().createdAt || 0).getTime();
             return dateA - dateB;
           });
+          
+          // Update the first one to correct ID/name
+          await updateDoc(doc(db, 'tasks', sortedDocs[0].id), {
+            assigneeId: 'jhkim1130',
+            assigneeName: '김주한',
+            createdBy: 'jhkim1130'
+          });
+
+          // Delete duplicates
           for (let i = 1; i < sortedDocs.length; i++) {
             await deleteDoc(doc(db, 'tasks', sortedDocs[i].id));
           }
-          console.log(`Successfully purged ${sortedDocs.length - 1} duplicate tasks in Layout`);
+          console.log(`Successfully purged ${sortedDocs.length - 1} duplicate tasks and updated original assignee`);
         }
-        localStorage.setItem('has_cleaned_duplicates_ung_05_layout_v1', 'true');
+        localStorage.setItem('has_cleaned_duplicates_ung_05_layout_v2', 'true');
       } catch (err) {
         console.error("Purge duplicates error in Layout:", err);
       }

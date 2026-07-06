@@ -1827,9 +1827,24 @@ export const OrderDetail: React.FC = () => {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) return;
-      const displayName = currentUser.displayName || currentUser.email || 'System';
-      const assigneeId = currentUser.uid || 'system';
-      
+      const userKey = currentUser.email?.split('@')[0] || '';
+      let assigneeId = userKey;
+      let assigneeName = '시스템';
+
+      if (userKey === 'jhkim1130') {
+        assigneeId = 'jhkim1130';
+        assigneeName = '김주한';
+      } else if (userKey === 'jhk010624') {
+        assigneeId = 'jhk010624';
+        assigneeName = '김하은';
+      } else if (userKey === 'alexpark') {
+        assigneeId = 'alexpark';
+        assigneeName = '박현';
+      } else {
+        assigneeId = userKey || 'system';
+        assigneeName = currentUser.displayName || userKey || '시스템';
+      }
+
       // Look for an existing incomplete auto task for this Order
       const q = query(
         collection(db, 'tasks'),
@@ -1838,7 +1853,7 @@ export const OrderDetail: React.FC = () => {
       );
       const snap = await getDocs(q);
       
-      const taskDescription = `주문관리(PI: ${piNum}, 바이어: ${customerName})의 일부 업무가 진행 및 갱신되었습니다.\n- 변경/작업 내역:\n  ${actionDescription}\n- 담당자: ${displayName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
+      const taskDescription = `주문관리(PI: ${piNum}, 바이어: ${customerName})의 일부 업무가 진행 및 갱신되었습니다.\n- 변경/작업 내역:\n  ${actionDescription}\n- 담당자: ${assigneeName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
       
       if (!snap.empty) {
         // Option A: Update existing incomplete task
@@ -1863,7 +1878,7 @@ export const OrderDetail: React.FC = () => {
           urgency: 5,
           quadrant: 'Q2',
           assigneeId: assigneeId,
-          assigneeName: displayName,
+          assigneeName: assigneeName,
           createdBy: assigneeId,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
