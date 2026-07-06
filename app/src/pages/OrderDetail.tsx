@@ -199,6 +199,37 @@ export const OrderDetail: React.FC = () => {
     } catch (e) { console.error('체크리스트 저장 실패:', e); }
   };
 
+  // 모든 체크리스트 항목 일괄 완료 처리
+  const handleForceCompleteAll = async () => {
+    if (!order) return;
+    if (!window.confirm("모든 체크리스트 항목을 일괄 완료 처리하시겠습니까?")) return;
+
+    const updated = { ...stageCompletion };
+    Object.keys(updated).forEach(stage => {
+      const sKey = stage as StageKey;
+      const items = { ...updated[sKey] };
+      Object.keys(items).forEach(itemKey => {
+        items[itemKey] = true;
+      });
+      updated[sKey] = items;
+    });
+
+    const newOverride: Record<string, boolean> = {};
+    setStageCompletion(updated);
+    setManualOverride(newOverride);
+
+    try {
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, {
+        stageCompletion: updated,
+        stageCompletionOverride: newOverride,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.error('전체 완료 처리 실패:', e);
+    }
+  };
+
 
   // ────────────────────────────────────────────────────────────────────────
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | null>(null);
@@ -4628,9 +4659,29 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>
                 🚩 단계별 진행 체크리스트
               </span>
-              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
-                전체 {allDone.length}/{allItems.length} ({totalPct}%)
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #bfdbfe' }}>
+                  전체 {allDone.length}/{allItems.length} ({totalPct}%)
+                </span>
+                <button
+                  onClick={handleForceCompleteAll}
+                  style={{
+                    background: '#10b981',
+                    border: 'none',
+                    color: '#fff',
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    boxShadow: '0 2px 4px rgba(16,185,129,0.2)'
+                  }}
+                  title="모든 미완료 항목을 수동 완료 처리합니다."
+                >
+                  ⚡ 전체 일괄 완료
+                </button>
+              </div>
             </div>
 
             {/* 전체 진행바 */}
