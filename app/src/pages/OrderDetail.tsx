@@ -2893,27 +2893,76 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           </div>
         )}
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
           {fileList.length > 0 ? (
-            fileList.map((file, idx) => (
-              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '6px 8px', borderRadius: '5px', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                  <span 
+            fileList.map((file, idx) => {
+              const nameLower = file.name.toLowerCase();
+              const isImg = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(nameLower);
+              const isPdf = /\.pdf$/i.test(nameLower);
+              const isExcel = /\.(xls|xlsx)$/i.test(nameLower);
+
+              return (
+                <div 
+                  key={idx} 
+                  style={{ 
+                    background: '#fff', 
+                    border: '1px solid #cbd5e1', 
+                    borderRadius: '8px', 
+                    padding: '6px 10px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '10px', 
+                    fontSize: '12px', 
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {/* Thumbnail / Icon */}
+                  <div 
                     onClick={() => previewFile(file.url, file.name)}
-                    style={{ fontSize: '13.5px', color: '#1e3a8a', fontWeight: 700, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', wordBreak: 'break-all', flex: 1, cursor: 'pointer', textDecoration: 'underline', lineHeight: '1.2', maxHeight: '25px' }} 
+                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
                     title="클릭하여 미리보기"
                   >
-                    {file.name}
-                  </span>
-                  <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-                    <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', width: '20px', height: '20px', fontSize: '15.5px', textDecoration: 'none' }} title="다운로드">
-                      ⬇
-                    </a>
+                    {isImg ? (
+                      <img 
+                        src={file.url} 
+                        alt={file.name} 
+                        style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                      />
+                    ) : (
+                      <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                        {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Name and size */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                    <span 
+                      onClick={() => previewFile(file.url, file.name)}
+                      style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                      title="클릭하여 미리보기"
+                    >
+                      {file.name}
+                    </span>
+                    <span style={{ color: '#64748b', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => previewFile(file.url, file.name)}
+                      style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                      title="미리보기"
+                    >
+                      🔍
+                    </button>
                     {isEditing && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteDoc(fieldName, idx)}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', width: '20px', height: '20px', cursor: 'pointer', fontSize: '14.5px' }}
+                      <button 
+                        type="button" 
+                        onClick={() => handleDeleteDoc(fieldName, idx)} 
+                        style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
                         title="삭제"
                       >
                         ✕
@@ -2921,41 +2970,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     )}
                   </div>
                 </div>
-                
-                {/* 썸네일 미리보기 영역 추가 */}
-                {(() => {
-                  const nameLower = file.name.toLowerCase();
-                  const isImage = nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg') || nameLower.endsWith('.gif') || nameLower.endsWith('.webp');
-                  const isPdf = nameLower.endsWith('.pdf');
-
-                  if (isImage) {
-                    return (
-                      <div 
-                        onClick={() => previewFile(file.url, file.name)}
-                        style={{ width: '100%', height: '48px', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0', cursor: 'pointer', backgroundColor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <img src={file.url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    );
-                  } else if (isPdf) {
-                    return (
-                      <div 
-                        onClick={() => previewFile(file.url, file.name)}
-                        style={{ width: '100%', height: '48px', borderRadius: '4px', border: '1px dashed #cbd5e1', cursor: 'pointer', backgroundColor: '#faf5ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px', transition: 'all 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = '#7c3aed'}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}
-                      >
-                        <span style={{ fontSize: '16.5px', lineHeight: 1 }}>📄</span>
-                        <span style={{ fontSize: '8.5px', color: '#7c3aed', fontWeight: 'bold' }}>PDF 미리보기</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            ))
+              );
+            })
           ) : (
-            !isEditing && <span style={{ fontSize: '14.5px', color: '#94a3b8', fontStyle: 'italic' }}>첨부 파일 없음</span>
+            !isEditing && <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>첨부 파일 없음</span>
           )}
         </div>
       </div>
