@@ -62,6 +62,40 @@ export const Layout: React.FC = () => {
     };
   }, [isDragging, resize, stopResizing]);
 
+  // TEMPORARY: Clean up duplicate auto-tasks for UNG-05
+  React.useEffect(() => {
+    const cleanUpDuplicates = async () => {
+      try {
+        const hasCleaned = localStorage.getItem('has_cleaned_duplicates_ung_05_layout_v1');
+        if (hasCleaned) return;
+
+        const { query, collection, where, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+
+        const q = query(
+          collection(db, 'tasks'),
+          where('title', '==', `[자동] 견적서 작성: United Neama Group Gem Trad & Con... (PI: PI-YS-2026-UNG-05)`)
+        );
+        const snap = await getDocs(q);
+        if (snap.size > 1) {
+          const sortedDocs = snap.docs.sort((a, b) => {
+            const dateA = new Date(a.data().createdAt || 0).getTime();
+            const dateB = new Date(b.data().createdAt || 0).getTime();
+            return dateA - dateB;
+          });
+          for (let i = 1; i < sortedDocs.length; i++) {
+            await deleteDoc(doc(db, 'tasks', sortedDocs[i].id));
+          }
+          console.log(`Successfully purged ${sortedDocs.length - 1} duplicate tasks in Layout`);
+        }
+        localStorage.setItem('has_cleaned_duplicates_ung_05_layout_v1', 'true');
+      } catch (err) {
+        console.error("Purge duplicates error in Layout:", err);
+      }
+    };
+    cleanUpDuplicates();
+  }, []);
+
   // 2 Hours Session Timeout Monitor Hook
   React.useEffect(() => {
     if (!userProfile) return;
