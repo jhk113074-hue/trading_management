@@ -1842,7 +1842,7 @@ export const Dashboard: React.FC = () => {
                           }}
                           title={`${file.name} (클릭 시 미리보기)`}
                         >
-                          📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                          🔍 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                         </a>
                         <button
                           type="button"
@@ -2113,7 +2113,7 @@ export const Dashboard: React.FC = () => {
                           }}
                           title={`${file.name} (클릭 시 미리보기)`}
                         >
-                          📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                          🔍 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                         </a>
                         <button
                           type="button"
