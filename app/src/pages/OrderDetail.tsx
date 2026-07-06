@@ -9958,7 +9958,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '13.5px' }}>지정된 포워더/운송사가 없습니다. 선적관리 탭에서 먼저 추가해주세요.</div>
                       ) : (
                         forwardersList.map((fw, idx) => {
-                          const taxInvoices = fw.taxInvoices || (fw.taxInvoiceDate || fw.taxInvoiceNo ? [{ date: fw.taxInvoiceDate || '', invoiceNo: fw.taxInvoiceNo || '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }] : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }]);
+                          const isCardDefault = fw.name && (
+                            fw.name.toUpperCase().includes('FEDEX') ||
+                            fw.name.toUpperCase().includes('DHL') ||
+                            fw.name.toUpperCase().includes('EMS') ||
+                            fw.name.toUpperCase().includes('SF') ||
+                            fw.name.includes('우체국')
+                          );
+                          const taxInvoices = fw.taxInvoices || (fw.taxInvoiceDate || fw.taxInvoiceNo ? [{ date: fw.taxInvoiceDate || '', invoiceNo: fw.taxInvoiceNo || '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0, type: (isCardDefault ? '카드' : '세금계산서') as '카드' | '세금계산서' }] : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0, type: (isCardDefault ? '카드' : '세금계산서') as '카드' | '세금계산서' }]);
                           
                           return (
                             <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 14px', background: '#faf5ff', borderRadius: '8px', border: '1px solid #e9d5ff' }}>
@@ -9967,7 +9974,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const newList = [...taxInvoices, { date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }];
+                                    const newList = [...taxInvoices, { date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0, type: (isCardDefault ? '카드' : '세금계산서') as '카드' | '세금계산서' }];
                                     setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                   }}
                                   style={{ background: '#fff', border: '1px solid #d8b4fe', borderRadius: '4px', padding: '3px 10px', fontSize: '15.5px', fontWeight: 700, color: '#7c3aed', cursor: 'pointer' }}
@@ -10042,8 +10049,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               })()}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '15.5px', fontWeight: 700 }}>
-                                  <span style={{ paddingLeft: '4px' }}>발행일자</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '15.5px', fontWeight: 700 }}>
+                                  <span style={{ paddingLeft: '4px' }}>구분</span>
+                                  <span>발행일자</span>
                                   <span>승인번호</span>
                                   <span>공급가액</span>
                                   <span>부가세액</span>
@@ -10059,7 +10067,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   const displayTotal = inv.amount || (displaySupplyVal + displayVat + displayAgentAmt);
 
                                   return (
-                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center' }}>
+                                    <div key={invIdx} style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center' }}>
+                                      {/* 구분 */}
+                                      <select
+                                        value={inv.type || '세금계산서'}
+                                        onChange={e => {
+                                          const newList = [...taxInvoices];
+                                          newList[invIdx].type = e.target.value as '세금계산서' | '카드';
+                                          setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: '#475569' }}
+                                      >
+                                        <option value="세금계산서">세금계산서</option>
+                                        <option value="카드">카드</option>
+                                      </select>
                                       {/* 발행일자 */}
                                       <input
                                         type="date"
@@ -10074,7 +10095,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       {/* 승인번호 */}
                                       <input
                                         type="text"
-                                        placeholder="국세청 승인번호"
+                                        placeholder={inv.type === '카드' ? '카드 승인번호' : '국세청 승인번호'}
                                         value={inv.invoiceNo || ''}
                                         onChange={e => {
                                           const newList = [...taxInvoices];
