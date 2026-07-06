@@ -9386,7 +9386,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 {[
                   { id: '세금계산서', label: '1) 세금계산서' },
                   { id: '대금결제', label: '2) 대금결제' },
-                  { id: 'BANK_CHARGES', label: '3) BANK CHARGES(LC)' },
+                  { id: 'BANK_CHARGES', label: '3) 지급수수료' },
                   { id: '수금관리', label: '4) 수금관리' },
                   { id: '정산현황', label: '5) 정산현황' }
                 ].map(tab => {
