@@ -10580,7 +10580,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           const usdPaid = installments.filter(inst => inst.currency === 'USD' || (!inst.currency && fw.freightCurrency === 'USD')).reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           
                           const finalUsd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
-                          const finalKrw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                          const finalKrw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                           
                           const krwOutstanding = Math.max(0, finalKrw - krwPaid);
                           const usdOutstanding = Math.max(0, finalUsd - usdPaid);
