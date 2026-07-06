@@ -973,7 +973,7 @@ export const OrderDetail: React.FC = () => {
     packingList: null as any,
     supplierPurchaseCertificate: {} as Record<string, 'Y' | 'N' | ''>,
     supplierTaxTypes: {} as Record<string, '영세' | '과세'>,
-    supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; } | Array<{ date: string; invoiceNo: string; }>>,
+    supplierTaxInvoiceDetails: {} as Record<string, any>,
     supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
     supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; method?: '송금' | '카드'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
@@ -9600,17 +9600,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {/* 4) 세금계산서 발행 */}
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 발행 정보 등록</h4>
-                    <div style={{ fontSize: '13.5px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서 발행일자 및 국세청 승인번호를 기록합니다. (다수 발행 가능)</div>
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>📄 4) 공급사 세금계산서 및 카드전표 발행 정보 등록</h4>
+                    <div style={{ fontSize: '13.5px', color: '#64748b', marginBottom: '12px' }}>각 공급사별로 국내 발행된 세금계산서(또는 카드 영수증) 발행일자 및 국세청(또는 카드) 승인번호를 기록합니다. (다수 발행 가능)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                       {allOrderSuppliers.length === 0 ? (
                         <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '13.5px' }}>공급업체가 없습니다.</div>
                       ) : (
                         allOrderSuppliers.map(supplier => {
                           const raw = basicForm.supplierTaxInvoiceDetails[supplier];
-                          const list: Array<{ date: string; invoiceNo: string; supplyAmount?: string; vatAmount?: string; remarks?: string }> = Array.isArray(raw)
+                          const list: Array<{ date: string; invoiceNo: string; supplyAmount?: string; vatAmount?: string; remarks?: string; type?: '세금계산서' | '카드' }> = Array.isArray(raw)
                             ? raw
-                            : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as any] : [{ date: '', invoiceNo: '', remarks: '' }]);
+                            : (raw && (raw.date !== undefined || raw.invoiceNo !== undefined) ? [raw as any] : [{ date: '', invoiceNo: '', remarks: '', type: '세금계산서' }]);
 
                           const supplierItems = sourcingItems.filter(it => (it.supplier?.trim() || 'General Supplier') === supplier);
                           const isZeroTax = basicForm.supplierTaxTypes[supplier] === '영세';
@@ -9639,7 +9639,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const newList = [...list, { date: '', invoiceNo: '', supplyAmount: '', vatAmount: '', remarks: '' }];
+                                    const newList = [...list, { date: '', invoiceNo: '', supplyAmount: '', vatAmount: '', remarks: '', type: '세금계산서' as const }];
                                     setBasicForm(prev => ({
                                       ...prev,
                                       supplierTaxInvoiceDetails: {
@@ -9650,13 +9650,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   }}
                                   style={{ padding: '3px 8px', fontSize: '15.5px', fontWeight: 700, color: '#2563eb', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '4px', cursor: 'pointer' }}
                                 >
-                                  ➕ 세금계산서 추가
+                                  ➕ 증빙 추가
                                 </button>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '15.5px', fontWeight: 700 }}>
-                                  <span style={{ paddingLeft: '4px' }}>발행일자</span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '15.5px', fontWeight: 700 }}>
+                                  <span style={{ paddingLeft: '4px' }}>구분</span>
+                                  <span>발행일자</span>
                                   <span>승인번호</span>
                                   <span>공급가액</span>
                                   <span>부가세액</span>
@@ -9670,7 +9671,27 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   const vat = Number(details.vatAmount) || 0;
                                   const total = supply + vat;
                                   return (
-                                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', alignItems: 'center' }}>
+                                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', alignItems: 'center' }}>
+                                      {/* 구분 */}
+                                      <select
+                                        value={details.type || '세금계산서'}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          const newList = [...list];
+                                          newList[idx] = { ...newList[idx], type: val as any };
+                                          setBasicForm(prev => ({
+                                            ...prev,
+                                            supplierTaxInvoiceDetails: {
+                                              ...prev.supplierTaxInvoiceDetails,
+                                              [supplier]: newList
+                                            }
+                                          }));
+                                        }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: '#475569' }}
+                                      >
+                                        <option value="세금계산서">세금계산서</option>
+                                        <option value="카드">카드</option>
+                                      </select>
                                       {/* 발행일자 */}
                                       <input
                                         type="date"
@@ -9693,7 +9714,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       {/* 승인번호 */}
                                       <input
                                         type="text"
-                                        placeholder="국세청 승인번호"
+                                        placeholder={details.type === '카드' ? '카드 승인번호' : '국세청 승인번호'}
                                         value={details.invoiceNo || ''}
                                         onChange={e => {
                                           const val = e.target.value;
@@ -9813,9 +9834,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   const totalInvoicesVat = list.reduce((sum, item) => sum + (Number(item.vatAmount) || 0), 0);
                                   const totalInvoicesGrand = totalInvoicesSupply + totalInvoicesVat;
                                   return (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', alignItems: 'center', marginTop: '4px', paddingTop: '8px', borderTop: '2px double #cbd5e1', color: '#1e3a8a', fontWeight: 'bold' }}>
-                                      <span style={{ fontSize: '15.5px', paddingLeft: '4px' }}>등록 세금계산서 합계</span>
-                                      <span></span>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', alignItems: 'center', marginTop: '4px', paddingTop: '8px', borderTop: '2px double #cbd5e1', color: '#1e3a8a', fontWeight: 'bold' }}>
+                                      <span style={{ fontSize: '15.5px', paddingLeft: '4px', gridColumn: 'span 3' }}>등록 세금계산서/카드 합계</span>
                                       <span style={{ fontSize: '15.5px', color: '#0f172a' }}>₩{totalInvoicesSupply.toLocaleString()}</span>
                                       <span style={{ fontSize: '15.5px', color: '#0f172a' }}>₩{totalInvoicesVat.toLocaleString()}</span>
                                       <span style={{ fontSize: '14.5px', textAlign: 'right', paddingRight: '12px' }}>₩{totalInvoicesGrand.toLocaleString()}</span>

@@ -141,7 +141,7 @@ export interface Order {
   supplierTaxInvoice?: Record<string, 'Y' | 'N' | ''>; // 공급사별 세금계산서 발행여부
   supplierPurchaseCertificate?: Record<string, 'Y' | 'N' | ''>; // 공급사별 구매확인서 발행여부
   supplierTaxTypes?: Record<string, '영세' | '과세'>; // 공급사별 과세구분 (영세/과세)
-  supplierTaxInvoiceDetails?: Record<string, { date: string; invoiceNo: string; }>; // 공급사별 세금계산서 정보
+  supplierTaxInvoiceDetails?: Record<string, any>; // 공급사별 세금계산서 정보
   supplierPurchaseCertFiles?: Record<string, Array<{ name: string; url: string; size: number; path: string }>>; // 공급사별 구매확인서 파일
   supplierPaymentInstallments?: Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; method?: '송금' | '카드'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>; // 공급사별 분할 결제 정보
   paymentCollectedInstallments?: Array<{
