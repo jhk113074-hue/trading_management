@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocs, onSnapshot, setDoc, serverTimestamp, deleteDoc, collection, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage, auth } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -1823,6 +1823,59 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const autoRegisterOrderTask = async (piNum: string, customerName: string, actionDescription: string) => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const displayName = currentUser.displayName || currentUser.email || 'System';
+      const assigneeId = currentUser.uid || 'system';
+      
+      // Look for an existing incomplete auto task for this Order
+      const q = query(
+        collection(db, 'tasks'),
+        where('title', '==', `[자동] 주문 관리: ${customerName} (PI: ${piNum})`),
+        where('status', '!=', 'DONE')
+      );
+      const snap = await getDocs(q);
+      
+      const taskDescription = `주문관리(PI: ${piNum}, 바이어: ${customerName})의 일부 업무가 진행 및 갱신되었습니다.\n- 변경/작업 내역:\n  ${actionDescription}\n- 담당자: ${displayName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
+      
+      if (!snap.empty) {
+        // Option A: Update existing incomplete task
+        const existingDoc = snap.docs[0];
+        const existingData = existingDoc.data() as any;
+        const updatedDesc = `${existingData.description || ''}\n\n[업데이트 - ${new Date().toLocaleTimeString()}]\n- ${actionDescription}`;
+        
+        await updateDoc(doc(db, 'tasks', existingDoc.id), {
+          description: updatedDesc,
+          updatedAt: new Date().toISOString()
+        });
+        console.log('Updated existing auto OrderTask:', existingDoc.id);
+      } else {
+        // Create a new task
+        const newTask = {
+          title: `[자동] 주문 관리: ${customerName} (PI: ${piNum})`,
+          description: taskDescription,
+          status: 'IN_PROGRESS',
+          type: 'DAILY',
+          scheduleType: 'SELF',
+          importance: 'B',
+          urgency: 5,
+          quadrant: 'Q2',
+          assigneeId: assigneeId,
+          assigneeName: displayName,
+          createdBy: assigneeId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        await addDoc(collection(db, 'tasks'), newTask);
+        console.log('Created new auto OrderTask');
+      }
+    } catch (e) {
+      console.error('Failed to auto register Order task:', e);
+    }
+  };
+
   // Save details changes
   const handleSaveBasic = async (showMsg: boolean = true, tabIdOverride?: string, stepNameOverride?: string) => {
     if (!order) return;
@@ -2067,6 +2120,9 @@ export const OrderDetail: React.FC = () => {
       }
 
       isDirtyRef.current = false;
+      const logDescription = changes.length > 0 ? changes.join(', ') : '주문 정보 저장';
+      await autoRegisterOrderTask(basicForm.piNumber || order.piNumber || '알수없음', basicForm.customer || order.customer || '알수없음', logDescription);
+
       if (showMsg) {
         alert('✅ 저장되었습니다.');
       }
@@ -2555,6 +2611,7 @@ export const OrderDetail: React.FC = () => {
       const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
       const updatedList = [...(order[fieldName] || []), ...uploadedFiles];
       await setDoc(orderRef, { [fieldName]: updatedList, updatedAt: serverTimestamp() }, { merge: true });
+      await autoRegisterOrderTask(order.piNumber || '알수없음', order.customer || '알수없음', `${fieldName} 파일 첨부 업로드: ${uploadedFiles.map(f => f.name).join(', ')}`);
       
       alert("✅ 모든 파일이 성공적으로 업로드되었습니다.");
     } catch (err: any) {
