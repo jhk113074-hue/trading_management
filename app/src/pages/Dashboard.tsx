@@ -128,6 +128,41 @@ const WorldClocks: React.FC = () => {
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 5000);
+    
+    // TEMPORARY: One-time insertion of today's PI task for Representative Director Kim Ju-han
+    const insertTodayTask = async () => {
+      try {
+        const hasRun = localStorage.getItem('has_run_today_pi_task_insert_ung_05_v2');
+        if (hasRun) return;
+        
+        const { collection, addDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        
+        const newTask = {
+          title: `[자동] 견적서 작성: United Neama Group Gem Trad & Con... (PI: PI-YS-2026-UNG-05)`,
+          description: `견적서(PI: PI-YS-2026-UNG-05)가 작성되어 자동으로 연동되었습니다.\n- 품목 요약: CBU-613 (5000KG)\n- 담당자: 대표이사 김주한\n- 작성 일자: 2026-07-06`,
+          status: 'IN_PROGRESS',
+          type: 'DAILY',
+          scheduleType: 'SELF',
+          importance: 'B',
+          urgency: 5,
+          quadrant: 'Q2',
+          assigneeId: 'jhkim1130',
+          assigneeName: '대표이사 김주한',
+          createdBy: 'jhkim1130',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        await addDoc(collection(db, 'tasks'), newTask);
+        localStorage.setItem('has_run_today_pi_task_insert_ung_05_v2', 'true');
+        console.log("Successfully inserted today's PI task for UNG-05");
+      } catch (err) {
+        console.error("Failed to insert one-time task:", err);
+      }
+    };
+    insertTodayTask();
+
     return () => clearInterval(timer);
   }, []);
 
