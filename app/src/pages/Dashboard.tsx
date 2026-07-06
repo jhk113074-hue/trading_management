@@ -339,38 +339,40 @@ export const Dashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const { userProfile, currentUser } = useAuth();
 
-  // TEMPORARY: One-time insertion of today's PI task for Representative Director Kim Ju-han
+  // TEMPORARY: Clean up duplicate auto-tasks for UNG-05
   useEffect(() => {
-    const insertTodayTask = async () => {
+    const cleanUpDuplicates = async () => {
       try {
-        const hasRun = localStorage.getItem('has_run_today_pi_task_insert_ung_05_v4');
-        if (hasRun) return;
-        
-        await addTask({
-          title: `[자동] 견적서 작성: United Neama Group Gem Trad & Con... (PI: PI-YS-2026-UNG-05)`,
-          description: `견적서(PI: PI-YS-2026-UNG-05)가 작성되어 자동으로 연동되었습니다.\n- 품목 요약: CBU-613 (5000KG)\n- 담당자: 대표이사 김주한\n- 작성 일자: 2026-07-06`,
-          status: 'IN_PROGRESS',
-          type: 'DAILY',
-          scheduleType: 'SELF',
-          importance: 'B',
-          urgency: 5,
-          quadrant: 'Q2',
-          assigneeId: 'jhkim1130',
-          assigneeName: '대표이사 김주한',
-          createdBy: 'jhkim1130',
-          startDate: '2026-07-06',
-          dueDate: '2026-07-06',
-          createdAt: new Date().toISOString()
-        } as any);
-        
-        localStorage.setItem('has_run_today_pi_task_insert_ung_05_v4', 'true');
-        console.log("Successfully inserted today's PI task for UNG-05");
+        const hasCleaned = localStorage.getItem('has_cleaned_duplicates_ung_05_v1');
+        if (hasCleaned) return;
+
+        const { query, collection, where, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+
+        const q = query(
+          collection(db, 'tasks'),
+          where('title', '==', `[자동] 견적서 작성: United Neama Group Gem Trad & Con... (PI: PI-YS-2026-UNG-05)`)
+        );
+        const snap = await getDocs(q);
+        if (snap.size > 1) {
+          const sortedDocs = snap.docs.sort((a, b) => {
+            const dateA = new Date(a.data().createdAt || 0).getTime();
+            const dateB = new Date(b.data().createdAt || 0).getTime();
+            return dateA - dateB;
+          });
+          for (let i = 1; i < sortedDocs.length; i++) {
+            await deleteDoc(doc(db, 'tasks', sortedDocs[i].id));
+          }
+          console.log(`Successfully purged ${sortedDocs.length - 1} duplicate tasks`);
+        }
+        localStorage.setItem('has_cleaned_duplicates_ung_05_v1', 'true');
       } catch (err) {
-        console.error("Failed to insert one-time task:", err);
+        console.error("Purge duplicates error:", err);
       }
     };
-    insertTodayTask();
-  }, [addTask]);
+    cleanUpDuplicates();
+  }, []);
+
 
   const isCommentNew = (lastCommentAt?: string): boolean => {
     if (!lastCommentAt) return false;
