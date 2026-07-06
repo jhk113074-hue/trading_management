@@ -217,6 +217,7 @@ export const Layout: React.FC = () => {
         const hasNewUnread = unreadIds.some(id => !prevUnreadIdsRef.current.includes(id));
         if (hasNewUnread) {
           playNotificationSound();
+          setShowNotifications(true);
         }
         prevUnreadIdsRef.current = unreadIds;
       }
