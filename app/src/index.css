@@ -289,3 +289,17 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+@keyframes blink-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+
+.blink-dot {
+  animation: blink-dot 1.2s infinite ease-in-out;
+}

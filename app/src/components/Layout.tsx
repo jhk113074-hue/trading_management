@@ -412,6 +412,7 @@ export const Layout: React.FC = () => {
                       {item.label}
                       {item.badgeCount > 0 && (
                         <span 
+                          className="blink-dot"
                           style={{ 
                             width: '6px', 
                             height: '6px', 
