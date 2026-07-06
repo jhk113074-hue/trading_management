@@ -1267,6 +1267,29 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     }
   };
 
+  const autoCompletePITask = async (piNum: string, customerName: string) => {
+    try {
+      const q = query(
+        collection(db, 'tasks'),
+        where('title', '==', `[자동] 견적서 작성: ${customerName} (PI: ${piNum})`),
+        where('status', '!=', 'DONE')
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        for (const docSnap of snap.docs) {
+          await updateDoc(doc(db, 'tasks', docSnap.id), {
+            status: 'DONE',
+            completedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+        console.log('Auto completed PI task for', piNum);
+      }
+    } catch (e) {
+      console.error('Failed to auto complete PI task:', e);
+    }
+  };
+
   const handleSave = async (isRevision: boolean = false) => {
     // ── Guard: prevent double execution ──
     if (savingType !== null) return;
@@ -1656,6 +1679,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           }
         }
       }
+      
+      await autoCompletePITask(piNum || '임시', formData.customerName || '알수없음');
       
       // Navigate to /orders with createFromPi parameter
       window.location.href = `/orders?createFromPi=${piId}`;

@@ -1876,6 +1876,29 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const autoCompleteOrderTask = async (piNum: string, customerName: string) => {
+    try {
+      const q = query(
+        collection(db, 'tasks'),
+        where('title', '==', `[자동] 주문 관리: ${customerName} (PI: ${piNum})`),
+        where('status', '!=', 'DONE')
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        for (const docSnap of snap.docs) {
+          await updateDoc(doc(db, 'tasks', docSnap.id), {
+            status: 'DONE',
+            completedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+        console.log('Auto completed Order task for', piNum);
+      }
+    } catch (e) {
+      console.error('Failed to auto complete Order task:', e);
+    }
+  };
+
   // Save details changes
   const handleSaveBasic = async (showMsg: boolean = true, tabIdOverride?: string, stepNameOverride?: string) => {
     if (!order) return;
@@ -2121,7 +2144,15 @@ export const OrderDetail: React.FC = () => {
 
       isDirtyRef.current = false;
       const logDescription = changes.length > 0 ? changes.join(', ') : '주문 정보 저장';
-      await autoRegisterOrderTask(basicForm.piNumber || order.piNumber || '알수없음', basicForm.customer || order.customer || '알수없음', logDescription);
+      const piNum = basicForm.piNumber || order.piNumber || '알수없음';
+      const customer = basicForm.customer || order.customer || '알수없음';
+      
+      await autoRegisterOrderTask(piNum, customer, logDescription);
+
+      const isCompleted = basicForm.shipmentCompleted === 'Y' || mappedStatus === '이익관리';
+      if (isCompleted) {
+        await autoCompleteOrderTask(piNum, customer);
+      }
 
       if (showMsg) {
         alert('✅ 저장되었습니다.');
