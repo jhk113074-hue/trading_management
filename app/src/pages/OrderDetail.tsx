@@ -10005,8 +10005,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <div>
-                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>💸 BANK CHARGES (LC 수수료 관리)</h4>
-                        <div style={{ fontSize: '13.5px', color: '#64748b' }}>L/C 개설, 매입, 환가료 등 은행에서 발생한 수수료 항목과 금액을 등록합니다. (정산현황에서 자동 차감됩니다.)</div>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>💸 지급수수료 관리</h4>
+                        <div style={{ fontSize: '13.5px', color: '#64748b' }}>통관수수료, 원산지 증명서 발행비, 신용장수령, 기타 은행수수료 등 제반 수수료 항목과 금액을 등록합니다. (정산현황에서 자동 차감됩니다.)</div>
                       </div>
                       <button
                         type="button"
@@ -10026,7 +10026,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {(!basicForm.bankCharges || basicForm.bankCharges.length === 0) ? (
                         <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '15.5px', border: '1px dashed #cbd5e1', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
-                          등록된 은행 수수료 내역이 없습니다. '수수료 항목 추가' 버튼을 눌러 등록해주세요.
+                          등록된 수수료 내역이 없습니다. '수수료 항목 추가' 버튼을 눌러 등록해주세요.
                         </div>
                       ) : (
                         <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
@@ -10035,7 +10035,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '50px' }}>번호</th>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '130px' }}>발생일자</th>
-                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>수수료 항목 (예: 환가료, 대체료, 전신료)</th>
+                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569' }}>수수료 항목</th>
                                 <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#475569', width: '180px' }}>금액 (KRW ₩)</th>
                                 <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: '#475569', width: '250px' }}>영수증 첨부</th>
                                 <th style={{ padding: '10px', textAlign: 'center', fontWeight: 700, color: '#475569', width: '80px' }}>작업</th>
@@ -10065,8 +10065,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     <td style={{ padding: '10px' }}>
                                       <input
                                         type="text"
+                                        list="bank-charges-items"
                                         value={bc.item || ''}
-                                        placeholder="예: 환가료 / 전신료 / 대체료 등"
+                                        placeholder="선택하거나 직접 입력하세요"
                                         onChange={e => handleFieldChange('item', e.target.value)}
                                         onBlur={() => handleSaveBasic(false)}
                                         onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
@@ -10165,9 +10166,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   </tr>
                                 );
                               })}
-                              {/* 총액 합계 Row */}
                               <tr style={{ background: '#eff6ff', fontWeight: 800, borderTop: '2px solid #2563eb' }}>
-                                <td colSpan={3} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 BANK CHARGES 총액 합계</td>
+                                <td colSpan={3} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 지급수수료 총액 합계</td>
                                 <td style={{ padding: '12px', color: '#2563eb', textAlign: 'right', fontSize: '14.5px' }}>
                                   ₩{basicForm.bankCharges.reduce((sum, bc) => sum + (bc.amount || 0), 0).toLocaleString()} KRW
                                 </td>
@@ -10179,6 +10179,16 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       )}
                     </div>
                   </div>
+
+                  <datalist id="bank-charges-items">
+                    <option value="통관수수료" />
+                    <option value="원산지 증명서 발행비" />
+                    <option value="신용장수령" />
+                    <option value="기타 은행수수료" />
+                    <option value="환가료" />
+                    <option value="대체료" />
+                    <option value="전신료" />
+                  </datalist>
                 </div>
               )}
 
@@ -10696,7 +10706,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           </div>
                         </div>
                         <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                          <div style={{ fontSize: '15.5px', color: '#64748b', fontWeight: 600 }}>BANK CHARGES</div>
+                          <div style={{ fontSize: '15.5px', color: '#64748b', fontWeight: 600 }}>지급수수료</div>
                           <div style={{ fontSize: '16.5px', fontWeight: 800, color: '#991b1b', marginTop: '4px' }}>
                             ₩{totalBankChargesKrw.toLocaleString()} KRW
                           </div>
@@ -10735,7 +10745,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#60a5fa', marginTop: '10px', borderTop: '1px dashed #bfdbfe', paddingTop: '8px' }}>
-                          공식: 주문금액(USD) - 매입원가(USD 상당) - 운송비(USD 상당) - BANK CHARGES(USD 상당)
+                          공식: 주문금액(USD) - 매입원가(USD 상당) - 운송비(USD 상당) - 지급수수료(USD 상당)
                         </div>
                       </div>
 
@@ -10754,7 +10764,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           </span>
                         </div>
                         <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '10px', borderTop: '1px dashed #a7f3d0', paddingTop: '8px' }}>
-                          공식: 주문금액(KRW) - 매입금액 - 운송비 - BANK CHARGES
+                          공식: 주문금액(KRW) - 매입금액 - 운송비 - 지급수수료
                         </div>
                       </div>
                     </div>
