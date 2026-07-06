@@ -22,6 +22,7 @@ const getHoliday = (dateStr: string) => {
     '2026-05-25': { name: '대체공휴일', country: 'KR' },
     '2026-06-03': { name: '지방선거일', country: 'KR' },
     '2026-06-06': { name: '현충일', country: 'KR' },
+    '2026-07-17': { name: '제헌절', country: 'KR' },
     '2026-08-15': { name: '광복절', country: 'KR' },
     '2026-08-17': { name: '대체공휴일', country: 'KR' },
     '2026-09-24': { name: '추석', country: 'KR' },
