@@ -1809,58 +1809,82 @@ export const Dashboard: React.FC = () => {
                 
                 {/* 첨부파일 리스트 */}
                 {eventForm.attachments && eventForm.attachments.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                    {eventForm.attachments.map((file, fIdx) => (
-                      <div 
-                        key={fIdx} 
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          background: '#fff',
-                          border: '1px solid #e2e8f0',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      >
-                        <a 
-                          href={file.url} 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPreviewFile({ name: file.name, url: file.url });
-                          }}
-                          style={{
-                            color: '#2563eb',
-                            textDecoration: 'underline',
-                            fontWeight: 600,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '320px',
-                            cursor: 'pointer'
-                          }}
-                          title={`${file.name} (클릭 시 미리보기)`}
-                        >
-                          🔍 {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => handleEventDeleteAttachment(fIdx)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            padding: '0 4px'
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                    {eventForm.attachments.map((file, fIdx) => {
+                      const nameLower = file.name.toLowerCase();
+                      const isImg = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(nameLower);
+                      const isPdf = /\.pdf$/i.test(nameLower);
+                      const isExcel = /\.(xls|xlsx)$/i.test(nameLower);
+
+                      return (
+                        <div 
+                          key={fIdx} 
+                          style={{ 
+                            background: '#fff', 
+                            border: '1px solid #cbd5e1', 
+                            borderRadius: '8px', 
+                            padding: '6px 10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            fontSize: '12px', 
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                            boxSizing: 'border-box'
                           }}
                         >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                          {/* Thumbnail / Icon */}
+                          <div 
+                            onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                            title="클릭하여 미리보기"
+                          >
+                            {isImg ? (
+                              <img 
+                                src={file.url} 
+                                alt={file.name} 
+                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                              />
+                            ) : (
+                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                                {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Name and size */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                            <span 
+                              onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                              style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                              title="클릭하여 미리보기"
+                            >
+                              {file.name}
+                            </span>
+                            <span style={{ color: '#64748b', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                            <button 
+                              type="button" 
+                              onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                              style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              title="미리보기"
+                            >
+                              🔍
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleEventDeleteAttachment(fIdx)} 
+                              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              title="삭제"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
@@ -2080,58 +2104,82 @@ export const Dashboard: React.FC = () => {
                 
                 {/* 첨부파일 리스트 */}
                 {eventForm.attachments && eventForm.attachments.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                    {eventForm.attachments.map((file, fIdx) => (
-                      <div 
-                        key={fIdx} 
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          background: '#fff',
-                          border: '1px solid #e2e8f0',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          fontSize: '12px'
-                        }}
-                      >
-                        <a 
-                          href={file.url} 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPreviewFile({ name: file.name, url: file.url });
-                          }}
-                          style={{
-                            color: '#2563eb',
-                            textDecoration: 'underline',
-                            fontWeight: 600,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '320px',
-                            cursor: 'pointer'
-                          }}
-                          title={`${file.name} (클릭 시 미리보기)`}
-                        >
-                          🔍 {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => handleEventDeleteAttachment(fIdx)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            padding: '0 4px'
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                    {eventForm.attachments.map((file, fIdx) => {
+                      const nameLower = file.name.toLowerCase();
+                      const isImg = /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(nameLower);
+                      const isPdf = /\.pdf$/i.test(nameLower);
+                      const isExcel = /\.(xls|xlsx)$/i.test(nameLower);
+
+                      return (
+                        <div 
+                          key={fIdx} 
+                          style={{ 
+                            background: '#fff', 
+                            border: '1px solid #cbd5e1', 
+                            borderRadius: '8px', 
+                            padding: '6px 10px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            fontSize: '12px', 
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                            boxSizing: 'border-box'
                           }}
                         >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+                          {/* Thumbnail / Icon */}
+                          <div 
+                            onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                            title="클릭하여 미리보기"
+                          >
+                            {isImg ? (
+                              <img 
+                                src={file.url} 
+                                alt={file.name} 
+                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                              />
+                            ) : (
+                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                                {isPdf ? '📄' : isExcel ? '📊' : '📎'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Name and size */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
+                            <span 
+                              onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                              style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                              title="클릭하여 미리보기"
+                            >
+                              {file.name}
+                            </span>
+                            <span style={{ color: '#64748b', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
+                            <button 
+                              type="button" 
+                              onClick={() => setPreviewFile({ name: file.name, url: file.url })}
+                              style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              title="미리보기"
+                            >
+                              🔍
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleEventDeleteAttachment(fIdx)} 
+                              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              title="삭제"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
