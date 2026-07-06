@@ -976,7 +976,7 @@ export const OrderDetail: React.FC = () => {
     supplierTaxInvoiceDetails: {} as Record<string, { date: string; invoiceNo: string; } | Array<{ date: string; invoiceNo: string; }>>,
     supplierPoDetails: {} as Record<string, { requestDate?: string; deliveryPlace?: string; specialRemarks?: string; generalNotes?: string; }>,
     supplierPurchaseCertFiles: {} as Record<string, Array<{ name: string; url: string; size: number; path: string }>>,
-    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
+    supplierPaymentInstallments: {} as Record<string, Array<{ date: string; amount: number; currency?: 'KRW' | 'USD'; method?: '송금' | '카드'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>>,
     paymentCollectedInstallments: [{ date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }] as Array<{ date: string; amount: number; fee?: number; total?: number; currency: 'KRW' | 'USD' | 'CNY' | 'EUR'; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
     bankSubmissionStatus: '' as 'Y' | 'N' | '',
     bankCharges: [] as Array<{ date?: string; item: string; amount: number; receiptFiles?: Array<{ name: string; url: string; size: number; path: string }> }>,
@@ -10441,12 +10441,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           const krwPaid = installments.filter(inst => inst.currency === 'KRW' || (!inst.currency && isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           const usdPaid = installments.filter(inst => inst.currency === 'USD' || (!inst.currency && !isKrw)).reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           
+                          const krwRemittance = installments.filter(inst => (inst.currency === 'KRW' || (!inst.currency && isKrw)) && inst.method !== '카드').reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const krwCard = installments.filter(inst => (inst.currency === 'KRW' || (!inst.currency && isKrw)) && inst.method === '카드').reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const usdRemittance = installments.filter(inst => (inst.currency === 'USD' || (!inst.currency && !isKrw)) && inst.method !== '카드').reduce((sum, inst) => sum + (inst.amount || 0), 0);
+                          const usdCard = installments.filter(inst => (inst.currency === 'USD' || (!inst.currency && !isKrw)) && inst.method === '카드').reduce((sum, inst) => sum + (inst.amount || 0), 0);
+
                           const krwOutstanding = Math.max(0, Math.round(krwGrand - krwPaid));
                           const usdOutstanding = Math.max(0, parseFloat((usdGrand - usdPaid).toFixed(2)));
                           
                           const isCompleted = (krwGrand === 0 || krwPaid >= (krwGrand - 0.9)) && (usdGrand === 0 || usdPaid >= (usdGrand - 0.009));
 
-                          const handleInstallmentChange = (idx: number, field: 'date' | 'amount' | 'currency', value: any) => {
+                          const handleInstallmentChange = (idx: number, field: 'date' | 'amount' | 'currency' | 'method', value: any) => {
                             const newList = [...installments];
                             newList[idx] = { ...newList[idx], [field]: value };
                             
@@ -10490,16 +10495,30 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               </div>
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', fontSize: '14.5px' }}>
                                 <span>발주: <strong>{usdGrand > 0 ? `$${usdGrand.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdGrand > 0 && krwGrand > 0 ? ' / ' : ''} {krwGrand > 0 ? `₩${krwGrand.toLocaleString()}` : (usdGrand === 0 ? '₩0' : '')}</strong></span>
-                                <span>송금: <strong style={{ color: '#0d9488' }}>{usdPaid > 0 ? `$${usdPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdPaid > 0 && krwPaid > 0 ? ' / ' : ''} {krwPaid > 0 ? `₩${krwPaid.toLocaleString()}` : (usdPaid === 0 ? '₩0' : '')}</strong></span>
+                                <span>
+                                  결제액: <strong style={{ color: '#0d9488' }}>
+                                    {usdPaid > 0 ? `$${usdPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdPaid > 0 && krwPaid > 0 ? ' / ' : ''} {krwPaid > 0 ? `₩${krwPaid.toLocaleString()}` : (usdPaid === 0 ? '₩0' : '')}
+                                  </strong>
+                                  {(krwCard > 0 || usdCard > 0) && (
+                                    <span style={{ fontSize: '12.5px', color: '#64748b', marginLeft: '4px' }}>
+                                      ({[
+                                        krwRemittance > 0 ? `송금 ₩${krwRemittance.toLocaleString()}` : null,
+                                        krwCard > 0 ? `카드 ₩${krwCard.toLocaleString()}` : null,
+                                        usdRemittance > 0 ? `송금 $${usdRemittance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : null,
+                                        usdCard > 0 ? `카드 $${usdCard.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : null
+                                      ].filter(Boolean).join(', ')})
+                                    </span>
+                                  )}
+                                </span>
                                 <span>잔액: <strong style={{ color: (krwOutstanding > 0 || usdOutstanding > 0) ? '#ef4444' : '#64748b' }}>{usdOutstanding > 0 ? `$${usdOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : ''} {usdOutstanding > 0 && krwOutstanding > 0 ? ' / ' : ''} {krwOutstanding > 0 ? `₩${krwOutstanding.toLocaleString()}` : (usdOutstanding === 0 ? '₩0' : '')}</strong></span>
                                 <span style={{ padding: '2px 6px', borderRadius: '4px', background: isCompleted ? '#dcfce7' : '#fee2e2', color: isCompleted ? '#15803d' : '#b91c1c', fontWeight: 700, fontSize: '13.5px' }}>
-                                  {isCompleted ? '송금완료' : '지급대기'}
+                                  {isCompleted ? '결제완료' : '지급대기'}
                                 </span>
                               </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                               {installments.map((inst, i) => (
-                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '340px' }}>
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '410px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#64748b' }}>{i + 1}차</span>
                                     <input
@@ -10515,6 +10534,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     >
                                       <option value="KRW">₩</option>
                                       <option value="USD">$</option>
+                                    </select>
+                                    <select
+                                      value={inst.method || '송금'}
+                                      onChange={e => handleInstallmentChange(i, 'method', e.target.value)}
+                                      style={{ padding: '1px 2px', border: 'none', fontSize: '14.5px', outline: 'none', background: 'transparent', color: '#475569', fontWeight: 600 }}
+                                    >
+                                      <option value="송금">송금</option>
+                                      <option value="카드">카드</option>
                                     </select>
                                     <FormattedNumberInput
                                       placeholder="지급액"
