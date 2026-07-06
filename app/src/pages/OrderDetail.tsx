@@ -2117,8 +2117,8 @@ export const OrderDetail: React.FC = () => {
             freightAmount: freight,
             amountKrw: domestic,
             amountUsd: budget,
-            finalAmountUsd: fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? freight : 0),
-            finalAmountKrw: fw.finalAmountKrw || domestic + (fw.freightCurrency === 'KRW' ? freight : 0),
+            finalAmountUsd: (fw.freightCurrency === 'USD' ? freight : 0),
+            finalAmountKrw: domestic + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? freight : 0),
           };
         }),
         forwarderFreightAmount: forwardersList[0] ? (
@@ -10579,8 +10579,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           const krwPaid = installments.filter(inst => inst.currency === 'KRW' || (!inst.currency && fw.freightCurrency !== 'USD')).reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           const usdPaid = installments.filter(inst => inst.currency === 'USD' || (!inst.currency && fw.freightCurrency === 'USD')).reduce((sum, inst) => sum + (inst.amount || 0), 0);
                           
-                          const finalUsd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
-                          const finalKrw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                          const finalUsd = (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                          const finalKrw = (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                           
                           const krwOutstanding = Math.max(0, finalKrw - krwPaid);
                           const usdOutstanding = Math.max(0, finalUsd - usdPaid);
@@ -10777,8 +10777,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     }, 0);
                     return sum + invoiceSum;
                   }
-                  const usd = fw.finalAmountUsd || (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
-                  const krw = fw.finalAmountKrw || (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                  const usd = (fw.freightCurrency === 'USD' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
+                  const krw = (fw.amountKrw ? Number(fw.amountKrw) : 0) + (fw.amountVatKrw ? Number(fw.amountVatKrw) : 0) + (fw.freightCurrency === 'KRW' ? (fw.freightAmount ? Number(fw.freightAmount) : 0) : 0);
                   return sum + krw + Math.round(usd * customsRate);
                 }, 0);
 
