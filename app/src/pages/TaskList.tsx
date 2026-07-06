@@ -30,6 +30,25 @@ const columns = [
   { key: 'actions', label: '관리' }
 ];
 
+const toLocalDateStr = (val?: string | Date): string => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    if (val.length === 10 && val.includes('-') && !val.includes('T')) {
+      return val;
+    }
+  }
+  try {
+    const d = typeof val === 'string' ? new Date(val) : val;
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return '';
+  }
+};
+
 export const TaskList: React.FC = () => {
   const { tasks, updateTask, updateTaskStatus, addTask, deleteTask } = useTasks();
   const { userProfile } = useAuth();
@@ -185,10 +204,10 @@ export const TaskList: React.FC = () => {
       if (isDone) {
         // 완료 업무: completedAt → dueDate → startDate 순으로 기준 날짜 결정
         const compDate = (
-          task.completedAt?.split('T')[0] ||
+          toLocalDateStr(task.completedAt) ||
           task.dueDate ||
           task.startDate ||
-          task.createdAt?.split('T')[0] ||
+          toLocalDateStr(task.createdAt) ||
           ''
         );
         if (!compDate) return true; // 날짜 정보 없으면 항상 표시
@@ -197,15 +216,15 @@ export const TaskList: React.FC = () => {
           return compDate === selectedDate;
         } else if (dateMode === 'weekly') {
           const { start, end } = getWeekRange(weekOffset);
-          const wStartStr = start.toISOString().split('T')[0];
-          const wEndStr = end.toISOString().split('T')[0];
+          const wStartStr = toLocalDateStr(start);
+          const wEndStr = toLocalDateStr(end);
           return compDate >= wStartStr && compDate <= wEndStr;
         } else {
           return compDate >= startDate && compDate <= endDate;
         }
       } else {
         // 미완료 업무: 날짜 범위 겹침 여부로 판단
-        const tStart = task.startDate || task.createdAt?.split('T')[0] || '';
+        const tStart = task.startDate || toLocalDateStr(task.createdAt) || '';
         const tDue = task.dueDate || '';
 
         // 시작일·마감일 둘 다 없으면 모든 기간에 표시
@@ -220,8 +239,8 @@ export const TaskList: React.FC = () => {
           return effectiveStart <= selectedDate && effectiveDue >= selectedDate;
         } else if (dateMode === 'weekly') {
           const { start, end } = getWeekRange(weekOffset);
-          const wStartStr = start.toISOString().split('T')[0];
-          const wEndStr = end.toISOString().split('T')[0];
+          const wStartStr = toLocalDateStr(start);
+          const wEndStr = toLocalDateStr(end);
           return effectiveStart <= wEndStr && effectiveDue >= wStartStr;
         } else {
           return effectiveStart <= endDate && effectiveDue >= startDate;

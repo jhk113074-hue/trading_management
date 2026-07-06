@@ -312,6 +312,25 @@ const WorldClocks: React.FC = () => {
   );
 };
 
+const toLocalDateStr = (val?: string | Date): string => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    if (val.length === 10 && val.includes('-') && !val.includes('T')) {
+      return val;
+    }
+  }
+  try {
+    const d = typeof val === 'string' ? new Date(val) : val;
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    return '';
+  }
+};
+
 export const Dashboard: React.FC = () => {
   const location = useLocation();
   const { tasks, addTask, updateTask, loading } = useTasks();
@@ -904,29 +923,29 @@ export const Dashboard: React.FC = () => {
       const isDone = task.status === 'DONE';
       
       if (isDone) {
-        const compDate = (task.completedAt || task.createdAt || '').split('T')[0];
+        const compDate = toLocalDateStr(task.completedAt || task.createdAt);
         if (!compDate) return false;
 
         if (dateMode === 'daily') {
           return compDate === selectedDate;
         } else if (dateMode === 'weekly') {
           const { start, end } = getWeekRange(weekOffset);
-          const wStartStr = start.toISOString().split('T')[0];
-          const wEndStr = end.toISOString().split('T')[0];
+          const wStartStr = toLocalDateStr(start);
+          const wEndStr = toLocalDateStr(end);
           return compDate >= wStartStr && compDate <= wEndStr;
         } else {
           return compDate >= startDate && compDate <= endDate;
         }
       } else {
-        const tStart = task.startDate || task.createdAt?.split('T')[0] || '';
+        const tStart = task.startDate || toLocalDateStr(task.createdAt) || '';
         const tDue = task.dueDate || '9999-12-31';
 
         if (dateMode === 'daily') {
           return tStart <= selectedDate && tDue >= selectedDate;
         } else if (dateMode === 'weekly') {
           const { start, end } = getWeekRange(weekOffset);
-          const wStartStr = start.toISOString().split('T')[0];
-          const wEndStr = end.toISOString().split('T')[0];
+          const wStartStr = toLocalDateStr(start);
+          const wEndStr = toLocalDateStr(end);
           return tStart <= wEndStr && tDue >= wStartStr;
         } else {
           return tStart <= endDate && tDue >= startDate;
