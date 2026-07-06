@@ -157,6 +157,41 @@ export const Layout: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const prevUnreadIdsRef = React.useRef<string[]>([]);
+  const isFirstLoadRef = React.useRef(true);
+
+  const playNotificationSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      const playTone = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.15, start + 0.05); // volume
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+
+      const now = ctx.currentTime;
+      playTone(587.33, now, 0.4); // D5
+      playTone(880, now + 0.1, 0.5); // A5
+    } catch (err) {
+      console.warn("Failed to play notification sound:", err);
+    }
+  };
+
   React.useEffect(() => {
     if (!userProfile?.id) return;
     const q = query(collection(db, 'mails'), where('receiverId', '==', userProfile.id));
@@ -171,9 +206,28 @@ export const Layout: React.FC = () => {
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
       });
+      
+      const unread = fetched.filter((n: any) => !n.isRead);
+      const unreadIds = unread.map((n: any) => n.id);
+
+      if (isFirstLoadRef.current) {
+        isFirstLoadRef.current = false;
+        prevUnreadIdsRef.current = unreadIds;
+      } else {
+        const hasNewUnread = unreadIds.some(id => !prevUnreadIdsRef.current.includes(id));
+        if (hasNewUnread) {
+          playNotificationSound();
+        }
+        prevUnreadIdsRef.current = unreadIds;
+      }
+
       setNotifications(fetched);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      isFirstLoadRef.current = true;
+      prevUnreadIdsRef.current = [];
+    };
   }, [userProfile?.id]);
 
   const handleMarkAllAsRead = async () => {
