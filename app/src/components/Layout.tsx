@@ -584,7 +584,7 @@ export const Layout: React.FC = () => {
                             onMouseLeave={(e) => { e.currentTarget.style.background = n.isRead ? '#ffffff' : '#f0f9ff'; }}
                           >
                             <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: n.isRead ? 400 : 600 }}>
-                              📢 <strong>{n.senderName}</strong>님이 검토를 요청했습니다.
+                              📢 <strong>{(!n.senderName || n.senderName.toUpperCase() === 'SYSTEM') ? '알림' : n.senderName}</strong>님이 검토를 요청했습니다.
                             </div>
                             <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               업무: {n.taskTitle}
