@@ -9,7 +9,9 @@ interface LeaveRequest {
   userName: string;
   startDate: string;
   endDate: string;
-  leaveType: 'FULL' | 'AM_HALF' | 'PM_HALF';
+  leaveType: 'FULL' | 'AM_HALF' | 'PM_HALF' | 'HOURLY';
+  startTime?: string;
+  endTime?: string;
   totalDays: number;
   reason: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -28,7 +30,9 @@ export const LeaveManagement: React.FC = () => {
   // Form State
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [leaveType, setLeaveType] = useState<'FULL' | 'AM_HALF' | 'PM_HALF'>('FULL');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
+  const [leaveType, setLeaveType] = useState<'FULL' | 'AM_HALF' | 'PM_HALF' | 'HOURLY'>('FULL');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -120,6 +124,13 @@ export const LeaveManagement: React.FC = () => {
   // Helper to calculate total request days
   const calculateRequestedDays = () => {
     if (leaveType === 'AM_HALF' || leaveType === 'PM_HALF') return 0.5;
+    if (leaveType === 'HOURLY') {
+      const [sh, sm] = startTime.split(':').map(Number);
+      const [eh, em] = endTime.split(':').map(Number);
+      const diffHours = (eh - sh) + (em - sm) / 60;
+      if (diffHours <= 0) return 0;
+      return parseFloat((diffHours / 8).toFixed(3));
+    }
     
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -150,7 +161,7 @@ export const LeaveManagement: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'leave_requests'), {
+      const payload: any = {
         userId: userProfile.id,
         userName: userProfile.name,
         startDate,
@@ -160,7 +171,19 @@ export const LeaveManagement: React.FC = () => {
         reason,
         status: 'PENDING',
         createdAt: new Date().toISOString()
-      });
+      };
+      if (leaveType === 'HOURLY') {
+        payload.startTime = startTime;
+        payload.endTime = endTime;
+      }
+
+      await addDoc(collection(db, 'leave_requests'), payload);
+      alert('✅ 휴가가 신청되었습니다.');
+      setReason('');
+      setLeaveType('FULL');
+      // Reset default times
+      setStartTime('09:00');
+      setEndTime('10:00');
 
       // Send mail to all admins/managers
       const admins = users.filter(u => u.id !== userProfile.id && (u.role === '관리자' || u.roleCode === 'ADMIN' || u.role === '매니저'));
@@ -171,7 +194,7 @@ export const LeaveManagement: React.FC = () => {
           receiverId: admin.id,
           receiverName: admin.name,
           title: `[알림] ${userProfile.name}님의 휴가 신청 결재 요청`,
-          content: `${userProfile.name}님이 휴가를 신청했습니다.\n\n구분: ${leaveType === 'FULL' ? '종일' : '반차'}\n기간: ${startDate} ~ ${leaveType === 'FULL' ? endDate : startDate}\n사유: ${reason}\n\n연월차 관리 메뉴에서 결재해 주시기 바랍니다.`,
+          content: `${userProfile.name}님이 휴가를 신청했습니다.\n\n구분: ${leaveType === 'FULL' ? '종일' : leaveType === 'AM_HALF' ? '오전반차' : leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${startTime}~${endTime})`}\n기간: ${startDate} ~ ${leaveType === 'FULL' ? endDate : startDate}\n사유: ${reason}\n\n연월차 관리 메뉴에서 결재해 주시기 바랍니다.`,
           isRead: false,
           createdAt: new Date().toISOString()
         })
@@ -207,7 +230,7 @@ export const LeaveManagement: React.FC = () => {
           receiverId: targetReq.userId,
           receiverName: targetReq.userName,
           title: `[알림] 휴가 신청이 승인되었습니다.`,
-          content: `${userProfile.name}님이 신청하신 휴가를 승인하였습니다.\n\n기간: ${targetReq.startDate} ~ ${targetReq.endDate}\n구분: ${targetReq.leaveType === 'FULL' ? '종일' : '반차'} (${targetReq.totalDays}일)\n\n즐거운 휴가 보내시기 바랍니다.`,
+          content: `${userProfile.name}님이 신청하신 휴가를 승인하였습니다.\n\n기간: ${targetReq.startDate} ~ ${targetReq.endDate}\n구분: ${targetReq.leaveType === 'FULL' ? '종일' : targetReq.leaveType === 'AM_HALF' ? '오전반차' : targetReq.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${targetReq.startTime}~${targetReq.endTime})`} (${targetReq.totalDays}일)\n\n즐거운 휴가 보내시기 바랍니다.`,
           isRead: false,
           createdAt: new Date().toISOString()
         });
@@ -312,6 +335,7 @@ export const LeaveManagement: React.FC = () => {
                     <option value="FULL">종일 휴가 (1.0일)</option>
                     <option value="AM_HALF">오전 반차 (0.5일 - 09:00~13:00)</option>
                     <option value="PM_HALF">오후 반차 (0.5일 - 14:00~18:00)</option>
+                    <option value="HOURLY">시간차 (1시간당 0.125일 차감)</option>
                   </select>
                 </div>
 
@@ -337,6 +361,29 @@ export const LeaveManagement: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {leaveType === 'HOURLY' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>시작시간</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={e => setStartTime(e.target.value)}
+                        style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b' }}>종료시간</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={e => setEndTime(e.target.value)}
+                        style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px' }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#475569', fontWeight: 700 }}>총 차감일수:</span>
@@ -441,7 +488,7 @@ export const LeaveManagement: React.FC = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <strong style={{ fontSize: '13.5px', color: '#1e293b' }}>{r.userName}</strong>
                             <span style={{ fontSize: '10.5px', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                              {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : '오후반차'} ({r.totalDays}일)
+                              {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`} ({r.totalDays}일)
                             </span>
                           </div>
                           <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
@@ -503,7 +550,7 @@ export const LeaveManagement: React.FC = () => {
                       {userProfile?.role === '관리자' && <td style={{ padding: '10px 12px', fontWeight: 700 }}>{r.userName}</td>}
                       <td style={{ padding: '10px 12px' }}>
                         <span style={{ fontSize: '10.5px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
-                          {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : '오후반차'}
+                          {r.leaveType === 'FULL' ? '종일' : r.leaveType === 'AM_HALF' ? '오전반차' : r.leaveType === 'PM_HALF' ? '오후반차' : `시간차 (${r.startTime}~${r.endTime})`}
                         </span>
                       </td>
                       <td style={{ padding: '10px 12px', color: '#475569' }}>{r.startDate} ~ {r.endDate}</td>
