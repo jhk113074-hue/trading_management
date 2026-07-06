@@ -10427,14 +10427,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                               {installments.map((inst, i) => (
-                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '270px' }}>
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '340px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#64748b' }}>{i + 1}차</span>
                                     <input
                                       type="date"
                                       value={inst.date}
                                       onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
-                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '15.5px', width: '90px', outline: 'none' }}
+                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '15.5px', width: '135px', outline: 'none' }}
                                     />
                                     <select
                                       value={inst.currency || (isKrw ? 'KRW' : 'USD')}
@@ -10448,7 +10448,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       placeholder="지급액"
                                       value={inst.amount || 0}
                                       onChange={val => handleInstallmentChange(i, 'amount', val)}
-                                      style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '80px', textAlign: 'right', outline: 'none' }}
+                                      style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '110px', textAlign: 'right', outline: 'none' }}
                                     />
                                     {installments.length > 1 && (
                                       <button
@@ -10616,14 +10616,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                               <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                                 {installments.map((inst, instIdx) => (
-                                  <div key={instIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '270px' }}>
+                                  <div key={instIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '340px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                       <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#64748b' }}>{instIdx + 1}차</span>
                                       <input
                                         type="date"
                                         value={inst.date || ''}
                                         onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
-                                        style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '15.5px', width: '90px', outline: 'none' }}
+                                        style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid #e2e8f0', fontSize: '15.5px', width: '135px', outline: 'none' }}
                                       />
                                       <select
                                         value={inst.currency || fw.freightCurrency || 'KRW'}
@@ -10637,7 +10637,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         placeholder="지급액"
                                         value={inst.amount || 0}
                                         onChange={val => handleFwInstallmentChange(instIdx, 'amount', val)}
-                                        style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '80px', textAlign: 'right', outline: 'none' }}
+                                        style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '110px', textAlign: 'right', outline: 'none' }}
                                       />
                                       {installments.length > 1 && (
                                         <button
