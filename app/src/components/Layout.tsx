@@ -520,7 +520,29 @@ export const Layout: React.FC = () => {
                         background: '#f8fafc'
                       }}
                     >
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>알림</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>알림</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playNotificationSound();
+                          }}
+                          style={{
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            color: '#475569',
+                            fontSize: '10px',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                          }}
+                          title="알림 사운드 미리 듣기 및 브라우저 오디오 블록 해제"
+                        >
+                          🔊 소리 테스트
+                        </button>
+                      </div>
                       {notifications.filter(n => !n.isRead).length > 0 && (
                         <button
                           onClick={handleMarkAllAsRead}
