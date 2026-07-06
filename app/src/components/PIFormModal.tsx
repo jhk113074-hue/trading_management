@@ -2982,12 +2982,16 @@ const getRawProductCode = (code: string | undefined): string => {
 };
 
 const ceilValue = (value: number, digits: number): number => {
+  if (value === 0) return 0;
+  const epsilon = 1e-9;
+  const sign = value > 0 ? 1 : -1;
+  const absValue = Math.abs(value);
   if (digits < 0) {
     const scale = Math.pow(10, Math.abs(digits));
-    return Math.ceil(value / scale) * scale;
+    return sign * Math.ceil((absValue / scale) - epsilon) * scale;
   }
   const factor = Math.pow(10, digits);
-  return Math.ceil(value * factor) / factor;
+  return sign * Math.ceil((absValue * factor) - epsilon) / factor;
 };
 
 const sanitizeForFirestore = (obj: any): any => {
