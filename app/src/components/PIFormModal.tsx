@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot, addDoc, query, where, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import type { ProformaInvoice, PIItem, PIRevision } from '../types/pi';
@@ -1220,91 +1220,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     );
   };
 
-  const autoRegisterPITask = async (piNum: string, customerName: string, itemsSummary: string[]) => {
-    try {
-      // Look for an existing incomplete auto task for this PI
-      const q = query(
-        collection(db, 'tasks'),
-        where('title', '==', `[자동] 견적서 작성: ${customerName} (PI: ${piNum})`),
-        where('status', '!=', 'DONE')
-      );
-      const snap = await getDocs(q);
-      
-      let assigneeId = 'jhkim1130';
-      let assigneeName = '김주한';
-
-      const normalizedUser = currentUser ? currentUser.trim() : '';
-      if (normalizedUser.includes('김하은') || normalizedUser.includes('jhk010624')) {
-        assigneeId = 'jhk010624';
-        assigneeName = '김하은';
-      } else if (normalizedUser.includes('박현') || normalizedUser.includes('alexpark')) {
-        assigneeId = 'alexpark';
-        assigneeName = '박현';
-      } else if (normalizedUser.includes('김주한') || normalizedUser.includes('jhkim1130')) {
-        assigneeId = 'jhkim1130';
-        assigneeName = '김주한';
-      } else {
-        assigneeId = currentUser || 'system';
-        assigneeName = currentUser || '시스템';
-      }
-
-      const taskDescription = `견적서(PI: ${piNum})가 작성 또는 갱신되어 자동으로 연동되었습니다.\n- 품목 요약: ${itemsSummary.join(', ')}\n- 담당자: ${assigneeName}\n- 최종 업데이트: ${new Date().toLocaleString()}`;
-      
-      if (!snap.empty) {
-        // Option A: Update existing incomplete task
-        const existingDoc = snap.docs[0];
-        await updateDoc(doc(db, 'tasks', existingDoc.id), {
-          description: taskDescription,
-          updatedAt: new Date().toISOString()
-        });
-        console.log('Updated existing auto PITask:', existingDoc.id);
-      } else {
-        // Create a new task
-        const newTask = {
-          title: `[자동] 견적서 작성: ${customerName} (PI: ${piNum})`,
-          description: taskDescription,
-          status: 'IN_PROGRESS',
-          type: 'DAILY',
-          scheduleType: 'SELF',
-          importance: 'B',
-          urgency: 5,
-          quadrant: 'Q2',
-          assigneeId: assigneeId,
-          assigneeName: assigneeName,
-          createdBy: assigneeId,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        await addDoc(collection(db, 'tasks'), newTask);
-        console.log('Created new auto PITask');
-      }
-    } catch (e) {
-      console.error('Failed to auto register PI task:', e);
-    }
-  };
-
-  const autoCompletePITask = async (piNum: string, customerName: string) => {
-    try {
-      const q = query(
-        collection(db, 'tasks'),
-        where('title', '==', `[자동] 견적서 작성: ${customerName} (PI: ${piNum})`),
-        where('status', '!=', 'DONE')
-      );
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        for (const docSnap of snap.docs) {
-          await updateDoc(doc(db, 'tasks', docSnap.id), {
-            status: 'DONE',
-            completedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        }
-        console.log('Auto completed PI task for', piNum);
-      }
-    } catch (e) {
-      console.error('Failed to auto complete PI task:', e);
-    }
-  };
+  // Auto tasks registration features deleted.
 
   const handleSave = async (isRevision: boolean = false) => {
     // ── Guard: prevent double execution ──
@@ -1549,7 +1465,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         items: true
       };
 
-      await autoRegisterPITask(piNum || '임시', formData.customerName || '알수없음', itemsSummary);
+      // await autoRegisterPITask(piNum || '임시', formData.customerName || '알수없음', itemsSummary);
 
       alert(isRevision ? `✅ Revision 저장 완료! (R${version})` : '✅ 일반저장 완료!');
       // onClose(); 삭제됨: 저장 후 창 닫지 않음
@@ -1696,7 +1612,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         }
       }
       
-      await autoCompletePITask(piNum || '임시', formData.customerName || '알수없음');
+      // await autoCompletePITask(piNum || '임시', formData.customerName || '알수없음');
       
       // Navigate to /orders with createFromPi parameter
       window.location.href = `/orders?createFromPi=${piId}`;
