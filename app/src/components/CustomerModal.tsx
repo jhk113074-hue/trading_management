@@ -90,9 +90,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       
       setIsLoadingTasks(true);
       try {
-        let list: any[] = [];
+        let taskList: any[] = [];
+        let meetingList: any[] = [];
         
-        // 1st Priority: Query by customerId (no orderBy to prevent index errors)
+        // 1. Fetch Tasks
         if (customerIdQuery) {
           const qId = query(
             collection(db, 'tasks'),
@@ -100,34 +101,57 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
           );
           const snapId = await getDocs(qId);
           snapId.forEach(d => {
-            list.push({ id: d.id, ...d.data() });
+            taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
           });
         }
-        
-        // 2nd Priority: Fallback or merge by customerName if list is empty
-        if (list.length === 0 && nameToQuery) {
+        if (taskList.length === 0 && nameToQuery) {
           const qName = query(
             collection(db, 'tasks'),
             where('customerName', '==', nameToQuery)
           );
           const snapName = await getDocs(qName);
           snapName.forEach(d => {
-            if (!list.some(existing => existing.id === d.id)) {
-              list.push({ id: d.id, ...d.data() });
+            if (!taskList.some(existing => existing.id === d.id)) {
+              taskList.push({ id: d.id, crmType: 'TASK', ...d.data() });
             }
           });
         }
-        
-        // Sort in memory by createdAt descending
-        list.sort((a, b) => {
+
+        // 2. Fetch Meetings
+        if (customerIdQuery) {
+          const qMeetId = query(
+            collection(db, 'meetings'),
+            where('customerId', '==', customerIdQuery)
+          );
+          const snapMeetId = await getDocs(qMeetId);
+          snapMeetId.forEach(d => {
+            meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
+          });
+        }
+        if (meetingList.length === 0 && nameToQuery) {
+          const qMeetName = query(
+            collection(db, 'meetings'),
+            where('customerName', '==', nameToQuery)
+          );
+          const snapMeetName = await getDocs(qMeetName);
+          snapMeetName.forEach(d => {
+            if (!meetingList.some(existing => existing.id === d.id)) {
+              meetingList.push({ id: d.id, crmType: 'MEETING', ...d.data() });
+            }
+          });
+        }
+
+        // 3. Merge and Sort
+        const mergedList = [...taskList, ...meetingList];
+        mergedList.sort((a, b) => {
           const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
           const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
           return dateB - dateA;
         });
         
-        setCrmTasks(list);
+        setCrmTasks(mergedList);
       } catch (err) {
-        console.error("Error fetching CRM tasks:", err);
+        console.error("Error fetching CRM items:", err);
       } finally {
         setIsLoadingTasks(false);
       }
@@ -319,10 +343,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
-                  💼 연동 업무 히스토리 ({crmTasks.length}건)
+                  💼 CRM 연동 업무 및 회의록 이력 ({crmTasks.length}건)
                 </span>
                 <span style={{ fontSize: '11px', color: '#64748b' }}>
-                  * 거래처명이 "{formData.name || initialCustomer?.name || ''}"로 지정된 업무 리스트입니다.
+                  * 거래처명이 "{formData.name || initialCustomer?.name || ''}"로 지정된 데이터 리스트입니다.
                 </span>
               </div>
               
@@ -338,7 +362,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {crmTasks.map((t) => (
                     <div key={t.id} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
-                      {/* 업무 요약 헤더 */}
+                      {/* 업무 / 회의록 요약 헤더 */}
                       <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ 
@@ -346,25 +370,36 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                             fontWeight: 800, 
                             padding: '2px 6px', 
                             borderRadius: '4px',
-                            background: t.status === 'DONE' ? '#dcfce7' : '#fee2e2',
-                            color: t.status === 'DONE' ? '#15803d' : '#b91c1c'
+                            background: t.crmType === 'MEETING' ? '#f3e8ff' : (t.status === 'DONE' ? '#dcfce7' : '#fee2e2'),
+                            color: t.crmType === 'MEETING' ? '#7e22ce' : (t.status === 'DONE' ? '#15803d' : '#b91c1c')
                           }}>
-                            {t.status === 'DONE' ? '완료' : '진행중'}
+                            {t.crmType === 'MEETING' ? '📝 회의록' : (t.status === 'DONE' ? '완료' : '진행중')}
                           </span>
-                          <span style={{ 
-                            fontSize: '10.5px', 
-                            fontWeight: 800, 
-                            padding: '2px 6px', 
-                            borderRadius: '4px',
-                            background: '#e0f2fe',
-                            color: '#0369a1'
-                          }}>
-                            중요도: {t.importance || 'B'}
-                          </span>
+                          {t.crmType === 'TASK' && (
+                            <span style={{ 
+                              fontSize: '10.5px', 
+                              fontWeight: 800, 
+                              padding: '2px 6px', 
+                              borderRadius: '4px',
+                              background: '#e0f2fe',
+                              color: '#0369a1'
+                            }}>
+                              중요도: {t.importance || 'B'}
+                            </span>
+                          )}
                           <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e293b' }}>{t.title}</span>
+                          {t.crmType === 'MEETING' && t.projectName && (
+                            <span style={{ fontSize: '11px', color: '#0d9488', background: '#f0fdfa', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
+                              🚀 {t.projectName}
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: '11px', color: '#64748b' }}>
-                          담당: <strong style={{ color: '#334155' }}>{t.assigneeName || '미지정'}</strong> | 등록일: {t.createdAt ? t.createdAt.substring(0,10) : '-'}
+                          {t.crmType === 'MEETING' ? (
+                            <>작성: <strong style={{ color: '#334155' }}>{t.createdByName || '시스템'}</strong> | 회의일: {t.date || t.createdAt?.substring(0,10)}</>
+                          ) : (
+                            <>담당: <strong style={{ color: '#334155' }}>{t.assigneeName || '미지정'}</strong> | 등록일: {t.createdAt ? t.createdAt.substring(0,10) : '-'}</>
+                          )}
                         </div>
                       </div>
                       
