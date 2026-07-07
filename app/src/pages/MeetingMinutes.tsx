@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
@@ -89,6 +89,42 @@ export const MeetingMinutes: React.FC = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [isFormCustomerSearchOpen, setIsFormCustomerSearchOpen] = useState(false);
+  const [suggestedProjects, setSuggestedProjects] = useState<string[]>([]);
+  const [showProjDropdown, setShowProjDropdown] = useState(false);
+
+  // Fetch projects related to selected customer for recommendations
+  useEffect(() => {
+    const fetchSuggestedProjects = async () => {
+      if (!customerId) {
+        setSuggestedProjects([]);
+        return;
+      }
+      try {
+        const q = query(
+          collection(db, 'companies', COMPANY_ID, 'proforma_invoices'),
+          where('customerId', '==', customerId)
+        );
+        const snap = await getDocs(q);
+        const projs: string[] = [];
+        snap.forEach(d => {
+          const data = d.data() as any;
+          if (data.projectName && !projs.includes(data.projectName)) {
+            projs.push(data.projectName);
+          }
+          if (data.piNumber && !projs.includes(data.piNumber)) {
+            projs.push(data.piNumber);
+          }
+        });
+        setSuggestedProjects(projs);
+      } catch (err) {
+        console.error("Error loading suggested projects:", err);
+      }
+    };
+    fetchSuggestedProjects();
+  }, [customerId]);
 
   // Mail Share recipient
   const [mailReceiverId, setMailReceiverId] = useState('');
@@ -321,6 +357,8 @@ export const MeetingMinutes: React.FC = () => {
           if (data.title !== undefined && data.title !== title) setTitle(data.title);
           if (data.date !== undefined && data.date !== date) setDate(data.date);
           if (data.projectName !== undefined && data.projectName !== projectName) setProjectName(data.projectName);
+          if (data.customerId !== undefined && data.customerId !== customerId) setCustomerId(data.customerId || '');
+          if (data.customerName !== undefined && data.customerName !== customerName) setCustomerName(data.customerName || '');
           if (data.companies !== undefined) setCompanies(data.companies || []);
           if (data.attachments !== undefined) setAttachments(data.attachments || []);
         }
@@ -391,6 +429,12 @@ export const MeetingMinutes: React.FC = () => {
     } else if (fieldName === 'projectName') {
       setProjectName(value);
       syncToFirestore({ projectName: value });
+    } else if (fieldName === 'customerId') {
+      setCustomerId(value);
+      syncToFirestore({ customerId: value });
+    } else if (fieldName === 'customerName') {
+      setCustomerName(value);
+      syncToFirestore({ customerName: value });
     }
   };
 
@@ -683,6 +727,8 @@ export const MeetingMinutes: React.FC = () => {
     setTitle('');
     setDate(draftData.date);
     setProjectName('');
+    setCustomerId('');
+    setCustomerName('');
     setCompanies([]);
     setAttachments([]);
     setContentHTML('');
@@ -698,6 +744,8 @@ export const MeetingMinutes: React.FC = () => {
     setTitle(m.title);
     setDate(m.date);
     setProjectName(m.projectName || '');
+    setCustomerId(m.customerId || '');
+    setCustomerName(m.customerName || '');
     setCompanies(m.companies || []);
     setAttachments(m.attachments || []);
     setContentHTML(m.content);
@@ -732,8 +780,8 @@ export const MeetingMinutes: React.FC = () => {
           title,
           date,
           projectName,
-          customerId: companies.length > 0 ? companies[0].companyId : '',
-          customerName: aggregatedCustName,
+          customerId: customerId || (companies.length > 0 ? companies[0].companyId : ''),
+          customerName: customerName || aggregatedCustName,
           attendees: aggregatedAttendees,
           companies,
           attachments,
@@ -1164,7 +1212,7 @@ export const MeetingMinutes: React.FC = () => {
                 </div>
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>회의 일자 ★</label>
                   <input
@@ -1175,15 +1223,113 @@ export const MeetingMinutes: React.FC = () => {
                     style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                
+                {/* 2단: 연계 고객사 (바이어) 선택 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 고객사 (바이어)</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '13.5px',
+                      background: '#fff',
+                      minHeight: '41px',
+                      boxSizing: 'border-box',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => setIsFormCustomerSearchOpen(true)}
+                    >
+                      {customerName ? (
+                        <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{customerName}</span>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>🔍 고객사 선택...</span>
+                      )}
+                    </div>
+                    {customerName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleLocalChange('customerId', '');
+                          handleLocalChange('customerName', '');
+                        }}
+                        style={{
+                          padding: '0 12px',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontSize: '13px'
+                        }}
+                        title="고객사 매핑 취소"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3단: 연계 프로젝트명 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 프로젝트명</label>
                   <input
                     type="text"
                     placeholder="예: 삼익HDS 프로젝트"
                     value={projectName}
                     onChange={e => handleLocalChange('projectName', e.target.value)}
+                    onFocus={() => setShowProjDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowProjDropdown(false), 200)}
                     style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
+                  
+                  {/* 프로젝트 추천 드롭다운 */}
+                  {showProjDropdown && suggestedProjects.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: '#fff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      zIndex: 3500,
+                      maxHeight: '180px',
+                      overflowY: 'auto',
+                      marginTop: '4px'
+                    }}>
+                      <div style={{ padding: '6px 10px', fontSize: '10.5px', fontWeight: 800, color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        💡 고객사 관련 추천 프로젝트/PI 목록
+                      </div>
+                      {suggestedProjects.map((p, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            handleLocalChange('projectName', p);
+                            setShowProjDropdown(false);
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            fontSize: '12.5px',
+                            color: '#334155',
+                            cursor: 'pointer',
+                            transition: 'background 0.15s',
+                            borderBottom: '1px solid #f1f5f9'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          🚀 {p}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1464,6 +1610,19 @@ export const MeetingMinutes: React.FC = () => {
             setTempCompanyId(cust.id);
             setTempCompanyName(cust.name);
             setIsCustomerSearchOpen(false);
+          }}
+          customers={customers as any}
+        />
+      )}
+
+      {/* Form Customer Finder Modal */}
+      {isFormCustomerSearchOpen && (
+        <CustomerSearchModal
+          onClose={() => setIsFormCustomerSearchOpen(false)}
+          onSelect={(cust) => {
+            handleLocalChange('customerId', cust.id);
+            handleLocalChange('customerName', cust.name);
+            setIsFormCustomerSearchOpen(false);
           }}
           customers={customers as any}
         />
