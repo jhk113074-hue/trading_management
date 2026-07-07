@@ -4935,7 +4935,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>PO 접수일</span>
+              <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#4b5563' }}>PO 접수일 (CI 작성일)</span>
               <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
             </div>
 
