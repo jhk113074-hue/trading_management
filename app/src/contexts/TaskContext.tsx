@@ -43,9 +43,31 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const taskList: Task[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        taskList.push({ id: doc.id, ...data } as Task);
+      
+      const today = new Date();
+      const threeDaysLater = new Date();
+      threeDaysLater.setDate(today.getDate() + 3);
+      const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
+
+      snapshot.forEach((taskDoc) => {
+        const data = taskDoc.data();
+        let status = data.status as TaskStatus;
+
+        // 시작일(startDate)이 오늘로부터 3일 이내로 진입한 UPCOMING 주기 업무는 TODO로 자동 활성화
+        if (
+          data.type === 'PERIODIC' &&
+          status === 'UPCOMING' &&
+          data.startDate &&
+          data.startDate <= threeDaysLaterStr
+        ) {
+          status = 'TODO';
+          updateDoc(doc(db, 'tasks', taskDoc.id), { 
+            status: 'TODO', 
+            updatedAt: new Date().toISOString() 
+          }).catch((e: any) => console.error("Error auto-activating upcoming task:", e));
+        }
+
+        taskList.push({ id: taskDoc.id, ...data, status } as Task);
       });
       setTasks(taskList);
       setLoading(false);
@@ -119,14 +141,22 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        const today = new Date();
+        const threeDaysLater = new Date();
+        threeDaysLater.setDate(today.getDate() + 3);
+        const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
+
         for (const occDate of occurrences) {
           const occDueDate = new Date(occDate);
           occDueDate.setDate(occDueDate.getDate() + durationDays);
           const occDueDateStr = occDueDate.toISOString().split('T')[0];
+          
+          const initialStatus = occDate <= threeDaysLaterStr ? 'TODO' : 'UPCOMING';
 
           await addDoc(collection(db, 'tasks'), {
             ...taskData,
             title: formatPeriodicTitle(taskData.title || '', occDate),
+            status: initialStatus,
             startDate: occDate,
             dueDate: occDueDateStr,
             createdAt: new Date().toISOString(),
@@ -164,10 +194,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        const today = new Date();
+        const threeDaysLater = new Date();
+        threeDaysLater.setDate(today.getDate() + 3);
+        const threeDaysLaterStr = threeDaysLater.toISOString().split('T')[0];
+
+        const initialStatusForSelf = data.startDate <= threeDaysLaterStr ? (data.status === 'UPCOMING' ? 'TODO' : data.status) : 'UPCOMING';
+
         // We update the clicked task itself first (attaching year/month if it is periodic)
         await updateDoc(doc(db, 'tasks', id), {
           ...data,
           title: formatPeriodicTitle(data.title || '', data.startDate),
+          status: initialStatusForSelf,
           updatedAt: new Date().toISOString()
         });
 
@@ -181,10 +219,13 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const occDueDate = new Date(occDate);
             occDueDate.setDate(occDueDate.getDate() + durationDays);
             const occDueDateStr = occDueDate.toISOString().split('T')[0];
+            
+            const initialStatus = occDate <= threeDaysLaterStr ? 'TODO' : 'UPCOMING';
 
             await addDoc(collection(db, 'tasks'), {
               ...data,
               title: occTitle,
+              status: initialStatus,
               startDate: occDate,
               dueDate: occDueDateStr,
               createdAt: new Date().toISOString(),

@@ -1,5 +1,5 @@
 export type Visibility = 'PUBLIC' | 'RESTRICTED' | 'PRIVATE';
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'HOLDING';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'HOLDING' | 'UPCOMING';
 export type TaskType = 'PROJECT' | 'DAILY' | 'PERIODIC' | 'DELEGATED';
 export type ScheduleType = 'SELF' | 'SCHEDULED' | 'PERIODIC' | 'REQUESTED';
 export type Quadrant = 'Q1' | 'Q2' | 'Q3' | 'Q4';
