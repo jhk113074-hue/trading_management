@@ -67,7 +67,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     let count = 0;
-    while (current <= end && count < 100) {
+    while (current <= end && count < 3) {
       dates.push(current.toISOString().split('T')[0]);
       const next = new Date(current);
       if (cycle === '매일') {
