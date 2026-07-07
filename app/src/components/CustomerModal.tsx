@@ -133,10 +133,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       }
     };
 
-    if (activeTab === 'crm') {
-      fetchCrmTasks();
-    }
-  }, [activeTab, formData.name, formData.customerCode, initialCustomer]);
+    fetchCrmTasks();
+  }, [formData.name, formData.customerCode, initialCustomer]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
