@@ -403,10 +403,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         </div>
                       </div>
                       
-                      {/* 업무 본문 설명 및 메모 */}
+                      {/* 업무 / 회의록 본문 설명 및 메모 */}
                       <div 
                         style={{ padding: '12px', background: '#ffffff', fontSize: '13px', color: '#334155', lineHeight: '1.6', fontFamily: 'inherit' }}
-                        dangerouslySetInnerHTML={{ __html: t.description || '<span style="color: #94a3b8; font-style: italic;">작성된 내용이 없습니다.</span>' }}
+                        dangerouslySetInnerHTML={{ __html: t.content || t.description || '<span style="color: #94a3b8; font-style: italic;">작성된 내용이 없습니다.</span>' }}
                       />
                     </div>
                   ))}
