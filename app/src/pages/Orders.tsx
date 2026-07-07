@@ -698,7 +698,18 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
+                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>
+                        {(() => {
+                          if (order.createdAt) {
+                            if (typeof order.createdAt === 'string') return order.createdAt.substring(0, 10);
+                            if ((order.createdAt as any).seconds) {
+                              const d = new Date((order.createdAt as any).seconds * 1000);
+                              return d.toISOString().substring(0, 10);
+                            }
+                          }
+                          return order.poDate || '-';
+                        })()}
+                      </td>
                       <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13.5px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13.5px' })} title={order.customer}>{order.customer}</td>
