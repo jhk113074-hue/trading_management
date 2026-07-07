@@ -63,6 +63,11 @@ export const FilePreviewModal: React.FC = () => {
         left: `${position.x}px`,
         top: `${position.y}px`,
         width: '800px',
+        height: '620px',
+        minWidth: '400px',
+        minHeight: '350px',
+        maxWidth: '95vw',
+        maxHeight: '95vh',
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         boxShadow: '0 12px 36px rgba(15, 23, 42, 0.3)',
@@ -71,6 +76,7 @@ export const FilePreviewModal: React.FC = () => {
         zIndex: 10005,
         border: '2px solid #cbd5e1',
         overflow: 'hidden',
+        resize: 'both',
         userSelect: isDragging ? 'none' : 'auto'
       }}
     >
@@ -85,7 +91,8 @@ export const FilePreviewModal: React.FC = () => {
           alignItems: 'center',
           background: '#f1f5f9',
           cursor: 'move',
-          userSelect: 'none'
+          userSelect: 'none',
+          flexShrink: 0
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
@@ -151,7 +158,7 @@ export const FilePreviewModal: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          maxHeight: '65vh',
+          flex: 1,
           overflowY: 'auto'
         }}
       >
@@ -161,7 +168,7 @@ export const FilePreviewModal: React.FC = () => {
             alt={name}
             style={{
               maxWidth: '100%',
-              maxHeight: '55vh',
+              maxHeight: '100%',
               objectFit: 'contain',
               borderRadius: '6px',
               boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
@@ -173,7 +180,8 @@ export const FilePreviewModal: React.FC = () => {
             title={name}
             style={{
               width: '100%',
-              height: '55vh',
+              height: '100%',
+              minHeight: '280px',
               border: 'none',
               borderRadius: '6px',
               background: '#ffffff',
