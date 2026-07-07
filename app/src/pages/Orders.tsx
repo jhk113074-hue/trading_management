@@ -236,13 +236,13 @@ export const Orders: React.FC = () => {
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
       const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (pi?.totalUsd || o.totalAmount || 0);
+      return sum + (o.totalAmount || pi?.totalUsd || 0);
     }, 0);
     
     const salesOrders = processedOrders.filter(o => (o.etd || "").trim() !== "");
     const salesTotalUsd = salesOrders.reduce((sum, o) => {
       const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (pi?.totalUsd || o.totalAmount || 0);
+      return sum + (o.totalAmount || pi?.totalUsd || 0);
     }, 0);
 
     return {
@@ -250,11 +250,11 @@ export const Orders: React.FC = () => {
       totalUsd,
       totalYsaccUsd: processedOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (pi?.totalUsd || o.totalAmount || 0);
+        return sum + (o.totalAmount || pi?.totalUsd || 0);
       }, 0),
       totalYsUsd: processedOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (pi?.totalUsd || o.totalAmount || 0);
+        return sum + (o.totalAmount || pi?.totalUsd || 0);
       }, 0),
       urgentCount: processedOrders.filter(o => o.nextAction.level === 'RED').length,
       salesCount: salesOrders.length,
@@ -664,7 +664,7 @@ export const Orders: React.FC = () => {
               <tbody>
                 {processedOrders.map(order => {
                   const pi = quotations.find(q => q.id === order.quotationId);
-                  const amount = pi?.totalUsd || order.totalAmount || 0;
+                  const amount = order.totalAmount || pi?.totalUsd || 0;
                   const { pct } = getOverallProgress(order);
                   const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
