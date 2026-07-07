@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs, deleteDoc, doc, onSnapshot, setDoc, updateDoc, addDoc, query, where } from 'firebase/firestore';
-import { db, COMPANY_ID } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, COMPANY_ID, storage } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
@@ -89,6 +90,7 @@ export const MeetingMinutes: React.FC = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [contentHTML, setContentHTML] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [isFormCustomerSearchOpen, setIsFormCustomerSearchOpen] = useState(false);
@@ -472,29 +474,40 @@ export const MeetingMinutes: React.FC = () => {
   };
 
   // Drag Drop & Paste Attachments Handler
-  const handleFilesAdded = (files: FileList) => {
-    Array.from(files).forEach(file => {
-      if (file.size > 512000) {
-        alert(`용량 초과! '${file.name}'의 크기가 500KB를 넘습니다. (더 작은 이미지나 파일을 첨부해 주세요)`);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64Data = e.target?.result as string;
+  const handleFilesAdded = async (files: FileList) => {
+    if (!editId) {
+      alert("회의록 임시 번호가 발급되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    setIsUploadingFile(true);
+    try {
+      const fileList = Array.from(files);
+      for (const file of fileList) {
+        // Safe upload path: companies/{COMPANY_ID}/meetings/{editId}/attachments/{filename}
+        const fileRef = ref(storage, `companies/${COMPANY_ID}/meetings/${editId}/attachments/${file.name}`);
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
         const newAttachment: Attachment = {
           name: file.name,
           size: file.size,
           type: file.type,
-          data: base64Data
+          data: downloadUrl // Replace base64 with Firebase Storage URL
         };
+
         setAttachments(prev => {
           const next = [...prev, newAttachment];
           syncToFirestore({ attachments: next });
           return next;
         });
-      };
-      reader.readAsDataURL(file);
-    });
+      }
+    } catch (err) {
+      console.error("Storage upload failed:", err);
+      alert("파일 업로드 도중 에러가 발생했습니다.");
+    } finally {
+      setIsUploadingFile(false);
+    }
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -1164,7 +1177,17 @@ export const MeetingMinutes: React.FC = () => {
             {isDraggingOver && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed #4f46e5', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                 <span style={{ fontSize: '20px', fontWeight: 900, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                  📥 마우스를 놓아 파일 업로드 (500KB 이하)
+                  📥 마우스를 놓아 클라우드 저장소에 파일 업로드 (무제한 용량 지원)
+                </span>
+              </div>
+            )}
+
+            {/* Cloud upload loading banner */}
+            {isUploadingFile && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(255, 255, 255, 0.85)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                <div style={{ fontSize: '28px' }}>⏳</div>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                  대용량 파일을 클라우드 저장소(Firebase Storage)에 안전하게 업로드하는 중입니다...
                 </span>
               </div>
             )}
