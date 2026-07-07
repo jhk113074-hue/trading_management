@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
 
@@ -92,12 +92,11 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       try {
         let list: any[] = [];
         
-        // 1st Priority: Query by customerId
+        // 1st Priority: Query by customerId (no orderBy to prevent index errors)
         if (customerIdQuery) {
           const qId = query(
             collection(db, 'tasks'),
-            where('customerId', '==', customerIdQuery),
-            orderBy('createdAt', 'desc')
+            where('customerId', '==', customerIdQuery)
           );
           const snapId = await getDocs(qId);
           snapId.forEach(d => {
@@ -109,17 +108,22 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         if (list.length === 0 && nameToQuery) {
           const qName = query(
             collection(db, 'tasks'),
-            where('customerName', '==', nameToQuery),
-            orderBy('createdAt', 'desc')
+            where('customerName', '==', nameToQuery)
           );
           const snapName = await getDocs(qName);
           snapName.forEach(d => {
-            // Prevent duplicate entries
             if (!list.some(existing => existing.id === d.id)) {
               list.push({ id: d.id, ...d.data() });
             }
           });
         }
+        
+        // Sort in memory by createdAt descending
+        list.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
         
         setCrmTasks(list);
       } catch (err) {
