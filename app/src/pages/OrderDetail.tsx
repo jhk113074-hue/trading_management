@@ -10895,7 +10895,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
               {(activeSettlementTab === '수금관리' || activeSettlementTab === '정산현황') && (() => {
                 const customsRate = basicForm.customsExchangeRate || piData?.exchangeRate || 1350;
-                const orderAmountUsd = piData?.totalUsd || 0;
+                const orderAmountUsd = piData?.totalUsd || order?.totalAmount || 0;
 
                 const purchaseUsd = sourcingItems?.reduce((sum: number, it: Partial<OrderItem>) => {
                   const info = getSupplierPurchaseInfo(it);
