@@ -93,6 +93,41 @@ export const MeetingMinutes: React.FC = () => {
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
+  
+  // Floating Modaless preview states
+  const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState('');
+  const [previewFileType, setPreviewFileType] = useState('');
+  const [subPosition, setSubPosition] = useState({ x: 250, y: 100 });
+  const [isSubDragging, setIsSubDragging] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+  const posStartRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isSubDragging) return;
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      setSubPosition({
+        x: Math.max(10, Math.min(window.innerWidth - 300, posStartRef.current.x + dx)),
+        y: Math.max(10, Math.min(window.innerHeight - 200, posStartRef.current.y + dy))
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsSubDragging(false);
+    };
+
+    if (isSubDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isSubDragging]);
+
   const [isFormCustomerSearchOpen, setIsFormCustomerSearchOpen] = useState(false);
   const [suggestedProjects, setSuggestedProjects] = useState<string[]>([]);
   const [showProjDropdown, setShowProjDropdown] = useState(false);
@@ -1504,11 +1539,24 @@ export const MeetingMinutes: React.FC = () => {
                           <img
                             src={file.data}
                             alt={file.name}
-                            onClick={() => setPreviewImageUrl(file.data)}
+                            onClick={() => {
+                              setPreviewFileUrl(file.data);
+                              setPreviewFileName(file.name);
+                              setPreviewFileType(file.type);
+                            }}
                             style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
                           />
                         ) : (
-                          <div style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#64748b' }}>📄</div>
+                          <div 
+                            onClick={() => {
+                              setPreviewFileUrl(file.data);
+                              setPreviewFileName(file.name);
+                              setPreviewFileType(file.type);
+                            }}
+                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#64748b', cursor: 'pointer' }}
+                          >
+                            📄
+                          </div>
                         )}
                         <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
                           {file.name}
@@ -1828,11 +1876,24 @@ export const MeetingMinutes: React.FC = () => {
                           <img
                             src={file.data}
                             alt={file.name}
-                            onClick={() => setPreviewImageUrl(file.data)}
+                            onClick={() => {
+                              setPreviewFileUrl(file.data);
+                              setPreviewFileName(file.name);
+                              setPreviewFileType(file.type);
+                            }}
                             style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
                           />
                         ) : (
-                          <a href={file.data} download={file.name} style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', textDecoration: 'none', color: '#64748b' }}>📄</a>
+                          <div 
+                            onClick={() => {
+                              setPreviewFileUrl(file.data);
+                              setPreviewFileName(file.name);
+                              setPreviewFileType(file.type);
+                            }}
+                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', color: '#64748b' }}
+                          >
+                            📄
+                          </div>
                         )}
                         <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
                           {file.name}
@@ -1882,6 +1943,111 @@ export const MeetingMinutes: React.FC = () => {
       {previewImageUrl && (
         <div onClick={() => setPreviewImageUrl(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10010, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', cursor: 'zoom-out' }}>
           <img src={previewImageUrl} alt="Preview" style={{ maxWidth: '95vw', maxHeight: '95vh', borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }} />
+        </div>
+      )}
+
+      {/* Draggable Modeless File Viewer Sub-Window */}
+      {previewFileUrl && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${subPosition.x}px`,
+            top: `${subPosition.y}px`,
+            width: '640px',
+            height: '560px',
+            zIndex: 11000,
+            background: '#fff',
+            borderRadius: '10px',
+            boxShadow: '0 15px 35px rgba(15,23,42,0.25)',
+            border: '2px solid #cbd5e1',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            pointerEvents: 'auto'
+          }}
+        >
+          {/* Header (Drag Handle) */}
+          <div
+            style={{
+              padding: '10px 16px',
+              background: '#f8fafc',
+              borderBottom: '1px solid #cbd5e1',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'move',
+              userSelect: 'none'
+            }}
+            onMouseDown={(e) => {
+              setIsSubDragging(true);
+              dragStartRef.current = { x: e.clientX, y: e.clientY };
+              posStartRef.current = { x: subPosition.x, y: subPosition.y };
+            }}
+          >
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>📄</span>
+              <span style={{ maxWidth: '480px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={previewFileName}>
+                {previewFileName} (미리보기)
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewFileUrl(null)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#64748b',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                padding: '0 4px'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Body Viewer Content */}
+          <div style={{ flex: 1, padding: '12px', background: '#f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+            {previewFileType.startsWith('image/') ? (
+              <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <img
+                  src={previewFileUrl}
+                  alt={previewFileName}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                />
+              </div>
+            ) : previewFileType === 'application/pdf' || previewFileName.endsWith('.pdf') ? (
+              <iframe
+                src={previewFileUrl}
+                title={previewFileName}
+                style={{ width: '100%', height: '100%', border: 'none', background: '#fff', borderRadius: '6px', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' }}
+              />
+            ) : (
+              <div style={{ padding: '24px', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                <div style={{ fontSize: '42px', marginBottom: '12px' }}>📄</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '14px' }}>
+                  이 파일 포맷은 바로 미리보기할 수 없습니다.
+                </div>
+                <a
+                  href={previewFileUrl}
+                  download={previewFileName}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#4f46e5',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 4px rgba(79,70,229,0.15)'
+                  }}
+                >
+                  📥 파일 다운로드 받기
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
