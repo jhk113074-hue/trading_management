@@ -1955,6 +1955,10 @@ export const MeetingMinutes: React.FC = () => {
             top: `${subPosition.y}px`,
             width: '640px',
             height: '560px',
+            minWidth: '350px',
+            minHeight: '300px',
+            maxWidth: '95vw',
+            maxHeight: '95vh',
             zIndex: 11000,
             background: '#fff',
             borderRadius: '10px',
@@ -1963,6 +1967,7 @@ export const MeetingMinutes: React.FC = () => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
+            resize: 'both',
             pointerEvents: 'auto'
           }}
         >
