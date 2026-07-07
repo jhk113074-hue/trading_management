@@ -80,24 +80,47 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
 
   useEffect(() => {
     const fetchCrmTasks = async () => {
+      const customerIdQuery = initialCustomer?.id || formData.customerCode;
       const nameToQuery = formData.name || initialCustomer?.name;
-      if (!nameToQuery) {
+      
+      if (!customerIdQuery && !nameToQuery) {
         setCrmTasks([]);
         return;
       }
       
       setIsLoadingTasks(true);
       try {
-        const q = query(
-          collection(db, 'tasks'),
-          where('customerName', '==', nameToQuery),
-          orderBy('createdAt', 'desc')
-        );
-        const snap = await getDocs(q);
-        const list: any[] = [];
-        snap.forEach(d => {
-          list.push({ id: d.id, ...d.data() });
-        });
+        let list: any[] = [];
+        
+        // 1st Priority: Query by customerId
+        if (customerIdQuery) {
+          const qId = query(
+            collection(db, 'tasks'),
+            where('customerId', '==', customerIdQuery),
+            orderBy('createdAt', 'desc')
+          );
+          const snapId = await getDocs(qId);
+          snapId.forEach(d => {
+            list.push({ id: d.id, ...d.data() });
+          });
+        }
+        
+        // 2nd Priority: Fallback or merge by customerName if list is empty
+        if (list.length === 0 && nameToQuery) {
+          const qName = query(
+            collection(db, 'tasks'),
+            where('customerName', '==', nameToQuery),
+            orderBy('createdAt', 'desc')
+          );
+          const snapName = await getDocs(qName);
+          snapName.forEach(d => {
+            // Prevent duplicate entries
+            if (!list.some(existing => existing.id === d.id)) {
+              list.push({ id: d.id, ...d.data() });
+            }
+          });
+        }
+        
         setCrmTasks(list);
       } catch (err) {
         console.error("Error fetching CRM tasks:", err);
@@ -109,7 +132,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
     if (activeTab === 'crm') {
       fetchCrmTasks();
     }
-  }, [activeTab, formData.name, initialCustomer]);
+  }, [activeTab, formData.name, formData.customerCode, initialCustomer]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
