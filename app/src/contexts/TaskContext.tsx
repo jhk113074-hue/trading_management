@@ -94,6 +94,18 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return dates;
   };
 
+  const formatPeriodicTitle = (baseTitle: string, dateStr: string) => {
+    if (!dateStr) return baseTitle;
+    const match = dateStr.match(/^(\d{4})-(\d{2})/);
+    if (match) {
+      const year = match[1];
+      const month = match[2];
+      const cleanedTitle = baseTitle.replace(/\s*\(\d{4}년\s*\d{2}월\)$/, '');
+      return `${cleanedTitle} (${year}년 ${month}월)`;
+    }
+    return baseTitle;
+  };
+
   const addTask = async (taskData: any) => {
     try {
       if (taskData.type === 'PERIODIC' && taskData.startDate && taskData.recurrenceEndDate) {
@@ -114,6 +126,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           await addDoc(collection(db, 'tasks'), {
             ...taskData,
+            title: formatPeriodicTitle(taskData.title || '', occDate),
             startDate: occDate,
             dueDate: occDueDateStr,
             createdAt: new Date().toISOString(),
@@ -141,10 +154,6 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // If it is updated to a PERIODIC task and we need to generate periodic items:
       if (data.type === 'PERIODIC' && data.startDate && data.recurrenceEndDate) {
-        // Find existing tasks that might belong to the same repetition cycle so we don't duplicate them,
-        // or simple rule: if updating this specific task, update this one, but also generate the remaining ones.
-        // To be safe and clean: if it is periodic, we can update the clicked task (this one),
-        // and if there are other occurrences from getOccurrenceDates that don't exist yet, we add them.
         const occurrences = getOccurrenceDates(data.startDate, data.recurrenceEndDate, data.recurrence || '매주');
         let durationDays = 0;
         if (data.startDate && data.dueDate) {
@@ -155,17 +164,19 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // We update the clicked task itself first
+        // We update the clicked task itself first (attaching year/month if it is periodic)
         await updateDoc(doc(db, 'tasks', id), {
           ...data,
+          title: formatPeriodicTitle(data.title || '', data.startDate),
           updatedAt: new Date().toISOString()
         });
 
         // Generate the other occurrences. We filter out the one that matches this updated task's start date (which is already updated)
         const otherOccurrences = occurrences.filter(occDate => occDate !== data.startDate);
         for (const occDate of otherOccurrences) {
-          // Check if a task with the same title and same startDate already exists to prevent duplicate generation
-          const duplicateExists = tasks.some(t => t.title === data.title && t.startDate === occDate);
+          const occTitle = formatPeriodicTitle(data.title || '', occDate);
+          // Check if a task with the same formatted title and same startDate already exists to prevent duplicate generation
+          const duplicateExists = tasks.some(t => t.title === occTitle && t.startDate === occDate);
           if (!duplicateExists) {
             const occDueDate = new Date(occDate);
             occDueDate.setDate(occDueDate.getDate() + durationDays);
@@ -173,6 +184,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             await addDoc(collection(db, 'tasks'), {
               ...data,
+              title: occTitle,
               startDate: occDate,
               dueDate: occDueDateStr,
               createdAt: new Date().toISOString(),
