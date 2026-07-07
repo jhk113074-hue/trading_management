@@ -135,6 +135,7 @@ export const Orders: React.FC = () => {
   // Filters
   const [issuingCompanyFilter, setIssuingCompanyFilter] = useState('All');
   const [managerFilter, setManagerFilter] = useState('All');
+  const [customerFilter, setCustomerFilter] = useState('All');
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All');
   const [dateFilterType, setDateFilterType] = useState<string>('All');
@@ -190,6 +191,12 @@ export const Orders: React.FC = () => {
     return { text: todoText, level, step: currentStep };
   };
 
+  const customers = useMemo(() => {
+    const list = new Set<string>();
+    orders.forEach(o => { if (o.customer) list.add(o.customer); });
+    return Array.from(list).sort();
+  }, [orders]);
+
   const managers = useMemo(() => {
     const list = new Set<string>();
     orders.forEach(o => { if (o.manager) list.add(o.manager); });
@@ -200,6 +207,7 @@ export const Orders: React.FC = () => {
     let result = orders.map(o => ({ ...o, nextAction: getNextAction(o) }));
     if (issuingCompanyFilter !== 'All') result = result.filter(o => o.issuingCompany === issuingCompanyFilter);
     if (managerFilter !== 'All') result = result.filter(o => o.manager === managerFilter);
+    if (customerFilter !== 'All') result = result.filter(o => o.customer === customerFilter);
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
     if (dateFilterType !== 'All') {
@@ -223,7 +231,7 @@ export const Orders: React.FC = () => {
       return b.id.localeCompare(a.id);
     });
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, stepFilter, viewFilter, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
+  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
 
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
@@ -299,6 +307,7 @@ export const Orders: React.FC = () => {
       <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 8px', flexShrink: 0 }} />
 
       {[
+        { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All','전체'], ...customers.map(c => [c, c])] },
         { label: '담당자', value: managerFilter, set: setManagerFilter, opts: [['All','전체'], ...managers.map(m => [m, m])] },
         { label: '단계', value: stepFilter, set: setStepFilter, opts: [['All','전체'],['수주정보','수주정보'],['소싱/발주','소싱/발주'],['물류/선적','물류/선적'],['서류관리','서류관리'],['정산/결제','정산/결제']] },
         { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All','전체 오더'],['Urgent','⚠️ 긴급만']] },
