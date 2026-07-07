@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
 
@@ -10,6 +10,9 @@ interface Props {
 
 export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'info' | 'crm'>('info');
+  const [crmTasks, setCrmTasks] = useState<any[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
   // 다중 담당자 임시 추가용 state
   const [newContactName, setNewContactName] = useState('');
@@ -74,6 +77,39 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       fetchNextCode();
     }
   }, [initialCustomer]);
+
+  useEffect(() => {
+    const fetchCrmTasks = async () => {
+      const nameToQuery = formData.name || initialCustomer?.name;
+      if (!nameToQuery) {
+        setCrmTasks([]);
+        return;
+      }
+      
+      setIsLoadingTasks(true);
+      try {
+        const q = query(
+          collection(db, 'tasks'),
+          where('customerName', '==', nameToQuery),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        const list: any[] = [];
+        snap.forEach(d => {
+          list.push({ id: d.id, ...d.data() });
+        });
+        setCrmTasks(list);
+      } catch (err) {
+        console.error("Error fetching CRM tasks:", err);
+      } finally {
+        setIsLoadingTasks(false);
+      }
+    };
+
+    if (activeTab === 'crm') {
+      fetchCrmTasks();
+    }
+  }, [activeTab, formData.name, initialCustomer]);
 
   const handleChange = (field: keyof Customer, value: any) => {
     setIsDirty(true);
@@ -212,195 +248,301 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
           <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
+        {/* Tab switcher */}
+        <div style={{ display: 'flex', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', padding: '0 16px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveTab('info')}
+            style={{
+              padding: '10px 16px',
+              border: 'none',
+              background: activeTab === 'info' ? '#ffffff' : 'transparent',
+              borderBottom: activeTab === 'info' ? '3px solid #2563eb' : '3px solid transparent',
+              color: activeTab === 'info' ? '#2563eb' : '#475569',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            📂 기본 정보 및 담당자 관리
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('crm')}
+            style={{
+              padding: '10px 16px',
+              border: 'none',
+              background: activeTab === 'crm' ? '#ffffff' : 'transparent',
+              borderBottom: activeTab === 'crm' ? '3px solid #2563eb' : '3px solid transparent',
+              color: activeTab === 'crm' ? '#2563eb' : '#475569',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              cursor: 'pointer',
+              outline: 'none',
+              transition: 'all 0.15s'
+            }}
+          >
+            📝 CRM 및 업무 이력 연동 ({crmTasks.length})
+          </button>
+        </div>
+
         {/* Body Container (Ultra Compact, scrollable only if screen is tiny) */}
-        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
-          
-          {/* SECTION 1: 회사 기본 규격 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-            <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-              <span style={{ color: '#2563eb' }}>🏢</span> 회사 기본 정보 (Company Profile)
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-              <Input label="고객코드 (자동지정)" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={true} placeholder="생성 중..." />
-              <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL BASSAM FACTORIES" labelColor="#2563eb" />
-              <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: AL-BASSAM" />
-              <Input label="대표자 (Representative)" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="CEO / President Name" />
-              
-              <Input label="국가명" value={formData.countryName} onChange={(v: any) => handleChange('countryName', v)} placeholder="예: UAE" />
-              <Input label="도시 (City)" value={formData.city} onChange={(v: any) => handleChange('city', v)} placeholder="예: Dubai" />
-              <Input label="회사 유선전화" value={formData.phone} onChange={(v: any) => handleChange('phone', v)} placeholder="+971-4-XXX-XXXX" />
-              <Input label="대표 이메일" value={formData.email} onChange={(v: any) => handleChange('email', v)} type="email" placeholder="info@company.com" />
-              
-              <div style={{ gridColumn: 'span 2' }}>
-                <Input label="공식 웹사이트 (Website)" value={formData.website} onChange={(v: any) => handleChange('website', v)} placeholder="https://www.company.com" />
+        {activeTab === 'crm' ? (
+          <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                  💼 연동 업무 히스토리 ({crmTasks.length}건)
+                </span>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                  * 거래처명이 "{formData.name || initialCustomer?.name || ''}"로 지정된 업무 리스트입니다.
+                </span>
               </div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <Input label="영문 주소 (Corporate Address)" value={formData.addressEn} onChange={(v: any) => handleChange('addressEn', v)} placeholder="Full street address, ZIP Code" />
-              </div>
+              
+              {isLoadingTasks ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '13px' }}>
+                  ⏳ 업무 이력을 불러오는 중입니다...
+                </div>
+              ) : crmTasks.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontSize: '13px' }}>
+                  📭 등록된 연동 업무 히스토리가 없습니다.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {crmTasks.map((t) => (
+                    <div key={t.id} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
+                      {/* 업무 요약 헤더 */}
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ 
+                            fontSize: '10.5px', 
+                            fontWeight: 800, 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            background: t.status === 'DONE' ? '#dcfce7' : '#fee2e2',
+                            color: t.status === 'DONE' ? '#15803d' : '#b91c1c'
+                          }}>
+                            {t.status === 'DONE' ? '완료' : '진행중'}
+                          </span>
+                          <span style={{ 
+                            fontSize: '10.5px', 
+                            fontWeight: 800, 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            background: '#e0f2fe',
+                            color: '#0369a1'
+                          }}>
+                            중요도: {t.importance || 'B'}
+                          </span>
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e293b' }}>{t.title}</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                          담당: <strong style={{ color: '#334155' }}>{t.assigneeName || '미지정'}</strong> | 등록일: {t.createdAt ? t.createdAt.substring(0,10) : '-'}
+                        </div>
+                      </div>
+                      
+                      {/* 업무 본문 설명 및 메모 */}
+                      <div style={{ padding: '12px', background: '#ffffff', fontSize: '13px', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                        {t.description || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>작성된 내용이 없습니다.</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* SECTION 2: 무역 선적 & 세무 금융 정보 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        ) : (
+          <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
             
-            {/* 무역/선적 스펙 */}
+            {/* SECTION 1: 회사 기본 규격 */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
               <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-                <span style={{ color: '#1d4ed8' }}>🚢</span> 무역 거래 및 선적 조건
+                <span style={{ color: '#2563eb' }}>🏢</span> 회사 기본 정보 (Company Profile)
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <Select label="기본 인도조건 (Incoterms)" value={formData.preferredIncoterms} onChange={(v: any) => handleChange('preferredIncoterms', v)} options={['FOB', 'EXW', 'CIF', 'CFR', 'FCA', 'CPT', 'CIP', 'DAP', 'DDP']} />
-                <Input label="도착항 (Destination Port)" value={formData.shippingPort} onChange={(v: any) => handleChange('shippingPort', v)} placeholder="예: JEBEL ALI PORT" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                <Input label="고객코드 (자동지정)" value={formData.customerCode} onChange={(v: any) => handleChange('customerCode', v)} disabled={true} placeholder="생성 중..." />
+                <Input label="고객명_영문 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: AL BASSAM FACTORIES" labelColor="#2563eb" />
+                <Input label="고객약자 (Abbreviation)" value={formData.nameKo} onChange={(v: any) => handleChange('nameKo', v)} placeholder="예: AL-BASSAM" />
+                <Input label="대표자 (Representative)" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="CEO / President Name" />
+                
+                <Input label="국가명" value={formData.countryName} onChange={(v: any) => handleChange('countryName', v)} placeholder="예: UAE" />
+                <Input label="도시 (City)" value={formData.city} onChange={(v: any) => handleChange('city', v)} placeholder="예: Dubai" />
+                <Input label="회사 유선전화" value={formData.phone} onChange={(v: any) => handleChange('phone', v)} placeholder="+971-4-XXX-XXXX" />
+                <Input label="대표 이메일" value={formData.email} onChange={(v: any) => handleChange('email', v)} type="email" placeholder="info@company.com" />
+                
                 <div style={{ gridColumn: 'span 2' }}>
-                  <Input label="결제조건 (Payment Terms)" value={formData.paymentTerms} onChange={(v: any) => handleChange('paymentTerms', v)} placeholder="예: 100% LC at sight / NET 30 Days" />
+                  <Input label="공식 웹사이트 (Website)" value={formData.website} onChange={(v: any) => handleChange('website', v)} placeholder="https://www.company.com" />
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <Input label="영문 주소 (Corporate Address)" value={formData.addressEn} onChange={(v: any) => handleChange('addressEn', v)} placeholder="Full street address, ZIP Code" />
                 </div>
               </div>
             </div>
 
-            {/* 세무/금융 금융계좌 (2줄로 나누어 공간 최적 확보) */}
+            {/* SECTION 2: 무역 선적 & 세무 금융 정보 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              
+              {/* 무역/선적 스펙 */}
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                  <span style={{ color: '#1d4ed8' }}>🚢</span> 무역 거래 및 선적 조건
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <Select label="기본 인도조건 (Incoterms)" value={formData.preferredIncoterms} onChange={(v: any) => handleChange('preferredIncoterms', v)} options={['FOB', 'EXW', 'CIF', 'CFR', 'FCA', 'CPT', 'CIP', 'DAP', 'DDP']} />
+                  <Input label="도착항 (Destination Port)" value={formData.shippingPort} onChange={(v: any) => handleChange('shippingPort', v)} placeholder="예: JEBEL ALI PORT" />
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <Input label="결제조건 (Payment Terms)" value={formData.paymentTerms} onChange={(v: any) => handleChange('paymentTerms', v)} placeholder="예: 100% LC at sight / NET 30 Days" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 세무/금융 금융계좌 (2줄로 나누어 공간 최적 확보) */}
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                  <span style={{ color: '#475569' }}>💳</span> 세무 등록 및 외환 계좌 정보
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <Input label="TAX-ID / VAT" value={formData.taxId} onChange={(v: any) => handleChange('taxId', v)} placeholder="VAT Number" />
+                  <Input label="은행명" value={formData.bankName} onChange={(v: any) => handleChange('bankName', v)} placeholder="Bank Name" />
+                  <Input label="계좌번호" value={formData.bankAccount} onChange={(v: any) => handleChange('bankAccount', v)} placeholder="Account No" />
+                  <Input label="예금주" value={formData.bankHolder} onChange={(v: any) => handleChange('bankHolder', v)} placeholder="Holder" />
+                  <Input label="SWIFT Code" value={formData.swiftCode} onChange={(v: any) => handleChange('swiftCode', v)} placeholder="SWIFT" />
+                  <Input label="IBAN Number" value={formData.iban} onChange={(v: any) => handleChange('iban', v)} placeholder="IBAN" />
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: 다중 담당자 입체 관리 */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
               <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-                <span style={{ color: '#475569' }}>💳</span> 세무 등록 및 외환 계좌 정보
+                <span style={{ color: '#7e22ce' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <Input label="TAX-ID / VAT" value={formData.taxId} onChange={(v: any) => handleChange('taxId', v)} placeholder="VAT Number" />
-                <Input label="은행명" value={formData.bankName} onChange={(v: any) => handleChange('bankName', v)} placeholder="Bank Name" />
-                <Input label="계좌번호" value={formData.bankAccount} onChange={(v: any) => handleChange('bankAccount', v)} placeholder="Account No" />
-                <Input label="예금주" value={formData.bankHolder} onChange={(v: any) => handleChange('bankHolder', v)} placeholder="Holder" />
-                <Input label="SWIFT Code" value={formData.swiftCode} onChange={(v: any) => handleChange('swiftCode', v)} placeholder="SWIFT" />
-                <Input label="IBAN Number" value={formData.iban} onChange={(v: any) => handleChange('iban', v)} placeholder="IBAN" />
-              </div>
-            </div>
-          </div>
 
-          {/* SECTION 3: 다중 담당자 입체 관리 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-            <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-              <span style={{ color: '#7e22ce' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
-            </div>
-
-            {/* 인라인 등록 폼 */}
-            <div style={{ display: 'flex', gap: '6px', background: '#faf5ff', padding: '8px 10px', borderRadius: '5px', border: '1px solid #f3e8ff', marginBottom: '8px', alignItems: 'flex-end' }}>
-              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
-                <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
-                <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-              </div>
-              <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
-                <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-              </div>
-              <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
-                <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-              </div>
-              <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
-                <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
-              </div>
-              {editingContactId ? (
-                <div style={{ display: 'flex', gap: '4px' }}>
+              {/* 인라인 등록 폼 */}
+              <div style={{ display: 'flex', gap: '6px', background: '#faf5ff', padding: '8px 10px', borderRadius: '5px', border: '1px solid #f3e8ff', marginBottom: '8px', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
+                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
+                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                </div>
+                <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
+                  <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                </div>
+                <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
+                  <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                </div>
+                <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
+                  <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                </div>
+                {editingContactId ? (
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
+                        setFormData(prev => ({
+                          ...prev,
+                          contacts: (prev.contacts || []).map(c => c.id === editingContactId ? {
+                            ...c,
+                            name: newContactName.trim(),
+                            position: newContactPosition.trim() || undefined,
+                            phone: newContactPhone.trim() || undefined,
+                            email: newContactEmail.trim() || undefined,
+                            remarks: newContactRemarks.trim() || undefined
+                          } : c)
+                        }));
+                        setEditingContactId(null);
+                        setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
+                      }}
+                      style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                    >
+                      수정완료
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingContactId(null);
+                        setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
+                      }}
+                      style={{ background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
                     onClick={() => {
                       if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
+                      const newContact: CustomerContact = {
+                        id: 'contact_' + Math.random().toString(36).substr(2, 9),
+                        name: newContactName.trim(),
+                        position: newContactPosition.trim() || undefined,
+                        phone: newContactPhone.trim() || undefined,
+                        email: newContactEmail.trim() || undefined,
+                        isPrimary: (formData.contacts || []).length === 0,
+                        remarks: newContactRemarks.trim() || undefined
+                      };
                       setFormData(prev => ({
                         ...prev,
-                        contacts: (prev.contacts || []).map(c => c.id === editingContactId ? {
-                          ...c,
-                          name: newContactName.trim(),
-                          position: newContactPosition.trim() || undefined,
-                          phone: newContactPhone.trim() || undefined,
-                          email: newContactEmail.trim() || undefined,
-                          remarks: newContactRemarks.trim() || undefined
-                        } : c)
+                        contacts: [...(prev.contacts || []), newContact]
                       }));
-                      setEditingContactId(null);
                       setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                     }}
-                    style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                    style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
                   >
-                    수정완료
+                    + 추가
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingContactId(null);
-                      setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
-                    }}
-                    style={{ background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
-                  >
-                    취소
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!newContactName.trim()) { alert('담당자 이름은 필수입니다.'); return; }
-                    const newContact: CustomerContact = {
-                      id: 'contact_' + Math.random().toString(36).substr(2, 9),
-                      name: newContactName.trim(),
-                      position: newContactPosition.trim() || undefined,
-                      phone: newContactPhone.trim() || undefined,
-                      email: newContactEmail.trim() || undefined,
-                      isPrimary: (formData.contacts || []).length === 0,
-                      remarks: newContactRemarks.trim() || undefined
-                    };
-                    setFormData(prev => ({
-                      ...prev,
-                      contacts: [...(prev.contacts || []), newContact]
-                    }));
-                    setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
-                  }}
-                  style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
-                >
-                  + 추가
-                </button>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* 테이블 명부 */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
-                    <th style={{ padding: '5px 8px', width: '45px', textAlign: 'center' }}>대표</th>
-                    <th style={{ padding: '5px 8px', width: '140px' }}>이름 (직책)</th>
-                    <th style={{ padding: '5px 8px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
-                    <th style={{ padding: '5px 8px' }}>역할 / 특이사항</th>
-                    <th style={{ padding: '5px 8px', width: '100px', textAlign: 'center' }}>관리</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(formData.contacts || []).map((c: any) => (
-                    <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                        <input type="radio" checked={c.isPrimary} onChange={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.map((ct: any) => ({ ...ct, isPrimary: ct.id === c.id })) }))} />
-                      </td>
-                      <td style={{ padding: '5px 8px' }}>{c.name}<br /><span style={{ color: '#64748b' }}>{c.position}</span></td>
-                      <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: '#64748b' }}>{c.email}</span></td>
-                      <td style={{ padding: '5px 8px' }}>{c.remarks}</td>
-                      <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                        <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px' }}>수정</button>
-                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.filter((ct: any) => ct.id !== c.id) }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>삭제</button>
-                      </td>
+              {/* 테이블 명부 */}
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
+                      <th style={{ padding: '5px 8px', width: '45px', textAlign: 'center' }}>대표</th>
+                      <th style={{ padding: '5px 8px', width: '140px' }}>이름 (직책)</th>
+                      <th style={{ padding: '5px 8px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
+                      <th style={{ padding: '5px 8px' }}>역할 / 특이사항</th>
+                      <th style={{ padding: '5px 8px', width: '100px', textAlign: 'center' }}>관리</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(formData.contacts || []).map((c: any) => (
+                      <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                          <input type="radio" checked={c.isPrimary} onChange={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.map((ct: any) => ({ ...ct, isPrimary: ct.id === c.id })) }))} />
+                        </td>
+                        <td style={{ padding: '5px 8px' }}>{c.name}<br /><span style={{ color: '#64748b' }}>{c.position}</span></td>
+                        <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: '#64748b' }}>{c.email}</span></td>
+                        <td style={{ padding: '5px 8px' }}>{c.remarks}</td>
+                        <td style={{ padding: '5px 8px', textAlign: 'center' }}>
+                          <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px' }}>수정</button>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.filter((ct: any) => ct.id !== c.id) }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>삭제</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          {/* 특이사항 / 비고 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-            <Input label="바이어 특이사항 / 종합 비고 (General Remarks)" value={formData.remarks} onChange={(v: any) => handleChange('remarks', v)} placeholder="예: 바이어 신용 등급 및 특이 조항 등" />
-          </div>
+            {/* 특이사항 / 비고 */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+              <Input label="바이어 특이사항 / 종합 비고 (General Remarks)" value={formData.remarks} onChange={(v: any) => handleChange('remarks', v)} placeholder="예: 바이어 신용 등급 및 특이 조항 등" />
+            </div>
 
-        </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ padding: '10px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
