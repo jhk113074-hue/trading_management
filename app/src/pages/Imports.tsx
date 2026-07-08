@@ -751,8 +751,8 @@ export const Imports: React.FC = () => {
                 </div>
               </div>
 
-              {/* 최종고객 & INCOTERMS */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>최종고객</label>
                   <input 
@@ -778,6 +778,16 @@ export const Imports: React.FC = () => {
                     <option value="DDP">DDP</option>
                     <option value="DAP">DAP</option>
                   </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>B/L (AWB) 번호</label>
+                  <input 
+                    type="text" 
+                    value={newRequest.blAwb || ''} 
+                    onChange={e => setNewRequest(p => ({ ...p, blAwb: e.target.value }))}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: B/L 번호 직접 입력"
+                  />
                 </div>
               </div>
 
@@ -1273,8 +1283,8 @@ export const Imports: React.FC = () => {
                 </div>
               </div>
 
-              {/* 최종고객 & INCOTERMS */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>최종고객</label>
                   <input 
@@ -1300,6 +1310,16 @@ export const Imports: React.FC = () => {
                     <option value="DAP">DAP</option>
                     <option value="DDP">DDP</option>
                   </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>B/L (AWB) 번호</label>
+                  <input 
+                    type="text" 
+                    value={editingRequest.blAwb || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, blAwb: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: B/L 번호 직접 입력"
+                  />
                 </div>
               </div>
 
