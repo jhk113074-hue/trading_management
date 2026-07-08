@@ -45,10 +45,15 @@ export const ImportDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [importRequests] = useState<ImportRequest[]>(() => {
+  const [importRequests, setImportRequests] = useState<ImportRequest[]>(() => {
     const saved = localStorage.getItem('import_requests');
     return saved ? JSON.parse(saved) : INITIAL_IMPORTS;
   });
+
+  const saveToStorage = (updatedList: ImportRequest[]) => {
+    localStorage.setItem('import_requests', JSON.stringify(updatedList));
+    setImportRequests(updatedList);
+  };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const [activeTab, setActiveTab] = useState<'운송현황' | '의뢰내역' | '서류' | '정산'>('의뢰내역');
@@ -61,7 +66,7 @@ export const ImportDetail: React.FC = () => {
     };
   });
 
-  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc', file: File) => {
+  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice', file: File) => {
     if (!file) return;
     try {
       setUploading(key);
@@ -69,12 +74,27 @@ export const ImportDetail: React.FC = () => {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      const nextDocs = {
-        ...documents,
-        [key]: { name: file.name, url: downloadUrl }
-      };
-      setDocuments(nextDocs);
-      localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+      if (key === 'customerPi' || key === 'freightInvoice') {
+        // Save to import request details
+        const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
+        const updatedList = importRequests.map(r => {
+          if (r.id === id) {
+            return {
+              ...r,
+              [fileProp]: { name: file.name, url: downloadUrl, path: snapshot.ref.fullPath }
+            };
+          }
+          return r;
+        });
+        saveToStorage(updatedList);
+      } else {
+        const nextDocs = {
+          ...documents,
+          [key]: { name: file.name, url: downloadUrl }
+        };
+        setDocuments(nextDocs);
+        localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+      }
       alert(`${file.name} 업로드가 완료되었습니다.`);
     } catch (e) {
       console.error(e);
@@ -84,12 +104,26 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc') => {
+  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice') => {
     if (window.confirm('첨부된 파일을 삭제하시겠습니까?')) {
-      const nextDocs = { ...documents };
-      delete nextDocs[key];
-      setDocuments(nextDocs);
-      localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+      if (key === 'customerPi' || key === 'freightInvoice') {
+        const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
+        const updatedList = importRequests.map(r => {
+          if (r.id === id) {
+            return {
+              ...r,
+              [fileProp]: null
+            };
+          }
+          return r;
+        });
+        saveToStorage(updatedList);
+      } else {
+        const nextDocs = { ...documents };
+        delete nextDocs[key as any];
+        setDocuments(nextDocs);
+        localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+      }
     }
   };
 
@@ -273,6 +307,185 @@ export const ImportDetail: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ color: '#64748b' }}>FTA 원산지대행</span>
                       <strong style={{ color: '#64748b' }}>{request.ftaOriginCert || '미신청'}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4: 수입 품목 및 운송 견적서 (PI / 쉽다명세서) */}
+            <div style={{ marginTop: '28px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>
+                📂 수입 품목 및 운송 견적서 (PI / 쉽다명세서)
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                {/* 1. Proforma Invoice (PI) & 구매 아이템 정보 */}
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>📄 고객사 발송 Proforma Invoice (PI)</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>PDF 필수 유첨</span>
+                  </div>
+
+                  {/* PDF 업로드/보기 영역 */}
+                  <div style={{ background: '#fff', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center' }}>
+                    {request.customerPiFile ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span 
+                          onClick={() => previewFile(request.customerPiFile!.url, request.customerPiFile!.name)} 
+                          style={{ fontSize: '12.5px', fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          📎 {request.customerPiFile.name} (미리보기)
+                        </span>
+                        <button 
+                          onClick={() => handleFileDelete('customerPi')} 
+                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', cursor: 'pointer', fontSize: '12.5px', color: '#64748b', padding: '8px 0' }}>
+                        {uploading === 'customerPi' ? '⏳ 업로드 중...' : '📁 클릭하여 PI PDF 파일 첨부'}
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleFileUpload('customerPi', e.target.files[0]);
+                            }
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PI 세부 기입 항목 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>구매 품명</span>
+                      <input 
+                        type="text" 
+                        value={request.piItemName || ''} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemName: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                        placeholder="예: E-GLASS SURFACE TISSUE"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>수량 / 단위</span>
+                      <input 
+                        type="text" 
+                        value={request.piItemQty || ''} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemQty: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                        placeholder="예: 20000(㎡)"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>FOB 단가</span>
+                      <input 
+                        type="text" 
+                        value={request.piItemUnitPrice || ''} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemUnitPrice: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                        placeholder="예: $0.157"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>총 구매금액</span>
+                      <input 
+                        type="text" 
+                        value={request.piItemAmount || ''} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemAmount: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                        placeholder="예: US$3,140.00"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. 운송비 견적 받은 내역 (쉽다 거래명세서 등) */}
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#b45309', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>📊 운송 대행 견적서 및 거래명세서</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>PDF 필수 유첨</span>
+                  </div>
+
+                  {/* PDF 업로드/보기 영역 */}
+                  <div style={{ background: '#fff', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center' }}>
+                    {request.freightInvoiceFile ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span 
+                          onClick={() => previewFile(request.freightInvoiceFile!.url, request.freightInvoiceFile!.name)} 
+                          style={{ fontSize: '12.5px', fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          📎 {request.freightInvoiceFile.name} (미리보기)
+                        </span>
+                        <button 
+                          onClick={() => handleFileDelete('freightInvoice')} 
+                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', cursor: 'pointer', fontSize: '12.5px', color: '#64748b', padding: '8px 0' }}>
+                        {uploading === 'freightInvoice' ? '⏳ 업로드 중...' : '📁 클릭하여 운송비 명세 PDF 파일 첨부'}
+                        <input 
+                          type="file" 
+                          accept=".pdf" 
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleFileUpload('freightInvoice', e.target.files[0]);
+                            }
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 쉽다 등 운송 메타 기입 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>의뢰/송장번호</span>
+                      <input 
+                        type="text" 
+                        value={request.id || ''} 
+                        disabled
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f1f5f9', color: '#64748b' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>청구 운임총액</span>
+                      <input 
+                        type="text" 
+                        value={request.freightInvoiceAmount || ''} 
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, freightInvoiceAmount: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
+                        placeholder="예: ₩720,049"
+                      />
                     </div>
                   </div>
                 </div>

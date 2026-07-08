@@ -134,6 +134,15 @@ export interface ImportRequest {
   importerName?: string; // 수입처
   finalCustomer?: string; // 최종고객
   
+  // PI / 운송비 견적서 유첨 파일 데이터
+  customerPiFile?: { name: string; url: string; path?: string } | null;
+  freightInvoiceFile?: { name: string; url: string; path?: string } | null;
+  piItemName?: string;
+  piItemQty?: string;
+  piItemUnitPrice?: string;
+  piItemAmount?: string;
+  freightInvoiceAmount?: string;
+  
   
   // 상세
   portOfLoading?: string;
