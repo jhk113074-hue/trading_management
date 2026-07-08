@@ -138,6 +138,27 @@ export const ImportDetail: React.FC = () => {
   const totalNetWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
   const totalGrossWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
 
+  const formatDateToEnglish = (dateStr?: string) => {
+    if (!dateStr) return 'July 8, 2026';
+    const clean = dateStr.replace(/[\s\.]+/g, '-').replace(/-+/g, '-');
+    const parts = clean.split('-');
+    let year = 2026;
+    let month = 7;
+    let day = 8;
+    if (parts.length >= 3) {
+      const p0 = Number(parts[0]);
+      const p1 = Number(parts[1]);
+      const p2 = Number(parts[2]);
+      if (!isNaN(p0) && p0 > 100) year = p0;
+      else if (!isNaN(p0) && p0 < 100) year = 2000 + p0; // 2자리 년도 예외처리 (ex: 26.07.08)
+      if (!isNaN(p1)) month = p1;
+      if (!isNaN(p2)) day = p2;
+    }
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = months[month - 1] || 'July';
+    return `${monthName} ${day}, ${year}`;
+  };
+
   const letterheadInfo = currentLetterhead === 'YSACC' ? {
     company: 'YSACC CO.,LTD.',
     address: '201-1Ho, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do 28420, South Korea',
@@ -397,7 +418,7 @@ export const ImportDetail: React.FC = () => {
                           <div style="text-align: right; font-size: 13px; min-width: 180px;">
                             <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 2px;">PURCHASE ORDER</div>
                             <div><strong>PO NO:</strong> ${request.id}</div>
-                            <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
+                            <div><strong>Date:</strong> ${formatDateToEnglish(request.createdAt)}</div>
                           </div>
                         </div>
                       </div>
@@ -964,7 +985,7 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '160px' }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '2px' }}>PURCHASE ORDER</div>
                   <div><strong>PO NO:</strong> {request.id}</div>
-                  <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
+                  <div><strong>Date:</strong> {formatDateToEnglish(request.createdAt)}</div>
                 </div>
               </div>
             </div>
