@@ -56,7 +56,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
-  const [activeTab, setActiveTab] = useState<'운송현황' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산'>('수입내역');
+  const [activeTab, setActiveTab] = useState<'수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입내역');
   const [uploading, setUploading] = useState<string | null>(null);
 
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
@@ -159,11 +159,11 @@ export const ImportDetail: React.FC = () => {
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '24px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
           {([
-            { key: '운송현황', label: '운송현황' },
             { key: '수입내역', label: '수입내역' },
             { key: '운송사/관세사 선정', label: '운송사/관세사 선정' },
             { key: '서류', label: '서류' },
-            { key: '정산', label: '정산' }
+            { key: '정산', label: '정산' },
+            { key: '로그', label: '로그' }
           ] as const).map(tab => (
             <button
               key={tab.key}
@@ -187,17 +187,6 @@ export const ImportDetail: React.FC = () => {
         </div>
 
         {/* Tab Contents */}
-        {activeTab === '운송현황' && (
-          <div style={{ padding: '20px 0' }}>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700 }}>운송 트래킹 정보</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', borderLeft: '2px solid #cbd5e1', paddingLeft: '20px', marginLeft: '10px' }}>
-              <div>
-                <div style={{ fontWeight: 700, color: '#2563eb', fontSize: '14px' }}>진행 결정 요청</div>
-                <div style={{ fontSize: '12.5px', color: '#64748b' }}>수입 요청이 접수되어 진행을 검토 중입니다.</div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {activeTab === '수입내역' && (
           <div>
@@ -313,6 +302,122 @@ export const ImportDetail: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* 발주서 PO 생성 및 인쇄 컨트롤 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={() => {
+                  const printWin = window.open('', '_blank');
+                  if (!printWin) return alert('팝업 차단기를 해제해주세요.');
+                  
+                  const itemsHtml = (request.piItems || []).map((item, idx) => `
+                    <tr style="border-bottom: 1px solid #cbd5e1; height: 32px;">
+                      <td style="text-align: center; border: 1px solid #cbd5e1;">${idx + 1}</td>
+                      <td style="border: 1px solid #cbd5e1; padding-left: 8px;">${item.name}</td>
+                      <td style="text-align: center; border: 1px solid #cbd5e1;">${item.hsCode || '-'}</td>
+                      <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px;">${(Number(item.qty) || 0).toLocaleString()}</td>
+                      <td style="text-align: center; border: 1px solid #cbd5e1;">${item.unit || 'EA'}</td>
+                      <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px;">$${(Number(item.unitPrice) || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                      <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px;">$${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    </tr>
+                  `).join('');
+
+                  const totalQty = (request.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+                  const totalAmount = (request.piItems || []).reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
+
+                  printWin.document.write(`
+                    <html>
+                    <head>
+                      <title>Purchase Order - ${request.id}</title>
+                      <style>
+                        body { font-family: 'Arial', sans-serif; padding: 40px; color: #1e293b; line-height: 1.4; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 3px double #1e3a8a; padding-bottom: 10px; margin-bottom: 24px; }
+                        .po-title { font-size: 28px; font-weight: bold; color: #1e3a8a; }
+                        .meta-table, .item-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+                        .item-table th { background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px; }
+                        .signature-section { display: flex; justify-content: space-between; margin-top: 60px; }
+                        .signature-box { border-top: 1px solid #94a3b8; width: 220px; text-align: center; padding-top: 8px; font-size: 13px; font-weight: bold; }
+                        @media print { body { padding: 20px; } }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="header">
+                        <div>
+                          <div class="po-title">PURCHASE ORDER (발주서)</div>
+                          <div style="font-size: 13px; margin-top: 4px; color: #64748b;">YSACC Co., Ltd. / (주)와이에스에이씨</div>
+                        </div>
+                        <div style="text-align: right; font-size: 13px;">
+                          <div><strong>PO NO:</strong> ${request.id}</div>
+                          <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
+                        </div>
+                      </div>
+
+                      <table class="meta-table">
+                        <tr>
+                          <td style="width: 50%; vertical-align: top; padding-right: 20px;">
+                            <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                              <strong style="color: #1e3a8a;">BUYER (발주자)</strong><br/>
+                              Company: YSACC Co., Ltd.<br/>
+                              Importer: ${request.importCompany || 'YSACC'}<br/>
+                              Address: 경남 창녕군 장마면 전곡남지선로 131
+                            </div>
+                          </td>
+                          <td style="width: 50%; vertical-align: top;">
+                            <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                              <strong style="color: #1e3a8a;">SELLER (공급처)</strong><br/>
+                              Company: ${request.importerName || request.shipperName || 'Global Supplier Ltd.'}<br/>
+                              Origin: ${request.routeFrom || 'CHINA'}<br/>
+                              Incoterms: ${request.incoterms || 'FOB'}
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <h4 style="margin-bottom: 8px; color: #1e3a8a;">[ ORDER DETAILS (발주 제품 명세) ]</h4>
+                      <table class="item-table">
+                        <thead>
+                          <tr>
+                            <th style="width: 40px;">No</th>
+                            <th>Description</th>
+                            <th style="width: 100px;">HS Code</th>
+                            <th style="width: 80px;">Qty</th>
+                            <th style="width: 60px;">Unit</th>
+                            <th style="width: 100px;">U.Price</th>
+                            <th style="width: 120px;">Total Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${itemsHtml}
+                          <tr style="font-weight: bold; background: #f8fafc; height: 36px;">
+                            <td colspan="3" style="text-align: center; border: 1px solid #cbd5e1;">TOTAL SUMMARY (합계)</td>
+                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px; color: #1e3a8a;">${totalQty.toLocaleString()}</td>
+                            <td style="border: 1px solid #cbd5e1;"></td>
+                            <td style="border: 1px solid #cbd5e1;"></td>
+                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px; color: #0f766e;">$${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div class="signature-section">
+                        <div class="signature-box">For Seller (공급처 서명)</div>
+                        <div class="signature-box">For Buyer (발주처 서명)</div>
+                      </div>
+
+                      <script>
+                        window.onload = function() {
+                          window.print();
+                        }
+                      </script>
+                    </body>
+                    </html>
+                  `);
+                  printWin.document.close();
+                }}
+                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                📄 발주서(PO) 생성 및 인쇄
+              </button>
             </div>
           </div>
         )}
@@ -739,6 +844,62 @@ export const ImportDetail: React.FC = () => {
               >
                 저장 후 목록으로
               </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === '로그' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '20px' }}>
+              📜 업무 이력 및 진행 히스토리 로그
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', paddingLeft: '24px', borderLeft: '3px solid #e2e8f0', marginLeft: '12px' }}>
+              
+              {/* Log 1: 생성 일시 */}
+              <div style={{ position: 'relative' }}>
+                <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#10b981', border: '3px solid #fff', boxShadow: '0 0 0 3px #d1fae5' }} />
+                <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>{request.createdAt || '2026. 07. 03.'}</div>
+                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📥 수입 관리 의뢰 등록 완료</div>
+                <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>수입 의뢰 번호: #{request.id} 건이 시스템에 성공적으로 등록되었습니다. (작성 관리자: {request.manager || '김주한'})</div>
+              </div>
+
+              {/* Log 2: 품목 스펙 반영 */}
+              {request.piItems && request.piItems.length > 0 && (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#2563eb', border: '3px solid #fff', boxShadow: '0 0 0 3px #dbeafe' }} />
+                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>{request.createdAt || '2026. 07. 03.'}</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📦 수입 제품 및 패킹 스펙 확정</div>
+                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
+                    총 {request.piItems.length}개 수입 제품(총 수량 {request.piItems.reduce((s, it) => s + (Number(it.qty) || 0), 0).toLocaleString()} EA)의 스펙과 중량이 최종 기입되었습니다.
+                  </div>
+                </div>
+              )}
+
+              {/* Log 3: 운송/통관 선정 정보 */}
+              {(request.localTransportType || request.customsAgent) && (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#8b5cf6', border: '3px solid #fff', boxShadow: '0 0 0 3px #ede9fe' }} />
+                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>진행중</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>🚢 운송 파트너사 및 세관 관세사 지정 업데이트</div>
+                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
+                    지정 운송 포워더: <strong>{request.localTransportType || 'CJ대한통운'}</strong> | 통관 관세사: <strong>{request.customsAgent || '이음관세사무소'}</strong>로 실무 선정이 완료되었습니다.
+                  </div>
+                </div>
+              )}
+
+              {/* Log 4: 정산 변경 내용 */}
+              {(Number(request.taxAmount) > 0 || Number(request.freightAmount) > 0 || Number(request.customsTaxAmount) > 0) && (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#0f766e', border: '3px solid #fff', boxShadow: '0 0 0 3px #ccfbf1' }} />
+                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>최근 수정</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>💵 세금계산서 및 통관 관/부가세 실무 정산 정보 등록</div>
+                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
+                    수입세금계산서 총합 ₩{((Number(request.taxAmount) || 0) + (Number(request.taxVat) || 0)).toLocaleString()} 원 및 관세 납부 ₩{(Number(request.customsTaxAmount) || 0).toLocaleString()} 원 정산 정보가 업데이트되어 보관되었습니다.
+                  </div>
+                </div>
+              )}
+              
             </div>
           </div>
         )}
