@@ -683,7 +683,7 @@ export const ImportDetail: React.FC = () => {
                         type="text"
                         readOnly
                         placeholder="지정 운송사(포워더)를 검색해주세요."
-                        value={request.localTransportType || ''}
+                        value={request.forwarderName || ''}
                         style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#f1f5f9' }}
                       />
                       <button 
@@ -1321,7 +1321,7 @@ export const ImportDetail: React.FC = () => {
         isOpen={showForwarderModal}
         onClose={() => setShowForwarderModal(false)}
         onSelect={(name) => {
-          const updated = importRequests.map(r => r.id === id ? { ...r, localTransportType: name } : r);
+          const updated = importRequests.map(r => r.id === id ? { ...r, forwarderName: name } : r);
           saveToStorage(updated);
           setShowForwarderModal(false);
         }}
