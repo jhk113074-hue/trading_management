@@ -562,6 +562,7 @@ export const ImportDetail: React.FC = () => {
                           <div style="text-align: right; font-size: 13px; min-width: 180px;">
                             <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 2px;">PURCHASE ORDER</div>
                             <div><strong>PO NO:</strong> ${request.poNumber || request.id}</div>
+                            ${request.piNumber ? `<div><strong>PI NO:</strong> ${request.piNumber}</div>` : ''}
                             <div><strong>Date:</strong> ${formatDateToEnglish(request.createdAt)}</div>
                           </div>
                         </div>
@@ -1151,6 +1152,7 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '160px' }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '2px' }}>PURCHASE ORDER</div>
                   <div><strong>PO NO:</strong> {request.poNumber || request.id}</div>
+                  {request.piNumber && <div><strong>PI NO:</strong> {request.piNumber}</div>}
                   <div><strong>Date:</strong> {formatDateToEnglish(request.createdAt)}</div>
                 </div>
               </div>
