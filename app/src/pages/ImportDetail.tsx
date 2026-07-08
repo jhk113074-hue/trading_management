@@ -787,7 +787,7 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>필수 첨부</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    C/I &amp; P/L * <span style={{ cursor: 'pointer', color: '#64748b' }} title="Commercial Invoice & Packing List">❓</span>
+                    C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Commercial Invoice & Packing List">❓</span>
                   </div>
                   {documents.ciPl ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -810,7 +810,7 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      CO <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
+                      CO {documents.co && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
                     </div>
                     {documents.co ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -829,7 +829,7 @@ export const ImportDetail: React.FC = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      인증/검역 <span style={{ cursor: 'pointer', color: '#64748b' }} title="인증 및 검역서류">❓</span>
+                      인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="인증 및 검역서류">❓</span>
                     </div>
                     {documents.inspect ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -848,7 +848,7 @@ export const ImportDetail: React.FC = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      기타 <span style={{ cursor: 'pointer', color: '#64748b' }} title="기타 참고서류">❓</span>
+                      기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="기타 참고서류">❓</span>
                     </div>
                     {documents.etc ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -871,7 +871,7 @@ export const ImportDetail: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  수입신고필증 <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
+                  수입신고필증 {documents.customsPermit && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
                 </div>
                 {documents.customsPermit ? (
                   <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -890,7 +890,7 @@ export const ImportDetail: React.FC = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  수입세금계산서 <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
+                  수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
                 </div>
                 {documents.taxInvoice ? (
                   <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -909,7 +909,7 @@ export const ImportDetail: React.FC = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  BL(AWB) <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
+                  BL(AWB) {documents.blAwbDoc && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
                 </div>
                 {documents.blAwbDoc ? (
                   <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
