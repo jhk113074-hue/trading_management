@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TaskContext';
 import { TaskModal } from './TaskModal';
+import { Button, Card } from './ui';
 import { collection, onSnapshot, query, where, doc, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Task, User } from '../types';
@@ -600,16 +601,13 @@ export const Layout: React.FC = () => {
                 </button>
 
                 {showNotifications && (
-                  <div
+                  <Card
+                    padding="0"
                     style={{
                       position: 'absolute',
                       top: '40px',
                       right: '0',
                       width: '320px',
-                      background: '#fff',
-                      borderRadius: 'var(--radius-md)',
-                      boxShadow: 'var(--shadow-lg)',
-                      border: '1px solid var(--border-color)',
                       zIndex: 1000,
                       display: 'flex',
                       flexDirection: 'column',
@@ -651,19 +649,14 @@ export const Layout: React.FC = () => {
                         </button>
                       </div>
                       {notifications.filter(n => !n.isRead).length > 0 && (
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={handleMarkAllAsRead}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-link)',
-                            fontSize: '11px',
-                            cursor: 'pointer',
-                            fontWeight: 600
-                          }}
+                          style={{ padding: '2px 6px', color: 'var(--text-link)', fontSize: '11px' }}
                         >
                           ✓ 모두 읽음 처리
-                        </button>
+                        </Button>
                       )}
                     </div>
                     <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -706,7 +699,7 @@ export const Layout: React.FC = () => {
                         ))
                       )}
                     </div>
-                  </div>
+                  </Card>
                 )}
               </div>
             )}
@@ -728,25 +721,15 @@ export const Layout: React.FC = () => {
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 🔒 남은시간: <span style={{ color: sessionTimeLeft <= 300 ? '#ef4444' : '#0f172a' }}>{formatCountdown(sessionTimeLeft)}</span>
               </span>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleExtendSession}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  background: 'var(--primary-color)',
-                  color: '#ffffff',
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-hover)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--primary-color)'}
+                style={{ padding: '2px 10px' }}
               >
                 연장
-              </button>
+              </Button>
             </div>
 
             <Link to="/profile" className="btn" style={{
@@ -765,20 +748,9 @@ export const Layout: React.FC = () => {
             }}>
               <span style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
             </Link>
-            <button className="btn" onClick={logout} style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '10px 18px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-color)',
-              backgroundColor: '#ffffff',
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              cursor: 'pointer'
-            }}>
+            <Button variant="secondary" onClick={logout}>
               로그아웃
-            </button>
+            </Button>
           </div>
         </header>
 
@@ -832,18 +804,16 @@ export const Layout: React.FC = () => {
           zIndex: 999999,
           pointerEvents: 'auto'
         }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: 'var(--radius-lg)',
-            padding: '24px',
-            width: '420px',
-            boxShadow: 'var(--shadow-lg)',
-            textAlign: 'center',
-            border: '1px solid var(--border-color)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
+          <Card
+            padding="24px"
+            style={{
+              width: '420px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+            }}
+          >
             <div style={{ fontSize: '36px' }}>⏰</div>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>보안 자동 로그아웃 안내</h3>
             <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
@@ -852,43 +822,14 @@ export const Layout: React.FC = () => {
               로그인 상태를 유지하시겠습니까?
             </p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={logout}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-default)',
-                  background: '#f8fafc',
-                  color: 'var(--text-secondary)',
-                  fontSize: '14.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
+              <Button type="button" variant="secondary" onClick={logout} style={{ flex: 1 }}>
                 즉시 로그아웃
-              </button>
-              <button
-                type="button"
-                onClick={handleExtendSession}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: 'var(--radius-md)',
-                  border: 'none',
-                  background: 'var(--primary-color)',
-                  color: '#ffffff',
-                  fontSize: '14.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-brand)'
-                }}
-              >
+              </Button>
+              <Button type="button" variant="primary" onClick={handleExtendSession} style={{ flex: 1 }}>
                 로그인 연장
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

@@ -128,7 +128,7 @@ body {
   text-decoration: none;
   font-size: 1.02rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 3px;
   gap: 10px;
@@ -136,7 +136,7 @@ body {
 }
 
 .nav-item:hover {
-  background-color: rgba(190, 18, 60, 0.04);
+  background-color: rgba(189, 23, 35, 0.05);
   color: var(--sidebar-text-hover);
   padding-left: 18px; /* Smooth slide-in indicator instead of transform */
 }
@@ -144,8 +144,8 @@ body {
 .nav-item.active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
-  font-weight: 600;
-  box-shadow: inset 4px 0 0 #be123c; /* Precise brand red indicator */
+  font-weight: 700;
+  box-shadow: none;
 }
 
 .header {
@@ -209,6 +209,9 @@ body {
   border-color: var(--primary-color);
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
+/* 공용 UI 컴포넌트(Button/Input/Card/Badge)는 src/components/ui 에서
+   인라인 스타일 + 위 토큰으로 직접 구현되어 있어 별도 클래스가 필요 없음. */
 
 .main-wrapper {
   flex: 1;
