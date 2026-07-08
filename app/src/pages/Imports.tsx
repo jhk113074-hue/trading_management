@@ -253,11 +253,30 @@ export const Imports: React.FC = () => {
     const totalGrossWeight = itemsList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
 
+    const getSellerAbbr = (name: string): string => {
+      if (!name) return 'SUP';
+      const words = name.replace(/[^a-zA-Z\s]/g, '').toUpperCase().split(/\s+/).filter(Boolean);
+      if (words.length >= 3) {
+        return words.slice(0, 3).map(w => w[0]).join('');
+      } else if (words.length === 2) {
+        return words[0][0] + words[1][0] + (words[1][1] || 'X');
+      } else if (words.length === 1) {
+        return words[0].slice(0, 3).padEnd(3, 'X');
+      }
+      return 'SUP';
+    };
+
+    const compPrefix = (newRequest.importCompany === 'YS' ? 'YS' : 'YSACC');
+    const sellerAbbr = getSellerAbbr(newRequest.importerName || '');
+    const currentYear = new Date().getFullYear().toString();
+    const serial = reqId.slice(-2) || '01';
+    const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
+
     const created: ImportRequest = {
       id: reqId,
       status: '진행 결정 요청',
       blAwb: '-',
-      poNumber: '-',
+      poNumber: generatedPo,
       itemName: computedItemName,
       transportType: newRequest.transportType || 'By Sea',
       volume: `${totalCbm.toFixed(2)} CBM`,
@@ -340,11 +359,31 @@ export const Imports: React.FC = () => {
     const totalGrossWeight = itemsList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
 
+    const getSellerAbbr = (name: string): string => {
+      if (!name) return 'SUP';
+      const words = name.replace(/[^a-zA-Z\s]/g, '').toUpperCase().split(/\s+/).filter(Boolean);
+      if (words.length >= 3) {
+        return words.slice(0, 3).map(w => w[0]).join('');
+      } else if (words.length === 2) {
+        return words[0][0] + words[1][0] + (words[1][1] || 'X');
+      } else if (words.length === 1) {
+        return words[0].slice(0, 3).padEnd(3, 'X');
+      }
+      return 'SUP';
+    };
+
     const nextList = importRequests.map(req => {
       if (req.id === editingRequest.id) {
+        const compPrefix = (editingRequest.importCompany === 'YS' ? 'YS' : 'YSACC');
+        const sellerAbbr = getSellerAbbr(editingRequest.importerName || req.importerName || '');
+        const currentYear = new Date().getFullYear().toString();
+        const serial = req.id.slice(-2) || '01';
+        const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
+
         return {
           ...req,
           ...editingRequest,
+          poNumber: generatedPo,
           itemName: computedItemName,
           volume: `${totalCbm.toFixed(2)} CBM`,
           routeFrom: editingRequest.pol || editingRequest.routeFrom || req.routeFrom,

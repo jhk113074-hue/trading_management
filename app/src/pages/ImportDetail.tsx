@@ -504,7 +504,7 @@ export const ImportDetail: React.FC = () => {
                     )}
                     <div style={{ fontSize: '10px', color: '#475569', marginTop: '6px', fontWeight: 600, lineHeight: '1.4' }}>
                       {commonShippingMark.port}, {commonShippingMark.country}<br/>
-                      PO NO : {request.id}<br/>
+                      PO NO : {request.poNumber || request.id}<br/>
                       {commonShippingMark.origin}
                     </div>
                   </div>
@@ -561,7 +561,7 @@ export const ImportDetail: React.FC = () => {
                         <div style="display: flex; justify-content: flex-end; border-bottom: 2px solid #0a1e3f; padding-bottom: 8px;">
                           <div style="text-align: right; font-size: 13px; min-width: 180px;">
                             <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 2px;">PURCHASE ORDER</div>
-                            <div><strong>PO NO:</strong> ${request.id}</div>
+                            <div><strong>PO NO:</strong> ${request.poNumber || request.id}</div>
                             <div><strong>Date:</strong> ${formatDateToEnglish(request.createdAt)}</div>
                           </div>
                         </div>
@@ -603,7 +603,7 @@ export const ImportDetail: React.FC = () => {
                             ${getShippingMarkShapeImgHtml(commonShippingMark.shape, commonShippingMark.company)}
                             <div style="font-size: 9.5px; color: #334155; margin-top: 4px; font-weight: bold; line-height: 1.3;">
                               ${commonShippingMark.port}, ${commonShippingMark.country}<br/>
-                              PO NO : ${request.id}<br/>
+                              PO NO : ${request.poNumber || request.id}<br/>
                               ${commonShippingMark.origin}
                             </div>
                           </div>
@@ -1150,7 +1150,7 @@ export const ImportDetail: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '2px solid #0a1e3f', paddingBottom: '6px' }}>
                 <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '160px' }}>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '2px' }}>PURCHASE ORDER</div>
-                  <div><strong>PO NO:</strong> {request.id}</div>
+                  <div><strong>PO NO:</strong> {request.poNumber || request.id}</div>
                   <div><strong>Date:</strong> {formatDateToEnglish(request.createdAt)}</div>
                 </div>
               </div>
@@ -1199,7 +1199,7 @@ export const ImportDetail: React.FC = () => {
                   )}
                   <div style={{ fontSize: '8.5px', color: '#334155', marginTop: '3px', fontWeight: 'bold', lineHeight: '1.2' }}>
                     {commonShippingMark.port}, {commonShippingMark.country}<br/>
-                    PO NO : {request.id}<br/>
+                    PO NO : {request.poNumber || request.id}<br/>
                     {commonShippingMark.origin}
                   </div>
                 </div>
