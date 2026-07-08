@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import { SupplierSearchModal } from '../components/SupplierSearchModal';
 
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
@@ -143,6 +144,7 @@ export const Imports: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSupplierSearch, setShowSupplierSearch] = useState(false);
 
   // 신규 등록 폼 상태
   const [newRequest, setNewRequest] = useState<Partial<ImportRequest>>({
@@ -515,19 +517,23 @@ export const Imports: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입처 (공급업체관리 연결)</label>
-                  <select 
-                    required
-                    value={newRequest.importerName || ''} 
-                    onChange={e => setNewRequest(p => ({ ...p, importerName: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
-                  >
-                    <option value="">-- 공급업체 선택 --</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.nameKo || s.nameEn || s.companyName || s.id}>
-                        {s.nameKo || s.nameEn || s.companyName}
-                      </option>
-                    ))}
-                  </select>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      readOnly
+                      required
+                      placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
+                      value={newRequest.importerName || ''}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierSearch(true)}
+                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -849,6 +855,20 @@ export const Imports: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+      {/* Supplier Search Modal (Subwindow) */}
+      {showSupplierSearch && (
+        <SupplierSearchModal
+          suppliers={suppliers}
+          onClose={() => setShowSupplierSearch(false)}
+          onSelect={(sup) => {
+            setNewRequest(p => ({
+              ...p,
+              importerName: sup.name || ''
+            }));
+            setShowSupplierSearch(false);
+          }}
+        />
       )}
 
     </div>
