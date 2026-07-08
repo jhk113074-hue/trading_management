@@ -308,6 +308,51 @@ export const Imports: React.FC = () => {
     });
   };
 
+  // 수입 수정 모달 상태
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<Partial<ImportRequest> | null>(null);
+
+  const handleEditRequest = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRequest || !editingRequest.id) return;
+
+    let computedItemName = editingRequest.itemName || '';
+    if (editingRequest.piItems && editingRequest.piItems.length > 0) {
+      computedItemName = editingRequest.piItems[0].name || '';
+      if (editingRequest.piItems.length > 1) {
+        computedItemName += ` 외 ${editingRequest.piItems.length - 1}건`;
+      }
+    }
+    if (!computedItemName) computedItemName = '미지정 품목';
+
+    const itemsList = editingRequest.piItems || [];
+    const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
+    const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
+    const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
+    const nextList = importRequests.map(req => {
+      if (req.id === editingRequest.id) {
+        return {
+          ...req,
+          ...editingRequest,
+          itemName: computedItemName,
+          volume: `${totalCbm.toFixed(2)} CBM`,
+          routeFrom: editingRequest.pol || editingRequest.routeFrom || req.routeFrom,
+          routeTo: editingRequest.pod || editingRequest.routeTo || req.routeTo,
+          amount: Number(editingRequest.amount || 0),
+          packingQty: totalQty || 1,
+          weight: `${totalWeight}KG`,
+          dimensions: itemsList[0]?.palletSize || req.dimensions
+        } as ImportRequest;
+      }
+      return req;
+    });
+
+    saveToStorage(nextList);
+    setShowEditModal(false);
+    setEditingRequest(null);
+  };
+
   const handleDeleteRequest = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm(`의뢰번호 ${id} 수입운송 건을 삭제하시겠습니까?`)) {
@@ -461,27 +506,49 @@ export const Imports: React.FC = () => {
                   </span>
                 </td>
                 
-                {/* 관리 (삭제 버튼) */}
+                {/* 관리 (수정 및 삭제 버튼) */}
                 <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                  <button
-                    onClick={(e) => handleDeleteRequest(req.id, e)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#ef4444',
-                      fontSize: '16px',
-                      cursor: 'pointer',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      transition: 'background 0.2s',
-                      fontWeight: 'bold'
-                    }}
-                    title="의뢰 삭제"
-                    onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                  >
-                    🗑️
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingRequest(JSON.parse(JSON.stringify(req)));
+                        setShowEditModal(true);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#3b82f6',
+                        fontSize: '15px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        fontWeight: 'bold'
+                      }}
+                      title="의뢰 수정"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteRequest(req.id, e)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ef4444',
+                        fontSize: '16px',
+                        cursor: 'pointer',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        transition: 'background 0.2s',
+                        fontWeight: 'bold'
+                      }}
+                      title="의뢰 삭제"
+                      onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -893,10 +960,11 @@ export const Imports: React.FC = () => {
           onClose={() => setShowSupplierSearch(false)}
           onRefreshSuppliers={loadSuppliers}
           onSelect={(sup) => {
-            setNewRequest(p => ({
-              ...p,
-              importerName: sup.name || ''
-            }));
+            if (showEditModal) {
+              setEditingRequest(p => p ? { ...p, importerName: sup.name || '' } : null);
+            } else {
+              setNewRequest(p => ({ ...p, importerName: sup.name || '' }));
+            }
             setShowSupplierSearch(false);
           }}
         />
@@ -910,27 +978,451 @@ export const Imports: React.FC = () => {
             setProductSearchTargetIdx(null);
           }}
           onSelect={(prod) => {
-            setNewRequest(p => {
-              const next = [...(p.piItems || [])];
-              const idx = productSearchTargetIdx;
-              if (next[idx]) {
-                next[idx] = {
-                  ...next[idx],
-                  name: prod.nameEn || prod.nameKo || '',
-                  hsCode: prod.hsCode || '',
-                  unitPrice: String(prod.purchasePrice || ''),
-                  unit: prod.unit || 'EA',
-                  weight: String(prod.weight || '')
-                };
-              }
-              return { ...p, piItems: next };
-            });
+            if (showEditModal) {
+              setEditingRequest(p => {
+                if (!p) return null;
+                const next = [...(p.piItems || [])];
+                const idx = productSearchTargetIdx;
+                if (next[idx]) {
+                  next[idx] = {
+                    ...next[idx],
+                    name: prod.nameEn || prod.nameKo || '',
+                    hsCode: prod.hsCode || '',
+                    unitPrice: String(prod.purchasePrice || ''),
+                    unit: prod.unit || 'EA',
+                    weight: String(prod.weight || '')
+                  };
+                }
+                return { ...p, piItems: next };
+              });
+            } else {
+              setNewRequest(p => {
+                const next = [...(p.piItems || [])];
+                const idx = productSearchTargetIdx;
+                if (next[idx]) {
+                  next[idx] = {
+                    ...next[idx],
+                    name: prod.nameEn || prod.nameKo || '',
+                    hsCode: prod.hsCode || '',
+                    unitPrice: String(prod.purchasePrice || ''),
+                    unit: prod.unit || 'EA',
+                    weight: String(prod.weight || '')
+                  };
+                }
+                return { ...p, piItems: next };
+              });
+            }
             setShowProductSearch(false);
             setProductSearchTargetIdx(null);
           }}
         />
       )}
+      {/* Edit Modal (Modalless & Resizeable/Draggable Window) */}
+      {showEditModal && editingRequest && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10009, pointerEvents: 'none' }}>
+          <div style={{
+            position: 'absolute',
+            left: `${modalPosition.x}px`,
+            top: `${modalPosition.y}px`,
+            background: '#fff',
+            borderRadius: '12px',
+            width: '1240px',
+            minWidth: '600px',
+            maxWidth: '98vw',
+            padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 0 1px 1px rgba(0,0,0,0.2)',
+            boxSizing: 'border-box',
+            pointerEvents: 'auto',
+            resize: 'both',
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div 
+              onMouseDown={handleHeaderMouseDown}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
+            >
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>수입 의뢰 건 수정 📌 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
+              <button onClick={() => { setShowEditModal(false); setEditingRequest(null); }} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            </div>
+            
+            <form onSubmit={handleEditRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
+              {/* 기본 수입주체 & 수입처 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입주체 구분</label>
+                  <select 
+                    value={editingRequest.importCompany || 'YSACC'} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, importCompany: e.target.value as any }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="YSACC">YSACC</option>
+                    <option value="YS">YS (영성ACC)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입처 (공급업체관리 연결)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text"
+                      readOnly
+                      required
+                      placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
+                      value={editingRequest.importerName || ''}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierSearch(true)}
+                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
+                </div>
+              </div>
 
+              {/* 최종고객 & INCOTERMS */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>최종고객</label>
+                  <input 
+                    type="text" 
+                    value={editingRequest.finalCustomer || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, finalCustomer: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: 최종 납품처 기입"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>INCOTERMS</label>
+                  <select 
+                    value={editingRequest.incoterms || 'FOB'} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, incoterms: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="EXW">EXW</option>
+                    <option value="FCA">FCA</option>
+                    <option value="FOB">FOB</option>
+                    <option value="CFR">CFR</option>
+                    <option value="CIF">CIF</option>
+                    <option value="DAP">DAP</option>
+                    <option value="DDP">DDP</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* PAYMENT TERMS & 운송수단 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PAYMENT TERMS</label>
+                  <input 
+                    type="text" 
+                    value={editingRequest.paymentTerms || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, paymentTerms: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: 100% T/T in advance"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>운송수단</label>
+                  <select 
+                    value={editingRequest.transportType || 'By Sea'} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, transportType: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="By Sea">By Sea</option>
+                    <option value="By Air">By Air</option>
+                    <option value="By courier">By courier</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 출발PORT & 도착PORT & 견적 운임 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingRequest.pol || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, pol: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: SHANGHAI PORT, CHINA"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>도착 PORT</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingRequest.pod || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, pod: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: INCHEON PORT, KOREA"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>견적 운임 (₩)</label>
+                  <input 
+                    type="number" 
+                    value={editingRequest.amount} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, amount: Number(e.target.value) }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }] }) : null)}
+                    style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    ＋ 항목 추가
+                  </button>
+                </div>
+                
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1000px' }}>
+                    <thead>
+                      <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '30px' }}>
+                        <th style={{ padding: '4px', width: '30px', textAlign: 'center' }}>No</th>
+                        <th style={{ padding: '4px', textAlign: 'left', minWidth: '180px' }}>DESCRIPTION OF COMMODITY</th>
+                        <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
+                        <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>QTY</th>
+                        <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>UNIT</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>U.PRICE</th>
+                        <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                        <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
+                        <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>WEIGHT (KG)</th>
+                        <th style={{ padding: '4px', width: '30px' }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(editingRequest.piItems || []).map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                          <td style={{ padding: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                              <input 
+                                type="text" 
+                                value={item.name} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setEditingRequest(p => {
+                                    if (!p) return null;
+                                    const next = [...(p.piItems || [])];
+                                    next[idx] = { ...next[idx], name: val };
+                                    return { ...p, piItems: next };
+                                  });
+                                }}
+                                style={{ flex: 1, padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                                placeholder="예: E-GLASS SURFACE TISSUE"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProductSearchTargetIdx(idx);
+                                  setShowProductSearch(true);
+                                }}
+                                style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                title="상품 DB에서 가져오기"
+                              >
+                                🔍
+                              </button>
+                            </div>
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.hsCode || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], hsCode: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.qty} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], qty: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.unit || 'EA'} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], unit: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.unitPrice} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], unitPrice: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.amount} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], amount: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.palletSize || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], palletSize: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              placeholder="예: 110*110*120"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.cbm || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], cbm: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0.0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.weight || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], weight: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px', textAlign: 'center' }}>
+                            {editingRequest.piItems && editingRequest.piItems.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: (p.piItems || []).filter((_, i) => i !== idx) }) : null)}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* 제일 밑줄에 nos of package and CBM and weight의 합계를 보여주는 요약행 */}
+                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid #cbd5e1' }}>
+                        <td colSpan={3} style={{ padding: '6px 8px', textAlign: 'center' }}>[합계 요약 (Total Summary)]</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1e3a8a' }}>
+                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0)}
+                        </td>
+                        <td colSpan={3} style={{ padding: '6px 8px' }}></td>
+                        <td style={{ padding: '6px 8px', textAlign: 'center' }}>NOS of PLT/PKG</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#0f766e' }}>
+                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)}
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
+                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.weight) || 0), 0)} kg
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 하단 제어 */}
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => { setShowEditModal(false); setEditingRequest(null); }}
+                  style={{ padding: '8px 16px', background: '#f1f5f9', border: 'none', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  취소
+                </button>
+                <button 
+                  type="submit"
+                  style={{ padding: '8px 16px', background: '#2563eb', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  수정완료
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
