@@ -591,12 +591,9 @@ export const ImportDetail: React.FC = () => {
                       <div class="packing-section" style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                           <strong style="color: #0a1e3f;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
-                          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;">
-                            <div>- Total Volume: ${totalCbm.toFixed(2)} CBM</div>
+                          <div style="display: grid; grid-template-columns: 1fr; gap: 4px; margin-top: 6px;">
                             <div>- Shipment By: ${request.transportType || 'By Sea'}</div>
-                            <div>- Net Weight: ${totalNetWt.toLocaleString()} kg</div>
                             <div>- Port of Loading (POL): ${request.pol || request.portOfLoading || '-'}</div>
-                            <div>- Gross Weight: ${totalGrossWt.toLocaleString()} kg</div>
                             <div>- Port of Discharge (POD): ${request.pod || request.portOfDischarge || '-'}</div>
                           </div>
                         </div>
@@ -1181,12 +1178,9 @@ export const ImportDetail: React.FC = () => {
             <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <strong style={{ color: '#0a1e3f' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginTop: '6px', fontSize: '11.5px', lineHeight: '1.4' }}>
-                  <div>- Total Volume: {totalCbm.toFixed(2)} CBM</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px', marginTop: '6px', fontSize: '11.5px', lineHeight: '1.4' }}>
                   <div>- Shipment By: {request.transportType || 'By Sea'}</div>
-                  <div>- Net Weight: {totalNetWt.toLocaleString()} kg</div>
                   <div>- Port of Loading (POL): {request.pol || request.portOfLoading || '-'}</div>
-                  <div>- Gross Weight: {totalGrossWt.toLocaleString()} kg</div>
                   <div>- Port of Discharge (POD): {request.pod || request.portOfDischarge || '-'}</div>
                 </div>
               </div>
