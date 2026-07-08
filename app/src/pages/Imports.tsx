@@ -167,6 +167,49 @@ export const Imports: React.FC = () => {
     setImportRequests(data);
   };
 
+  // 모달리스 위치 및 리사이즈 상태
+  const [modalPosition, setModalPosition] = useState({ x: 100, y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
+    // Input/Select/Button을 드래그 영역에서 제외
+    const targetTag = (e.target as HTMLElement).tagName.toLowerCase();
+    if (targetTag === 'input' || targetTag === 'select' || targetTag === 'button') {
+      return;
+    }
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - modalPosition.x,
+      y: e.clientY - modalPosition.y
+    });
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      setModalPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
   const handleAddRequest = (e: React.FormEvent) => {
     e.preventDefault();
     const reqId = String(Math.floor(100000 + Math.random() * 900000));
@@ -427,16 +470,38 @@ export const Imports: React.FC = () => {
         </table>
       </div>
 
-      {/* Add Modal */}
+      {/* Add Modal (Modalless & Resizeable/Draggable Window) */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10009 }}>
-          <div style={{ background: '#fff', borderRadius: '12px', width: '800px', maxWidth: '95%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>신규수입등록</h3>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10009, pointerEvents: 'none' }}>
+          <div style={{
+            position: 'absolute',
+            left: `${modalPosition.x}px`,
+            top: `${modalPosition.y}px`,
+            background: '#fff',
+            borderRadius: '12px',
+            width: '820px',
+            minWidth: '400px',
+            minHeight: '300px',
+            maxWidth: '95vw',
+            maxHeight: '90vh',
+            padding: '24px',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 0 1px 1px rgba(0,0,0,0.1)',
+            boxSizing: 'border-box',
+            pointerEvents: 'auto',
+            resize: 'both',
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div 
+              onMouseDown={handleHeaderMouseDown}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
+            >
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>신규수입등록 📌 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
             </div>
             
-            <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '6px' }}>
+            <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, overflowY: 'auto', paddingRight: '6px' }}>
               {/* 기본 수입주체 & 수입처 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
