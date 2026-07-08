@@ -56,7 +56,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
-  const [activeTab, setActiveTab] = useState<'운송현황' | '수입내역' | '서류' | '정산'>('수입내역');
+  const [activeTab, setActiveTab] = useState<'운송현황' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산'>('수입내역');
   const [uploading, setUploading] = useState<string | null>(null);
 
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
@@ -161,6 +161,7 @@ export const ImportDetail: React.FC = () => {
           {([
             { key: '운송현황', label: '운송현황' },
             { key: '수입내역', label: '수입내역' },
+            { key: '운송사/관세사 선정', label: '운송사/관세사 선정' },
             { key: '서류', label: '서류' },
             { key: '정산', label: '정산' }
           ] as const).map(tab => (
@@ -312,6 +313,112 @@ export const ImportDetail: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === '운송사/관세사 선정' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>
+              🚢 운송사 및 통관 관세사 선정 관리
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '20px' }}>
+              {/* 운송사 (포워더) 선정 */}
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px' }}>
+                  Forwarder (지정 운송사)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>운송사 이름</label>
+                    <select
+                      value={request.localTransportType || 'CJ대한통운'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = importRequests.map(r => r.id === id ? { ...r, localTransportType: val } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                    >
+                      <option value="CJ대한통운">CJ대한통운 (CJ Logistics)</option>
+                      <option value="현대글로비스">현대글로비스 (Hyundai Glovis)</option>
+                      <option value="한진">한진 (Hanjin Shipping)</option>
+                      <option value="유니코로그">유니코로그 (Unico Logistics)</option>
+                      <option value="영성포워딩">영성포워딩 (YS Logistics)</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>운송 요율(₩)</label>
+                    <input 
+                      type="text"
+                      placeholder="예: 720,000"
+                      value={request.freightInvoiceAmount || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = importRequests.map(r => r.id === id ? { ...r, freightInvoiceAmount: val } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 통관 관세사 선정 */}
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px' }}>
+                  Customs Agent (통관 관세사)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>관세사사무소 이름</label>
+                    <select
+                      value={request.customsAgent || '이음관세사무소'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = importRequests.map(r => r.id === id ? { ...r, customsAgent: val } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                    >
+                      <option value="이음관세사무소">이음관세사무소</option>
+                      <option value="세인관세법인">세인관세법인</option>
+                      <option value="신한관세법인">신한관세법인</option>
+                      <option value="자체 지정관세사">자체 지정관세사</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>통관 의뢰 진행상태</label>
+                    <select
+                      value={request.dangerousCargo || '미의뢰'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = importRequests.map(r => r.id === id ? { ...r, dangerousCargo: val } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                    >
+                      <option value="미의뢰">미의뢰</option>
+                      <option value="서류 검토중">서류 검토중 (Pending Doc Review)</option>
+                      <option value="수입신고진행">수입신고진행 (Customs Declaration)</option>
+                      <option value="수입신고수리">수입신고수리 (Cleared)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => {
+                  alert('운송사 및 관세사 정보가 성공적으로 반영되었습니다.');
+                  setActiveTab('서류');
+                }}
+                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                저장 후 다음단계로
+              </button>
             </div>
           </div>
         )}
