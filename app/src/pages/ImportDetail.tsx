@@ -924,6 +924,19 @@ export const ImportDetail: React.FC = () => {
                     <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('blAwbDoc', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                   </div>
                 )}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                  <input 
+                    type="text"
+                    value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = importRequests.map(r => r.id === id ? { ...r, blAwb: val || '-' } : r);
+                      saveToStorage(updated);
+                    }}
+                    placeholder="B/L 번호 직접 입력"
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
