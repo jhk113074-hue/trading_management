@@ -88,6 +88,33 @@ export const ImportDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleDownloadPdf = () => {
+    const element = document.getElementById('po-print-area');
+    if (!element) return alert('PDF 다운로드 대상을 찾을 수 없습니다.');
+
+    const runHtml2Pdf = () => {
+      const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     `PO_${id}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      (window as any).html2pdf().from(element).set(opt).save();
+    };
+
+    if (!(window as any).html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = () => {
+        runHtml2Pdf();
+      };
+      document.body.appendChild(script);
+    } else {
+      runHtml2Pdf();
+    }
+  };
+
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
     const saved = localStorage.getItem(`import_docs_${id}`);
     return saved ? JSON.parse(saved) : {
@@ -1117,7 +1144,7 @@ export const ImportDetail: React.FC = () => {
           </div>
 
           <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
-            <div style={{ marginBottom: '20px' }}>
+            <div id="po-print-area" style={{ padding: '10px', background: '#fff', marginBottom: '20px' }}>
               <img 
                 src={currentLetterhead === 'YSACC' ? ysaccLetterImg : ysAccLetterImg} 
                 alt="Letterhead Preview" 
@@ -1247,6 +1274,12 @@ export const ImportDetail: React.FC = () => {
               style={{ padding: '6px 12px', background: '#94a3b8', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px' }}
             >
               닫기
+            </button>
+            <button 
+              onClick={handleDownloadPdf}
+              style={{ padding: '6px 12px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 'bold' }}
+            >
+              PDF 저장
             </button>
             <button 
               onClick={() => {
