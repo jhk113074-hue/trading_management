@@ -73,6 +73,7 @@ export const ImportDetail: React.FC = () => {
     };
   });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
+  const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [forwarders, setForwarders] = useState<any[]>([]);
 
@@ -677,30 +678,21 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>운송사 이름</label>
-                    <select
-                      value={request.localTransportType || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, localTransportType: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
-                    >
-                      <option value="">-- 운송사(포워더) 선택 --</option>
-                      {forwarders.length > 0 ? (
-                        forwarders.map(f => (
-                          <option key={f.id} value={f.name}>{f.name}</option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="CJ대한통운">CJ대한통운 (CJ Logistics)</option>
-                          <option value="현대글로비스">현대글로비스 (Hyundai Glovis)</option>
-                          <option value="한진">한진 (Hanjin Shipping)</option>
-                          <option value="유니코로그">유니코로그 (Unico Logistics)</option>
-                          <option value="영성포워딩">영성포워딩 (YS Logistics)</option>
-                        </>
-                      )}
-                    </select>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type="text"
+                        readOnly
+                        placeholder="지정 운송사(포워더)를 검색해주세요."
+                        value={request.localTransportType || ''}
+                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#f1f5f9' }}
+                      />
+                      <button 
+                        onClick={() => setShowForwarderModal(true)}
+                        style={{ padding: '6px 12px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔍 검색/신규등록
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>운송 요율(₩)</label>
@@ -1325,6 +1317,19 @@ export const ImportDetail: React.FC = () => {
           </div>
         </div>
       )}
+      <ForwarderSearchModal 
+        isOpen={showForwarderModal}
+        onClose={() => setShowForwarderModal(false)}
+        onSelect={(name) => {
+          const updated = importRequests.map(r => r.id === id ? { ...r, localTransportType: name } : r);
+          saveToStorage(updated);
+          setShowForwarderModal(false);
+        }}
+        forwarders={forwarders}
+        onRefresh={() => {
+          // No manual refresh needed since Firestore onSnapshot handles it
+        }}
+      />
     </div>
   );
 };
@@ -1345,3 +1350,134 @@ const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
 };
 
 export default ImportDetail;
+
+// 포워더 검색 및 신규 등록 모달 Sub창 컴포넌트
+interface ForwarderSearchModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (name: string) => void;
+  forwarders: any[];
+  onRefresh: () => void;
+}
+
+import { addDoc } from 'firebase/firestore';
+
+const ForwarderSearchModal: React.FC<ForwarderSearchModalProps> = ({ isOpen, onClose, onSelect, forwarders, onRefresh }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newForwarder, setNewForwarder] = useState({ name: '', manager: '', phone: '', email: '', note: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const filtered = forwarders.filter(f => f.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const handleAddNew = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newForwarder.name.trim()) {
+      alert('업체명을 입력해주세요.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, 'companies', 'YSACC', 'suppliers'), {
+        ...newForwarder,
+        category: '포워딩사',
+        createdAt: new Date().toISOString()
+      });
+      alert('신규 포워더가 성공적으로 등록되었습니다.');
+      setNewForwarder({ name: '', manager: '', phone: '', email: '', note: '' });
+      setShowAddForm(false);
+      onRefresh();
+    } catch (err) {
+      console.error(err);
+      alert('등록 중 에러가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+      <div style={{ background: '#fff', width: '100%', maxWidth: '500px', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f766e' }}>🚢 지정 포워더(운송사) 검색</h4>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer', color: '#64748b' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '16px 20px', display: 'flex', gap: '8px' }}>
+          <input 
+            type="text" 
+            placeholder="포워더 이름으로 검색..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+          />
+          <button 
+            onClick={() => setShowAddForm(p => !p)}
+            style={{ padding: '8px 12px', background: showAddForm ? '#64748b' : '#0f766e', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            {showAddForm ? '목록 보기' : '➕ 신규 포워더 추가'}
+          </button>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 20px' }}>
+          {showAddForm ? (
+            <form onSubmit={handleAddNew} style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', marginBottom: '4px' }}>📝 신규 포워더 등록 정보</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>포워더 업체명 (*)</label>
+                <input required type="text" value={newForwarder.name} onChange={e => setNewForwarder(p => ({ ...p, name: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} placeholder="예: (주)영성물류" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>담당자명</label>
+                <input type="text" value={newForwarder.manager} onChange={e => setNewForwarder(p => ({ ...p, manager: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} placeholder="예: 홍길동 과장" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>연락처</label>
+                <input type="text" value={newForwarder.phone} onChange={e => setNewForwarder(p => ({ ...p, phone: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} placeholder="예: 010-1234-5678" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>이메일</label>
+                <input type="email" value={newForwarder.email} onChange={e => setNewForwarder(p => ({ ...p, email: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} placeholder="예: cargo@logistics.com" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <label style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>비고 / 메모</label>
+                <input type="text" value={newForwarder.note} onChange={e => setNewForwarder(p => ({ ...p, note: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} placeholder="기타 특이사항 입력" />
+              </div>
+              <button disabled={isSubmitting} type="submit" style={{ padding: '8px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', marginTop: '6px' }}>
+                {isSubmitting ? '등록 중...' : '저장 및 즉시 등록'}
+              </button>
+            </form>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {filtered.length > 0 ? (
+                filtered.map(f => (
+                  <div 
+                    key={f.id}
+                    onClick={() => onSelect(f.name)}
+                    style={{ padding: '12px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f0fdf4'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '13.5px', color: '#1e293b' }}>{f.name}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                        {f.manager ? `담당자: ${f.manager}` : '담당자 없음'} {f.phone ? ` | ${f.phone}` : ''}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11.5px', color: '#0f766e', fontWeight: 'bold' }}>선택</span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '12.5px' }}>
+                  검색 조건에 맞는 포워더가 존재하지 않습니다.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
