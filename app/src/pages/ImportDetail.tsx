@@ -384,16 +384,14 @@ export const ImportDetail: React.FC = () => {
                       </style>
                     </head>
                     <body>
-                      <div style="border-top: 10px solid #0a1e3f; border-bottom: 2px solid #b91c1c; padding: 15px 0; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                          <div style="font-size: 26px; font-weight: 850; color: #0a1e3f; letter-spacing: -0.5px;">${letterheadInfo.company}</div>
-                          <div style="font-size: 11.5px; color: #475569; margin-top: 4px; line-height: 1.4;">
-                            Address: ${letterheadInfo.address}<br/>
-                            Tel: ${letterheadInfo.tel} | Fax: ${letterheadInfo.fax} | ${letterheadInfo.extra}
-                          </div>
-                        </div>
-                        <div style="text-align: right; font-size: 13px; border-left: 1px solid #cbd5e1; padding-left: 16px;">
-                          <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 4px;">PURCHASE ORDER</div>
+                      <div style="margin-bottom: 24px; text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <img 
+                          src="${currentLetterhead === 'YSACC' ? '/ysacc_letterhead.png' : '/ys_acc_letterhead.png'}" 
+                          alt="Letterhead" 
+                          style="max-height: 90px; max-width: 480px; object-fit: contain;"
+                        />
+                        <div style="text-align: right; font-size: 13px; min-width: 140px; padding-left: 16px;">
+                          <div style="font-size: 15px; font-weight: 800; color: #b91c1c; margin-bottom: 4px;">PURCHASE ORDER</div>
                           <div><strong>PO NO:</strong> ${request.id}</div>
                           <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
                         </div>
@@ -943,16 +941,14 @@ export const ImportDetail: React.FC = () => {
           </div>
 
           <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
-            <div style={{ borderTop: '10px solid #0a1e3f', borderBottom: '2px solid #b91c1c', padding: '15px 0', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 850, color: '#0a1e3f', letterSpacing: '-0.5px' }}>{letterheadInfo.company}</h2>
-                <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', lineHeight: '1.4' }}>
-                  Address: {letterheadInfo.address}<br/>
-                  Tel: {letterheadInfo.tel} | Fax: {letterheadInfo.fax} | {letterheadInfo.extra}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right', fontSize: '12px', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#b91c1c', marginBottom: '4px' }}>PURCHASE ORDER</div>
+            <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <img 
+                src={currentLetterhead === 'YSACC' ? '/ysacc_letterhead.png' : '/ys_acc_letterhead.png'} 
+                alt="Letterhead Preview" 
+                style={{ maxHeight: '72px', maxWidth: '380px', objectFit: 'contain' }}
+              />
+              <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '120px', paddingLeft: '16px' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '4px' }}>PURCHASE ORDER</div>
                 <div><strong>PO NO:</strong> {request.id}</div>
                 <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
               </div>
