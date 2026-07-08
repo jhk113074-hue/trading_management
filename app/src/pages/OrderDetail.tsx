@@ -995,7 +995,9 @@ export const OrderDetail: React.FC = () => {
     lcDescription: '',
     lcRemark: '',
     shipmentType: 'FCL' as 'LCL' | 'FCL' | '',
-    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>
+    fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>,
+    blNumbers: [] as string[],
+    blNumber: ''
   });
 
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
@@ -1658,7 +1660,9 @@ export const OrderDetail: React.FC = () => {
           actualContainerSimulation: data.actualContainerSimulation || null,
           quotationId: data.quotationId || '',
           shipmentType: data.shipmentType || 'FCL',
-          fclSpecs: data.fclSpecs || []
+          fclSpecs: data.fclSpecs || [],
+          blNumbers: data.blNumbers || (data.blNumber ? [data.blNumber] : []),
+          blNumber: data.blNumber || ''
         });
         const itemsWithHs = (data.items || []).map((it) => {
           const codeMatch = (it.name || '').match(/^\[(.*?)\]\s*(.*)$/);
@@ -9258,6 +9262,75 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '160px' }}>
                     <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
                     <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), width: '100%' }} placeholder="예: 1352.50" />
+                  </div>
+
+                  {/* B/L 번호 목록 다중 입력 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                      <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>B/L 번호 목록</span>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                            setBasicForm(p => ({
+                              ...p,
+                              blNumbers: [...currentBls, '']
+                            }));
+                          }}
+                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '2px 8px', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                          + 추가
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
+                      {(() => {
+                        const currentBls = basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : []);
+                        if (currentBls.length === 0) {
+                          return (
+                            <div style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>등록된 B/L 번호가 없습니다. (수정 모드에서 추가 가능)</div>
+                          );
+                        }
+                        return currentBls.map((bl: string, idx: number) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <input
+                              type="text"
+                              value={bl}
+                              disabled={!isEditing}
+                              onChange={(e) => {
+                                const nextBls = [...currentBls];
+                                nextBls[idx] = e.target.value;
+                                setBasicForm(p => ({
+                                  ...p,
+                                  blNumbers: nextBls,
+                                  blNumber: nextBls.filter(Boolean).join(', ')
+                                }));
+                              }}
+                              placeholder={`B/L 번호 #${idx + 1}`}
+                              style={{ ...inputStyle(isEditing), flex: 1, padding: '4px 8px' }}
+                            />
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextBls = currentBls.filter((_: any, i: number) => i !== idx);
+                                  setBasicForm(p => ({
+                                    ...p,
+                                    blNumbers: nextBls,
+                                    blNumber: nextBls.filter(Boolean).join(', ')
+                                  }));
+                                }}
+                                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '4px 8px', cursor: 'pointer', fontWeight: 600 }}
+                              >
+                                삭제
+                              </button>
+                            )}
+                          </div>
+                        ));
+                      })()}
+                    </div>
                   </div>
 
                   {/* 7개의 유첨 파일 + 신규 사진 유첨 추가 */}

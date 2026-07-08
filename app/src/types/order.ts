@@ -202,6 +202,8 @@ export interface Order {
     specialRemarks?: string;
     generalNotes?: string;
   }>;
+  blNumbers?: string[];
+  blNumber?: string;
 }
 
 export const getFormattedPoId = (poId: string, _issuingCompany?: 'YSACC' | 'YS'): string => {
