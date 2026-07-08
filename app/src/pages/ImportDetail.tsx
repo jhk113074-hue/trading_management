@@ -406,7 +406,7 @@ export const ImportDetail: React.FC = () => {
                         <tr>
                           <td style="width: 50%; vertical-align: top; padding-right: 20px;">
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                              <strong style="color: #0a1e3f;">BUYER (발주자)</strong><br/>
+                              <strong style="color: #0a1e3f;">BUYER</strong><br/>
                               Company: ${letterheadInfo.company}<br/>
                               Importer: ${request.importCompany || 'YSACC'}<br/>
                               Address: ${letterheadInfo.address}
@@ -414,7 +414,7 @@ export const ImportDetail: React.FC = () => {
                           </td>
                           <td style="width: 50%; vertical-align: top;">
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                              <strong style="color: #0a1e3f;">SELLER (공급처)</strong><br/>
+                              <strong style="color: #0a1e3f;">SELLER</strong><br/>
                               Company: ${request.importerName || request.shipperName || 'Global Supplier Ltd.'}<br/>
                               Origin: ${request.routeFrom || 'CHINA'}<br/>
                               Incoterms: ${request.incoterms || 'FOB'}<br/>
@@ -425,7 +425,7 @@ export const ImportDetail: React.FC = () => {
                       </table>
 
                       <div class="packing-section">
-                        <strong style="color: #1e3a8a;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
+                        <strong style="color: #0a1e3f;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
                         - Total CBM: ${totalCbm.toFixed(2)} CBM<br/>
                         - Total Weight: Net: ${totalNetWt.toLocaleString()} kg | Gross: ${totalGrossWt.toLocaleString()} kg<br/>
                         - Shipping Mark: <pre style="display:inline; font-family:inherit; white-space:pre-wrap;">${shippingMark}</pre>
@@ -455,9 +455,17 @@ export const ImportDetail: React.FC = () => {
                         </tbody>
                       </table>
 
-                      <div class="signature-section">
-                        <div class="signature-box">For Seller (공급처 서명)</div>
-                        <div class="signature-box">For Buyer (발주처 서명)</div>
+                      <div class="signature-section" style="position: relative;">
+                        <div class="signature-box">For Seller</div>
+                        <div class="signature-box" style="position: relative;">
+                          <img 
+                            src="/ysacc_stamp.png" 
+                            alt="Stamp" 
+                            onerror="this.style.display='none';"
+                            style="position: absolute; left: 50%; transform: translateX(-50%); top: -45px; width: 110px; height: auto; object-fit: contain; pointer-events: none;"
+                          />
+                          For Buyer
+                        </div>
                       </div>
 
                       <script>
@@ -963,7 +971,7 @@ export const ImportDetail: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <strong style={{ color: '#0a1e3f' }}>BUYER (발주자)</strong>
+                <strong style={{ color: '#0a1e3f' }}>BUYER</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
                   Company: {letterheadInfo.company}<br/>
                   Importer: {request.importCompany || 'YSACC'}<br/>
@@ -971,7 +979,7 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <strong style={{ color: '#0a1e3f' }}>SELLER (공급처)</strong>
+                <strong style={{ color: '#0a1e3f' }}>SELLER</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
                   Company: {request.importerName || request.shipperName || '-'}<br/>
                   Origin: {request.routeFrom || 'CHINA'}<br/>
@@ -1029,7 +1037,15 @@ export const ImportDetail: React.FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', paddingBottom: '20px' }}>
               <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Seller Signature</div>
-              <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Buyer Signature</div>
+              <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold', position: 'relative' }}>
+                <img 
+                  src="/ysacc_stamp.png" 
+                  alt="Stamp" 
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '-45px', width: '100px', height: 'auto', objectFit: 'contain', pointerEvents: 'none' }}
+                />
+                Buyer Signature
+              </div>
             </div>
           </div>
 
