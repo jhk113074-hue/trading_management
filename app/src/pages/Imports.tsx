@@ -189,6 +189,14 @@ export const Imports: React.FC = () => {
     });
   };
 
+  const handleDeleteRequest = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`의뢰번호 ${id} 수입운송 건을 삭제하시겠습니까?`)) {
+      const nextList = importRequests.filter(req => req.id !== id);
+      saveToStorage(nextList);
+    }
+  };
+
   const filteredRequests = useMemo(() => {
     if (!searchTerm.trim()) return importRequests;
     return importRequests.filter(req => 
@@ -255,6 +263,7 @@ export const Imports: React.FC = () => {
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px', textAlign: 'center' }}>운송일정</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px' }}>담당자</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'right' }}>운임</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '70px', textAlign: 'center' }}>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -328,6 +337,29 @@ export const Imports: React.FC = () => {
                     </span>
                     <span style={{ fontSize: '11px', color: '#94a3b8' }}>(견적 금액)</span>
                   </div>
+                </td>
+                
+                {/* 관리 (삭제 버튼) */}
+                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                  <button
+                    onClick={(e) => handleDeleteRequest(req.id, e)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontSize: '16px',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      transition: 'background 0.2s',
+                      fontWeight: 'bold'
+                    }}
+                    title="의뢰 삭제"
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                  >
+                    🗑️
+                  </button>
                 </td>
               </tr>
             ))}
