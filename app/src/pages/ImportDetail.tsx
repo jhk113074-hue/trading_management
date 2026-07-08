@@ -792,7 +792,7 @@ export const ImportDetail: React.FC = () => {
                 {/* 1. CI & PL */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Commercial Invoice & Packing List">❓</span>
+                    C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
                   {documents.ciPl ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -812,7 +812,7 @@ export const ImportDetail: React.FC = () => {
                 {/* 2. CO */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
+                    CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
                   {documents.co ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -832,7 +832,7 @@ export const ImportDetail: React.FC = () => {
                 {/* 3. BL */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
+                    BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
                   {documents.blAwbDoc ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -865,7 +865,7 @@ export const ImportDetail: React.FC = () => {
                 {/* 4. 수입신고필증 (수입면장) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
+                    수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
                   {documents.customsPermit ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -893,7 +893,7 @@ export const ImportDetail: React.FC = () => {
                   {/* 1. 인증/검역 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="인증 및 검역서류">❓</span>
+                      인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
                     {documents.inspect ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -913,7 +913,7 @@ export const ImportDetail: React.FC = () => {
                   {/* 2. 기타 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="기타 참고서류">❓</span>
+                      기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
                     {documents.etc ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -934,7 +934,7 @@ export const ImportDetail: React.FC = () => {
                 {/* 하단: 정산 관련 세금계산서 영역 */}
                 <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
+                    수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>}
                   </div>
                   {documents.taxInvoice ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
