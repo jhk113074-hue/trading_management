@@ -5,6 +5,9 @@ import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { previewFile } from '../components/FilePreviewModal';
 
+import ysaccLetterImg from '../assets/ysacc_letterhead.png';
+import ysAccLetterImg from '../assets/ys_acc_letterhead.png';
+
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
     id: '189348',
@@ -386,7 +389,7 @@ export const ImportDetail: React.FC = () => {
                     <body>
                       <div style="margin-bottom: 24px; text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
                         <img 
-                          src="${currentLetterhead === 'YSACC' ? '/ysacc_letterhead.png' : '/ys_acc_letterhead.png'}" 
+                          src="${currentLetterhead === 'YSACC' ? ysaccLetterImg : ysAccLetterImg}" 
                           alt="Letterhead" 
                           style="max-height: 90px; max-width: 480px; object-fit: contain;"
                         />
@@ -943,7 +946,7 @@ export const ImportDetail: React.FC = () => {
           <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
             <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <img 
-                src={currentLetterhead === 'YSACC' ? '/ysacc_letterhead.png' : '/ys_acc_letterhead.png'} 
+                src={currentLetterhead === 'YSACC' ? ysaccLetterImg : ysAccLetterImg} 
                 alt="Letterhead Preview" 
                 style={{ maxHeight: '72px', maxWidth: '380px', objectFit: 'contain' }}
               />
