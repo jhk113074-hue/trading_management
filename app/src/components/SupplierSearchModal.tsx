@@ -72,13 +72,13 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', width: '90%', maxWidth: '900px',
-        height: '75vh', display: 'flex', flexDirection: 'column',
+        background: '#fff', borderRadius: '16px', width: '1150px', maxWidth: '95vw',
+        height: '82vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden', border: '1px solid #e2e8f0',
         pointerEvents: 'auto',
         resize: 'both',
-        minWidth: '550px', minHeight: '320px'
+        minWidth: '800px', minHeight: '400px'
       }}>
         {/* Header */}
         <div 

@@ -95,13 +95,13 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', width: '90%', maxWidth: '1000px',
-        height: '80vh', display: 'flex', flexDirection: 'column',
+        background: '#fff', borderRadius: '16px', width: '1200px', maxWidth: '95vw',
+        height: '85vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden', border: '1px solid #e2e8f0',
         pointerEvents: 'auto',
         resize: 'both',
-        minWidth: '600px', minHeight: '350px'
+        minWidth: '800px', minHeight: '400px'
       }}>
         {/* Header */}
         <div 
