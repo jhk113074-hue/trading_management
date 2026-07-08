@@ -142,6 +142,7 @@ export interface ImportRequest {
   piItemUnitPrice?: string;
   piItemAmount?: string;
   freightInvoiceAmount?: string;
+  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string }>;
   
   
   // 상세

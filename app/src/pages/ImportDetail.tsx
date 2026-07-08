@@ -360,63 +360,129 @@ export const ImportDetail: React.FC = () => {
                     )}
                   </div>
 
-                  {/* PI 세부 기입 항목 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>구매 품명</span>
-                      <input 
-                        type="text" 
-                        value={request.piItemName || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemName: val } : r);
+                  {/* PI 세부 기입 항목 (동적 그리드) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📦 구매 아이템 세부내역</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentItems = request.piItems && request.piItems.length > 0
+                            ? [...request.piItems]
+                            : [{ name: request.piItemName || '', qty: request.piItemQty || '', unitPrice: request.piItemUnitPrice || '', amount: request.piItemAmount || '' }];
+                          
+                          const updated = importRequests.map(r => r.id === id ? {
+                            ...r,
+                            piItems: [...currentItems, { name: '', qty: '', unitPrice: '', amount: '' }]
+                          } : r);
                           saveToStorage(updated);
                         }}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                        placeholder="예: E-GLASS SURFACE TISSUE"
-                      />
+                        style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        ＋ 행 추가
+                      </button>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>수량 / 단위</span>
-                      <input 
-                        type="text" 
-                        value={request.piItemQty || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemQty: val } : r);
-                          saveToStorage(updated);
-                        }}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                        placeholder="예: 20000(㎡)"
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>FOB 단가</span>
-                      <input 
-                        type="text" 
-                        value={request.piItemUnitPrice || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemUnitPrice: val } : r);
-                          saveToStorage(updated);
-                        }}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                        placeholder="예: $0.157"
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>총 구매금액</span>
-                      <input 
-                        type="text" 
-                        value={request.piItemAmount || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = importRequests.map(r => r.id === id ? { ...r, piItemAmount: val } : r);
-                          saveToStorage(updated);
-                        }}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                        placeholder="예: US$3,140.00"
-                      />
+
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', height: '30px' }}>
+                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', textAlign: 'left' }}>구매 품명</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '70px', textAlign: 'right' }}>수량</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '65px', textAlign: 'right' }}>단가</th>
+                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '80px', textAlign: 'right' }}>금액</th>
+                            <th style={{ width: '30px' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const activeItems = request.piItems && request.piItems.length > 0
+                              ? request.piItems
+                              : [{
+                                  name: request.piItemName || '',
+                                  qty: request.piItemQty || '',
+                                  unitPrice: request.piItemUnitPrice || '',
+                                  amount: request.piItemAmount || ''
+                                }];
+
+                            return activeItems.map((item, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input 
+                                    type="text"
+                                    value={item.name}
+                                    placeholder="품명"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const next = activeItems.map((it, i) => i === idx ? { ...it, name: val } : it);
+                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
+                                      saveToStorage(updated);
+                                    }}
+                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input 
+                                    type="text"
+                                    value={item.qty}
+                                    placeholder="수량"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const next = activeItems.map((it, i) => i === idx ? { ...it, qty: val } : it);
+                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
+                                      saveToStorage(updated);
+                                    }}
+                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input 
+                                    type="text"
+                                    value={item.unitPrice}
+                                    placeholder="단가"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const next = activeItems.map((it, i) => i === idx ? { ...it, unitPrice: val } : it);
+                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
+                                      saveToStorage(updated);
+                                    }}
+                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px' }}>
+                                  <input 
+                                    type="text"
+                                    value={item.amount}
+                                    placeholder="금액"
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const next = activeItems.map((it, i) => i === idx ? { ...it, amount: val } : it);
+                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
+                                      saveToStorage(updated);
+                                    }}
+                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '4px 6px', textAlign: 'center' }}>
+                                  {activeItems.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = activeItems.filter((_, i) => i !== idx);
+                                        const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
+                                        saveToStorage(updated);
+                                      }}
+                                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', padding: 0 }}
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ));
+                          })()}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>
