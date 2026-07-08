@@ -476,7 +476,7 @@ export const ImportDetail: React.FC = () => {
                 onClick={() => setShowPoModal(true)}
                 style={{ padding: '8px 16px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
-                🔍 PO 모달리스 미리보기
+                미리보기 및 인쇄
               </button>
               <button
                 onClick={() => {
@@ -618,7 +618,7 @@ export const ImportDetail: React.FC = () => {
                 }}
                 style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
-                🖨️ PO 즉시 인쇄
+                PO 즉시 인쇄
               </button>
             </div>
           </div>
