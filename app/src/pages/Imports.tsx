@@ -489,7 +489,8 @@ export const Imports: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '44px' }}>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '130px' }}>주문번호</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px' }}>주문번호</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>PO번호</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '150px' }}>수입처</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>품명</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '160px' }}>운송내용</th>
@@ -511,11 +512,15 @@ export const Imports: React.FC = () => {
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
                 {/* 주문번호 */}
+                <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 700, color: '#475569' }}>
+                  {req.id}
+                </td>
+
+                {/* PO번호 */}
                 <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>{req.poNumber || req.id}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {req.id}</span>
-                  </div>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                    {req.poNumber && req.poNumber !== '-' ? req.poNumber : '-'}
+                  </span>
                 </td>
                 
                 {/* 수입처 */}
