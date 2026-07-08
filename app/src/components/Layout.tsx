@@ -478,14 +478,14 @@ export const Layout: React.FC = () => {
 
         {/* 하단 사용자 영역 */}
         {userProfile && (
-          <div style={{ padding: '12px 16px 20px', borderTop: '1px solid #e2e8f0', marginTop: 'auto' }}>
+          <div style={{ padding: '12px 16px 20px', borderTop: '1px solid var(--border-color)', marginTop: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg,#be123c,#9f1239)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary-color), var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                 {userProfile.name?.charAt(0)}
               </div>
               <div style={{ overflow: 'hidden' }}>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.name}</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.department || userProfile.role || ''}</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.name}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userProfile.department || userProfile.role || ''}</div>
               </div>
             </div>
           </div>
@@ -499,7 +499,7 @@ export const Layout: React.FC = () => {
           style={{
             width: '5px',
             cursor: 'col-resize',
-            background: isDragging ? '#0d9488' : 'transparent',
+            background: isDragging ? 'var(--focus-ring)' : 'transparent',
             transition: 'background 0.15s',
             zIndex: 10,
             position: 'relative',
@@ -507,7 +507,7 @@ export const Layout: React.FC = () => {
             alignSelf: 'stretch',
             userSelect: 'none'
           }}
-          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = 'rgba(13,148,136,0.3)'; }}
+          onMouseEnter={(e) => { if (!isDragging) e.currentTarget.style.background = 'rgba(42,162,177,0.3)'; }}
           onMouseLeave={(e) => { if (!isDragging) e.currentTarget.style.background = 'transparent'; }}
         />
       )}
@@ -522,12 +522,12 @@ export const Layout: React.FC = () => {
                 border: 'none',
                 fontSize: '28px',
                 cursor: 'pointer',
-                color: '#475569',
+                color: 'var(--text-secondary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '8px',
-                borderRadius: '6px',
+                borderRadius: 'var(--radius-md)',
                 transition: 'background 0.1s',
                 lineHeight: 1
               }}
@@ -537,15 +537,15 @@ export const Layout: React.FC = () => {
             >
               ☰
             </button>
-            <div className="header-logo-text" style={{ fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
-              <span style={{ color: '#be123c', marginRight: '6px' }}>YSACC</span>
-              <span style={{ color: '#334155' }}>업무포탈</span>
+            <div className="header-logo-text" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '800', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <span style={{ color: 'var(--primary-color)', marginRight: '6px' }}>YSACC</span>
+              <span style={{ color: 'var(--text-primary)' }}>업무포탈</span>
             </div>
           </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {userProfile && (
-              <span className="header-user-text" style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+              <span className="header-user-text" style={{ marginRight: '16px', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                 {userProfile.department ? `${userProfile.department} ` : ''}{userProfile.name}님 로그인 중
               </span>
             )}
@@ -568,7 +568,7 @@ export const Layout: React.FC = () => {
                     justifyContent: 'center',
                     transition: 'background 0.2s',
                     outline: 'none',
-                    color: '#475569'
+                    color: 'var(--text-secondary)'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -607,9 +607,9 @@ export const Layout: React.FC = () => {
                       right: '0',
                       width: '320px',
                       background: '#fff',
-                      borderRadius: '8px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                      border: '1px solid #e2e8f0',
+                      borderRadius: 'var(--radius-md)',
+                      boxShadow: 'var(--shadow-lg)',
+                      border: '1px solid var(--border-color)',
                       zIndex: 1000,
                       display: 'flex',
                       flexDirection: 'column',
@@ -620,7 +620,7 @@ export const Layout: React.FC = () => {
                     <div
                       style={{
                         padding: '10px 12px',
-                        borderBottom: '1px solid #e2e8f0',
+                        borderBottom: '1px solid var(--border-color)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -628,7 +628,7 @@ export const Layout: React.FC = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>알림</span>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>알림</span>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -637,9 +637,9 @@ export const Layout: React.FC = () => {
                           }}
                           style={{
                             background: '#f1f5f9',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            color: '#475569',
+                            border: '1px solid var(--border-default)',
+                            borderRadius: 'var(--radius-xs)',
+                            color: 'var(--text-secondary)',
                             fontSize: '10px',
                             cursor: 'pointer',
                             fontWeight: 700,
@@ -656,7 +656,7 @@ export const Layout: React.FC = () => {
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#0d9488',
+                            color: 'var(--text-link)',
                             fontSize: '11px',
                             cursor: 'pointer',
                             fontWeight: 600
@@ -668,7 +668,7 @@ export const Layout: React.FC = () => {
                     </div>
                     <div style={{ overflowY: 'auto', flex: 1 }}>
                       {notifications.length === 0 ? (
-                        <div style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
                           새로운 알림이 없습니다.
                         </div>
                       ) : (
@@ -693,13 +693,13 @@ export const Layout: React.FC = () => {
                             <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: n.isRead ? 400 : 600 }}>
                               📢 <strong>{(!n.senderName || n.senderName.toUpperCase() === 'SYSTEM') ? '알림' : n.senderName}</strong>님이 검토를 요청했습니다.
                             </div>
-                            <div style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               업무: {n.taskTitle}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '4px 6px', borderRadius: '4px', marginTop: '4px', fontStyle: 'italic' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', background: '#f1f5f9', padding: '4px 6px', borderRadius: 'var(--radius-xs)', marginTop: '4px', fontStyle: 'italic' }}>
                               "{n.commentContent}"
                             </div>
-                            <div style={{ fontSize: '9px', color: '#94a3b8', alignSelf: 'flex-end', marginTop: '2px' }}>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', alignSelf: 'flex-end', marginTop: '2px' }}>
                               {new Date(n.createdAt).toLocaleString()}
                             </div>
                           </div>
@@ -717,12 +717,12 @@ export const Layout: React.FC = () => {
               alignItems: 'center',
               gap: '8px',
               padding: '6px 12px',
-              borderRadius: '6px',
+              borderRadius: 'var(--radius-md)',
               backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--border-color)',
               fontSize: '13.5px',
               fontWeight: 700,
-              color: '#475569',
+              color: 'var(--text-secondary)',
               marginRight: '6px',
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -733,17 +733,17 @@ export const Layout: React.FC = () => {
                 onClick={handleExtendSession}
                 style={{
                   padding: '2px 8px',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-sm)',
                   border: 'none',
-                  background: '#4f46e5',
+                  background: 'var(--primary-color)',
                   color: '#ffffff',
                   fontSize: '11.5px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'background 0.2s'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#4338ca'}
-                onMouseLeave={e => e.currentTarget.style.background = '#4f46e5'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--primary-hover)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--primary-color)'}
               >
                 연장
               </button>
@@ -755,26 +755,26 @@ export const Layout: React.FC = () => {
               alignItems: 'center',
               gap: '8px',
               padding: '10px 18px',
-              borderRadius: '6px',
-              border: '1px solid #e8ecf0',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
               backgroundColor: '#ffffff',
               fontSize: '15px',
               fontWeight: 600,
-              color: '#4f46e5',
+              color: 'var(--text-secondary)',
               cursor: 'pointer'
             }}>
-              <span style={{ color: '#4f46e5', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
+              <span style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
             </Link>
             <button className="btn" onClick={logout} style={{
               display: 'inline-flex',
               alignItems: 'center',
               padding: '10px 18px',
-              borderRadius: '6px',
-              border: '1px solid #e8ecf0',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
               backgroundColor: '#ffffff',
               fontSize: '15px',
               fontWeight: 600,
-              color: '#1e293b',
+              color: 'var(--text-primary)',
               cursor: 'pointer'
             }}>
               로그아웃
@@ -834,19 +834,19 @@ export const Layout: React.FC = () => {
         }}>
           <div style={{
             background: '#ffffff',
-            borderRadius: '12px',
+            borderRadius: 'var(--radius-lg)',
             padding: '24px',
             width: '420px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            boxShadow: 'var(--shadow-lg)',
             textAlign: 'center',
-            border: '1px solid #e2e8f0',
+            border: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px'
           }}>
             <div style={{ fontSize: '36px' }}>⏰</div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e293b', margin: 0 }}>보안 자동 로그아웃 안내</h3>
-            <p style={{ fontSize: '14.5px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>보안 자동 로그아웃 안내</h3>
+            <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
               장시간 활동이 감지되지 않아 <strong>{Math.floor(timeLeft / 60)}분 {timeLeft % 60}초</strong> 후 보안을 위해 자동으로 로그아웃됩니다.
               <br />
               로그인 상태를 유지하시겠습니까?
@@ -858,10 +858,10 @@ export const Layout: React.FC = () => {
                 style={{
                   flex: 1,
                   padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-default)',
                   background: '#f8fafc',
-                  color: '#475569',
+                  color: 'var(--text-secondary)',
                   fontSize: '14.5px',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -875,14 +875,14 @@ export const Layout: React.FC = () => {
                 style={{
                   flex: 1,
                   padding: '10px',
-                  borderRadius: '6px',
+                  borderRadius: 'var(--radius-md)',
                   border: 'none',
-                  background: '#4f46e5',
+                  background: 'var(--primary-color)',
                   color: '#ffffff',
                   fontSize: '14.5px',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.3)'
+                  boxShadow: 'var(--shadow-brand)'
                 }}
               >
                 로그인 연장

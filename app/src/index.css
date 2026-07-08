@@ -1,20 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
 :root {
-  --bg-primary: #f9fafb;
-  --bg-secondary: #ffffff;
+  /* ── YSACC 디자인시스템 (로그인 화면 기준으로 통일) ── */
+  --bg-primary: #F8F8F9; /* surface-page */
+  --bg-secondary: #ffffff; /* surface-card */
   --bg-header: #ffffff;
-  --bg-sidebar: #f8fafc; /* Clean Light Slate Background */
-  --sidebar-text: #475569; /* Slate-600 for high readability */
-  --sidebar-text-hover: #be123c; /* Brand Red on hover */
-  --sidebar-active-bg: rgba(190, 18, 60, 0.07); /* Light Red Tint */
-  --sidebar-active-text: #be123c; /* Brand Red */
-  --sidebar-section-title: #94a3b8; /* Slate-400 */
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --border-color: #e8ecf0;
-  --primary-color: #be123c; /* Matching YSACC Brand Red */
-  --primary-hover: #9f1239;
-  --q1-color: #be123c;
+  --bg-sidebar: #ffffff;
+  --sidebar-text: #555555; /* text-secondary */
+  --sidebar-text-hover: #BD1723; /* Brand Red on hover */
+  --sidebar-active-bg: rgba(189, 23, 35, 0.07); /* Light Red Tint */
+  --sidebar-active-text: #BD1723; /* Brand Red */
+  --sidebar-section-title: #8A8A8D; /* text-muted */
+  --text-primary: #262628;
+  --text-secondary: #555555;
+  --text-muted: #8A8A8D;
+  --text-link: #A5121C;
+  --border-color: #E4E4E6; /* border-subtle */
+  --border-default: #CFCFD2;
+  --border-strong: #B1B1B1;
+  --primary-color: #BD1723; /* Brand Red */
+  --primary-hover: #A5121C; /* Red-600 */
+  --focus-ring: #2AA2B1; /* Aqua accent */
+  --q1-color: #BD1723;
+
+  /* 반경 스케일 */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* 그림자 스케일 */
+  --shadow-lg: 0 12px 28px rgba(22,22,23,0.12), 0 4px 8px rgba(22,22,23,0.05);
+  --shadow-brand: 0 6px 18px rgba(189,23,35,0.22);
+  --shadow-focus: 0 0 0 3px rgba(42,162,177,0.35);
+
+  /* 폰트 */
+  --font-display: 'Archivo', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 * {
@@ -157,18 +181,28 @@ body {
 
 .btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background: white;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
+  transition: background-color 120ms, border-color 120ms;
+}
+
+.btn:hover {
+  border-color: var(--border-strong);
 }
 
 .btn-primary {
   background: var(--primary-color);
   color: white;
   border: none;
+  box-shadow: var(--shadow-brand);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
 }
 
 .task-card:hover {
@@ -302,4 +336,13 @@ input[type=number] {
 
 .blink-dot {
   animation: blink-dot 1.2s infinite ease-in-out;
+}
+
+/* 전역 인풋 포커스 링 (개별 컴포넌트에 인라인 focus 스타일이 없는 경우 기본 적용) */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: var(--shadow-focus);
 }
