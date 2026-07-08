@@ -429,7 +429,6 @@ export const ImportDetail: React.FC = () => {
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
                               <strong style="color: #0a1e3f;">BUYER</strong><br/>
                               Company: ${letterheadInfo.company}<br/>
-                              Importer: ${request.importCompany || 'YSACC'}<br/>
                               Address: ${letterheadInfo.address}
                             </div>
                           </td>
@@ -995,7 +994,6 @@ export const ImportDetail: React.FC = () => {
                 <strong style={{ color: '#0a1e3f' }}>BUYER</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
                   Company: {letterheadInfo.company}<br/>
-                  Importer: {request.importCompany || 'YSACC'}<br/>
                   Address: {letterheadInfo.address}
                 </div>
               </div>
