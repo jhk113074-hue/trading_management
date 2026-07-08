@@ -168,7 +168,7 @@ export const Imports: React.FC = () => {
   };
 
   // 모달리스 위치 및 리사이즈 상태
-  const [modalPosition, setModalPosition] = useState({ x: 100, y: 80 });
+  const [modalPosition, setModalPosition] = useState({ x: 80, y: 35 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -479,13 +479,11 @@ export const Imports: React.FC = () => {
             top: `${modalPosition.y}px`,
             background: '#fff',
             borderRadius: '12px',
-            width: '820px',
-            minWidth: '400px',
-            minHeight: '300px',
-            maxWidth: '95vw',
-            maxHeight: '90vh',
+            width: '1240px',
+            minWidth: '600px',
+            maxWidth: '98vw',
             padding: '24px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 0 1px 1px rgba(0,0,0,0.1)',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 0 1px 1px rgba(0,0,0,0.2)',
             boxSizing: 'border-box',
             pointerEvents: 'auto',
             resize: 'both',
@@ -501,7 +499,7 @@ export const Imports: React.FC = () => {
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
             </div>
             
-            <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, overflowY: 'auto', paddingRight: '6px' }}>
+            <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
               {/* 기본 수입주체 & 수입처 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
