@@ -2108,6 +2108,8 @@ export const OrderDetail: React.FC = () => {
         commonShippingMark: commonShippingMark,
         activeSourcingTab: sourcingTabToSave,
         quotationId: basicForm.quotationId || '',
+        blNumbers: basicForm.blNumbers || [],
+        blNumber: basicForm.blNumber || '',
         
         items: orderItems.map(it => ({
           itemId: it.itemId || '',
