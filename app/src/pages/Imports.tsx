@@ -296,7 +296,7 @@ export const Imports: React.FC = () => {
             onClick={() => setShowAddModal(true)}
             style={{ padding: '8px 16px', background: '#eff6ff', border: '1px solid #3b82f6', color: '#2563eb', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
           >
-            운송의뢰 추가
+            신규 수입건 추가
           </button>
           <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
             목록 받기
