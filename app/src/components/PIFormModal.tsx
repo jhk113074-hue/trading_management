@@ -1004,8 +1004,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           }
         }
       } else {
-        it.productName = productCodeVal;
-        it.description = productCodeVal;
+        it.productName = productCodeVal || '';
+        it.description = productCodeVal || '';
+        if (!it.unit) {
+          it.unit = 'EA';
+        }
       }
     }
 
