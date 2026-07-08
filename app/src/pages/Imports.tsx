@@ -147,8 +147,7 @@ export const Imports: React.FC = () => {
   // 신규 등록 폼 상태
   const [newRequest, setNewRequest] = useState<Partial<ImportRequest>>({
     itemName: '',
-    transportType: 'FOB | 해상LCL',
-    volume: '1.0 R.TON',
+    transportType: 'By Sea',
     routeFrom: '',
     routeTo: '',
     manager: '김주한',
@@ -160,8 +159,7 @@ export const Imports: React.FC = () => {
     paymentTerms: '100% T/T in advance',
     pol: '',
     pod: '',
-    piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '' }],
-    packingPallets: [{ palletSize: '', qty: '', cbm: '', weight: '' }]
+    piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }]
   });
 
   const saveToStorage = (data: ImportRequest[]) => {
@@ -183,14 +181,19 @@ export const Imports: React.FC = () => {
     }
     if (!computedItemName) computedItemName = '미지정 품목';
 
+    const itemsList = newRequest.piItems || [];
+    const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
+    const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
+    const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
     const created: ImportRequest = {
       id: reqId,
       status: '진행 결정 요청',
       blAwb: '-',
       poNumber: '-',
       itemName: computedItemName,
-      transportType: newRequest.transportType || 'FOB | 해상LCL',
-      volume: newRequest.volume || '1.0 R.TON',
+      transportType: newRequest.transportType || 'By Sea',
+      volume: `${totalCbm.toFixed(2)} CBM`,
       routeFrom: newRequest.pol || newRequest.routeFrom || '중국 상해항',
       routeTo: newRequest.pod || '한국 내륙',
       manager: newRequest.manager || '김주한',
@@ -204,16 +207,15 @@ export const Imports: React.FC = () => {
       paymentTerms: newRequest.paymentTerms || '100% T/T in advance',
       pol: newRequest.pol || '',
       pod: newRequest.pod || '',
-      piItems: newRequest.piItems || [],
-      packingPallets: newRequest.packingPallets || [],
+      piItems: itemsList,
       
       // Default 상세
       portOfLoading: newRequest.pol || newRequest.routeFrom,
       portOfDischarge: newRequest.pod || '인천항',
-      packingQty: newRequest.packingPallets ? newRequest.packingPallets.reduce((sum, p) => sum + (Number(p.qty) || 0), 0) : 10,
+      packingQty: totalQty || 1,
       packingUnit: 'PALLET',
-      dimensions: newRequest.packingPallets && newRequest.packingPallets[0] ? newRequest.packingPallets[0].palletSize : '120*80*100(CM)',
-      weight: newRequest.packingPallets ? `${newRequest.packingPallets.reduce((sum, p) => sum + (Number(p.weight) || 0), 0)}KG` : '150KG',
+      dimensions: itemsList[0]?.palletSize || '120*80*100(CM)',
+      weight: `${totalWeight}KG`,
       dangerousCargo: '미포함',
       msdsStatus: '미포함',
       lssIncluded: '포함',
@@ -228,8 +230,7 @@ export const Imports: React.FC = () => {
     setShowAddModal(false);
     setNewRequest({
       itemName: '',
-      transportType: 'FOB | 해상LCL',
-      volume: '1.0 R.TON',
+      transportType: 'By Sea',
       routeFrom: '',
       routeTo: '',
       manager: '김주한',
@@ -241,8 +242,7 @@ export const Imports: React.FC = () => {
       paymentTerms: '100% T/T in advance',
       pol: '',
       pod: '',
-      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '' }],
-      packingPallets: [{ palletSize: '', qty: '', cbm: '', weight: '' }]
+      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }]
     });
   };
 
@@ -511,19 +511,21 @@ export const Imports: React.FC = () => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>운송 형태 및 수단</label>
-                  <input 
-                    type="text" 
-                    value={newRequest.transportType} 
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>운송수단</label>
+                  <select 
+                    value={newRequest.transportType || 'By Sea'} 
                     onChange={e => setNewRequest(p => ({ ...p, transportType: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                    placeholder="예: FOB | 해상LCL"
-                  />
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="By Sea">By Sea</option>
+                    <option value="By Air">By Air</option>
+                    <option value="By courier">By courier</option>
+                  </select>
                 </div>
               </div>
 
-              {/* 출발PORT & 도착PORT */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              {/* 출발PORT & 도착PORT & 견적 운임 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
                   <input 
@@ -546,19 +548,6 @@ export const Imports: React.FC = () => {
                     placeholder="예: INCHEON PORT, KOREA"
                   />
                 </div>
-              </div>
-
-              {/* 물량단위 및 견적운임 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>총 물량 / 단위</label>
-                  <input 
-                    type="text" 
-                    value={newRequest.volume} 
-                    onChange={e => setNewRequest(p => ({ ...p, volume: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                  />
-                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>견적 운임 (₩)</label>
                   <input 
@@ -570,247 +559,212 @@ export const Imports: React.FC = () => {
                 </div>
               </div>
 
-              {/* 4. 동적 수입 제품 라인 테이블 */}
+              {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}
               <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 세부 목록 (DESCRIPTION OF COMMODITY)</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
                   <button 
                     type="button" 
-                    onClick={() => setNewRequest(p => ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '' }] }))}
+                    onClick={() => setNewRequest(p => ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }] }))}
                     style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    ＋ 품목 추가
+                    ＋ 항목 추가
                   </button>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '28px' }}>
-                      <th style={{ padding: '4px', width: '30px', textAlign: 'center' }}>No</th>
-                      <th style={{ padding: '4px', textAlign: 'left' }}>DESCRIPTION OF COMMODITY</th>
-                      <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
-                      <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>QUANTITY</th>
-                      <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>UNIT</th>
-                      <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>UNIT PRICE</th>
-                      <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL</th>
-                      <th style={{ padding: '4px', width: '30px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(newRequest.piItems || []).map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.name} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], name: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', boxSizing: 'border-box' }}
-                            placeholder="예: E-GLASS SURFACE TISSUE"
-                          />
-                        </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.hsCode || ''} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], hsCode: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', boxSizing: 'border-box' }}
-                          />
-                        </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.qty} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], qty: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                          />
-                        </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.unit || 'EA'} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], unit: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
-                          />
-                        </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.unitPrice} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], unitPrice: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                          />
-                        </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.amount} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.piItems || [])];
-                                next[idx] = { ...next[idx], amount: val };
-                                return { ...p, piItems: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                          />
-                        </td>
-                        <td style={{ padding: '4px', textAlign: 'center' }}>
-                          {newRequest.piItems && newRequest.piItems.length > 1 && (
-                            <button 
-                              type="button" 
-                              onClick={() => setNewRequest(p => ({ ...p, piItems: (p.piItems || []).filter((_, i) => i !== idx) }))}
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </td>
+                
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1000px' }}>
+                    <thead>
+                      <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '30px' }}>
+                        <th style={{ padding: '4px', width: '30px', textAlign: 'center' }}>No</th>
+                        <th style={{ padding: '4px', textAlign: 'left', minWidth: '180px' }}>DESCRIPTION OF COMMODITY</th>
+                        <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
+                        <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>QTY</th>
+                        <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>UNIT</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>U.PRICE</th>
+                        <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                        <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
+                        <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>WEIGHT (KG)</th>
+                        <th style={{ padding: '4px', width: '30px' }}></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {(newRequest.piItems || []).map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.name} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], name: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              placeholder="예: E-GLASS SURFACE TISSUE"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.hsCode || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], hsCode: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.qty} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], qty: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.unit || 'EA'} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], unit: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.unitPrice} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], unitPrice: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.amount} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], amount: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.palletSize || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], palletSize: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              placeholder="예: 110*110*120"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.cbm || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], cbm: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0.0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.weight || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], weight: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px', textAlign: 'center' }}>
+                            {newRequest.piItems && newRequest.piItems.length > 1 && (
+                              <button 
+                                type="button" 
+                                onClick={() => setNewRequest(p => ({ ...p, piItems: (p.piItems || []).filter((_, i) => i !== idx) }))}
+                                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
 
-              {/* 7. 동적 패킹 사양 테이블 (PALLET SIZE / NOS of PLT / CBM / WEIGHT) */}
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 패킹 사양 목록 (PALLET SIZE / NOS of PLT / CBM / WEIGHT)</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setNewRequest(p => ({ ...p, packingPallets: [...(p.packingPallets || []), { palletSize: '', qty: '', cbm: '', weight: '' }] }))}
-                    style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    ＋ 패킹 사양 추가
-                  </button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '28px' }}>
-                      <th style={{ padding: '4px', textAlign: 'left' }}>PALLET SIZE</th>
-                      <th style={{ padding: '4px', width: '100px', textAlign: 'right' }}>NOS of PLT</th>
-                      <th style={{ padding: '4px', width: '100px', textAlign: 'right' }}>CBM</th>
-                      <th style={{ padding: '4px', width: '110px', textAlign: 'right' }}>WEIGHT (KG)</th>
-                      <th style={{ padding: '4px', width: '30px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(newRequest.packingPallets || []).map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.palletSize} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.packingPallets || [])];
-                                next[idx] = { ...next[idx], palletSize: val };
-                                return { ...p, packingPallets: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', boxSizing: 'border-box' }}
-                            placeholder="예: 110*110*120(CM)"
-                          />
+                      {/* 제일 밑줄에 nos of package and CBM and weight의 합계를 보여주는 요약행 */}
+                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid #cbd5e1' }}>
+                        <td colSpan={3} style={{ padding: '6px 8px', textAlign: 'center' }}>[합계 요약 (Total Summary)]</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1e3a8a' }}>
+                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0)}
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.qty} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.packingPallets || [])];
-                                next[idx] = { ...next[idx], qty: val };
-                                return { ...p, packingPallets: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                            placeholder="예: 2"
-                          />
+                        <td colSpan={3} style={{ padding: '6px 8px' }}></td>
+                        <td style={{ padding: '6px 8px', textAlign: 'center' }}>NOS of PLT/PKG</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#0f766e' }}>
+                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)}
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.cbm} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.packingPallets || [])];
-                                next[idx] = { ...next[idx], cbm: val };
-                                return { ...p, packingPallets: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                            placeholder="예: 2.8"
-                          />
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
+                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.weight) || 0), 0)} kg
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input 
-                            type="text" 
-                            value={item.weight} 
-                            onChange={e => {
-                              const val = e.target.value;
-                              setNewRequest(p => {
-                                const next = [...(p.packingPallets || [])];
-                                next[idx] = { ...next[idx], weight: val };
-                                return { ...p, packingPallets: next };
-                              });
-                            }}
-                            style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                            placeholder="예: 850"
-                          />
-                        </td>
-                        <td style={{ padding: '4px', textAlign: 'center' }}>
-                          {newRequest.packingPallets && newRequest.packingPallets.length > 1 && (
-                            <button 
-                              type="button" 
-                              onClick={() => setNewRequest(p => ({ ...p, packingPallets: (p.packingPallets || []).filter((_, i) => i !== idx) }))}
-                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </td>
+                        <td></td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* 하단 제어 */}

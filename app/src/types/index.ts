@@ -142,7 +142,7 @@ export interface ImportRequest {
   piItemUnitPrice?: string;
   piItemAmount?: string;
   freightInvoiceAmount?: string;
-  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; hsCode?: string; unit?: string }>;
+  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; hsCode?: string; unit?: string; palletSize?: string; cbm?: string; weight?: string }>;
   incoterms?: string;
   paymentTerms?: string;
   pol?: string;
