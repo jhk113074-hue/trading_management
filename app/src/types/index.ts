@@ -171,4 +171,9 @@ export interface ImportRequest {
   customsAgentId?: string;
   cargoInsurance?: string;
   ftaOriginCert?: string;
+  taxAmount?: number;
+  taxVat?: number;
+  freightAmount?: number;
+  freightVat?: number;
+  customsTaxAmount?: number;
 }
