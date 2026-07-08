@@ -432,7 +432,7 @@ export const Imports: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10009 }}>
           <div style={{ background: '#fff', borderRadius: '12px', width: '800px', maxWidth: '95%', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>신규 수입운송 의뢰 등록 (수입관리)</h3>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>신규수입등록</h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
             </div>
             
