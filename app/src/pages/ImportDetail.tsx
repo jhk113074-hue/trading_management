@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
-import { storage } from '../firebase';
+import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { previewFile } from '../components/FilePreviewModal';
 
 import ysaccLetterImg from '../assets/ysacc_letterhead.png';
@@ -73,6 +74,19 @@ export const ImportDetail: React.FC = () => {
   });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [forwarders, setForwarders] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', 'YSACC', 'suppliers'), (snapshot) => {
+      const list = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as any))
+        .filter(supplier => supplier.category === '포워딩사');
+      setForwarders(list);
+    }, (error) => {
+      console.error("Failed to sync suppliers/forwarders in ImportDetail:", error);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
     const saved = localStorage.getItem(`import_docs_${id}`);
@@ -639,7 +653,7 @@ export const ImportDetail: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}>운송사 이름</label>
                     <select
-                      value={request.localTransportType || 'CJ대한통운'}
+                      value={request.localTransportType || ''}
                       onChange={(e) => {
                         const val = e.target.value;
                         const updated = importRequests.map(r => r.id === id ? { ...r, localTransportType: val } : r);
@@ -647,11 +661,20 @@ export const ImportDetail: React.FC = () => {
                       }}
                       style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
                     >
-                      <option value="CJ대한통운">CJ대한통운 (CJ Logistics)</option>
-                      <option value="현대글로비스">현대글로비스 (Hyundai Glovis)</option>
-                      <option value="한진">한진 (Hanjin Shipping)</option>
-                      <option value="유니코로그">유니코로그 (Unico Logistics)</option>
-                      <option value="영성포워딩">영성포워딩 (YS Logistics)</option>
+                      <option value="">-- 운송사(포워더) 선택 --</option>
+                      {forwarders.length > 0 ? (
+                        forwarders.map(f => (
+                          <option key={f.id} value={f.name}>{f.name}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="CJ대한통운">CJ대한통운 (CJ Logistics)</option>
+                          <option value="현대글로비스">현대글로비스 (Hyundai Glovis)</option>
+                          <option value="한진">한진 (Hanjin Shipping)</option>
+                          <option value="유니코로그">유니코로그 (Unico Logistics)</option>
+                          <option value="영성포워딩">영성포워딩 (YS Logistics)</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
