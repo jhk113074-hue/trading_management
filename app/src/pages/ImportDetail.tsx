@@ -1242,7 +1242,7 @@ export const ImportDetail: React.FC = () => {
               }}
               style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 'bold' }}
             >
-              🖨️ 인쇄하기
+              인쇄하기
             </button>
           </div>
         </div>
