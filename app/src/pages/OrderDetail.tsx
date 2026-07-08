@@ -902,6 +902,8 @@ export const OrderDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const [editingPurchasePrice, setEditingPurchasePrice] = useState<{ [itemIdx: number]: string }>({});
+
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
       const list: Supplier[] = [];
@@ -5884,16 +5886,26 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               </select>
                                               <input
                                                 type="text"
-                                                value={(() => {
-                                                  const val = it.purchaseUnitPrice ?? originalPurchasePrice;
-                                                  return purchaseCurrency === 'KRW' 
-                                                    ? Math.round(val).toLocaleString('ko-KR')
-                                                    : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-                                                })()}
+                                                value={
+                                                  editingPurchasePrice[itemIndexInMain] !== undefined
+                                                    ? editingPurchasePrice[itemIndexInMain]
+                                                    : (() => {
+                                                        const val = it.purchaseUnitPrice ?? originalPurchasePrice;
+                                                        return purchaseCurrency === 'KRW' 
+                                                          ? Math.round(val).toLocaleString('ko-KR')
+                                                          : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+                                                      })()
+                                                }
                                                 disabled={!isEditing}
                                                 onChange={(e) => {
-                                                  const raw = e.target.value.replace(/,/g, '');
-                                                  const val = parseFloat(raw) || 0;
+                                                  const rawText = e.target.value;
+                                                  setEditingPurchasePrice(prev => ({
+                                                    ...prev,
+                                                    [itemIndexInMain]: rawText
+                                                  }));
+                                                  
+                                                  const rawNum = rawText.replace(/,/g, '');
+                                                  const val = parseFloat(rawNum) || 0;
                                                   setSourcingItems(prev => {
                                                     return prev.map(item => {
                                                       if (item === it) {
@@ -5901,6 +5913,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                       }
                                                       return item;
                                                     });
+                                                  });
+                                                }}
+                                                onBlur={() => {
+                                                  setEditingPurchasePrice(prev => {
+                                                    const copy = { ...prev };
+                                                    delete copy[itemIndexInMain];
+                                                    return copy;
                                                   });
                                                 }}
                                                 style={{
