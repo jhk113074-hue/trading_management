@@ -130,6 +130,10 @@ export interface ImportRequest {
   manager: string;
   amount: number;
   createdAt: string;
+  importCompany?: 'YSACC' | 'YS' | ''; // 수입주체
+  importerName?: string; // 수입처
+  finalCustomer?: string; // 최종고객
+  
   
   // 상세
   portOfLoading?: string;

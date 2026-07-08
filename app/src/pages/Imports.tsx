@@ -135,7 +135,10 @@ export const Imports: React.FC = () => {
     routeFrom: '중국 상해항',
     routeTo: '한국 내륙',
     manager: '김주한',
-    amount: 500000
+    amount: 500000,
+    importCompany: 'YSACC',
+    importerName: '',
+    finalCustomer: ''
   });
 
   const saveToStorage = (data: ImportRequest[]) => {
@@ -159,6 +162,9 @@ export const Imports: React.FC = () => {
       manager: newRequest.manager || '김주한',
       amount: Number(newRequest.amount || 0),
       createdAt: '26. 07. 08.',
+      importCompany: newRequest.importCompany || 'YSACC',
+      importerName: newRequest.importerName || '',
+      finalCustomer: newRequest.finalCustomer || '',
       // Default 상세
       portOfLoading: newRequest.routeFrom,
       portOfDischarge: '인천항',
@@ -185,7 +191,10 @@ export const Imports: React.FC = () => {
       routeFrom: '중국 상해항',
       routeTo: '한국 내륙',
       manager: '김주한',
-      amount: 500000
+      amount: 500000,
+      importCompany: 'YSACC',
+      importerName: '',
+      finalCustomer: ''
     });
   };
 
@@ -255,14 +264,15 @@ export const Imports: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '44px' }}>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '130px' }}>상태</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>의뢰정보</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569' }}>품명</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569' }}>운송내용</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569' }}>경로</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px', textAlign: 'center' }}>운송일정</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '130px' }}>주문번호</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '150px' }}>수입처</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>품명</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '160px' }}>운송내용</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'center' }}>수입주체</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '160px' }}>경로</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px' }}>최종고객</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px' }}>담당자</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'right' }}>운임</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'right' }}>수입금액</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '70px', textAlign: 'center' }}>관리</th>
             </tr>
           </thead>
@@ -275,27 +285,23 @@ export const Imports: React.FC = () => {
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
-                {/* 상태 */}
+                {/* 주문번호 */}
                 <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, color: '#d97706', background: '#fef3c7', textAlign: 'center', width: 'fit-content' }}>
-                      {req.status}
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>수출자 정보 입력 &gt;</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>{req.id}</span>
+                    {req.poNumber && req.poNumber !== '-' && (
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>PO: {req.poNumber}</span>
+                    )}
                   </div>
                 </td>
                 
-                {/* 의뢰정보 */}
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>의뢰번호: {req.id}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>BL(AWB): {req.blAwb}</span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>PO번호: {req.poNumber}</span>
-                  </div>
+                {/* 수입처 */}
+                <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                  {req.importerName || req.shipperName || '-'}
                 </td>
 
                 {/* 품명 */}
-                <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 600, color: '#334155' }}>
+                <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 600, color: '#1e3a8a' }}>
                   {req.itemName}
                 </td>
 
@@ -307,21 +313,30 @@ export const Imports: React.FC = () => {
                   </div>
                 </td>
 
+                {/* 수입주체 */}
+                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                  {req.importCompany ? (
+                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: req.importCompany === 'YS' ? '#0369a1' : '#15803d', background: req.importCompany === 'YS' ? '#e0f2fe' : '#dcfce7' }}>
+                      {req.importCompany}
+                    </span>
+                  ) : '-'}
+                </td>
+
                 {/* 경로 */}
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: '4px', flexDirection: 'column', fontSize: '12.5px', color: '#334155', fontWeight: 600 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       📍 {req.routeFrom} ➔
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#475569' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
                       ⚓ {req.routeTo}
                     </span>
                   </div>
                 </td>
 
-                {/* 운송일정 */}
-                <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '13px', color: '#94a3b8' }}>
-                  -
+                {/* 최종고객 */}
+                <td style={{ padding: '12px 16px', fontSize: '13px', color: '#334155', fontWeight: 500 }}>
+                  {req.finalCustomer || '-'}
                 </td>
 
                 {/* 담당자 */}
@@ -329,14 +344,11 @@ export const Imports: React.FC = () => {
                   {req.manager}
                 </td>
 
-                {/* 운임 */}
+                {/* 수입금액 */}
                 <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#1e293b' }}>
-                      ₩{req.amount.toLocaleString()}
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>(견적 금액)</span>
-                  </div>
+                  <span style={{ fontSize: '14.5px', fontWeight: 700, color: '#0f172a' }}>
+                    ₩{req.amount.toLocaleString()}
+                  </span>
                 </td>
                 
                 {/* 관리 (삭제 버튼) */}
@@ -382,6 +394,37 @@ export const Imports: React.FC = () => {
                   onChange={e => setNewRequest(p => ({ ...p, itemName: e.target.value }))}
                   style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   placeholder="예: Fiberglass tissue"
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>수입처 (수입회사)</label>
+                <input 
+                  type="text" 
+                  value={newRequest.importerName || ''} 
+                  onChange={e => setNewRequest(p => ({ ...p, importerName: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  placeholder="예: 공급처/제조사명 기입"
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>수입주체 구분</label>
+                <select 
+                  value={newRequest.importCompany || 'YSACC'} 
+                  onChange={e => setNewRequest(p => ({ ...p, importCompany: e.target.value as any }))}
+                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                >
+                  <option value="YSACC">YSACC</option>
+                  <option value="YS">YS (영성ACC)</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>최종고객</label>
+                <input 
+                  type="text" 
+                  value={newRequest.finalCustomer || ''} 
+                  onChange={e => setNewRequest(p => ({ ...p, finalCustomer: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  placeholder="예: 최종 납품처 기입"
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
