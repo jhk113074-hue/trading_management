@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { previewFile } from '../components/FilePreviewModal';
 
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
@@ -49,6 +52,46 @@ export const ImportDetail: React.FC = () => {
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const [activeTab, setActiveTab] = useState<'운송현황' | '의뢰내역' | '서류' | '정산'>('의뢰내역');
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
+    const saved = localStorage.getItem(`import_docs_${id}`);
+    return saved ? JSON.parse(saved) : {
+      bizReg: { name: '사업자등록증_(주)YSACC.pdf', url: '#' }
+    };
+  });
+
+  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc', file: File) => {
+    if (!file) return;
+    try {
+      setUploading(key);
+      const storageRef = ref(storage, `imports/${id}/documents/${key}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      const nextDocs = {
+        ...documents,
+        [key]: { name: file.name, url: downloadUrl }
+      };
+      setDocuments(nextDocs);
+      localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+      alert(`${file.name} 업로드가 완료되었습니다.`);
+    } catch (e) {
+      console.error(e);
+      alert('파일 업로드에 실패했습니다.');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc') => {
+    if (window.confirm('첨부된 파일을 삭제하시겠습니까?')) {
+      const nextDocs = { ...documents };
+      delete nextDocs[key];
+      setDocuments(nextDocs);
+      localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+    }
+  };
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
@@ -246,32 +289,133 @@ export const ImportDetail: React.FC = () => {
               {/* 필수 첨부 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>필수 첨부 서류</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff' }}>
-                    📄 C/I & P/L 업로드
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  
+                  {/* CI / PL */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>C/I & P/L</label>
+                    {documents.ciPl ? (
+                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.ciPl.url, documents.ciPl.name)}>
+                          📄 {documents.ciPl.name} (🔍 미리보기)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleFileDelete('ciPl')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                        {uploading === 'ciPl' ? '⏳ 업로드 중...' : '📁 클릭하여 C/I & P/L 파일 업로드'}
+                        <input
+                          type="file"
+                          disabled={uploading !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('ciPl', file);
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ border: '1px solid #e2e8f0', padding: '10px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>📄 사업자등록증_(주)YSACC.pdf</span>
-                    <span style={{ color: '#10b981', fontWeight: 700 }}>✓ 업로드됨</span>
+
+                  {/* 사업자등록증 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>사업자등록증 *</label>
+                    {documents.bizReg ? (
+                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.bizReg.url, documents.bizReg.name)}>
+                          📄 {documents.bizReg.name} (🔍 미리보기)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleFileDelete('bizReg')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                        {uploading === 'bizReg' ? '⏳ 업로드 중...' : '📁 클릭하여 사업자등록증 파일 업로드'}
+                        <input
+                          type="file"
+                          disabled={uploading !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('bizReg', file);
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
                   </div>
+
                 </div>
               </div>
 
               {/* 선택 첨부 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>선택 첨부 서류</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff' }}>
-                    📄 CO (원산지증명서) 업로드
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  
+                  {/* CO 원산지증명서 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>CO (원산지증명서)</label>
+                    {documents.co ? (
+                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.co.url, documents.co.name)}>
+                          📄 {documents.co.name} (🔍 미리보기)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleFileDelete('co')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                        {uploading === 'co' ? '⏳ 업로드 중...' : '📁 클릭하여 CO 파일 업로드'}
+                        <input
+                          type="file"
+                          disabled={uploading !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('co', file);
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff' }}>
-                    📄 기타 서류 업로드
+
+                  {/* 기타 서류 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>기타 서류</label>
+                    {documents.etc ? (
+                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.etc.url, documents.etc.name)}>
+                          📄 {documents.etc.name} (🔍 미리보기)
+                        </span>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleFileDelete('etc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                        {uploading === 'etc' ? '⏳ 업로드 중...' : '📁 클릭하여 기타 서류 파일 업로드'}
+                        <input
+                          type="file"
+                          disabled={uploading !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileUpload('etc', file);
+                          }}
+                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+                        />
+                      </div>
+                    )}
                   </div>
+
                 </div>
               </div>
             </div>
 
-            {/* 필다 발급 상태 */}
+            {/* 관련 기관 발급 문서 */}
             <div style={{ background: '#f1f5f9', padding: '16px', borderRadius: '8px' }}>
               <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#475569', marginBottom: '10px' }}>관련 기관 발급 문서</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
