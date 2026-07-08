@@ -4,6 +4,27 @@ import type { ImportRequest } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
+const getSellerAbbr = (name: string): string => {
+  if (!name) return 'SUP';
+  const words = name.replace(/[^a-zA-Z\s]/g, '').toUpperCase().split(/\s+/).filter(Boolean);
+  if (words.length >= 3) {
+    return words.slice(0, 3).map(w => w[0]).join('');
+  } else if (words.length === 2) {
+    return words[0][0] + words[1][0] + (words[1][1] || 'X');
+  } else if (words.length === 1) {
+    return words[0].slice(0, 3).padEnd(3, 'X');
+  }
+  return 'SUP';
+};
+
+const computePoNumber = (importCompany: string, sellerName: string, id: string): string => {
+  const compPrefix = importCompany === 'YS' ? 'YS' : 'YSACC';
+  const sellerAbbr = getSellerAbbr(sellerName);
+  const currentYear = new Date().getFullYear().toString();
+  const serial = id.slice(-2) || '01';
+  return `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
+};
+
 import { ProductSearchModal } from '../components/ProductSearchModal';
 import type { Product } from '../types/product';
 
@@ -636,12 +657,19 @@ export const Imports: React.FC = () => {
             
             <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
               {/* 기본 수입주체 & 수입처 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입주체 구분</label>
                   <select 
                     value={newRequest.importCompany || 'YSACC'} 
-                    onChange={e => setNewRequest(p => ({ ...p, importCompany: e.target.value as any }))}
+                    onChange={e => {
+                      const comp = e.target.value as any;
+                      setNewRequest(p => {
+                        const tempId = p.id || Math.floor(100000 + Math.random() * 900000).toString();
+                        const nextPo = computePoNumber(comp, p.importerName || '', tempId);
+                        return { ...p, importCompany: comp, poNumber: nextPo, id: tempId };
+                      });
+                    }}
                     style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>
@@ -667,6 +695,56 @@ export const Imports: React.FC = () => {
                       🔍 검색
                     </button>
                   </div>
+                </div>
+              </div>
+
+              {/* PO 번호 & PI 번호 라인 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingRequest?.poNumber || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, poNumber: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PO-YSACC-BOR-2026-01"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <input 
+                    type="text" 
+                    value={editingRequest?.piNumber || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, piNumber: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PI20260701-01"
+                  />
+                </div>
+              </div>
+
+              {/* PO 번호 & PI 번호 라인 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newRequest.poNumber || ''} 
+                    onChange={e => setNewRequest(p => ({ ...p, poNumber: e.target.value }))}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PO-YSACC-BOR-2026-01"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <input 
+                    type="text" 
+                    value={newRequest.piNumber || ''} 
+                    onChange={e => setNewRequest(p => ({ ...p, piNumber: e.target.value }))}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PI20260701-01"
+                  />
                 </div>
               </div>
 
@@ -1126,12 +1204,19 @@ export const Imports: React.FC = () => {
             
             <form onSubmit={handleEditRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
               {/* 기본 수입주체 & 수입처 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입주체 구분</label>
                   <select 
-                    value={editingRequest.importCompany || 'YSACC'} 
-                    onChange={e => setEditingRequest(p => p ? ({ ...p, importCompany: e.target.value as any }) : null)}
+                    value={editingRequest?.importCompany || 'YSACC'} 
+                    onChange={e => {
+                      const comp = e.target.value as any;
+                      setEditingRequest(p => {
+                        if (!p) return null;
+                        const nextPo = computePoNumber(comp, p.importerName || '', p.id || '');
+                        return { ...p, importCompany: comp, poNumber: nextPo };
+                      });
+                    }}
                     style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>

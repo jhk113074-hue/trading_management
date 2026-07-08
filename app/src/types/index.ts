@@ -122,6 +122,7 @@ export interface ImportRequest {
   status: string;
   blAwb?: string;
   poNumber?: string;
+  piNumber?: string;
   itemName: string;
   transportType: string;
   volume: string;
