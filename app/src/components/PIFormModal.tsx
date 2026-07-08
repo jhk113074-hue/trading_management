@@ -1787,8 +1787,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           deliveryTerm: data.deliveryTerm !== undefined ? data.deliveryTerm : formData.deliveryTerm,
           origin: data.origin !== undefined ? data.origin : formData.origin,
           yourRef: data.yourRef !== undefined ? data.yourRef : formData.yourRef,
-          attachments: data.attachments !== undefined ? data.attachments : (formData.attachments || [])
+          attachments: data.attachments !== undefined ? data.attachments : (formData.attachments || []),
+          currentVersion: data.version !== undefined ? data.version : formData.currentVersion
         };
+        setFormData(loadedForm);
         baselineStateRef.current = {
           formData: getSnapshot(loadedForm, loadedItems),
           items: true
