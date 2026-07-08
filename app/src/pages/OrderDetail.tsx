@@ -4626,7 +4626,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       </div>
 
       {/* ── 단계별 독립 체크리스트 대시보드 ── */}
-      {(() => {
+      {activeStep === '변경이력' && (() => {
         type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
         const stageMeta: { key: StageKey; label: string; icon: string; tabTarget: typeof steps[number] }[] = [
           { key: '수주정보', label: '수주정보', icon: '📋', tabTarget: '수주정보' },
