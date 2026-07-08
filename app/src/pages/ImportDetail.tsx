@@ -62,7 +62,15 @@ export const ImportDetail: React.FC = () => {
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입내역');
-  const [shippingMark, setShippingMark] = useState<string>(`${currentLetterhead}\nPO NO: ${id || ''}\nPORT: ${request.pod || 'INCHEON'}`);
+  const [commonShippingMark, setCommonShippingMark] = useState(() => {
+    return {
+      shape: (request as any).commonShippingMark?.shape || 'diamond',
+      company: (request as any).commonShippingMark?.company || (request.importCompany === 'YS' || request.importCompany === 'YSACC' ? 'YSACC' : 'YS ACC'),
+      port: (request as any).commonShippingMark?.port || request.pod || 'INCHEON',
+      country: (request as any).commonShippingMark?.country || 'KOREA',
+      origin: (request as any).commonShippingMark?.origin || request.origin || 'MADE IN CHINA'
+    };
+  });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -343,9 +351,10 @@ export const ImportDetail: React.FC = () => {
             {/* PO 생성 컨트롤 세션 */}
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '24px' }}>
               <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 800, color: '#1e3a8a' }}>📋 발주서 (PO) 생성 추가 세부설정</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>결제 방식 (Payment Terms)</label>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '300px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결제 방식 (Payment Terms)</label>
                   <input
                     type="text"
                     value={request.paymentTerms || '100% T/T in advance'}
@@ -357,14 +366,107 @@ export const ImportDetail: React.FC = () => {
                     style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Shipping Mark (쉬핑마크)</label>
-                  <textarea
-                    rows={2}
-                    value={shippingMark}
-                    onChange={(e) => setShippingMark(e.target.value)}
-                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', resize: 'none' }}
-                  />
+              </div>
+
+              {/* 공통 쉬핑마크 설정 (주문관리 차용) */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                <strong style={{ fontSize: '13px', color: '#0a1e3f', display: 'block', marginBottom: '10px' }}>⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)</strong>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>도형 선택</label>
+                    <select
+                      value={commonShippingMark.shape}
+                      onChange={(e) => {
+                        const next = { ...commonShippingMark, shape: e.target.value };
+                        setCommonShippingMark(next);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="diamond">◇ 다이아몬드</option>
+                      <option value="none">없음 (None)</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>회사/고객 약자</label>
+                    <input
+                      type="text"
+                      value={commonShippingMark.company}
+                      onChange={(e) => {
+                        const next = { ...commonShippingMark, company: e.target.value };
+                        setCommonShippingMark(next);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>도착 포트</label>
+                    <input
+                      type="text"
+                      value={commonShippingMark.port}
+                      onChange={(e) => {
+                        const next = { ...commonShippingMark, port: e.target.value };
+                        setCommonShippingMark(next);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>도착 국가</label>
+                    <input
+                      type="text"
+                      value={commonShippingMark.country}
+                      onChange={(e) => {
+                        const next = { ...commonShippingMark, country: e.target.value };
+                        setCommonShippingMark(next);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>원산지</label>
+                    <input
+                      type="text"
+                      value={commonShippingMark.origin}
+                      onChange={(e) => {
+                        const next = { ...commonShippingMark, origin: e.target.value };
+                        setCommonShippingMark(next);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                {/* 실시간 미리보기 */}
+                <div style={{ background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100px' }}>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '6px', fontWeight: 700 }}>🔍 실시간 쉬핑마크 미리보기 (Live Preview)</div>
+                  <div style={{ border: '1px solid #e2e8f0', padding: '12px', minWidth: '180px', background: '#fafafa', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    {commonShippingMark.shape === 'diamond' ? (
+                      <div style={{ position: 'relative', width: '90px', height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
+                        <svg viewBox="0 0 100 60" style={{ position: 'absolute', width: '100%', height: '100%' }}>
+                          <polygon points="50,2 98,30 50,58 2,30" fill="none" stroke="#334155" strokeWidth="2" />
+                        </svg>
+                        <span style={{ position: 'relative', fontWeight: 800, fontSize: '12px', color: '#1e293b', zIndex: 2 }}>{commonShippingMark.company}</span>
+                      </div>
+                    ) : (
+                      <strong style={{ fontSize: '13px', color: '#1e293b' }}>{commonShippingMark.company}</strong>
+                    )}
+                    <div style={{ fontSize: '10px', color: '#475569', marginTop: '6px', fontWeight: 600, lineHeight: '1.4' }}>
+                      {commonShippingMark.port}, {commonShippingMark.country}<br/>
+                      PO NO : {request.id}<br/>
+                      {commonShippingMark.origin}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -437,7 +539,7 @@ export const ImportDetail: React.FC = () => {
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
                               <strong style="color: #0a1e3f;">SELLER</strong><br/>
                               Company: ${request.importerName || request.shipperName || 'Global Supplier Ltd.'}<br/>
-                              Origin: ${request.routeFrom || 'CHINA'}<br/>
+                              Origin: ${request.origin || 'CHINA'}<br/>
                               Incoterms: ${request.incoterms || 'FOB'}<br/>
                               Payment Terms: ${request.paymentTerms || '100% T/T in advance'}
                             </div>
@@ -445,11 +547,29 @@ export const ImportDetail: React.FC = () => {
                         </tr>
                       </table>
 
-                      <div class="packing-section">
-                        <strong style="color: #0a1e3f;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
-                        - Total CBM: ${totalCbm.toFixed(2)} CBM<br/>
-                        - Total Weight: Net: ${totalNetWt.toLocaleString()} kg | Gross: ${totalGrossWt.toLocaleString()} kg<br/>
-                        - Shipping Mark: <pre style="display:inline; font-family:inherit; white-space:pre-wrap;">${shippingMark}</pre>
+                      <div class="packing-section" style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                          <strong style="color: #0a1e3f;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
+                          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px;">
+                            <div>- Total Volume: ${totalCbm.toFixed(2)} CBM</div>
+                            <div>- Shipment By: ${request.transportType || 'By Sea'}</div>
+                            <div>- Net Weight: ${totalNetWt.toLocaleString()} kg</div>
+                            <div>- Port of Loading (POL): ${request.pol || request.portOfLoading || '-'}</div>
+                            <div>- Gross Weight: ${totalGrossWt.toLocaleString()} kg</div>
+                            <div>- Port of Discharge (POD): ${request.pod || request.portOfDischarge || '-'}</div>
+                          </div>
+                        </div>
+                        <div style="border-left: 1px solid #cbd5e1; padding-left: 20px; margin-left: 20px; min-width: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                          <strong style="color: #0a1e3f; font-size: 11px; margin-bottom: 6px; display: block; align-self: flex-start;">SHIPPING MARK</strong>
+                          <div style="border: 1px solid #cbd5e1; padding: 10px; background: #fff; text-align: center; display: flex; flex-direction: column; alignItems: center; width: 140px;">
+                            ${getShippingMarkShapeImgHtml(commonShippingMark.shape, commonShippingMark.company)}
+                            <div style="font-size: 9.5px; color: #334155; margin-top: 4px; font-weight: bold; line-height: 1.3;">
+                              ${commonShippingMark.port}, ${commonShippingMark.country}<br/>
+                              PO NO : ${request.id}<br/>
+                              ${commonShippingMark.origin}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       <table class="item-table">
@@ -1001,20 +1121,44 @@ export const ImportDetail: React.FC = () => {
                 <strong style={{ color: '#0a1e3f' }}>SELLER</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
                   Company: {request.importerName || request.shipperName || '-'}<br/>
-                  Origin: {request.routeFrom || 'CHINA'}<br/>
+                  Origin: {request.origin || 'CHINA'}<br/>
                   Incoterms: {request.incoterms || 'FOB'}<br/>
                   Payment Terms: {request.paymentTerms || '100% T/T in advance'}
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #cbd5e1' }}>
-              <strong style={{ color: '#0a1e3f' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px', fontSize: '12px' }}>
-                <div>- Total Volume: {totalCbm.toFixed(2)} CBM</div>
-                <div>- Shipping Mark: <span style={{ fontWeight: 'bold' }}>{shippingMark.replace(/\n/g, ' / ')}</span></div>
-                <div>- Net Weight: {totalNetWt.toLocaleString()} kg</div>
-                <div>- Gross Weight: {totalGrossWt.toLocaleString()} kg</div>
+            <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <strong style={{ color: '#0a1e3f' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginTop: '6px', fontSize: '11.5px', lineHeight: '1.4' }}>
+                  <div>- Total Volume: {totalCbm.toFixed(2)} CBM</div>
+                  <div>- Shipment By: {request.transportType || 'By Sea'}</div>
+                  <div>- Net Weight: {totalNetWt.toLocaleString()} kg</div>
+                  <div>- Port of Loading (POL): {request.pol || request.portOfLoading || '-'}</div>
+                  <div>- Gross Weight: {totalGrossWt.toLocaleString()} kg</div>
+                  <div>- Port of Discharge (POD): {request.pod || request.portOfDischarge || '-'}</div>
+                </div>
+              </div>
+              <div style={{ borderLeft: '1px solid #cbd5e1', paddingLeft: '16px', marginLeft: '16px', minWidth: '160px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <strong style={{ color: '#0a1e3f', fontSize: '11px', marginBottom: '4px', display: 'block', alignSelf: 'flex-start' }}>SHIPPING MARK</strong>
+                <div style={{ border: '1px solid #cbd5e1', padding: '8px', background: '#fff', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '110px' }}>
+                  {commonShippingMark.shape === 'diamond' ? (
+                    <div style={{ position: 'relative', width: '70px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2px 0' }}>
+                      <svg viewBox="0 0 100 60" style={{ position: 'absolute', width: '100%', height: '100%' }}>
+                        <polygon points="50,2 98,30 50,58 2,30" fill="none" stroke="#334155" strokeWidth="2" />
+                      </svg>
+                      <span style={{ position: 'relative', fontWeight: 800, fontSize: '10.5px', color: '#1e293b', zIndex: 2 }}>{commonShippingMark.company}</span>
+                    </div>
+                  ) : (
+                    <strong style={{ fontSize: '11px', color: '#1e293b' }}>{commonShippingMark.company}</strong>
+                  )}
+                  <div style={{ fontSize: '8.5px', color: '#334155', marginTop: '3px', fontWeight: 'bold', lineHeight: '1.2' }}>
+                    {commonShippingMark.port}, {commonShippingMark.country}<br/>
+                    PO NO : {request.id}<br/>
+                    {commonShippingMark.origin}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1106,4 +1250,20 @@ export const ImportDetail: React.FC = () => {
     </div>
   );
 };
+
+// SVG Diamond shipping mark HTML string creator
+const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
+  if (shapeSymbol === 'diamond') {
+    return `
+      <div style="position: relative; width: 100px; height: 60px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 100 60" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+          <polygon points="50,2 98,30 50,58 2,30" fill="none" stroke="#000" stroke-width="2" />
+        </svg>
+        <span style="position: relative; font-weight: bold; font-size: 13px; font-family: sans-serif; z-index: 2;">${comp}</span>
+      </div>
+    `;
+  }
+  return `<div style="text-align: center; font-weight: bold; font-size: 14px;">${comp}</div>`;
+};
+
 export default ImportDetail;

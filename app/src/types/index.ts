@@ -133,6 +133,7 @@ export interface ImportRequest {
   importCompany?: 'YSACC' | 'YS' | ''; // 수입주체
   importerName?: string; // 수입처
   finalCustomer?: string; // 최종고객
+  origin?: string; // 원산지 (Origin)
   
   // PI / 운송비 견적서 유첨 파일 데이터
   customerPiFile?: { name: string; url: string; path?: string } | null;

@@ -178,6 +178,7 @@ export const Imports: React.FC = () => {
     paymentTerms: '100% T/T in advance',
     pol: '',
     pod: '',
+    origin: 'CHINA',
     piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }]
   });
 
@@ -268,6 +269,7 @@ export const Imports: React.FC = () => {
       importCompany: newRequest.importCompany || 'YSACC',
       importerName: newRequest.importerName || '',
       finalCustomer: newRequest.finalCustomer || '',
+      origin: newRequest.origin || 'CHINA',
       
       incoterms: newRequest.incoterms || 'FOB',
       paymentTerms: newRequest.paymentTerms || '100% T/T in advance',
@@ -686,7 +688,7 @@ export const Imports: React.FC = () => {
               </div>
 
               {/* 출발PORT & 도착PORT & 견적 운임 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
                   <input 
@@ -710,12 +712,24 @@ export const Imports: React.FC = () => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>원산지 (Origin)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newRequest.origin || 'CHINA'} 
+                    onChange={e => setNewRequest(p => ({ ...p, origin: e.target.value }))}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: CHINA, KOREA"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>견적 운임 (₩)</label>
                   <input 
                     type="number" 
                     value={newRequest.amount} 
                     onChange={e => setNewRequest(p => ({ ...p, amount: Number(e.target.value) }))}
                     style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: 500000"
                   />
                 </div>
               </div>
@@ -1164,7 +1178,7 @@ export const Imports: React.FC = () => {
               </div>
 
               {/* 출발PORT & 도착PORT & 견적 운임 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
                   <input 
@@ -1185,6 +1199,17 @@ export const Imports: React.FC = () => {
                     onChange={e => setEditingRequest(p => p ? ({ ...p, pod: e.target.value }) : null)}
                     style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: INCHEON PORT, KOREA"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>원산지 (Origin)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingRequest.origin || 'CHINA'} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, origin: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: CHINA, KOREA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
