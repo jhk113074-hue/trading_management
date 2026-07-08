@@ -1243,6 +1243,31 @@ export const Imports: React.FC = () => {
                 </div>
               </div>
 
+              {/* PO 번호 & PI 번호 라인 */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={editingRequest?.poNumber || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, poNumber: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PO-YSACC-BOR-2026-01"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <input 
+                    type="text" 
+                    value={editingRequest?.piNumber || ''} 
+                    onChange={e => setEditingRequest(p => p ? ({ ...p, piNumber: e.target.value }) : null)}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    placeholder="예: PI20260701-01"
+                  />
+                </div>
+              </div>
+
               {/* 최종고객 & INCOTERMS */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
