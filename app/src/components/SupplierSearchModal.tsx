@@ -68,18 +68,22 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
       left: `${position.x}px`,
       top: `${position.y}px`,
       zIndex: 30000,
-      pointerEvents: 'none',
+      background: '#fff', 
+      borderRadius: '16px', 
+      width: '1150px', 
+      maxWidth: '95vw',
+      height: '82vh', 
+      maxHeight: '95vh',
+      display: 'flex', 
+      flexDirection: 'column',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      overflow: 'hidden', 
+      border: '1px solid #e2e8f0',
+      resize: 'both',
+      minWidth: '800px', 
+      minHeight: '400px',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{
-        background: '#fff', borderRadius: '16px', width: '1150px', maxWidth: '95vw',
-        height: '82vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        overflow: 'hidden', border: '1px solid #e2e8f0',
-        pointerEvents: 'auto',
-        resize: 'both',
-        minWidth: '800px', minHeight: '400px'
-      }}>
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
@@ -251,7 +255,6 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
             </tbody>
           </table>
         </div>
-      </div>
 
       {/* Supplier Modal for Register/Edit Supplier */}
       {showSupplierModal && (

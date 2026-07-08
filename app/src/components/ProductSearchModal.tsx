@@ -91,18 +91,22 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
       left: `${position.x}px`,
       top: `${position.y}px`,
       zIndex: 30000,
-      pointerEvents: 'none',
+      background: '#fff', 
+      borderRadius: '16px', 
+      width: '1200px', 
+      maxWidth: '95vw',
+      height: '85vh', 
+      maxHeight: '95vh',
+      display: 'flex', 
+      flexDirection: 'column',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      overflow: 'hidden', 
+      border: '1px solid #e2e8f0',
+      resize: 'both',
+      minWidth: '800px', 
+      minHeight: '400px',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{
-        background: '#fff', borderRadius: '16px', width: '1200px', maxWidth: '95vw',
-        height: '85vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        overflow: 'hidden', border: '1px solid #e2e8f0',
-        pointerEvents: 'auto',
-        resize: 'both',
-        minWidth: '800px', minHeight: '400px'
-      }}>
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
@@ -435,7 +439,6 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
               </tbody>
             </table>
           </div>
-        </div>
         {isProdModalOpen && (
           <ProductModal
             initialProduct={editingProd}
