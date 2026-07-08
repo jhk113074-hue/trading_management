@@ -1,17 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import type { Supplier } from '../types/supplier';
+import { SupplierModal } from './SupplierModal';
 
 interface Props {
   onClose: () => void;
   onSelect: (supplier: Supplier) => void;
   suppliers: Supplier[];
+  onRefreshSuppliers?: () => void;
 }
 
-export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppliers }) => {
+export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppliers, onRefreshSuppliers }) => {
   // Modeless Drag-to-move state
   const [position, setPosition] = useState({ x: 120, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = React.useRef({ x: 0, y: 0 });
+
+  // 공급업체 신규등록/수정 서브 모달리스 상태
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | undefined>(undefined);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -139,6 +145,20 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
               autoFocus
             />
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingSupplier(undefined);
+              setShowSupplierModal(true);
+            }}
+            style={{
+              padding: '8px 16px', background: '#2563eb', color: '#fff',
+              border: 'none', borderRadius: '8px', fontSize: '12.5px',
+              fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+            }}
+          >
+            ＋ 신규등록
+          </button>
         </div>
 
         {/* Results Info */}
@@ -197,17 +217,33 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
                     </td>
                     <td style={{ padding: '10px 8px', color: '#4b5563' }}>{s.purchaseEmail || '-'}</td>
                     <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => onSelect(s)}
-                        style={{
-                          background: '#4f46e5', border: 'none', padding: '6px 12px',
-                          borderRadius: '6px', fontSize: '11.5px', fontWeight: 700,
-                          color: '#fff', cursor: 'pointer'
-                        }}
-                      >
-                        선택
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingSupplier(s);
+                            setShowSupplierModal(true);
+                          }}
+                          style={{
+                            background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '6px 10px',
+                            borderRadius: '6px', fontSize: '11.5px', fontWeight: 700,
+                            color: '#475569', cursor: 'pointer'
+                          }}
+                        >
+                          ✏️ 수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(s)}
+                          style={{
+                            background: '#4f46e5', border: 'none', padding: '6px 12px',
+                            borderRadius: '6px', fontSize: '11.5px', fontWeight: 700,
+                            color: '#fff', cursor: 'pointer'
+                          }}
+                        >
+                          선택
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -216,6 +252,21 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
           </table>
         </div>
       </div>
+
+      {/* Supplier Modal for Register/Edit Supplier */}
+      {showSupplierModal && (
+        <SupplierModal
+          initialSupplier={editingSupplier}
+          onClose={() => {
+            setShowSupplierModal(false);
+            if (onRefreshSuppliers) onRefreshSuppliers();
+          }}
+          onSave={() => {
+            setShowSupplierModal(false);
+            if (onRefreshSuppliers) onRefreshSuppliers();
+          }}
+        />
+      )}
     </div>
   );
 };

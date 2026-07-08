@@ -129,16 +129,17 @@ export const Imports: React.FC = () => {
   
   const [suppliers, setSuppliers] = useState<any[]>([]);
   
+  const loadSuppliers = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'suppliers'));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setSuppliers(list);
+    } catch (err) {
+      console.error("Failed to load suppliers inside Imports:", err);
+    }
+  };
+
   useEffect(() => {
-    const loadSuppliers = async () => {
-      try {
-        const snap = await getDocs(collection(db, 'companies', 'YSACC', 'suppliers'));
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setSuppliers(list);
-      } catch (err) {
-        console.error("Failed to load suppliers inside Imports:", err);
-      }
-    };
     loadSuppliers();
   }, []);
 
@@ -861,6 +862,7 @@ export const Imports: React.FC = () => {
         <SupplierSearchModal
           suppliers={suppliers}
           onClose={() => setShowSupplierSearch(false)}
+          onRefreshSuppliers={loadSuppliers}
           onSelect={(sup) => {
             setNewRequest(p => ({
               ...p,
