@@ -75,7 +75,7 @@ const INITIAL_IMPORTS: ImportRequest[] = [
     id: '182406',
     status: '진행 결정 요청',
     blAwb: '-',
-    poNumber: '-',
+    poNumber: 'PO-YSACC-FIL-2026-06',
     itemName: 'FILTER',
     transportType: 'EXW | 해상LCL',
     volume: '0.05 R.TON',
@@ -89,7 +89,7 @@ const INITIAL_IMPORTS: ImportRequest[] = [
     id: '181346',
     status: '진행 결정 요청',
     blAwb: '-',
-    poNumber: '-',
+    poNumber: 'PO-YS-SMC-2026-46',
     itemName: 'Sheet molding compound',
     transportType: 'FOB | 해상FCL',
     volume: '20DRY * 1',
@@ -103,7 +103,7 @@ const INITIAL_IMPORTS: ImportRequest[] = [
     id: '181345',
     status: '진행 결정 요청',
     blAwb: '-',
-    poNumber: '-',
+    poNumber: 'PO-YS-SMC-2026-45',
     itemName: 'Sheet molding compound',
     transportType: 'FOB | 해상FCL',
     volume: '20DRY * 1',
@@ -117,7 +117,7 @@ const INITIAL_IMPORTS: ImportRequest[] = [
     id: '181264',
     status: '진행 결정 요청',
     blAwb: '-',
-    poNumber: '-',
+    poNumber: 'PO-YSACC-CSM-2026-64',
     itemName: 'Carbon surface mat',
     transportType: 'FOB | 해상LCL',
     volume: '1.505 R.TON',
@@ -513,10 +513,8 @@ export const Imports: React.FC = () => {
                 {/* 주문번호 */}
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>{req.id}</span>
-                    {req.poNumber && req.poNumber !== '-' && (
-                      <span style={{ fontSize: '11px', color: '#64748b' }}>PO: {req.poNumber}</span>
-                    )}
+                    <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>{req.poNumber || req.id}</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {req.id}</span>
                   </div>
                 </td>
                 
