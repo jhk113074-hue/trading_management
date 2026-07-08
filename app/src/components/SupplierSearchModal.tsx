@@ -67,7 +67,7 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
       position: 'fixed',
       left: `${position.x}px`,
       top: `${position.y}px`,
-      zIndex: 20000,
+      zIndex: 30000,
       pointerEvents: 'none',
       userSelect: isDragging ? 'none' : 'auto'
     }}>

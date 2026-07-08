@@ -90,7 +90,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
       position: 'fixed',
       left: `${position.x}px`,
       top: `${position.y}px`,
-      zIndex: 2000,
+      zIndex: 30000,
       pointerEvents: 'none',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
