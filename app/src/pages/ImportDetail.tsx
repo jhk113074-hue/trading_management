@@ -782,11 +782,16 @@ export const ImportDetail: React.FC = () => {
               📁 수입 서류 및 통관 서류 업로드 관리
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>필수 첨부</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              {/* 필수 첨부 (CI, PL, CO, BL, 수입면장) */}
+              <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '4px' }}>
+                  필수 첨부 (*)
+                </div>
+
+                {/* 1. CI & PL */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Commercial Invoice & Packing List">❓</span>
                   </div>
                   {documents.ciPl ? (
@@ -797,36 +802,95 @@ export const ImportDetail: React.FC = () => {
                       <button onClick={() => handleFileDelete('ciPl')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
                     </div>
                   ) : (
-                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '24px 14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
                       {uploading === 'ciPl' ? '⏳ 업로드 중...' : '📤 클릭 혹은 업로드할 파일 드래그'}
                       <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('ciPl', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                     </div>
                   )}
                 </div>
+
+                {/* 2. CO */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
+                  </div>
+                  {documents.co ? (
+                    <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.co.url, documents.co.name)}>
+                        📄 {documents.co.name}
+                      </span>
+                      <button onClick={() => handleFileDelete('co')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                      {uploading === 'co' ? '...' : '📤 클릭 혹은 파일 드래그'}
+                      <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('co', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. BL */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
+                  </div>
+                  {documents.blAwbDoc ? (
+                    <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.blAwbDoc.url, documents.blAwbDoc.name)}>
+                        📄 {documents.blAwbDoc.name}
+                      </span>
+                      <button onClick={() => handleFileDelete('blAwbDoc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                      {uploading === 'blAwbDoc' ? '...' : '📤 클릭 혹은 파일 드래그'}
+                      <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('blAwbDoc', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                    <input 
+                      type="text"
+                      value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const updated = importRequests.map(r => r.id === id ? { ...r, blAwb: val || '-' } : r);
+                        saveToStorage(updated);
+                      }}
+                      placeholder="B/L 번호 직접 입력"
+                      style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                {/* 4. 수입신고필증 (수입면장) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
+                  </div>
+                  {documents.customsPermit ? (
+                    <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.customsPermit.url, documents.customsPermit.name)}>
+                        📄 {documents.customsPermit.name}
+                      </span>
+                      <button onClick={() => handleFileDelete('customsPermit')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                      {uploading === 'customsPermit' ? '...' : '📤 클릭 혹은 파일 드래그'}
+                      <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('customsPermit', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>선택 첨부</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      CO {documents.co && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
-                    </div>
-                    {documents.co ? (
-                      <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.co.url, documents.co.name)}>
-                          📄 {documents.co.name}
-                        </span>
-                        <button onClick={() => handleFileDelete('co')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                        {uploading === 'co' ? '...' : '📤 클릭 혹은 파일 드래그'}
-                        <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('co', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                      </div>
-                    )}
+              {/* 선택 첨부 및 정산서류 영역 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '4px' }}>
+                    선택 첨부
                   </div>
 
+                  {/* 1. 인증/검역 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="인증 및 검역서류">❓</span>
@@ -846,7 +910,8 @@ export const ImportDetail: React.FC = () => {
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
+                  {/* 2. 기타 */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="기타 참고서류">❓</span>
                     </div>
@@ -865,77 +930,25 @@ export const ImportDetail: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  수입신고필증 {documents.customsPermit && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
-                </div>
-                {documents.customsPermit ? (
-                  <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.customsPermit.url, documents.customsPermit.name)}>
-                      📄 {documents.customsPermit.name}
-                    </span>
-                    <button onClick={() => handleFileDelete('customsPermit')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                {/* 하단: 정산 관련 세금계산서 영역 */}
+                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
                   </div>
-                ) : (
-                  <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                    {uploading === 'customsPermit' ? '...' : '📤 클릭 혹은 파일 드래그'}
-                    <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('customsPermit', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
-                </div>
-                {documents.taxInvoice ? (
-                  <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.taxInvoice.url, documents.taxInvoice.name)}>
-                      📄 {documents.taxInvoice.name}
-                    </span>
-                    <button onClick={() => handleFileDelete('taxInvoice')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                    {uploading === 'taxInvoice' ? '...' : '📤 클릭 혹은 파일 드래그'}
-                    <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('taxInvoice', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  BL(AWB) {documents.blAwbDoc && <span style={{ color: '#16a34a' }}>✅</span>} <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
-                </div>
-                {documents.blAwbDoc ? (
-                  <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.blAwbDoc.url, documents.blAwbDoc.name)}>
-                      📄 {documents.blAwbDoc.name}
-                    </span>
-                    <button onClick={() => handleFileDelete('blAwbDoc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                  </div>
-                ) : (
-                  <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                    {uploading === 'blAwbDoc' ? '...' : '📤 클릭 혹은 파일 드래그'}
-                    <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('blAwbDoc', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                  <input 
-                    type="text"
-                    value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, blAwb: val || '-' } : r);
-                      saveToStorage(updated);
-                    }}
-                    placeholder="B/L 번호 직접 입력"
-                    style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
-                  />
+                  {documents.taxInvoice ? (
+                    <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.taxInvoice.url, documents.taxInvoice.name)}>
+                        📄 {documents.taxInvoice.name}
+                      </span>
+                      <button onClick={() => handleFileDelete('taxInvoice')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '16px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
+                      {uploading === 'taxInvoice' ? '...' : '📤 클릭 혹은 파일 드래그'}
+                      <input type="file" disabled={uploading !== null} onChange={e => e.target.files?.[0] && handleFileUpload('taxInvoice', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
