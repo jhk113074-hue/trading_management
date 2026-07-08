@@ -7,6 +7,7 @@ import { previewFile } from '../components/FilePreviewModal';
 
 import ysaccLetterImg from '../assets/ysacc_letterhead.png';
 import ysAccLetterImg from '../assets/ys_acc_letterhead.png';
+import ysaccStampImg from '../assets/ysacc_stamp.png';
 
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
@@ -479,9 +480,8 @@ export const ImportDetail: React.FC = () => {
                         <div class="signature-box">For Seller</div>
                         <div class="signature-box" style="position: relative;">
                           <img 
-                            src="/ysacc_stamp.png" 
+                            src="${ysaccStampImg}" 
                             alt="Stamp" 
-                            onerror="this.style.display='none';"
                             style="position: absolute; left: 50%; transform: translateX(-50%); top: -45px; width: 110px; height: auto; object-fit: contain; pointer-events: none;"
                           />
                           For Buyer
@@ -1058,9 +1058,8 @@ export const ImportDetail: React.FC = () => {
               <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Seller Signature</div>
               <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold', position: 'relative' }}>
                 <img 
-                  src="/ysacc_stamp.png" 
+                  src={ysaccStampImg} 
                   alt="Stamp" 
-                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                   style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '-45px', width: '100px', height: 'auto', objectFit: 'contain', pointerEvents: 'none' }}
                 />
                 Buyer Signature
