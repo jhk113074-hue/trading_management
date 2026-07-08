@@ -135,10 +135,19 @@ export const ImportDetail: React.FC = () => {
   const totalNetWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
   const totalGrossWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
 
-  const letterheadText = currentLetterhead === 'YSACC' ? 'YSACC Co., Ltd.' : 'YoungSung ACC Co.';
-  const letterheadAddr = currentLetterhead === 'YSACC' 
-    ? '경남 창녕군 장마면 전곡남지선로 131 삼익HDS(주) 제2공장 YSACC'
-    : '부산광역시 해운대구 센텀중앙로 영성ACC 빌딩';
+  const letterheadInfo = currentLetterhead === 'YSACC' ? {
+    company: 'YSACC CO.,LTD.',
+    address: '201-1Ho, 1251, Garosu-ro, Heungdeok-gu, Cheongju-si, Chungcheongbuk-do 28420, South Korea',
+    tel: '+82-10-7361-1130',
+    fax: '+82-30-3444-1130',
+    extra: 'Web: www.ysacc.co.kr'
+  } : {
+    company: 'YS ACC',
+    address: '110-1204, 24, Guryongsan-ro, Seowon-gu, Cheongju-si, ChungBuk 28611, KOREA',
+    tel: '+82-70-4141-2927',
+    fax: '+82-30-3444-1130',
+    extra: 'E-mail: jhkim1130@ysacc.co.kr'
+  };
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
@@ -375,12 +384,16 @@ export const ImportDetail: React.FC = () => {
                       </style>
                     </head>
                     <body>
-                      <div class="header">
+                      <div style="border-top: 10px solid #0a1e3f; border-bottom: 2px solid #b91c1c; padding: 15px 0; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                          <div class="po-title">${currentLetterhead} PURCHASE ORDER</div>
-                          <div style="font-size: 13px; color: #64748b;">${letterheadText}</div>
+                          <div style="font-size: 26px; font-weight: 850; color: #0a1e3f; letter-spacing: -0.5px;">${letterheadInfo.company}</div>
+                          <div style="font-size: 11.5px; color: #475569; margin-top: 4px; line-height: 1.4;">
+                            Address: ${letterheadInfo.address}<br/>
+                            Tel: ${letterheadInfo.tel} | Fax: ${letterheadInfo.fax} | ${letterheadInfo.extra}
+                          </div>
                         </div>
-                        <div style="text-align: right; font-size: 13px;">
+                        <div style="text-align: right; font-size: 13px; border-left: 1px solid #cbd5e1; padding-left: 16px;">
+                          <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 4px;">PURCHASE ORDER</div>
                           <div><strong>PO NO:</strong> ${request.id}</div>
                           <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
                         </div>
@@ -390,15 +403,15 @@ export const ImportDetail: React.FC = () => {
                         <tr>
                           <td style="width: 50%; vertical-align: top; padding-right: 20px;">
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                              <strong style="color: #1e3a8a;">BUYER (발주자)</strong><br/>
-                              Company: ${letterheadText}<br/>
+                              <strong style="color: #0a1e3f;">BUYER (발주자)</strong><br/>
+                              Company: ${letterheadInfo.company}<br/>
                               Importer: ${request.importCompany || 'YSACC'}<br/>
-                              Address: ${letterheadAddr}
+                              Address: ${letterheadInfo.address}
                             </div>
                           </td>
                           <td style="width: 50%; vertical-align: top;">
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                              <strong style="color: #1e3a8a;">SELLER (공급처)</strong><br/>
+                              <strong style="color: #0a1e3f;">SELLER (공급처)</strong><br/>
                               Company: ${request.importerName || request.shipperName || 'Global Supplier Ltd.'}<br/>
                               Origin: ${request.routeFrom || 'CHINA'}<br/>
                               Incoterms: ${request.incoterms || 'FOB'}<br/>
@@ -930,14 +943,16 @@ export const ImportDetail: React.FC = () => {
           </div>
 
           <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px double #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
+            <div style={{ borderTop: '10px solid #0a1e3f', borderBottom: '2px solid #b91c1c', padding: '15px 0', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#1e3a8a' }}>{currentLetterhead} PURCHASE ORDER</h2>
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                  {currentLetterhead === 'YSACC' ? 'YSACC Co., Ltd. / (주)와이에스에이씨' : 'YoungSung ACC Co. / 영성ACC'}
+                <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 850, color: '#0a1e3f', letterSpacing: '-0.5px' }}>{letterheadInfo.company}</h2>
+                <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px', lineHeight: '1.4' }}>
+                  Address: {letterheadInfo.address}<br/>
+                  Tel: {letterheadInfo.tel} | Fax: {letterheadInfo.fax} | {letterheadInfo.extra}
                 </div>
               </div>
-              <div style={{ textAlign: 'right', fontSize: '12px' }}>
+              <div style={{ textAlign: 'right', fontSize: '12px', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#b91c1c', marginBottom: '4px' }}>PURCHASE ORDER</div>
                 <div><strong>PO NO:</strong> {request.id}</div>
                 <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
               </div>
@@ -945,15 +960,15 @@ export const ImportDetail: React.FC = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <strong style={{ color: '#1e3a8a' }}>BUYER (발주자)</strong>
+                <strong style={{ color: '#0a1e3f' }}>BUYER (발주자)</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
-                  Company: {letterheadText}<br/>
+                  Company: {letterheadInfo.company}<br/>
                   Importer: {request.importCompany || 'YSACC'}<br/>
-                  Address: {letterheadAddr}
+                  Address: {letterheadInfo.address}
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
-                <strong style={{ color: '#1e3a8a' }}>SELLER (공급처)</strong>
+                <strong style={{ color: '#0a1e3f' }}>SELLER (공급처)</strong>
                 <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
                   Company: {request.importerName || request.shipperName || '-'}<br/>
                   Origin: {request.routeFrom || 'CHINA'}<br/>
@@ -964,7 +979,7 @@ export const ImportDetail: React.FC = () => {
             </div>
 
             <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #cbd5e1' }}>
-              <strong style={{ color: '#1e3a8a' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
+              <strong style={{ color: '#0a1e3f' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px', fontSize: '12px' }}>
                 <div>- Total Volume: {totalCbm.toFixed(2)} CBM</div>
                 <div>- Shipping Mark: <span style={{ fontWeight: 'bold' }}>{shippingMark.replace(/\n/g, ' / ')}</span></div>
