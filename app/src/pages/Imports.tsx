@@ -4,6 +4,8 @@ import type { ImportRequest } from '../types';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
+import { ProductSearchModal } from '../components/ProductSearchModal';
+import type { Product } from '../types/product';
 
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
@@ -128,6 +130,7 @@ export const Imports: React.FC = () => {
   });
   
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   
   const loadSuppliers = async () => {
     try {
@@ -139,13 +142,26 @@ export const Imports: React.FC = () => {
     }
   };
 
+  const loadProducts = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'products'));
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+      setProducts(list);
+    } catch (err) {
+      console.error("Failed to load products inside Imports:", err);
+    }
+  };
+
   useEffect(() => {
     loadSuppliers();
+    loadProducts();
   }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSupplierSearch, setShowSupplierSearch] = useState(false);
+  const [showProductSearch, setShowProductSearch] = useState(false);
+  const [productSearchTargetIdx, setProductSearchTargetIdx] = useState<number | null>(null);
 
   // 신규 등록 폼 상태
   const [newRequest, setNewRequest] = useState<Partial<ImportRequest>>({
@@ -664,20 +680,33 @@ export const Imports: React.FC = () => {
                         <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                           <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                           <td style={{ padding: '4px' }}>
-                            <input 
-                              type="text" 
-                              value={item.name} 
-                              onChange={e => {
-                                const val = e.target.value;
-                                setNewRequest(p => {
-                                  const next = [...(p.piItems || [])];
-                                  next[idx] = { ...next[idx], name: val };
-                                  return { ...p, piItems: next };
-                                });
-                              }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
-                              placeholder="예: E-GLASS SURFACE TISSUE"
-                            />
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                              <input 
+                                type="text" 
+                                value={item.name} 
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setNewRequest(p => {
+                                    const next = [...(p.piItems || [])];
+                                    next[idx] = { ...next[idx], name: val };
+                                    return { ...p, piItems: next };
+                                  });
+                                }}
+                                style={{ flex: 1, padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                                placeholder="예: E-GLASS SURFACE TISSUE"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProductSearchTargetIdx(idx);
+                                  setShowProductSearch(true);
+                                }}
+                                style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                title="상품 DB에서 가져오기"
+                              >
+                                🔍
+                              </button>
+                            </div>
                           </td>
                           <td style={{ padding: '4px' }}>
                             <input 
@@ -869,6 +898,35 @@ export const Imports: React.FC = () => {
               importerName: sup.name || ''
             }));
             setShowSupplierSearch(false);
+          }}
+        />
+      )}
+      {/* Product Search Modal (Subwindow) */}
+      {showProductSearch && productSearchTargetIdx !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => {
+            setShowProductSearch(false);
+            setProductSearchTargetIdx(null);
+          }}
+          onSelect={(prod) => {
+            setNewRequest(p => {
+              const next = [...(p.piItems || [])];
+              const idx = productSearchTargetIdx;
+              if (next[idx]) {
+                next[idx] = {
+                  ...next[idx],
+                  name: prod.nameEn || prod.nameKo || '',
+                  hsCode: prod.hsCode || '',
+                  unitPrice: String(prod.purchasePrice || ''),
+                  unit: prod.unit || 'EA',
+                  weight: String(prod.weight || '')
+                };
+              }
+              return { ...p, piItems: next };
+            });
+            setShowProductSearch(false);
+            setProductSearchTargetIdx(null);
           }}
         />
       )}
