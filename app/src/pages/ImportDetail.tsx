@@ -57,6 +57,9 @@ export const ImportDetail: React.FC = () => {
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const [activeTab, setActiveTab] = useState<'수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입내역');
+  const [poLetterhead, setPoLetterhead] = useState<'YSACC' | '영성ACC'>('YSACC');
+  const [shippingMark, setShippingMark] = useState<string>('YSACC\nPO NO: ' + (id || '') + '\nPORT: ' + (request.pod || 'INCHEON'));
+  const [showPoModal, setShowPoModal] = useState<boolean>(false);
   const [uploading, setUploading] = useState<string | null>(null);
 
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
@@ -126,6 +129,17 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
+  const totalQty = (request.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+  const totalAmount = (request.piItems || []).reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
+  const totalCbm = (request.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
+  const totalNetWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
+  const totalGrossWt = (request.piItems || []).reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
+
+  const letterheadText = poLetterhead === 'YSACC' ? 'YSACC Co., Ltd.' : 'YoungSung ACC Co.';
+  const letterheadAddr = poLetterhead === 'YSACC' 
+    ? '경남 창녕군 장마면 전곡남지선로 131 삼익HDS(주) 제2공장 YSACC'
+    : '부산광역시 해운대구 센텀중앙로 영성ACC 빌딩';
+
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
       
@@ -187,10 +201,9 @@ export const ImportDetail: React.FC = () => {
         </div>
 
         {/* Tab Contents */}
-
         {activeTab === '수입내역' && (
           <div>
-            {/* Section 1: 기본 정보 및 운송 개요 */}
+            {/* Section 1: 기본 정보 */}
             <div style={{ marginBottom: '28px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>수입 기본 정보 및 운송 개요</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
@@ -234,69 +247,58 @@ export const ImportDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Section 2: 수입 제품 및 패킹 명세 실데이터 테이블 */}
+            {/* Section 2: 품목 명세 */}
             <div style={{ marginBottom: '28px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>수입 제품 및 패킹 명세 리스트</h3>
               <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '34px' }}>
-                      <th style={{ padding: '8px 12px', width: '40px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>No</th>
-                      <th style={{ padding: '8px 12px', fontWeight: 700, color: '#475569' }}>DESCRIPTION OF COMMODITY</th>
-                      <th style={{ padding: '8px 12px', width: '110px', fontWeight: 700, color: '#475569' }}>HS CODE</th>
-                      <th style={{ padding: '8px 12px', width: '90px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>QTY</th>
-                      <th style={{ padding: '8px 12px', width: '70px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>UNIT</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>U.PRICE</th>
-                      <th style={{ padding: '8px 12px', width: '120px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL AMOUNT</th>
-                      <th style={{ padding: '8px 12px', width: '120px', fontWeight: 700, color: '#475569' }}>PALLET SIZE</th>
-                      <th style={{ padding: '8px 12px', width: '80px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>CBM</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>N.WT (KG)</th>
-                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>G.WT (KG)</th>
+                      <th style={{ padding: '8px 12px', width: '40px', textAlign: 'center' }}>No</th>
+                      <th style={{ padding: '8px 12px' }}>DESCRIPTION OF COMMODITY</th>
+                      <th style={{ padding: '8px 12px', width: '110px' }}>HS CODE</th>
+                      <th style={{ padding: '8px 12px', width: '90px', textAlign: 'right' }}>QTY</th>
+                      <th style={{ padding: '8px 12px', width: '70px', textAlign: 'center' }}>UNIT</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>U.PRICE</th>
+                      <th style={{ padding: '8px 12px', width: '120px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '8px 12px', width: '120px' }}>PALLET SIZE</th>
+                      <th style={{ padding: '8px 12px', width: '80px', textAlign: 'right' }}>CBM</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>N.WT (KG)</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>G.WT (KG)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(request.piItems && request.piItems.length > 0) ? (
                       request.piItems.map((item, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', height: '36px' }}>
-                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: 600, color: '#0f172a' }}>{item.name}</td>
-                          <td style={{ padding: '8px 12px', color: '#475569' }}>{item.hsCode || '-'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#1e3a8a' }}>{(Number(item.qty) || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'center', color: '#475569' }}>{item.unit || 'EA'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 12px', fontWeight: 600 }}>{item.name}</td>
+                          <td style={{ padding: '8px 12px' }}>{item.hsCode || '-'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700 }}>{(Number(item.qty) || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>{item.unit || 'EA'}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right' }}>${(Number(item.unitPrice) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#0f766e' }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td style={{ padding: '8px 12px', color: '#475569' }}>{item.palletSize || '-'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>{(Number(item.cbm) || 0).toFixed(2)}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700 }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td style={{ padding: '8px 12px' }}>{item.palletSize || '-'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.cbm) || 0).toFixed(2)}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.netWeight) || 0).toLocaleString()}</td>
                           <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.grossWeight) || 0).toLocaleString()}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>등록된 제품 명세가 없습니다.</td>
+                        <td colSpan={11} style={{ padding: '24px', textAlign: 'center' }}>등록된 제품 명세가 없습니다.</td>
                       </tr>
                     )}
                     
-                    {/* 합계 요약행 */}
                     {request.piItems && request.piItems.length > 0 && (
                       <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
-                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'center', color: '#334155' }}>합계 (Total Summary)</td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>
-                          {request.piItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0).toLocaleString()}
-                        </td>
-                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right', color: '#0f766e' }}>
-                          ${request.piItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                        </td>
-                        <td style={{ padding: '8px 12px', textAlign: 'center', color: '#64748b' }}>NOS of PLT/PKG</td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>
-                          {request.piItems.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)} CBM
-                        </td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>
-                          {request.piItems.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0).toLocaleString()} kg
-                        </td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>
-                          {request.piItems.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0).toLocaleString()} kg
-                        </td>
+                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'center' }}>합계 (Total Summary)</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>{totalQty.toLocaleString()}</td>
+                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right', color: '#0f766e' }}>${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center' }}>NOS of PLT/PKG</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>{totalCbm.toFixed(2)} CBM</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>{totalNetWt.toLocaleString()} kg</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right' }}>{totalGrossWt.toLocaleString()} kg</td>
                       </tr>
                     )}
                   </tbody>
@@ -304,8 +306,53 @@ export const ImportDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* 발주서 PO 생성 및 인쇄 컨트롤 */}
+            {/* PO 생성 컨트롤 세션 */}
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '24px' }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 800, color: '#1e3a8a' }}>📋 발주서 (PO) 생성 추가 세부설정</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Letterhead (발주사 로고 선택)</label>
+                  <select
+                    value={poLetterhead}
+                    onChange={(e) => setPoLetterhead(e.target.value as any)}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                  >
+                    <option value="YSACC">YSACC Co., Ltd. (와이에스에이씨)</option>
+                    <option value="영성ACC">영성ACC (YoungSung ACC)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>결제 방식 (Payment Terms)</label>
+                  <input
+                    type="text"
+                    value={request.paymentTerms || '100% T/T in advance'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentTerms: val } : r);
+                      saveToStorage(updated);
+                    }}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569' }}>Shipping Mark (쉬핑마크)</label>
+                  <textarea
+                    rows={2}
+                    value={shippingMark}
+                    onChange={(e) => setShippingMark(e.target.value)}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', resize: 'none' }}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <button
+                onClick={() => setShowPoModal(true)}
+                style={{ padding: '8px 16px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                🔍 PO 모달리스 미리보기
+              </button>
               <button
                 onClick={() => {
                   const printWin = window.open('', '_blank');
@@ -323,9 +370,6 @@ export const ImportDetail: React.FC = () => {
                     </tr>
                   `).join('');
 
-                  const totalQty = (request.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
-                  const totalAmount = (request.piItems || []).reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
-
                   printWin.document.write(`
                     <html>
                     <head>
@@ -336,16 +380,16 @@ export const ImportDetail: React.FC = () => {
                         .po-title { font-size: 28px; font-weight: bold; color: #1e3a8a; }
                         .meta-table, .item-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
                         .item-table th { background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; padding: 8px; }
+                        .packing-section { background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 24px; font-size: 13px; }
                         .signature-section { display: flex; justify-content: space-between; margin-top: 60px; }
                         .signature-box { border-top: 1px solid #94a3b8; width: 220px; text-align: center; padding-top: 8px; font-size: 13px; font-weight: bold; }
-                        @media print { body { padding: 20px; } }
                       </style>
                     </head>
                     <body>
                       <div class="header">
                         <div>
-                          <div class="po-title">PURCHASE ORDER (발주서)</div>
-                          <div style="font-size: 13px; margin-top: 4px; color: #64748b;">YSACC Co., Ltd. / (주)와이에스에이씨</div>
+                          <div class="po-title">${poLetterhead} PURCHASE ORDER</div>
+                          <div style="font-size: 13px; color: #64748b;">${letterheadText}</div>
                         </div>
                         <div style="text-align: right; font-size: 13px;">
                           <div><strong>PO NO:</strong> ${request.id}</div>
@@ -358,9 +402,9 @@ export const ImportDetail: React.FC = () => {
                           <td style="width: 50%; vertical-align: top; padding-right: 20px;">
                             <div style="background: #f8fafc; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px;">
                               <strong style="color: #1e3a8a;">BUYER (발주자)</strong><br/>
-                              Company: YSACC Co., Ltd.<br/>
+                              Company: ${letterheadText}<br/>
                               Importer: ${request.importCompany || 'YSACC'}<br/>
-                              Address: 경남 창녕군 장마면 전곡남지선로 131
+                              Address: ${letterheadAddr}
                             </div>
                           </td>
                           <td style="width: 50%; vertical-align: top;">
@@ -368,13 +412,20 @@ export const ImportDetail: React.FC = () => {
                               <strong style="color: #1e3a8a;">SELLER (공급처)</strong><br/>
                               Company: ${request.importerName || request.shipperName || 'Global Supplier Ltd.'}<br/>
                               Origin: ${request.routeFrom || 'CHINA'}<br/>
-                              Incoterms: ${request.incoterms || 'FOB'}
+                              Incoterms: ${request.incoterms || 'FOB'}<br/>
+                              Payment Terms: ${request.paymentTerms || '100% T/T in advance'}
                             </div>
                           </td>
                         </tr>
                       </table>
 
-                      <h4 style="margin-bottom: 8px; color: #1e3a8a;">[ ORDER DETAILS (발주 제품 명세) ]</h4>
+                      <div class="packing-section">
+                        <strong style="color: #1e3a8a;">[ SHIPPING &amp; PACKING INFORMATION ]</strong><br/>
+                        - Total CBM: ${totalCbm.toFixed(2)} CBM<br/>
+                        - Total Weight: Net: ${totalNetWt.toLocaleString()} kg | Gross: ${totalGrossWt.toLocaleString()} kg<br/>
+                        - Shipping Mark: <pre style="display:inline; font-family:inherit; white-space:pre-wrap;">${shippingMark}</pre>
+                      </div>
+
                       <table class="item-table">
                         <thead>
                           <tr>
@@ -390,11 +441,11 @@ export const ImportDetail: React.FC = () => {
                         <tbody>
                           ${itemsHtml}
                           <tr style="font-weight: bold; background: #f8fafc; height: 36px;">
-                            <td colspan="3" style="text-align: center; border: 1px solid #cbd5e1;">TOTAL SUMMARY (합계)</td>
-                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px; color: #1e3a8a;">${totalQty.toLocaleString()}</td>
+                            <td colspan="3" style="text-align: center; border: 1px solid #cbd5e1;">TOTAL SUMMARY</td>
+                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px;">${totalQty.toLocaleString()}</td>
                             <td style="border: 1px solid #cbd5e1;"></td>
                             <td style="border: 1px solid #cbd5e1;"></td>
-                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px; color: #0f766e;">$${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td style="text-align: right; border: 1px solid #cbd5e1; padding-right: 8px;">$${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -405,18 +456,16 @@ export const ImportDetail: React.FC = () => {
                       </div>
 
                       <script>
-                        window.onload = function() {
-                          window.print();
-                        }
+                        window.onload = function() { window.print(); }
                       </script>
                     </body>
                     </html>
                   `);
                   printWin.document.close();
                 }}
-                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
               >
-                📄 발주서(PO) 생성 및 인쇄
+                🖨️ PO 즉시 인쇄
               </button>
             </div>
           </div>
@@ -429,7 +478,6 @@ export const ImportDetail: React.FC = () => {
             </h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '20px' }}>
-              {/* 운송사 (포워더) 선정 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px' }}>
                   Forwarder (지정 운송사)
@@ -470,7 +518,6 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* 통관 관세사 선정 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px' }}>
                   Customs Agent (통관 관세사)
@@ -534,13 +581,9 @@ export const ImportDetail: React.FC = () => {
               📁 수입 서류 및 통관 서류 업로드 관리
             </h3>
             
-            {/* Top row: 필수 첨부 (Left) & 선택 첨부 (Right) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px', marginBottom: '20px' }}>
-              {/* Left Column: 필수 첨부 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>필수 첨부</div>
-                
-                {/* C/I & P/L */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     C/I &amp; P/L * <span style={{ cursor: 'pointer', color: '#64748b' }} title="Commercial Invoice & Packing List">❓</span>
@@ -561,12 +604,9 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Right Column: 선택 첨부 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b', marginBottom: '12px' }}>선택 첨부</div>
-                
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  {/* CO */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       CO <span style={{ cursor: 'pointer', color: '#64748b' }} title="Certificate of Origin">❓</span>
@@ -586,7 +626,6 @@ export const ImportDetail: React.FC = () => {
                     )}
                   </div>
 
-                  {/* 인증/검역 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       인증/검역 <span style={{ cursor: 'pointer', color: '#64748b' }} title="인증 및 검역서류">❓</span>
@@ -606,7 +645,6 @@ export const ImportDetail: React.FC = () => {
                     )}
                   </div>
 
-                  {/* 기타 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       기타 <span style={{ cursor: 'pointer', color: '#64748b' }} title="기타 참고서류">❓</span>
@@ -629,9 +667,7 @@ export const ImportDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Row: 수입신고필증 | 수입세금계산서 | BL(AWB) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              {/* 수입신고필증 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   수입신고필증 <span style={{ cursor: 'pointer', color: '#64748b' }} title="관세청 수입신고필증 수리 완료본">❓</span>
@@ -651,7 +687,6 @@ export const ImportDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* 수입세금계산서 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   수입세금계산서 <span style={{ cursor: 'pointer', color: '#64748b' }} title="세관 발급 부가세/관세 세금계산서">❓</span>
@@ -671,7 +706,6 @@ export const ImportDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* BL (AWB) */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   BL(AWB) <span style={{ cursor: 'pointer', color: '#64748b' }} title="선하증권 원본 혹은 Surrendered BL">❓</span>
@@ -701,8 +735,6 @@ export const ImportDetail: React.FC = () => {
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              
-              {/* 1. 수입세금계산서 정산 */}
               <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', display: 'block', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>
                   🧾 1. 수입세금계산서 (세관 발행분)
@@ -748,7 +780,6 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* 2. 운임 정산 및 증빙 */}
               <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', display: 'block', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>
                   🚚 2. 운임 (국내 내륙 운송 / 포워딩 청구분)
@@ -784,13 +815,12 @@ export const ImportDetail: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 거래명세서 및 세금계산서 유첨 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>거래명세표 및 세금계산서 유첨 파일</label>
                   {documents.freightDoc ? (
                     <div style={{ border: '1px solid #cbd5e1', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.freightDoc.url, documents.freightDoc.name)}>
-                        📄 {documents.freightDoc.name} (클릭하여 미리보기)
+                        📄 {documents.freightDoc.name}
                       </span>
                       <button onClick={() => handleFileDelete('freightDoc' as any)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
                     </div>
@@ -811,7 +841,6 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3. 관세 정산 */}
               <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', display: 'block', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>
                   🏛️ 3. 관세 (Customs Duty)
@@ -831,7 +860,6 @@ export const ImportDetail: React.FC = () => {
                   />
                 </div>
               </div>
-
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
@@ -855,56 +883,185 @@ export const ImportDetail: React.FC = () => {
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative', paddingLeft: '24px', borderLeft: '3px solid #e2e8f0', marginLeft: '12px' }}>
-              
-              {/* Log 1: 생성 일시 */}
               <div style={{ position: 'relative' }}>
                 <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#10b981', border: '3px solid #fff', boxShadow: '0 0 0 3px #d1fae5' }} />
                 <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>{request.createdAt || '2026. 07. 03.'}</div>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📥 수입 관리 의뢰 등록 완료</div>
-                <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>수입 의뢰 번호: #{request.id} 건이 시스템에 성공적으로 등록되었습니다. (작성 관리자: {request.manager || '김주한'})</div>
+                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📥 수입 의뢰 등록 완료</div>
+                <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>수입 의뢰 번호: #{request.id} 건이 등록되었습니다. (작성 관리자: {request.manager || '김주한'})</div>
               </div>
 
-              {/* Log 2: 품목 스펙 반영 */}
               {request.piItems && request.piItems.length > 0 && (
                 <div style={{ position: 'relative' }}>
                   <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#2563eb', border: '3px solid #fff', boxShadow: '0 0 0 3px #dbeafe' }} />
                   <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>{request.createdAt || '2026. 07. 03.'}</div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📦 수입 제품 및 패킹 스펙 확정</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📦 제품 명세 최종 확정</div>
                   <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
-                    총 {request.piItems.length}개 수입 제품(총 수량 {request.piItems.reduce((s, it) => s + (Number(it.qty) || 0), 0).toLocaleString()} EA)의 스펙과 중량이 최종 기입되었습니다.
+                    총 {request.piItems.length}종 제품(총 {totalQty.toLocaleString()} EA)의 명세 정보가 저장되었습니다.
                   </div>
                 </div>
               )}
-
-              {/* Log 3: 운송/통관 선정 정보 */}
-              {(request.localTransportType || request.customsAgent) && (
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#8b5cf6', border: '3px solid #fff', boxShadow: '0 0 0 3px #ede9fe' }} />
-                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>진행중</div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>🚢 운송 파트너사 및 세관 관세사 지정 업데이트</div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
-                    지정 운송 포워더: <strong>{request.localTransportType || 'CJ대한통운'}</strong> | 통관 관세사: <strong>{request.customsAgent || '이음관세사무소'}</strong>로 실무 선정이 완료되었습니다.
-                  </div>
-                </div>
-              )}
-
-              {/* Log 4: 정산 변경 내용 */}
-              {(Number(request.taxAmount) > 0 || Number(request.freightAmount) > 0 || Number(request.customsTaxAmount) > 0) && (
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#0f766e', border: '3px solid #fff', boxShadow: '0 0 0 3px #ccfbf1' }} />
-                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>최근 수정</div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>💵 세금계산서 및 통관 관/부가세 실무 정산 정보 등록</div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '2px' }}>
-                    수입세금계산서 총합 ₩{((Number(request.taxAmount) || 0) + (Number(request.taxVat) || 0)).toLocaleString()} 원 및 관세 납부 ₩{(Number(request.customsTaxAmount) || 0).toLocaleString()} 원 정산 정보가 업데이트되어 보관되었습니다.
-                  </div>
-                </div>
-              )}
-              
             </div>
           </div>
         )}
 
       </div>
+
+      {/* 모달리스 발주서 PO 미리보기 카드 */}
+      {showPoModal && (
+        <div style={{
+          position: 'fixed',
+          right: '24px',
+          top: '80px',
+          width: '680px',
+          height: 'calc(100vh - 120px)',
+          background: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.2)',
+          border: '1px solid #cbd5e1',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            background: '#1e3a8a',
+            padding: '12px 16px',
+            color: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <strong style={{ fontSize: '14px' }}>📄 PO 발주서 실시간 미리보기 (모달리스 창)</strong>
+            <button 
+              onClick={() => setShowPoModal(false)}
+              style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              &times;
+            </button>
+          </div>
+
+          <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px double #1e3a8a', paddingBottom: '10px', marginBottom: '20px' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#1e3a8a' }}>{poLetterhead} PURCHASE ORDER</h2>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                  {poLetterhead === 'YSACC' ? 'YSACC Co., Ltd. / (주)와이에스에이씨' : 'YoungSung ACC Co. / 영성ACC'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                <div><strong>PO NO:</strong> {request.id}</div>
+                <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                <strong style={{ color: '#1e3a8a' }}>BUYER (발주자)</strong>
+                <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
+                  Company: {letterheadText}<br/>
+                  Importer: {request.importCompany || 'YSACC'}<br/>
+                  Address: {letterheadAddr}
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                <strong style={{ color: '#1e3a8a' }}>SELLER (공급처)</strong>
+                <div style={{ marginTop: '4px', fontSize: '11.5px', lineHeight: '1.5' }}>
+                  Company: {request.importerName || request.shipperName || '-'}<br/>
+                  Origin: {request.routeFrom || 'CHINA'}<br/>
+                  Incoterms: {request.incoterms || 'FOB'}<br/>
+                  Payment Terms: {request.paymentTerms || '100% T/T in advance'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: '#f1f5f9', padding: '12px', borderRadius: '6px', marginBottom: '20px', border: '1px solid #cbd5e1' }}>
+              <strong style={{ color: '#1e3a8a' }}>[ SHIPPING &amp; PACKING INFORMATION ]</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px', fontSize: '12px' }}>
+                <div>- Total Volume: {totalCbm.toFixed(2)} CBM</div>
+                <div>- Shipping Mark: <span style={{ fontWeight: 'bold' }}>{shippingMark.replace(/\n/g, ' / ')}</span></div>
+                <div>- Net Weight: {totalNetWt.toLocaleString()} kg</div>
+                <div>- Gross Weight: {totalGrossWt.toLocaleString()} kg</div>
+              </div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '20px' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '28px' }}>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px' }}>No</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px' }}>Description of Commodity</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px' }}>HS Code</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'right' }}>Qty</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'center' }}>Unit</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'right' }}>U.Price</th>
+                  <th style={{ border: '1px solid #cbd5e1', padding: '4px', textAlign: 'right' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(request.piItems || []).map((item, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', height: '28px' }}>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
+                    <td style={{ border: '1px solid #cbd5e1', padding: '4px', fontWeight: 600 }}>{item.name}</td>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.hsCode || '-'}</td>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'right', padding: '4px' }}>{(Number(item.qty) || 0).toLocaleString()}</td>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'right', padding: '4px' }}>${(Number(item.unitPrice) || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td style={{ border: '1px solid #cbd5e1', textAlign: 'right', padding: '4px', fontWeight: 700 }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                  </tr>
+                ))}
+                <tr style={{ background: '#f8fafc', fontWeight: 'bold', height: '30px' }}>
+                  <td colSpan={3} style={{ border: '1px solid #cbd5e1', textAlign: 'center' }}>TOTAL SUM</td>
+                  <td style={{ border: '1px solid #cbd5e1', textAlign: 'right', padding: '4px', color: '#1e3a8a' }}>{totalQty.toLocaleString()}</td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1' }}></td>
+                  <td style={{ border: '1px solid #cbd5e1', textAlign: 'right', padding: '4px', color: '#0f766e' }}>
+                    ${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', paddingBottom: '20px' }}>
+              <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Seller Signature</div>
+              <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Buyer Signature</div>
+            </div>
+          </div>
+
+          <div style={{
+            background: '#f1f5f9',
+            padding: '12px 16px',
+            borderTop: '1px solid #cbd5e1',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '8px'
+          }}>
+            <button 
+              onClick={() => setShowPoModal(false)}
+              style={{ padding: '6px 12px', background: '#94a3b8', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px' }}
+            >
+              닫기
+            </button>
+            <button 
+              onClick={() => {
+                const printBtn = document.querySelector('button[title*="PO 즉시 인쇄"]') as HTMLButtonElement;
+                if (printBtn) {
+                  printBtn.click();
+                } else {
+                  const triggers = document.getElementsByTagName('button');
+                  for (let i = 0; i < triggers.length; i++) {
+                    if (triggers[i].textContent?.includes('PO 즉시 인쇄')) {
+                      triggers[i].click();
+                      break;
+                    }
+                  }
+                }
+              }}
+              style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 'bold' }}
+            >
+              🖨️ 인쇄하기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
