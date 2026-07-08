@@ -116,3 +116,40 @@ export interface RecurringTaskRule {
   assigneeId: string;
   isActive: boolean;
 }
+
+export interface ImportRequest {
+  id: string;
+  status: string;
+  blAwb?: string;
+  poNumber?: string;
+  itemName: string;
+  transportType: string;
+  volume: string;
+  routeFrom: string;
+  routeTo: string;
+  manager: string;
+  amount: number;
+  createdAt: string;
+  
+  // 상세
+  portOfLoading?: string;
+  portOfDischarge?: string;
+  vesselName?: string;
+  etd?: string;
+  eta?: string;
+  shipperName?: string;
+  shipperPhone?: string;
+  shipperEmail?: string;
+  packingQty?: number;
+  packingUnit?: string;
+  dimensions?: string;
+  weight?: string;
+  dangerousCargo?: string;
+  msdsStatus?: string;
+  lssIncluded?: string;
+  localTransportType?: string;
+  customsAgent?: string;
+  customsAgentId?: string;
+  cargoInsurance?: string;
+  ftaOriginCert?: string;
+}
