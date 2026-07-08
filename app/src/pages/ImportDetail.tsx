@@ -387,16 +387,18 @@ export const ImportDetail: React.FC = () => {
                       </style>
                     </head>
                     <body>
-                      <div style="margin-bottom: 24px; text-align: center; border-bottom: 2px solid #cbd5e1; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
+                      <div style="margin-bottom: 24px;">
                         <img 
                           src="${currentLetterhead === 'YSACC' ? ysaccLetterImg : ysAccLetterImg}" 
                           alt="Letterhead" 
-                          style="max-height: 90px; max-width: 480px; object-fit: contain;"
+                          style="width: 100%; max-height: 120px; object-fit: contain; display: block; margin-bottom: 16px;"
                         />
-                        <div style="text-align: right; font-size: 13px; min-width: 140px; padding-left: 16px;">
-                          <div style="font-size: 15px; font-weight: 800; color: #b91c1c; margin-bottom: 4px;">PURCHASE ORDER</div>
-                          <div><strong>PO NO:</strong> ${request.id}</div>
-                          <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
+                        <div style="display: flex; justify-content: flex-end; border-bottom: 2px solid #0a1e3f; padding-bottom: 8px;">
+                          <div style="text-align: right; font-size: 13px; min-width: 180px;">
+                            <div style="font-size: 16px; font-weight: 800; color: #b91c1c; margin-bottom: 2px;">PURCHASE ORDER</div>
+                            <div><strong>PO NO:</strong> ${request.id}</div>
+                            <div><strong>Date:</strong> ${request.createdAt || '2026-07-08'}</div>
+                          </div>
                         </div>
                       </div>
 
@@ -944,16 +946,18 @@ export const ImportDetail: React.FC = () => {
           </div>
 
           <div style={{ padding: '24px', overflowY: 'auto', flex: 1, fontSize: '12.5px', color: '#334155' }}>
-            <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div style={{ marginBottom: '20px' }}>
               <img 
                 src={currentLetterhead === 'YSACC' ? ysaccLetterImg : ysAccLetterImg} 
                 alt="Letterhead Preview" 
-                style={{ maxHeight: '72px', maxWidth: '380px', objectFit: 'contain' }}
+                style={{ width: '100%', maxHeight: '90px', objectFit: 'contain', display: 'block', marginBottom: '12px' }}
               />
-              <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '120px', paddingLeft: '16px' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '4px' }}>PURCHASE ORDER</div>
-                <div><strong>PO NO:</strong> {request.id}</div>
-                <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', borderBottom: '2px solid #0a1e3f', paddingBottom: '6px' }}>
+                <div style={{ textAlign: 'right', fontSize: '12px', minWidth: '160px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#b91c1c', marginBottom: '2px' }}>PURCHASE ORDER</div>
+                  <div><strong>PO NO:</strong> {request.id}</div>
+                  <div><strong>Date:</strong> {request.createdAt || '2026-07-08'}</div>
+                </div>
               </div>
             </div>
 
