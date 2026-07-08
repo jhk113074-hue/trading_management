@@ -178,7 +178,7 @@ export const Imports: React.FC = () => {
     paymentTerms: '100% T/T in advance',
     pol: '',
     pod: '',
-    piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }]
+    piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }]
   });
 
   const saveToStorage = (data: ImportRequest[]) => {
@@ -248,7 +248,8 @@ export const Imports: React.FC = () => {
       amount: String(((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)).toFixed(2))
     }));
     const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
-    const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
+    const totalNetWeight = itemsList.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
+    const totalGrossWeight = itemsList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
 
     const created: ImportRequest = {
@@ -280,7 +281,7 @@ export const Imports: React.FC = () => {
       packingQty: totalQty || 1,
       packingUnit: 'PALLET',
       dimensions: itemsList[0]?.palletSize || '120*80*100(CM)',
-      weight: `${totalWeight}KG`,
+      weight: `${totalGrossWeight}KG (Net: ${totalNetWeight}KG)`,
       dangerousCargo: '미포함',
       msdsStatus: '미포함',
       lssIncluded: '포함',
@@ -307,7 +308,7 @@ export const Imports: React.FC = () => {
       paymentTerms: '100% T/T in advance',
       pol: '',
       pod: '',
-      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }]
+      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }]
     });
   };
 
@@ -333,7 +334,8 @@ export const Imports: React.FC = () => {
       amount: String(((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)).toFixed(2))
     }));
     const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
-    const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
+    const totalNetWeight = itemsList.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0);
+    const totalGrossWeight = itemsList.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
 
     const nextList = importRequests.map(req => {
@@ -347,7 +349,7 @@ export const Imports: React.FC = () => {
           routeTo: editingRequest.pod || editingRequest.routeTo || req.routeTo,
           amount: Number(editingRequest.amount || 0),
           packingQty: totalQty || 1,
-          weight: `${totalWeight}KG`,
+          weight: `${totalGrossWeight}KG (Net: ${totalNetWeight}KG)`,
           dimensions: itemsList[0]?.palletSize || req.dimensions
         } as ImportRequest;
       }
@@ -724,7 +726,7 @@ export const Imports: React.FC = () => {
                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
                   <button 
                     type="button" 
-                    onClick={() => setNewRequest(p => ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }] }))}
+                    onClick={() => setNewRequest(p => ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }] }))}
                     style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     ＋ 항목 추가
@@ -744,7 +746,8 @@ export const Imports: React.FC = () => {
                         <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
                         <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
                         <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
-                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>WEIGHT (KG)</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>N.WT (KG)</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>G.WT (KG)</th>
                         <th style={{ padding: '4px', width: '30px' }}></th>
                       </tr>
                     </thead>
@@ -888,12 +891,28 @@ export const Imports: React.FC = () => {
                           <td style={{ padding: '4px' }}>
                             <input 
                               type="text" 
-                              value={item.weight || ''} 
+                              value={item.netWeight || ''} 
                               onChange={e => {
                                 const val = e.target.value;
                                 setNewRequest(p => {
                                   const next = [...(p.piItems || [])];
-                                  next[idx] = { ...next[idx], weight: val };
+                                  next[idx] = { ...next[idx], netWeight: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.grossWeight || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setNewRequest(p => {
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], grossWeight: val };
                                   return { ...p, piItems: next };
                                 });
                               }}
@@ -927,7 +946,10 @@ export const Imports: React.FC = () => {
                           {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)}
                         </td>
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
-                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.weight) || 0), 0)} kg
+                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0)} kg
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
+                          {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0)} kg
                         </td>
                         <td></td>
                       </tr>
@@ -1182,7 +1204,7 @@ export const Imports: React.FC = () => {
                   <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
                   <button 
                     type="button" 
-                    onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', weight: '' }] }) : null)}
+                    onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }] }) : null)}
                     style={{ padding: '2px 8px', border: '1px solid #2563eb', borderRadius: '4px', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     ＋ 항목 추가
@@ -1202,7 +1224,8 @@ export const Imports: React.FC = () => {
                         <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
                         <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
                         <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
-                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>WEIGHT (KG)</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>N.WT (KG)</th>
+                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>G.WT (KG)</th>
                         <th style={{ padding: '4px', width: '30px' }}></th>
                       </tr>
                     </thead>
@@ -1353,13 +1376,30 @@ export const Imports: React.FC = () => {
                           <td style={{ padding: '4px' }}>
                             <input 
                               type="text" 
-                              value={item.weight || ''} 
+                              value={item.netWeight || ''} 
                               onChange={e => {
                                 const val = e.target.value;
                                 setEditingRequest(p => {
                                   if (!p) return null;
                                   const next = [...(p.piItems || [])];
-                                  next[idx] = { ...next[idx], weight: val };
+                                  next[idx] = { ...next[idx], netWeight: val };
+                                  return { ...p, piItems: next };
+                                });
+                              }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              placeholder="0"
+                            />
+                          </td>
+                          <td style={{ padding: '4px' }}>
+                            <input 
+                              type="text" 
+                              value={item.grossWeight || ''} 
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const next = [...(p.piItems || [])];
+                                  next[idx] = { ...next[idx], grossWeight: val };
                                   return { ...p, piItems: next };
                                 });
                               }}
@@ -1393,7 +1433,10 @@ export const Imports: React.FC = () => {
                           {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)}
                         </td>
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
-                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.weight) || 0), 0)} kg
+                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0)} kg
+                        </td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right', color: '#b45309' }}>
+                          {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0)} kg
                         </td>
                         <td></td>
                       </tr>
