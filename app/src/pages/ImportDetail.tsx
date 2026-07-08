@@ -8,19 +8,19 @@ import { previewFile } from '../components/FilePreviewModal';
 const INITIAL_IMPORTS: ImportRequest[] = [
   {
     id: '189348',
-    status: '진행 결정 요청',
+    status: '\uC9C5\uD589 \uACB0\uC815 \uC694\uCCAD', // 진행 결정 요청
     blAwb: '-',
     poNumber: '-',
     itemName: 'Fiberglass tissue',
-    transportType: 'FCA | 해상LCL',
+    transportType: 'FCA | \uD574\uC0C1LCL', // 해상LCL
     volume: '0.8 R.TON',
-    routeFrom: '중국 위해항',
-    routeTo: '한국 내륙',
-    manager: '김주한',
+    routeFrom: '\uC911\uAD6D \uD68C\uD558\uD56D', // 중국 위해항
+    routeTo: '\uD55C\uAD6D \uB0B4\uB959', // 한국 내륙
+    manager: '\uAE40\uC8FC\uD55C', // 김주한
     amount: 489316,
     createdAt: '2026. 07. 03.',
-    portOfLoading: '위해항 | Weihai port (CNWEI)',
-    portOfDischarge: '인천항 | Incheon port (KRINC)',
+    portOfLoading: 'Weihai port (CNWEI)',
+    portOfDischarge: 'Incheon port (KRINC)',
     vesselName: 'TS NANSHA 26002S',
     etd: '2026-07-06',
     eta: '2026-07-08',
@@ -31,13 +31,13 @@ const INITIAL_IMPORTS: ImportRequest[] = [
     packingUnit: 'BOXES',
     dimensions: '125*40*40(CM)',
     weight: '18.5KG',
-    dangerousCargo: '위험물 ✖ 미포함',
-    msdsStatus: 'MSDS ✖ 미포함',
-    lssIncluded: '포함',
-    localTransportType: '독차',
-    customsAgent: '이음관세사무소',
-    cargoInsurance: '미신청',
-    ftaOriginCert: '미신청'
+    dangerousCargo: '\uBBF8\uD3EC\uD568', // 미포함
+    msdsStatus: '\uBBF8\uD3EC\uD568', // 미포함
+    lssIncluded: '\uD3EC\uD568', // 포함
+    localTransportType: '\uB3C5\uCC28', // 독차
+    customsAgent: '\uC774\uC74C\uAD05\uC138\uC0AC\uBB34\uC18C', // 이음관세사무소
+    cargoInsurance: '\uBBF8\uC9C0\uCCAD', // 미신청
+    ftaOriginCert: '\uBBF8\uC9C0\uCCAD' // 미신청
   }
 ];
 
@@ -56,13 +56,13 @@ export const ImportDetail: React.FC = () => {
   };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
-  const [activeTab, setActiveTab] = useState<'운송현황' | '의뢰내역' | '서류' | '정산'>('의뢰내역');
+  const [activeTab, setActiveTab] = useState<'\uC6B4\uC1A1\uD604\uD669' | '\uC218\uC785\uB0B4\uC5ED' | '\uC11C\uB958' | '\uC815\uC0B0'>('\uC218\uC785\uB0B4\uC5ED'); // 운송현황 | 수입내역 | 서류 | 정산
   const [uploading, setUploading] = useState<string | null>(null);
 
   const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
     const saved = localStorage.getItem(`import_docs_${id}`);
     return saved ? JSON.parse(saved) : {
-      bizReg: { name: '사업자등록증_(주)YSACC.pdf', url: '#' }
+      bizReg: { name: 'bizReg_YSACC.pdf', url: '#' }
     };
   });
 
@@ -75,7 +75,6 @@ export const ImportDetail: React.FC = () => {
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
       if (key === 'customerPi' || key === 'freightInvoice') {
-        // Save to import request details
         const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
@@ -95,17 +94,17 @@ export const ImportDetail: React.FC = () => {
         setDocuments(nextDocs);
         localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
       }
-      alert(`${file.name} 업로드가 완료되었습니다.`);
+      alert(`${file.name} \uC5C5\uB85C\uB4DC\uAC00 \uC644\uB8CC\uB418\uC5C8\uC5B5\uB2C8\uB2E4.`);
     } catch (e) {
       console.error(e);
-      alert('파일 업로드에 실패했습니다.');
+      alert('\uC5C5\uB85C\uB4DC \uC2E4\uD328');
     } finally {
       setUploading(null);
     }
   };
 
   const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice') => {
-    if (window.confirm('첨부된 파일을 삭제하시겠습니까?')) {
+    if (window.confirm('\uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?')) {
       if (key === 'customerPi' || key === 'freightInvoice') {
         const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
         const updatedList = importRequests.map(r => {
@@ -130,16 +129,16 @@ export const ImportDetail: React.FC = () => {
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
       
-      {/* Back button and quick header */}
+      {/* Back button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button 
           onClick={() => navigate('/imports')}
           style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14.5px' }}
         >
-          ➔ 목록으로 돌아가기
+          &larr; \uBAA9\uB85D\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30
         </button>
         <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-          의뢰 생성일: <span style={{ color: '#0f172a' }}>{request.createdAt}</span>
+          \uC694\uCCAD \uC0DD\uC2C1\uC77C: <span style={{ color: '#0f172a' }}>{request.createdAt}</span>
         </div>
       </div>
 
@@ -153,629 +152,213 @@ export const ImportDetail: React.FC = () => {
             {request.status}
           </span>
           <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-            BL(AWB): <strong style={{ color: '#1e293b' }}>{request.blAwb}</strong> | PO번호: <strong style={{ color: '#1e293b' }}>{request.poNumber}</strong>
+            BL(AWB): <strong style={{ color: '#1e293b' }}>{request.blAwb}</strong> | PO: <strong style={{ color: '#1e293b' }}>{request.poNumber}</strong>
           </span>
-        </div>
-
-        {/* Warning Indicator Row */}
-        <div style={{ background: '#fdf2f8', border: '1px solid #fbcfe8', borderRadius: '8px', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <span style={{ color: '#db2777', fontWeight: 700, fontSize: '13.5px' }}>수출자 정보를 입력하세요. ➔</span>
-          <button style={{ padding: '6px 12px', background: '#db2777', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
-            수출자 정보 입력
-          </button>
         </div>
 
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '24px', borderBottom: '2px solid #e2e8f0', marginBottom: '24px' }}>
-          {(['운송현황', '의뢰내역', '서류', '정산'] as const).map(tab => (
+          {([
+            { key: '\uC6B4\uC1A1\uD604\uD669', label: '\uC6B4\uC1A1\uD604\uD669' }, // 운송현황
+            { key: '\uC218\uC785\uB0B4\uC5ED', label: '\uC218\uC785\uB0B4\uC5ED' }, // 수입내역
+            { key: '\uC11C\uB958', label: '\uC11C\uB958' }, // 서류
+            { key: '\uC815\uC0B0', label: '\uC815\uC0B0' } // 정산
+          ] as const).map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               style={{
                 padding: '10px 4px',
                 border: 'none',
                 background: 'none',
                 fontSize: '14.5px',
-                fontWeight: activeTab === tab ? 800 : 600,
-                color: activeTab === tab ? '#2563eb' : '#64748b',
-                borderBottom: activeTab === tab ? '3px solid #2563eb' : '3px solid transparent',
+                fontWeight: activeTab === tab.key ? 800 : 600,
+                color: activeTab === tab.key ? '#2563eb' : '#64748b',
+                borderBottom: activeTab === tab.key ? '3px solid #2563eb' : '3px solid transparent',
                 cursor: 'pointer',
                 marginBottom: '-2px',
                 transition: 'all 0.2s'
               }}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Tab Contents */}
-        {activeTab === '운송현황' && (
+        {activeTab === '\uC6B4\uC1A1\uD604\uD669' && (
           <div style={{ padding: '20px 0' }}>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700 }}>운송 트래킹 정보</h4>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: 700 }}>\uC6B4\uC1A1 \uD2B8\uB798\uD0B9 \uC815\uCB74</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', borderLeft: '2px solid #cbd5e1', paddingLeft: '20px', marginLeft: '10px' }}>
               <div>
-                <div style={{ fontWeight: 700, color: '#2563eb', fontSize: '14px' }}>진행 결정 요청</div>
-                <div style={{ fontSize: '12.5px', color: '#64748b' }}>수입 의뢰가 접수되어 진행 타당성을 검토 중입니다.</div>
-              </div>
-              <div style={{ color: '#94a3b8' }}>
-                <div style={{ fontWeight: 600, fontSize: '14px' }}>수출자 정보 입력 대기</div>
-                <div style={{ fontSize: '12.5px' }}>수출자(화물정보) 세부 스펙을 준비 중입니다.</div>
-              </div>
-              <div style={{ color: '#94a3b8' }}>
-                <div style={{ fontWeight: 600, fontSize: '14px' }}>통관 및 적재</div>
-                <div style={{ fontSize: '12.5px' }}>선박 적재 전 서류 심사 단계입니다.</div>
+                <div style={{ fontWeight: 700, color: '#2563eb', fontSize: '14px' }}>\uC9C5\uD589 \uACB0\uC815 \uC694\uCCAD</div>
+                <div style={{ fontSize: '12.5px', color: '#64748b' }}>\uC218\uC785 \uC694\uCCAD\uC774 \uC811\uC218\uB418\uC5B4 \uC9C5\uD589\uC744 \uAC80\uD1A0 \uC913\uC785\uB2C8\uB2E4.</div>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === '의뢰내역' && (
+        {activeTab === '\uC218\uC785\uB0B4\uC5ED' && (
           <div>
-            {/* Section 1: 구간 정보 */}
+            {/* Section 1: 기본 정보 및 운송 개요 */}
             <div style={{ marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>구간 정보</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>출발지</div>
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>🇨🇳 창고: {request.shipperName || 'Shanghai warehouse (CNWEI)'}</div>
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>⚓ 출발지: {request.portOfLoading || '위해항 | Weihai port (CNWEI)'}</div>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>\uC218\uC785 \uAE30\uBC38 \uC815\uBCF4 \uBC0F \uC6B4\uC1A1 \uAC1C\uC694</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uC218\uC785\uC9C0\uCCB4</span>
+                    <strong style={{ color: '#0f172a' }}>{request.importCompany || 'YSACC'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uC218\uC785\uCC28 (\uACF5\uAE09\uC5C5\uCCB4)</span>
+                    <strong style={{ color: '#1e293b' }}>{request.importerName || request.shipperName || '-'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uCD5C\uC9C5 \uACE0\uAC1D\uC0AC</span>
+                    <strong style={{ color: '#0f172a' }}>{request.finalCustomer || '-'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>INCOTERMS / \uACB0\uC81C \uBC29\uC2DD</span>
+                    <strong style={{ color: '#334155' }}>{request.incoterms || 'FOB'} / {request.paymentTerms || '100% T/T in advance'}</strong>
                   </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>도착지</div>
-                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>⚓ 도착지: {request.portOfDischarge || '인천항 | Incheon port (KRINC)'}</div>
-                    <div style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>🇰🇷 최종 목적지: 경남 창녕군 장마면 전곡남지선로 131 (신구리) 삼익HDS(주) 제2공장</div>
+
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uC6B4\uC1A1\uC218\uB2E8</span>
+                    <strong style={{ color: '#2563eb' }}>{request.transportType}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uCD9C\uBC1C PORT (POL)</span>
+                    <strong style={{ color: '#334155' }}>{request.pol || request.portOfLoading || '-'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uB3C5\uCC29 PORT (POD)</span>
+                    <strong style={{ color: '#334155' }}>{request.pod || request.portOfDischarge || '-'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>\uCD1D \uC6B4\uC1A1 \uBB3C\uB3D9\uB7C9 / \uCD1D\uC911\uB7C9</span>
+                    <strong style={{ color: '#0f766e' }}>{request.volume} / {request.weight}</strong>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Section 2: 수출자/화물정보 */}
+            {/* Section 2: 수입 제품 및 패킹 명세 실데이터 테이블 */}
             <div style={{ marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>수출자/화물정보</h3>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '20px' }}>🏢</span>
-                    <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 700 }}>업체명: {request.shipperName || 'Shanghai Logistics Co.'}</div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>📞 {request.shipperPhone || '-'} | ✉ {request.shipperEmail || '-'}</div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '12px', color: '#0369a1', background: '#e0f2fe', padding: '4px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                    총 물동량: {request.volume}
-                  </span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포장수량</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>{request.packingQty || 4}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포장타입</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>{request.packingUnit || 'BOXES'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>가로*세로*높이</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>{request.dimensions || '125*40*40(CM)'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포장당 중량</div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '4px' }}>{request.weight || '18.5KG'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>화물 특성</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#e11d48', marginTop: '4px' }}>⚠️ {request.dangerousCargo || '미포함'}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 3: 확인사항 */}
-            <div>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>확인사항</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '8px' }}>비용 관련 사항</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: '#64748b' }}>LSS 납부</span>
-                    <strong style={{ color: '#334155' }}>{request.lssIncluded || '포함'}</strong>
-                  </div>
-                </div>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '8px' }}>내륙 운송</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: '#64748b' }}>도착지 운송방식</span>
-                    <strong style={{ color: '#334155' }}>{request.localTransportType || '독차'}</strong>
-                  </div>
-                </div>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', marginBottom: '8px' }}>부가서비스</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#64748b' }}>지정관세사</span>
-                      <strong style={{ color: '#2563eb' }}>{request.customsAgent || '이음관세사무소'}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#64748b' }}>적하보험 가입</span>
-                      <strong style={{ color: '#64748b' }}>{request.cargoInsurance || '미신청'}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#64748b' }}>FTA 원산지대행</span>
-                      <strong style={{ color: '#64748b' }}>{request.ftaOriginCert || '미신청'}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4: 수입 품목 및 운송 견적서 (PI / 쉽다명세서) */}
-            <div style={{ marginTop: '28px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>
-                📂 수입 품목 및 운송 견적서 (PI / 쉽다명세서)
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                {/* 1. Proforma Invoice (PI) & 구매 아이템 정보 */}
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>📄 고객사 발송 Proforma Invoice (PI)</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>PDF 필수 유첨</span>
-                  </div>
-
-                  {/* PDF 업로드/보기 영역 */}
-                  <div style={{ background: '#fff', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center' }}>
-                    {request.customerPiFile ? (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span 
-                          onClick={() => previewFile(request.customerPiFile!.url, request.customerPiFile!.name)} 
-                          style={{ fontSize: '12.5px', fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          📎 {request.customerPiFile.name} (미리보기)
-                        </span>
-                        <button 
-                          onClick={() => handleFileDelete('customerPi')} 
-                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
-                        >
-                          삭제
-                        </button>
-                      </div>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>\uC218\uC785 \uC81C\uD488 \uBC0F \uD328\uD0B9 \uBA85\uC138 \uB9AC\uC2A4\uD2B8</h3>
+              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '34px' }}>
+                      <th style={{ padding: '8px 12px', width: '40px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>No</th>
+                      <th style={{ padding: '8px 12px', fontWeight: 700, color: '#475569' }}>DESCRIPTION OF COMMODITY</th>
+                      <th style={{ padding: '8px 12px', width: '110px', fontWeight: 700, color: '#475569' }}>HS CODE</th>
+                      <th style={{ padding: '8px 12px', width: '90px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>QTY</th>
+                      <th style={{ padding: '8px 12px', width: '70px', textAlign: 'center', fontWeight: 700, color: '#475569' }}>UNIT</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>U.PRICE</th>
+                      <th style={{ padding: '8px 12px', width: '120px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '8px 12px', width: '120px', fontWeight: 700, color: '#475569' }}>PALLET SIZE</th>
+                      <th style={{ padding: '8px 12px', width: '80px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>CBM</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>N.WT (KG)</th>
+                      <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right', fontWeight: 700, color: '#475569' }}>G.WT (KG)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(request.piItems && request.piItems.length > 0) ? (
+                      request.piItems.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0', height: '36px' }}>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold', color: '#64748b' }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 12px', fontWeight: 600, color: '#0f172a' }}>{item.name}</td>
+                          <td style={{ padding: '8px 12px', color: '#475569' }}>{item.hsCode || '-'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#1e3a8a' }}>{(Number(item.qty) || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', color: '#475569' }}>{item.unit || 'EA'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>${(Number(item.unitPrice) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#0f766e' }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                          <td style={{ padding: '8px 12px', color: '#475569' }}>{item.palletSize || '-'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>{(Number(item.cbm) || 0).toFixed(2)}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.netWeight) || 0).toLocaleString()}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.grossWeight) || 0).toLocaleString()}</td>
+                        </tr>
+                      ))
                     ) : (
-                      <div style={{ position: 'relative', cursor: 'pointer', fontSize: '12.5px', color: '#64748b', padding: '8px 0' }}>
-                        {uploading === 'customerPi' ? '⏳ 업로드 중...' : '📁 클릭하여 PI PDF 파일 첨부'}
-                        <input 
-                          type="file" 
-                          accept=".pdf" 
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              handleFileUpload('customerPi', e.target.files[0]);
-                            }
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
-                        />
-                      </div>
+                      <tr>
+                        <td colSpan={11} style={{ padding: '24px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>\uB4F1\uB85D\uB41C \uC81C\uD488 \uBA85\uC138\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</td>
+                      </tr>
                     )}
-                  </div>
-
-                  {/* PI 세부 기입 항목 (동적 그리드) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📦 구매 아이템 세부내역</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentItems = request.piItems && request.piItems.length > 0
-                            ? [...request.piItems]
-                            : [{ name: request.piItemName || '', qty: request.piItemQty || '', unitPrice: request.piItemUnitPrice || '', amount: request.piItemAmount || '' }];
-                          
-                          const updated = importRequests.map(r => r.id === id ? {
-                            ...r,
-                            piItems: [...currentItems, { name: '', qty: '', unitPrice: '', amount: '' }]
-                          } : r);
-                          saveToStorage(updated);
-                        }}
-                        style={{ padding: '2px 8px', borderRadius: '4px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        ＋ 행 추가
-                      </button>
-                    </div>
-
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                        <thead>
-                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', height: '30px' }}>
-                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', textAlign: 'left' }}>구매 품명</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '70px', textAlign: 'right' }}>수량</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '65px', textAlign: 'right' }}>단가</th>
-                            <th style={{ padding: '4px 6px', fontWeight: 600, color: '#64748b', width: '80px', textAlign: 'right' }}>금액</th>
-                            <th style={{ width: '30px' }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(() => {
-                            const activeItems = request.piItems && request.piItems.length > 0
-                              ? request.piItems
-                              : [{
-                                  name: request.piItemName || '',
-                                  qty: request.piItemQty || '',
-                                  unitPrice: request.piItemUnitPrice || '',
-                                  amount: request.piItemAmount || ''
-                                }];
-
-                            return activeItems.map((item, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '4px 6px' }}>
-                                  <input 
-                                    type="text"
-                                    value={item.name}
-                                    placeholder="품명"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const next = activeItems.map((it, i) => i === idx ? { ...it, name: val } : it);
-                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
-                                      saveToStorage(updated);
-                                    }}
-                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', boxSizing: 'border-box' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '4px 6px' }}>
-                                  <input 
-                                    type="text"
-                                    value={item.qty}
-                                    placeholder="수량"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const next = activeItems.map((it, i) => i === idx ? { ...it, qty: val } : it);
-                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
-                                      saveToStorage(updated);
-                                    }}
-                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '4px 6px' }}>
-                                  <input 
-                                    type="text"
-                                    value={item.unitPrice}
-                                    placeholder="단가"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const next = activeItems.map((it, i) => i === idx ? { ...it, unitPrice: val } : it);
-                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
-                                      saveToStorage(updated);
-                                    }}
-                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '4px 6px' }}>
-                                  <input 
-                                    type="text"
-                                    value={item.amount}
-                                    placeholder="금액"
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      const next = activeItems.map((it, i) => i === idx ? { ...it, amount: val } : it);
-                                      const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
-                                      saveToStorage(updated);
-                                    }}
-                                    style={{ width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', fontSize: '11.5px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '4px 6px', textAlign: 'center' }}>
-                                  {activeItems.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const next = activeItems.filter((_, i) => i !== idx);
-                                        const updated = importRequests.map(r => r.id === id ? { ...r, piItems: next } : r);
-                                        saveToStorage(updated);
-                                      }}
-                                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', padding: 0 }}
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ));
-                          })()}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. 운송비 견적 받은 내역 (쉽다 거래명세서 등) */}
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#b45309', borderBottom: '1px solid #e2e8f0', paddingBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>📊 운송 대행 견적서 및 거래명세서</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>PDF 필수 유첨</span>
-                  </div>
-
-                  {/* PDF 업로드/보기 영역 */}
-                  <div style={{ background: '#fff', border: '1px dashed #cbd5e1', padding: '12px', borderRadius: '6px', textAlign: 'center' }}>
-                    {request.freightInvoiceFile ? (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span 
-                          onClick={() => previewFile(request.freightInvoiceFile!.url, request.freightInvoiceFile!.name)} 
-                          style={{ fontSize: '12.5px', fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          📎 {request.freightInvoiceFile.name} (미리보기)
-                        </span>
-                        <button 
-                          onClick={() => handleFileDelete('freightInvoice')} 
-                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 700 }}
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'relative', cursor: 'pointer', fontSize: '12.5px', color: '#64748b', padding: '8px 0' }}>
-                        {uploading === 'freightInvoice' ? '⏳ 업로드 중...' : '📁 클릭하여 운송비 명세 PDF 파일 첨부'}
-                        <input 
-                          type="file" 
-                          accept=".pdf" 
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              handleFileUpload('freightInvoice', e.target.files[0]);
-                            }
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
-                        />
-                      </div>
+                    
+                    {/* 합계 요약행 */}
+                    {request.piItems && request.piItems.length > 0 && (
+                      <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
+                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'center', color: '#334155' }}>\uD569\uACC4 (Total Summary)</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0).toLocaleString()}
+                        </td>
+                        <td colSpan={3} style={{ padding: '8px 12px', textAlign: 'right', color: '#0f766e' }}>
+                          ${request.piItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'center', color: '#64748b' }}>NOS of PLT/PKG</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toFixed(2)} CBM
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0).toLocaleString()} kg
+                        </td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#334155' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0).toLocaleString()} kg
+                        </td>
+                      </tr>
                     )}
-                  </div>
-
-                  {/* 쉽다 등 운송 메타 기입 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>의뢰/송장번호</span>
-                      <input 
-                        type="text" 
-                        value={request.id || ''} 
-                        disabled
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#f1f5f9', color: '#64748b' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#475569', width: '90px', fontWeight: 600 }}>청구 운임총액</span>
-                      <input 
-                        type="text" 
-                        value={request.freightInvoiceAmount || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          const updated = importRequests.map(r => r.id === id ? { ...r, freightInvoiceAmount: val } : r);
-                          saveToStorage(updated);
-                        }}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none' }}
-                        placeholder="예: ₩720,049"
-                      />
-                    </div>
-                  </div>
-                </div>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === '서류' && (
+        {activeTab === '\uC11C\uB958' && (
           <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>유첨 서류 업로드 및 관리</h3>
-            
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>\uC11C\uB958 \uC5C5\uB85C\uB4DC \uBC0F \uAD00\uB9AC</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
-              {/* 필수 첨부 */}
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>필수 첨부 서류</div>
+                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>\uD544\uC218 \uCCA8\uBDB0 \uC11C\uB958</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  
-                  {/* CI / PL */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>C/I & P/L</label>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>C/I &amp; P/L</label>
                     {documents.ciPl ? (
                       <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.ciPl.url, documents.ciPl.name)}>
-                          📄 {documents.ciPl.name} (🔍 미리보기)
+                          {documents.ciPl.name}
                         </span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleFileDelete('ciPl')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
-                        </div>
+                        <button onClick={() => handleFileDelete('ciPl')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>\uC0AD\uC81C</button>
                       </div>
                     ) : (
-                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                        {uploading === 'ciPl' ? '⏳ 업로드 중...' : '📁 클릭하여 C/I & P/L 파일 업로드'}
-                        <input
-                          type="file"
-                          disabled={uploading !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('ciPl', file);
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                        />
+                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff' }}>
+                        {uploading === 'ciPl' ? '...' : '\uD0B4\uB9AD\uD558\uC5EC \uD30C\uC77C \uCCA8\uBDB0'}
+                        <input type="file" onChange={e => e.target.files?.[0] && handleFileUpload('ciPl', e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                       </div>
                     )}
                   </div>
-
-                  {/* 사업자등록증 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>사업자등록증 *</label>
-                    {documents.bizReg ? (
-                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.bizReg.url, documents.bizReg.name)}>
-                          📄 {documents.bizReg.name} (🔍 미리보기)
-                        </span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleFileDelete('bizReg')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                        {uploading === 'bizReg' ? '⏳ 업로드 중...' : '📁 클릭하여 사업자등록증 파일 업로드'}
-                        <input
-                          type="file"
-                          disabled={uploading !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('bizReg', file);
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              </div>
-
-              {/* 선택 첨부 */}
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>선택 첨부 서류</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  
-                  {/* CO 원산지증명서 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>CO (원산지증명서)</label>
-                    {documents.co ? (
-                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.co.url, documents.co.name)}>
-                          📄 {documents.co.name} (🔍 미리보기)
-                        </span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleFileDelete('co')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                        {uploading === 'co' ? '⏳ 업로드 중...' : '📁 클릭하여 CO 파일 업로드'}
-                        <input
-                          type="file"
-                          disabled={uploading !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('co', file);
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 기타 서류 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>기타 서류</label>
-                    {documents.etc ? (
-                      <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.etc.url, documents.etc.name)}>
-                          📄 {documents.etc.name} (🔍 미리보기)
-                        </span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleFileDelete('etc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ position: 'relative', border: '1px dashed #cbd5e1', padding: '14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: '#64748b', background: '#fff', cursor: 'pointer' }}>
-                        {uploading === 'etc' ? '⏳ 업로드 중...' : '📁 클릭하여 기타 서류 파일 업로드'}
-                        <input
-                          type="file"
-                          disabled={uploading !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload('etc', file);
-                          }}
-                          style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
                 </div>
               </div>
             </div>
-
-            {/* 관련 기관 발급 문서 */}
-            <div style={{ background: '#f1f5f9', padding: '16px', borderRadius: '8px' }}>
-              <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#475569', marginBottom: '10px' }}>관련 기관 발급 문서</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>수입신고필증</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginTop: '4px' }}>미발급</div>
-                </div>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>수입세금계산서</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginTop: '4px' }}>미발행</div>
-                </div>
-                <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontSize: '11px', color: '#64748b' }}>BL(AWB) 원본</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginTop: '4px' }}>미발행</div>
-                </div>
-              </div>
-            </div>
-
           </div>
         )}
 
-        {activeTab === '정산' && (
+        {activeTab === '\uC815\uC0B0' && (
           <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>정산 및 견적 내역</h3>
-            
-            {/* 견적 정보 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>확정 견적 금액</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f766e', marginTop: '4px' }}>
-                  ₩{request.amount.toLocaleString()}
-                </div>
-              </div>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>제출 견적서 파일</div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, marginTop: '4px' }}>견적서_Fiberglass.pdf</div>
-                </div>
-                <button style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}>
-                  📥 다운로드
-                </button>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', borderBottom: '2px solid #f1f5f9', paddingBottom: '6px', marginBottom: '14px' }}>\uC815\uC0B0 \uB0B4\uC5ED</h3>
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '20px' }}>
+              <div style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>\uD655\uC815 \uACAC\uC801 \uAE08\uC561</div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f766e', marginTop: '4px' }}>
+                ₩{request.amount.toLocaleString()}
               </div>
             </div>
-
-            {/* 정산 테이블 */}
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '36px', textAlign: 'left' }}>
-                    <th style={{ padding: '8px 12px' }}>번호</th>
-                    <th style={{ padding: '8px 12px' }}>거래명세서</th>
-                    <th style={{ padding: '8px 12px' }}>적용환율</th>
-                    <th style={{ padding: '8px 12px' }}>청구금액</th>
-                    <th style={{ padding: '8px 12px' }}>입금금액</th>
-                    <th style={{ padding: '8px 12px' }}>입금여부</th>
-                    <th style={{ padding: '8px 12px' }}>세금계산서</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ height: '40px', borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '8px 12px' }}>1</td>
-                    <td style={{ padding: '8px 12px' }}>미발행</td>
-                    <td style={{ padding: '8px 12px' }}>-</td>
-                    <td style={{ padding: '8px 12px' }}>-</td>
-                    <td style={{ padding: '8px 12px' }}>-</td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
-                        임금 미완료
-                      </span>
-                    </td>
-                    <td style={{ padding: '8px 12px' }}>미발행</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
           </div>
         )}
 
       </div>
-
     </div>
   );
 };
+export default ImportDetail;
