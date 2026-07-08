@@ -243,7 +243,10 @@ export const Imports: React.FC = () => {
     }
     if (!computedItemName) computedItemName = '미지정 품목';
 
-    const itemsList = newRequest.piItems || [];
+    const itemsList = (newRequest.piItems || []).map(it => ({
+      ...it,
+      amount: String(((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)).toFixed(2))
+    }));
     const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
     const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
@@ -325,7 +328,10 @@ export const Imports: React.FC = () => {
     }
     if (!computedItemName) computedItemName = '미지정 품목';
 
-    const itemsList = editingRequest.piItems || [];
+    const itemsList = (editingRequest.piItems || []).map(it => ({
+      ...it,
+      amount: String(((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)).toFixed(2))
+    }));
     const totalCbm = itemsList.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
     const totalWeight = itemsList.reduce((sum, it) => sum + (Number(it.weight) || 0), 0);
     const totalQty = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
@@ -838,16 +844,13 @@ export const Imports: React.FC = () => {
                           <td style={{ padding: '4px' }}>
                             <input 
                               type="text" 
-                              value={item.amount} 
-                              onChange={e => {
-                                const val = e.target.value;
-                                setNewRequest(p => {
-                                  const next = [...(p.piItems || [])];
-                                  next[idx] = { ...next[idx], amount: val };
-                                  return { ...p, piItems: next };
-                                });
-                              }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              readOnly
+                              value={
+                                ((Number(item.qty) || 0) * (Number(item.unitPrice) || 0))
+                                  ? String(((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toFixed(2))
+                                  : ''
+                              } 
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1304,17 +1307,13 @@ export const Imports: React.FC = () => {
                           <td style={{ padding: '4px' }}>
                             <input 
                               type="text" 
-                              value={item.amount} 
-                              onChange={e => {
-                                const val = e.target.value;
-                                setEditingRequest(p => {
-                                  if (!p) return null;
-                                  const next = [...(p.piItems || [])];
-                                  next[idx] = { ...next[idx], amount: val };
-                                  return { ...p, piItems: next };
-                                });
-                              }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              readOnly
+                              value={
+                                ((Number(item.qty) || 0) * (Number(item.unitPrice) || 0))
+                                  ? String(((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toFixed(2))
+                                  : ''
+                              } 
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
