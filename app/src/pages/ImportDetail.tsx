@@ -476,13 +476,13 @@ export const ImportDetail: React.FC = () => {
                         </tbody>
                       </table>
 
-                      <div class="signature-section" style="position: relative;">
+                      <div class="signature-section" style="position: relative; margin-top: 100px;">
                         <div class="signature-box">For Seller</div>
                         <div class="signature-box" style="position: relative;">
                           <img 
                             src="${ysaccStampImg}" 
                             alt="Stamp" 
-                            style="position: absolute; left: 50%; transform: translateX(-50%); top: -45px; width: 110px; height: auto; object-fit: contain; pointer-events: none;"
+                            style="position: absolute; left: 50%; transform: translateX(-50%); top: -65px; width: 145px; height: auto; object-fit: contain; pointer-events: none;"
                           />
                           For Buyer
                         </div>
@@ -1054,13 +1054,13 @@ export const ImportDetail: React.FC = () => {
               </tbody>
             </table>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '40px', paddingBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '80px', paddingBottom: '20px' }}>
               <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold' }}>Seller Signature</div>
               <div style={{ borderTop: '1px solid #94a3b8', width: '160px', textAlign: 'center', paddingTop: '6px', fontSize: '11px', fontWeight: 'bold', position: 'relative' }}>
                 <img 
                   src={ysaccStampImg} 
                   alt="Stamp" 
-                  style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '-45px', width: '100px', height: 'auto', objectFit: 'contain', pointerEvents: 'none' }}
+                  style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: '-55px', width: '135px', height: 'auto', objectFit: 'contain', pointerEvents: 'none' }}
                 />
                 Buyer Signature
               </div>
