@@ -2038,7 +2038,6 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     title="고객 검색">🔍</button>
                 </div>
               </div>
-              <CompactInput label="주소" value={formData.customerAddress || ''} disabled />
               <CompactInput label="담당" value={formData.contactPerson || ''} onChange={(v: any) => setFormData(prev => ({...prev, contactPerson: v}))} />
               <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
               <CompactComboSelect label="Dest. Port ★" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
