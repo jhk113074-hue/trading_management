@@ -555,11 +555,10 @@ export const Mails: React.FC = () => {
       {/* Header with Compose Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 850, color: 'var(--primary-color)', margin: 0 }}>✉️ 사내 메일 및 알림</h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>동료 직원들과 쪽지를 주고받고, 시스템 업무 알림을 일괄 모니터링하는 소통 창구입니다.</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>✉️ 사내 메일 및 알림</h2>
+          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '6px 0 0 0' }}>동료 직원들과 쪽지를 주고받고, 시스템 업무 알림을 일괄 모니터링하는 소통 창구입니다.</p>
         </div>
         <button
-          className="btn btn-primary"
           onClick={() => {
             setAttachments([]);
             setTitle('');
@@ -569,24 +568,41 @@ export const Mails: React.FC = () => {
             setScheduledAt('');
             setIsComposeModalOpen(true);
           }}
+          style={{
+            background: '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '0 16px',
+            height: '34px',
+            fontSize: '12.5px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            boxSizing: 'border-box'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
         >
           ✍️ 새 쪽지 보내기
         </button>
       </div>
 
       {/* Navigation Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', gap: '8px' }}>
         <button
           onClick={() => { setActiveTab('inbox'); setSelectedMail(null); }}
           style={{
             padding: '10px 16px',
             border: 'none',
             background: 'none',
-            fontSize: '13.5px',
-            fontWeight: 800,
+            fontSize: '13px',
+            fontWeight: 700,
             cursor: 'pointer',
-            color: activeTab === 'inbox' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: activeTab === 'inbox' ? '2.5px solid var(--primary-color)' : 'none'
+            color: activeTab === 'inbox' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'inbox' ? '2.5px solid #3b82f6' : 'none'
           }}
         >
           📥 받은 쪽지함 ({inboxMails.filter(m => !m.isRead).length} 안읽음 / {inboxMails.length} 전체)
@@ -597,11 +613,11 @@ export const Mails: React.FC = () => {
             padding: '10px 16px',
             border: 'none',
             background: 'none',
-            fontSize: '13.5px',
-            fontWeight: 800,
+            fontSize: '13px',
+            fontWeight: 700,
             cursor: 'pointer',
-            color: activeTab === 'sent' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: activeTab === 'sent' ? '2.5px solid var(--primary-color)' : 'none'
+            color: activeTab === 'sent' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'sent' ? '2.5px solid #3b82f6' : 'none'
           }}
         >
           📤 보낸 쪽지함 ({sentMails.length})
@@ -612,20 +628,20 @@ export const Mails: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: selectedMail ? '1.2fr 1.8fr' : '1fr', gap: '20px', minHeight: '400px' }}>
         
         {/* Mails Table Panel */}
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', height: 'fit-content' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', height: 'fit-content' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                <th style={{ padding: '12px', width: '140px' }}>{activeTab === 'inbox' ? '보낸 사람' : '받는 사람'}</th>
-                <th style={{ padding: '12px' }}>쪽지 제목</th>
-                <th style={{ padding: '12px' }}>발송 일시</th>
-                <th style={{ padding: '12px', textAlign: 'center' }}>상태</th>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontWeight: 700 }}>
+                <th style={{ padding: '12px', width: '140px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{activeTab === 'inbox' ? '보낸 사람' : '받는 사람'}</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>쪽지 제목</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발송 일시</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
               </tr>
             </thead>
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
                     주고받은 쪽지가 존재하지 않습니다.
                   </td>
                 </tr>
