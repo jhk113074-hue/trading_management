@@ -129,6 +129,10 @@ export const Orders: React.FC = () => {
   // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, ETD, ETA, 단계, 다음단계]
   const { thStyle, resizerProps, colWidths } = useColumnResize([110, 150, 100, 240, 120, 100, 100, 280, 260]);
 
+  // 오름차순/내림차순 정렬 상태
+  const [sortKey, setSortKey] = useState<'날짜' | '주문번호' | '수주사' | '발주사' | '발주액' | 'ETD' | 'ETA' | '단계' | '다음단계' | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
+
   // 뷰 모드: 'list' | 'kanban' | 'todo'
   const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'todo'>('list');
 
@@ -377,14 +381,62 @@ export const Orders: React.FC = () => {
         return true;
       });
     }
-    result.sort((a, b) => {
-      const etdA = a.etd || "";
-      const etdB = b.etd || "";
-      if (etdA !== etdB) return etdB.localeCompare(etdA); // 최신 ETD 우선
-      return b.id.localeCompare(a.id);
-    });
+    if (sortKey && sortOrder) {
+      result.sort((a, b) => {
+        let valA: any = '';
+        let valB: any = '';
+
+        if (sortKey === '날짜') {
+          valA = a.poDate || a.createdAt || '';
+          valB = b.poDate || b.createdAt || '';
+        } else if (sortKey === '주문번호') {
+          valA = a.ciNumber || a.id || '';
+          valB = b.ciNumber || b.id || '';
+        } else if (sortKey === '수주사') {
+          valA = a.issuingCompany || '';
+          valB = b.issuingCompany || '';
+        } else if (sortKey === '발주사') {
+          valA = a.customer || '';
+          valB = b.customer || '';
+        } else if (sortKey === '발주액') {
+          const piA = quotations.find(q => q.id === a.quotationId);
+          const piB = quotations.find(q => q.id === b.quotationId);
+          valA = a.totalAmount || piA?.totalUsd || 0;
+          valB = b.totalAmount || piB?.totalUsd || 0;
+        } else if (sortKey === 'ETD') {
+          valA = a.etd || '';
+          valB = b.etd || '';
+        } else if (sortKey === 'ETA') {
+          valA = a.eta || '';
+          valB = b.eta || '';
+        } else if (sortKey === '단계') {
+          valA = getOverallProgress(a).pct;
+          valB = getOverallProgress(b).pct;
+        } else if (sortKey === '다음단계') {
+          valA = a.nextAction.text || '';
+          valB = b.nextAction.text || '';
+        }
+
+        if (typeof valA === 'string' && typeof valB === 'string') {
+          return sortOrder === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
+        } else {
+          return sortOrder === 'asc' 
+            ? (valA > valB ? 1 : -1) 
+            : (valA < valB ? 1 : -1);
+        }
+      });
+    } else {
+      result.sort((a, b) => {
+        const etdA = a.etd || "";
+        const etdB = b.etd || "";
+        if (etdA !== etdB) return etdB.localeCompare(etdA); // 최신 ETD 우선
+        return b.id.localeCompare(a.id);
+      });
+    }
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd]);
+  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, dateFilterType, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
 
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
@@ -773,47 +825,73 @@ export const Orders: React.FC = () => {
   };
 
   // ── 목록 뷰 (기존) ────────────────────────────────────────────────────────
-  const ListView = () => (
-    <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
-      {loading ? (
-        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>주문 정보를 로딩 중입니다...</div>
-      ) : processedOrders.length === 0 ? (
-        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 주문 정보가 없습니다.</div>
-      ) : (
-        <>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
-              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
-                <tr>
-                  {['날짜','주문번호','수주사','발주사','발주액','ETD','ETA','단계','다음단계'].map((h, hIdx) => (
-                    <th 
-                      key={h} 
-                      style={thStyle(hIdx, { 
-                        padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
-                        fontWeight: 700, 
-                        color: 'var(--text-secondary)', 
-                        fontSize: '14.5px', 
-                        letterSpacing: '0.05em', 
-                        textAlign: 'center', 
-                        whiteSpace: 'nowrap'
-                      })}
-                    >
-                      {h === '단계' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '14.5px', fontWeight: 700 }}>단계</span>
-                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                            {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
-                              <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
-                            ))}
+  const ListView = () => {
+    const handleSort = (key: any) => {
+      const actualKey = key === '단계' ? '단계' : key;
+      if (sortKey !== actualKey) {
+        setSortKey(actualKey);
+        setSortOrder('asc');
+      } else if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortKey(null);
+        setSortOrder(null);
+      }
+    };
+
+    const renderSortIcon = (h: string) => {
+      if (sortKey !== h) return ' ⇅';
+      return sortOrder === 'asc' ? ' ▲' : ' ▼';
+    };
+
+    return (
+      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>주문 정보를 로딩 중입니다...</div>
+        ) : processedOrders.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 주문 정보가 없습니다.</div>
+        ) : (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
+                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
+                  <tr>
+                    {['날짜','주문번호','수주사','발주사','발주액','ETD','ETA','단계','다음단계'].map((h, hIdx) => (
+                      <th 
+                        key={h} 
+                        onClick={() => handleSort(h)}
+                        style={thStyle(hIdx, { 
+                          padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
+                          fontWeight: 700, 
+                          color: sortKey === h ? '#2563eb' : 'var(--text-secondary)', 
+                          fontSize: '14.5px', 
+                          letterSpacing: '0.05em', 
+                          textAlign: 'center', 
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          background: sortKey === h ? '#eff6ff' : 'transparent',
+                          transition: 'background-color 0.2s'
+                        })}
+                      >
+                        {h === '단계' ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '14.5px', fontWeight: 700 }}>단계{renderSortIcon(h)}</span>
+                            <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                              {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
+                                <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ) : h}
-                      {/* 드래그 핸들러 */}
-                      <div {...resizerProps(hIdx)} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
+                        ) : (
+                          <span>{h}{renderSortIcon(h)}</span>
+                        )}
+                        {/* 드래그 핸들러 */}
+                        <div {...resizerProps(hIdx)} onClick={(e) => e.stopPropagation()} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
               <tbody>
                 {processedOrders.map(order => {
                   const pi = quotations.find(q => q.id === order.quotationId);
@@ -956,6 +1034,7 @@ export const Orders: React.FC = () => {
       )}
     </div>
   );
+};
 
   // ── 메인 렌더링 ───────────────────────────────────────────────────────────
   return (
