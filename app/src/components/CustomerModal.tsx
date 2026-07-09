@@ -476,32 +476,32 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
 
             {/* SECTION 3: 다중 담당자 입체 관리 */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-                <span style={{ color: '#7e22ce' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
+            <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
+                <span style={{ color: '#3b82f6' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
               </div>
 
               {/* 인라인 등록 폼 */}
-              <div style={{ display: 'flex', gap: '6px', background: '#faf5ff', padding: '8px 10px', borderRadius: '5px', border: '1px solid #f3e8ff', marginBottom: '8px', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '6px', background: '#f8fafc', padding: '8px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '8px', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
-                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>담당자명 *</label>
+                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
-                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>직책/부서</label>
+                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
-                  <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>연락처 (Mobile)</label>
+                  <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
-                  <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>이메일 주소</label>
+                  <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
-                  <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>비고 (역할 등)</label>
+                  <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 {editingContactId ? (
                   <div style={{ display: 'flex', gap: '4px' }}>
@@ -523,7 +523,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         setEditingContactId(null);
                         setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                       }}
-                      style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                      style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
                     >
                       수정완료
                     </button>
@@ -533,7 +533,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         setEditingContactId(null);
                         setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                       }}
-                      style={{ background: 'var(--text-secondary)', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                      style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', padding: '5px 10px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
                     >
                       취소
                     </button>
@@ -558,7 +558,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                       }));
                       setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                     }}
-                    style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', height: '26px' }}
                   >
                     + 추가
                   </button>

@@ -912,11 +912,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
               <>
 
                 {/* ─── 제조사 섹션 ─── */}
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15px' }}>🏭</span>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#15803d', margin: 0 }}>제조사 (Manufacturer)</h4>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#15803d', background: sameAsSupplier ? '#dcfce7' : '#fff', padding: '3px 10px', borderRadius: '20px', border: '1px solid #86efac' }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', margin: 0 }}>제조사 (Manufacturer)</h4>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', background: sameAsSupplier ? '#e2e8f0' : '#fff', padding: '3px 10px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
                       <input
                         type="checkbox"
                         checked={sameAsSupplier}
@@ -936,27 +936,27 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                             setManufacturerInput(supplierInput);
                           }
                         }}
-                        style={{ width: '14px', height: '14px', accentColor: '#16a34a', cursor: 'pointer' }}
+                        style={{ width: '14px', height: '14px', accentColor: '#3b82f6', cursor: 'pointer' }}
                       />
                       공급업체와 동일
                     </label>
-                    <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>생산 공장 · 원산지 제조처</span>
+                    <span style={{ fontSize: '11px', color: '#64748b', marginLeft: 'auto' }}>생산 공장 · 원산지 제조처</span>
                   </div>
 
                   {sameAsSupplier ? (
                     /* 동일 체크 시: 간단 배지로 표시 */
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
                       <span style={{ fontSize: '16px' }}>✅</span>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>{formData.manufacturerName || '(공급사 선택 후 자동 반영)'}</div>
-                        <div style={{ fontSize: '11px', color: '#4ade80' }}>공급사와 동일한 업체로 설정됨 · 코드: {formData.manufacturerCode || '-'}</div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>{formData.manufacturerName || '(공급사 선택 후 자동 반영)'}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>공급사와 동일한 업체로 설정됨 · 코드: {formData.manufacturerCode || '-'}</div>
                       </div>
                     </div>
                   ) : (
                     <>
                       {/* 제조사 선택 */}
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '5px' }}>제조사 선택 (DB 연동)</label>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', display: 'block', marginBottom: '5px' }}>제조사 선택 (DB 연동)</label>
                         <input
                           type="text"
                           list="manufacturers_datalist"
@@ -989,7 +989,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               }));
                             }
                           }}
-                          style={{ width: '100%', padding: '9px 11px', border: '1px solid #bbf7d0', borderRadius: '6px', fontSize: '13px', background: '#fff', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '0 11px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                         />
                         <datalist id="manufacturers_datalist">
                           {suppliers.map(s => (
@@ -1002,26 +1002,26 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
                       {/* 선택된 제조사 정보 요약 */}
                       {formData.manufacturerName ? (
-                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                        <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                           <div>
-                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>업체코드</div>
-                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#15803d' }}>{formData.manufacturerCode}</div>
+                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>업체코드</div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#cbd5e1' }}>{formData.manufacturerCode}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>담당자</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{formData.manufacturerContact || '-'}</div>
+                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>담당자</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b' }}>{formData.manufacturerContact || '-'}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>이메일</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerEmail || '-'}</div>
+                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>이메일</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerEmail || '-'}</div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>주소</div>
-                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerAddress || '-'}</div>
+                            <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>주소</div>
+                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerAddress || '-'}</div>
                           </div>
                         </div>
                       ) : (
-                        <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: '#f8fafc', borderRadius: '6px' }}>
+                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8fafc', borderRadius: '4px' }}>
                           제조사를 선택하면 상세 정보가 표시됩니다
                         </div>
                       )}
@@ -1030,24 +1030,24 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 </div>
 
                 {/* ─── 공급 유통망 지정 섹션 ─── */}
-                <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '10px', padding: '16px', marginTop: '14px' }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px', marginTop: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                     <span style={{ fontSize: '15px' }}>🔗</span>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#7e22ce', margin: 0 }}>거래 유통사 지정</h4>
-                    <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: 'auto' }}>거래 가능한 파트너 유통업체 지정</span>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', margin: 0 }}>거래 유통사 지정</h4>
+                    <span style={{ fontSize: '11px', color: '#64748b', marginLeft: 'auto' }}>거래 가능한 파트너 유통업체 지정</span>
                   </div>
 
                   {/* 신규 유통사 정보 등록 폼 */}
-                  <div style={{ background: '#fff', border: '1px solid #f3e8ff', borderRadius: '8px', padding: '12px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '12px', marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280' }}>유통사 선택</label>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>유통사 선택</label>
                       <input
                         type="text"
                         list="multi_suppliers_datalist"
                         value={selSupplierVal}
                         placeholder="유통사 검색 및 입력"
                         onChange={e => setSelSupplierVal(e.target.value)}
-                        style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '12px' }}
+                        style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                       />
                       <datalist id="multi_suppliers_datalist">
                         {suppliers.map(s => (
@@ -1089,17 +1089,19 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         // 입력 폼 클리어
                         setSelSupplierVal('');
                       }}
-                      style={{ background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '6px', padding: '9px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', height: '36px', marginTop: '16px' }}
+                      style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', padding: '0 16px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', height: '34px', marginTop: '18px', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
                     >
                       ➕ 유통사 추가
                     </button>
                   </div>
 
                   {/* 등록된 유통사 목록 테이블 */}
-                  <div style={{ border: '1px solid #e9d5ff', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ background: '#f5f3ff', borderBottom: '1px solid #e9d5ff', color: '#6b21a8', fontWeight: 700 }}>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontWeight: 750 }}>
                           <th style={{ padding: '8px', width: '60px' }}>기본</th>
                           <th style={{ padding: '8px' }}>유통사명 (코드)</th>
                           <th style={{ padding: '8px', textAlign: 'center', width: '80px' }}>삭제</th>
@@ -1108,11 +1110,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <tbody>
                         {(!formData.suppliers || formData.suppliers.length === 0) ? (
                           <tr>
-                            <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 거래 유통사가 없습니다. 상단에서 유통사를 검색해 추가해 주세요.</td>
+                            <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>등록된 거래 유통사가 없습니다. 상단에서 유통사를 검색해 추가해 주세요.</td>
                           </tr>
                         ) : (
                           formData.suppliers.map((sup, idx) => (
-                            <tr key={sup.supplierCode} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                            <tr key={sup.supplierCode} style={{ borderBottom: '1px solid #cbd5e1' }}>
                               <td style={{ padding: '8px' }}>
                                 <input
                                   type="radio"
@@ -1127,7 +1129,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       }))
                                     }));
                                   }}
-                                  style={{ cursor: 'pointer' }}
+                                  style={{ cursor: 'pointer', accentColor: '#3b82f6' }}
                                 />
                               </td>
                               <td style={{ padding: '8px', fontWeight: 600 }}>
