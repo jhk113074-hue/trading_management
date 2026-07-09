@@ -2973,20 +2973,24 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
         </div>
         {isEditing && (
           <div
+            tabIndex={0}
             style={{
               background: '#ffffff',
-              border: '1px dashed var(--border-default)',
-              padding: '6px 10px',
+              border: '1.5px dashed #cbd5e1',
+              padding: '12px 10px',
               borderRadius: '6px',
               textAlign: 'center',
               cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
+              outline: 'none',
             }}
-            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
-            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#ffffff'; }}
+            onFocus={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#f8fafc'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.background = '#eff6ff'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
             onDrop={e => {
               e.preventDefault();
-              e.currentTarget.style.borderColor = 'var(--border-default)';
+              e.currentTarget.style.borderColor = '#cbd5e1';
               e.currentTarget.style.background = '#ffffff';
               if (uploadingField !== null) return;
               if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -2996,12 +3000,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
             }}
             onPaste={async e => {
               const clipboardItems = e.clipboardData.items;
+              const filesToUpload: File[] = [];
               for (let i = 0; i < clipboardItems.length; i++) {
                 if (clipboardItems[i].type.indexOf('image') !== -1) {
                   const file = clipboardItems[i].getAsFile();
                   if (file) {
                     e.preventDefault();
-                    // Generate a file name with custom timestamp to identify pasted screenshots
                     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
                     const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
                     const renamedFile = new File(
@@ -3009,10 +3013,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       `screenshot_${dateStr}_${timeStr}.png`,
                       { type: file.type }
                     );
-                    const fakeEvent = { target: { files: [renamedFile] } } as any;
-                    handleDocUpload(fakeEvent, fieldName);
+                    filesToUpload.push(renamedFile);
                   }
                 }
+              }
+              if (filesToUpload.length > 0) {
+                const fakeEvent = { target: { files: filesToUpload } } as any;
+                handleDocUpload(fakeEvent, fieldName);
               }
             }}
             onClick={() => {
@@ -3021,8 +3028,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               }
             }}
           >
-            <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              {uploadingField === fieldName ? '⏳ 업로드 중...' : '📥 클릭 혹은 업로드할 파일 드래그'}
+            <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {uploadingField === fieldName ? '⏳ 업로드 중...' : '📥 클릭, 드래그&드롭 혹은 화면캡처 붙여넣기(Ctrl+V)'}
             </span>
             <input
               type="file"
