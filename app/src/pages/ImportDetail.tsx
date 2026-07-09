@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
-import { storage, db } from '../firebase';
+import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { previewFile } from '../components/FilePreviewModal';
 
 import ysaccLetterImg from '../assets/ysacc_letterhead.png';
@@ -50,19 +50,37 @@ export const ImportDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [importRequests, setImportRequests] = useState<ImportRequest[]>(() => {
-    const saved = localStorage.getItem('import_requests');
-    return saved ? JSON.parse(saved) : INITIAL_IMPORTS;
-  });
+  const [importRequests, setImportRequests] = useState<ImportRequest[]>(INITIAL_IMPORTS);
+
+  useEffect(() => {
+    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
+    const unsubscribe = onSnapshot(importsRef, (snap) => {
+      if (snap.empty) {
+        setImportRequests(INITIAL_IMPORTS);
+      } else {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ImportRequest));
+        setImportRequests(list);
+      }
+    }, (error) => {
+      console.error('Failed to sync imports from Firestore:', error);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const saveToStorage = (updatedList: ImportRequest[]) => {
-    localStorage.setItem('import_requests', JSON.stringify(updatedList));
-    setImportRequests(updatedList);
+    setImportRequests(updatedList); // 낙관적 업데이트 (Firestore onSnapshot이 곧 확정값으로 재동기화)
+    const updatedRecord = updatedList.find(r => r.id === id);
+    if (updatedRecord) {
+      const { id: recId, ...rest } = updatedRecord;
+      setDoc(doc(db, 'companies', COMPANY_ID, 'imports', recId), rest, { merge: true }).catch(err => {
+        console.error('Failed to save import doc:', err);
+      });
+    }
   };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
-  const [activeTab, setActiveTab] = useState<'수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입내역');
+  const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입요청');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
@@ -116,12 +134,15 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>(() => {
-    const saved = localStorage.getItem(`import_docs_${id}`);
-    return saved ? JSON.parse(saved) : {
-      bizReg: { name: 'bizReg_YSACC.pdf', url: '#' }
-    };
+  const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>({
+    bizReg: { name: 'bizReg_YSACC.pdf', url: '#' }
   });
+
+  // Firestore에서 불러온 request.documents 로 동기화 (구 localStorage 이관 완료 후 단일 소스로 사용)
+  useEffect(() => {
+    const docs = (request as any)?.documents;
+    if (docs) setDocuments(docs);
+  }, [request?.id, JSON.stringify((request as any)?.documents)]);
 
   const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc', file: File) => {
     if (!file) return;
@@ -149,7 +170,8 @@ export const ImportDetail: React.FC = () => {
           [key]: { name: file.name, url: downloadUrl }
         };
         setDocuments(nextDocs);
-        localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+        const updatedList = importRequests.map(r => r.id === id ? ({ ...r, documents: nextDocs } as ImportRequest) : r);
+        saveToStorage(updatedList);
       }
       alert(`${file.name} 업로드가 완료되었습니다.`);
     } catch (e) {
@@ -178,7 +200,8 @@ export const ImportDetail: React.FC = () => {
         const nextDocs = { ...documents };
         delete nextDocs[key as any];
         setDocuments(nextDocs);
-        localStorage.setItem(`import_docs_${id}`, JSON.stringify(nextDocs));
+        const updatedList = importRequests.map(r => r.id === id ? ({ ...r, documents: nextDocs } as ImportRequest) : r);
+        saveToStorage(updatedList);
       }
     }
   };
@@ -257,10 +280,12 @@ export const ImportDetail: React.FC = () => {
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '24px', borderBottom: '2px solid var(--border-color)', marginBottom: '24px' }}>
           {([
-            { key: '수입내역', label: '수입내역' },
-            { key: '운송사/관세사 선정', label: '운송사/관세사 선정' },
+            { key: '수입요청', label: '① 수입요청' },
+            { key: '견적/원가', label: '② 견적/원가' },
+            { key: '수입내역', label: '③ 발주/매입' },
+            { key: '운송사/관세사 선정', label: '④ 물류/통관' },
             { key: '서류', label: '서류' },
-            { key: '정산', label: '정산' },
+            { key: '정산', label: '⑤ 정산/완료' },
             { key: '로그', label: '로그' }
           ] as const).map(tab => (
             <button
@@ -285,6 +310,220 @@ export const ImportDetail: React.FC = () => {
         </div>
 
         {/* Tab Contents */}
+        {activeTab === '수입요청' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              📥 ① 수입요청 접수 정보
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>요청 접수일</label>
+                  <input
+                    type="date"
+                    value={request.requestDate || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestDate: e.target.value } : r))}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 담당자</label>
+                  <input
+                    type="text"
+                    value={request.requestedBy || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestedBy: e.target.value } : r))}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    placeholder="예: 홍길동 과장"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>최종 고객사</label>
+                  <input
+                    type="text"
+                    value={request.finalCustomer || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, finalCustomer: e.target.value } : r))}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                  />
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>요청 상세 내용</label>
+                <textarea
+                  value={request.requestNote || ''}
+                  onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestNote: e.target.value } : r))}
+                  rows={7}
+                  placeholder="고객사로부터 접수한 수입요청 내용을 입력하세요."
+                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+            </div>
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '14px 16px', fontSize: '12.5px', color: '#1e40af' }}>
+              💡 요청 접수 후 <strong>② 견적/원가</strong> 탭에서 해외공급사 견적을 취합하고 고객사 견적/마진을 산정하세요. 고객이 진행을 결정하면 <strong>③ 발주/매입</strong> 탭에서 PO를 발행합니다.
+            </div>
+          </div>
+        )}
+
+        {activeTab === '견적/원가' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              💵 ② 해외공급사 견적 및 고객 원가/마진 산정
+            </h3>
+
+            {/* 공급사 견적 리스트 */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>해외공급사 견적 비교</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextQuotes = [...(request.supplierQuotes || []), { id: `q${Date.now()}`, supplierName: '', amount: 0, currency: 'USD', quoteDate: new Date().toISOString().slice(0, 10) }];
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
+                  }}
+                  style={{ padding: '6px 12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  + 견적 추가
+                </button>
+              </div>
+              <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                  <thead>
+                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '34px' }}>
+                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>공급사명</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'left' }}>품목</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'right', width: '140px' }}>견적금액</th>
+                      <th style={{ padding: '8px 12px', width: '90px' }}>통화</th>
+                      <th style={{ padding: '8px 12px', width: '130px' }}>견적일</th>
+                      <th style={{ padding: '8px 12px', width: '60px' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(request.supplierQuotes && request.supplierQuotes.length > 0) ? request.supplierQuotes.map((q, idx) => (
+                      <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', height: '38px' }}>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input type="text" value={q.supplierName} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], supplierName: e.target.value };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input type="text" value={q.itemName || ''} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], itemName: e.target.value };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input type="number" value={q.amount || ''} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], amount: Number(e.target.value) || 0 };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none', textAlign: 'right' }} />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <select value={q.currency || 'USD'} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], currency: e.target.value };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', padding: '5px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }}>
+                            <option value="USD">USD</option>
+                            <option value="CNY">CNY</option>
+                            <option value="KRW">KRW</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input type="date" value={q.quoteDate || ''} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], quoteDate: e.target.value };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', padding: '5px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
+                        </td>
+                        <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                          <button type="button" onClick={() => {
+                            const next = (request.supplierQuotes || []).filter((_, i) => i !== idx);
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 공급사 견적이 없습니다.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 원가 / 마진 / 고객견적 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>수입원가 산정 (KRW)</span>
+                {([
+                  ['productCost', '제품 원가'],
+                  ['freightCost', '예상 운임'],
+                  ['customsCost', '예상 관세/통관비'],
+                  ['otherCost', '기타 비용']
+                ] as const).map(([key, label]) => (
+                  <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <label style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</label>
+                    <input type="number" value={(request.costBreakdown as any)?.[key] || ''} onChange={(e) => {
+                      const nextBreakdown = { ...(request.costBreakdown || {}), [key]: Number(e.target.value) || 0 };
+                      saveToStorage(importRequests.map(r => r.id === id ? { ...r, costBreakdown: nextBreakdown } : r));
+                    }} style={{ width: '140px', padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} />
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '8px', marginTop: '4px' }}>
+                  <strong style={{ fontSize: '13px' }}>수입원가 합계</strong>
+                  <strong style={{ fontSize: '13px', color: '#0f766e' }}>
+                    {(((request.costBreakdown?.productCost || 0) + (request.costBreakdown?.freightCost || 0) + (request.costBreakdown?.customsCost || 0) + (request.costBreakdown?.otherCost || 0))).toLocaleString()} 원
+                  </strong>
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>마진 및 고객 견적</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>마진율 (%)</label>
+                  <input type="number" value={request.marginRate ?? ''} onChange={(e) => {
+                    const rate = Number(e.target.value) || 0;
+                    const totalCost = (request.costBreakdown?.productCost || 0) + (request.costBreakdown?.freightCost || 0) + (request.costBreakdown?.customsCost || 0) + (request.costBreakdown?.otherCost || 0);
+                    const marginAmount = Math.round(totalCost * (rate / 100));
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
+                  }} style={{ width: '140px', padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>마진 금액 (₩)</label>
+                  <strong style={{ fontSize: '13px', color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '8px', marginTop: '4px' }}>
+                  <strong style={{ fontSize: '13px' }}>고객 제시 견적금액</strong>
+                  <strong style={{ fontSize: '14px', color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</strong>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정</label>
+                  <select value={request.customerDecision || '검토중'} onChange={(e) => {
+                    const val = e.target.value as any;
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, customerDecision: val, customerDecisionDate: new Date().toISOString().slice(0, 10) } : r));
+                  }} style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}>
+                    <option value="검토중">검토중</option>
+                    <option value="승인">승인 (진행 결정)</option>
+                    <option value="보류">보류</option>
+                    <option value="거절">거절</option>
+                  </select>
+                  {request.customerDecisionDate && (
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>결정일: {request.customerDecisionDate}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {request.customerDecision === '승인' && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '14px 16px', fontSize: '12.5px', color: '#166534' }}>
+                ✅ 고객사가 진행을 승인했습니다. <strong>③ 발주/매입</strong> 탭에서 공급사에 PO를 발행하세요.
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === '수입내역' && (
           <div>
             {/* Section 1: 기본 정보 */}
@@ -1079,10 +1318,80 @@ export const ImportDetail: React.FC = () => {
                   />
                 </div>
               </div>
+
+              <div style={{ background: '#eff6ff', padding: '18px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a', display: 'block', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
+                  📑 4. ⑤ 고객사 정산 완료 (거래명세표 / 세금계산서 / 수금)
+                </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>거래명세표 발송일</label>
+                    <input type="date" value={request.dealStatementSentDate || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementSentDate: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객 확인일</label>
+                    <input type="date" value={request.dealStatementConfirmedDate || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementConfirmedDate: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 번호</label>
+                    <input type="text" value={request.taxInvoiceNumber || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceNumber: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} placeholder="승인번호 입력" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 발행일</label>
+                    <input type="date" value={request.taxInvoiceIssuedDate || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceIssuedDate: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>대금 수령일</label>
+                    <input type="date" value={request.paymentCollectedDate || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentCollectedDate: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>수령 금액 (₩)</label>
+                    <input type="number" value={request.paymentCollectedAmount || ''} onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentCollectedAmount: val } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="수령 금액 입력" />
+                  </div>
+                </div>
+
+                {request.paymentCollectedDate && request.paymentCollectedAmount ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = importRequests.map(r => r.id === id ? { ...r, status: '업무 종료' } : r);
+                        saveToStorage(updated);
+                        alert('대금 수령이 확인되어 업무가 종료 처리되었습니다.');
+                      }}
+                      style={{ padding: '8px 16px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: request.status === '업무 종료' ? 'default' : 'pointer' }}
+                      disabled={request.status === '업무 종료'}
+                    >
+                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 대금 수령 확인 → 업무 종료 처리'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>대금 수령일과 수령 금액을 입력하면 업무 종료 처리를 할 수 있습니다.</div>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-              <button 
+              <button
                 onClick={() => {
                   alert('정산 입력 정보가 안전하게 저장되었습니다.');
                   navigate('/imports');

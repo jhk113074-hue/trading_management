@@ -179,4 +179,45 @@ export interface ImportRequest {
   freightAmount?: number;
   freightVat?: number;
   customsTaxAmount?: number;
+
+  // 문서함 (Firestore 이관: key별 {name,url})
+  documents?: { [key: string]: { name: string; url: string; path?: string } };
+
+  // ── 1단계: 수입요청 접수 ──
+  requestDate?: string; // 고객사 수입요청 접수일
+  requestedBy?: string; // 고객사 담당자
+  requestNote?: string; // 요청 상세 내용
+
+  // ── 2단계: 견적/원가 산정 ──
+  supplierQuotes?: Array<{
+    id: string;
+    supplierId?: string;
+    supplierName: string;
+    itemName?: string;
+    amount: number;
+    currency?: string; // USD/CNY/KRW 등
+    quoteDate?: string;
+    file?: { name: string; url: string; path?: string } | null;
+    note?: string;
+  }>;
+  costBreakdown?: {
+    productCost?: number; // 제품 원가 (KRW 환산)
+    freightCost?: number; // 예상 운임
+    customsCost?: number; // 예상 관세/통관비
+    otherCost?: number; // 기타 비용
+  };
+  marginRate?: number; // 마진율 (%)
+  marginAmount?: number; // 마진 금액 (KRW)
+  customerQuoteAmount?: number; // 고객 제시 견적금액 (원가+마진)
+  customerQuoteFile?: { name: string; url: string; path?: string } | null;
+  customerDecision?: '검토중' | '승인' | '보류' | '거절';
+  customerDecisionDate?: string;
+
+  // ── 5단계: 정산/완료 (고객사 청구) ──
+  dealStatementSentDate?: string; // 거래명세표 발송일
+  dealStatementConfirmedDate?: string; // 고객 확인일
+  taxInvoiceNumber?: string; // 세금계산서 승인번호
+  taxInvoiceIssuedDate?: string; // 세금계산서 발행일
+  paymentCollectedDate?: string; // 대금 수령일
+  paymentCollectedAmount?: number; // 수령 금액
 }

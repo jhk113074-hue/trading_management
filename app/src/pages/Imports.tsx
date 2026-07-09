@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { db, COMPANY_ID } from '../firebase';
+import { collection, doc, getDocs, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
 const getSellerAbbr = (name: string): string => {
   if (!name) return 'SUP';
@@ -145,11 +145,23 @@ const INITIAL_IMPORTS: ImportRequest[] = [
 
 export const Imports: React.FC = () => {
   const navigate = useNavigate();
-  const [importRequests, setImportRequests] = useState<ImportRequest[]>(() => {
-    const saved = localStorage.getItem('import_requests');
-    return saved ? JSON.parse(saved) : INITIAL_IMPORTS;
-  });
-  
+  const [importRequests, setImportRequests] = useState<ImportRequest[]>(INITIAL_IMPORTS);
+
+  useEffect(() => {
+    const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
+    const unsubscribe = onSnapshot(importsRef, (snap) => {
+      if (snap.empty) {
+        setImportRequests(INITIAL_IMPORTS);
+      } else {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ImportRequest));
+        setImportRequests(list);
+      }
+    }, (error) => {
+      console.error('Failed to sync imports from Firestore:', error);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   
@@ -200,12 +212,30 @@ export const Imports: React.FC = () => {
     pol: '',
     pod: '',
     origin: 'CHINA',
+    requestDate: new Date().toISOString().slice(0, 10),
+    requestedBy: '',
+    requestNote: '',
     piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }]
   });
 
   const saveToStorage = (data: ImportRequest[]) => {
-    localStorage.setItem('import_requests', JSON.stringify(data));
-    setImportRequests(data);
+    const prevIds = new Set(importRequests.map(r => r.id));
+    const nextIds = new Set(data.map(r => r.id));
+    setImportRequests(data); // 낙관적 업데이트 (Firestore onSnapshot이 곧 확정값으로 재동기화)
+
+    prevIds.forEach(pid => {
+      if (!nextIds.has(pid)) {
+        deleteDoc(doc(db, 'companies', COMPANY_ID, 'imports', pid)).catch(err => {
+          console.error('Failed to delete import doc:', err);
+        });
+      }
+    });
+    data.forEach(item => {
+      const { id: itemId, ...rest } = item;
+      setDoc(doc(db, 'companies', COMPANY_ID, 'imports', itemId), rest, { merge: true }).catch(err => {
+        console.error('Failed to save import doc:', err);
+      });
+    });
   };
 
   // 모달리스 위치 및 리사이즈 상태
@@ -310,7 +340,11 @@ export const Imports: React.FC = () => {
       importerName: newRequest.importerName || '',
       finalCustomer: newRequest.finalCustomer || '',
       origin: newRequest.origin || 'CHINA',
-      
+      requestDate: newRequest.requestDate || new Date().toISOString().slice(0, 10),
+      requestedBy: newRequest.requestedBy || '',
+      requestNote: newRequest.requestNote || '',
+      customerDecision: '검토중',
+
       incoterms: newRequest.incoterms || 'FOB',
       paymentTerms: newRequest.paymentTerms || '100% T/T in advance',
       pol: newRequest.pol || '',
@@ -659,6 +693,39 @@ export const Imports: React.FC = () => {
             </div>
             
             <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
+              {/* 1단계: 수입요청 접수 정보 */}
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>📥 요청 접수일</label>
+                  <input
+                    type="date"
+                    value={newRequest.requestDate || ''}
+                    onChange={e => setNewRequest(p => ({ ...p, requestDate: e.target.value }))}
+                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>고객사 담당자</label>
+                  <input
+                    type="text"
+                    value={newRequest.requestedBy || ''}
+                    onChange={e => setNewRequest(p => ({ ...p, requestedBy: e.target.value }))}
+                    placeholder="예: 홍길동 과장"
+                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>요청 내용 메모</label>
+                  <input
+                    type="text"
+                    value={newRequest.requestNote || ''}
+                    onChange={e => setNewRequest(p => ({ ...p, requestNote: e.target.value }))}
+                    placeholder="고객사로부터 받은 수입요청 내용 요약"
+                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                  />
+                </div>
+              </div>
+
               {/* 기본 수입주체 & 수입처 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
