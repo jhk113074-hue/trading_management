@@ -4896,8 +4896,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           {/* Form Fields Grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             
-            {/* 줄 1: 발행사 / 확정 CI 번호 / PO 접수일(CI 작성일) / 고객사 PO 번호 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            {/* 줄 1: 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발행사 (발주서 기준)</span>
                 {isEditing ? (
@@ -4908,6 +4908,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 ) : (
                   <input type="text" value={order.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : 'YSACC (와이에스에이씨씨)'} disabled style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
                 )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당 영업사원</span>
+                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -4929,6 +4934,29 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 PO 번호</span>
                 <input type="text" value={basicForm.custPo || ''} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연결된 견적서 (PI)</span>
+                {isEditing ? (
+                  <select
+                    value={basicForm.quotationId}
+                    onChange={e => setBasicForm(prev => ({ ...prev, quotationId: e.target.value }))}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
+                  >
+                    <option value="">연결 안 함</option>
+                    {piList.map(p => (
+                      <option key={p.id} value={p.id}>{p.piNumber}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={basicForm.quotationId ? (piList.find(p => p.id === basicForm.quotationId)?.piNumber || basicForm.quotationId) : '연결 안 함'}
+                    disabled
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }}
+                  />
+                )}
               </div>
             </div>
 
@@ -4960,13 +4988,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               </div>
             </div>
 
-            {/* 줄 3: 담당 영업사원 / 인코텀즈 / 연결 견적서 / 결제 조건 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당 영업사원</span>
-                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-
+            {/* 줄 3: 인코텀즈 / 결제 조건 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>인코텀즈</span>
                 {isEditing ? (
@@ -4980,29 +5003,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   </select>
                 ) : (
                   <input type="text" value={order.incoterms} disabled style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연결 견적서 (PI)</span>
-                {isEditing ? (
-                  <select
-                    value={basicForm.quotationId}
-                    onChange={e => setBasicForm(prev => ({ ...prev, quotationId: e.target.value }))}
-                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
-                  >
-                    <option value="">연결 안 함</option>
-                    {piList.map(p => (
-                      <option key={p.id} value={p.id}>{p.piNumber} ({p.customerName})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={basicForm.quotationId ? (piList.find(p => p.id === basicForm.quotationId)?.piNumber || basicForm.quotationId) : '연결 안 함'}
-                    disabled
-                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }}
-                  />
                 )}
               </div>
 
