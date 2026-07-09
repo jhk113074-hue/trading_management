@@ -398,21 +398,23 @@ export const TaskList: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
           {/* ── 조회 모드 탭 ── */}
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff', marginLeft: '12px' }}>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', marginLeft: '12px', height: '34px', boxSizing: 'border-box' }}>
             <button
               onClick={() => {
                 setDateMode('daily');
                 setSelectedDate(new Date().toISOString().split('T')[0]);
               }}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
                 background: dateMode === 'daily' ? '#3b82f6' : '#fff',
-                color: dateMode === 'daily' ? '#fff' : 'var(--text-secondary)',
+                color: dateMode === 'daily' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
-                transition: 'all 0.15s'
+                fontSize: '12.5px',
+                transition: 'all 0.15s',
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
               일간
@@ -423,15 +425,17 @@ export const TaskList: React.FC = () => {
                 setWeekOffset(0);
               }}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
                 background: dateMode === 'weekly' ? '#3b82f6' : '#fff',
-                color: dateMode === 'weekly' ? '#fff' : 'var(--text-secondary)',
+                color: dateMode === 'weekly' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '12.5px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid var(--border-default)'
+                borderLeft: '1px solid #cbd5e1',
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
               주간
@@ -447,15 +451,17 @@ export const TaskList: React.FC = () => {
                 setEndDate(lastDay.toISOString().split('T')[0]);
               }}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
                 background: dateMode === 'range' ? '#3b82f6' : '#fff',
-                color: dateMode === 'range' ? '#fff' : 'var(--text-secondary)',
+                color: dateMode === 'range' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '12.5px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid var(--border-default)'
+                borderLeft: '1px solid #cbd5e1',
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
               기간 검색
@@ -464,36 +470,41 @@ export const TaskList: React.FC = () => {
 
           {/* ── 상세 날짜 선택 영역 ── */}
           {dateMode === 'daily' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff', marginLeft: '8px' }}>
-              <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid var(--border-color)' }}>‹</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', marginLeft: '8px', height: '34px', boxSizing: 'border-box' }}>
+              <button onClick={handlePrevDay} style={{ padding: '0 12px', height: '100%', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid #cbd5e1', display: 'flex', alignItems: 'center' }}>‹</button>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
                 style={{
-                  padding: '4px 10px',
+                  padding: '0 10px',
                   border: 'none',
                   outline: 'none',
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: 'var(--text-primary)',
+                  color: '#1e293b',
                   cursor: 'pointer',
-                  background: '#fff'
+                  height: '100%',
+                  background: '#fff',
+                  boxSizing: 'border-box'
                 }}
               />
-              <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid var(--border-color)' }}>›</button>
+              <button onClick={handleNextDay} style={{ padding: '0 12px', height: '100%', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid #cbd5e1', display: 'flex', alignItems: 'center' }}>›</button>
               {selectedDate !== new Date().toISOString().split('T')[0] && (
                 <button
                   onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
                   style={{
-                    padding: '6px 12px',
+                    padding: '0 10px',
+                    height: '100%',
                     border: 'none',
-                    borderLeft: '1px solid var(--border-color)',
-                    background: '#f0fdf4',
+                    borderLeft: '1px solid #cbd5e1',
+                    background: '#fff7ed',
                     cursor: 'pointer',
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: '#16a34a'
+                    color: '#ea580c',
+                    display: 'flex',
+                    alignItems: 'center'
                   }}
                 >
                   오늘
@@ -503,104 +514,110 @@ export const TaskList: React.FC = () => {
           )}
 
           {dateMode === 'weekly' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff', marginLeft: '8px' }}>
-              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>‹</button>
-              <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid var(--border-default)', borderRight: '1px solid var(--border-default)', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', marginLeft: '8px', height: '34px', boxSizing: 'border-box' }}>
+              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '0 12px', height: '100%', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center' }}>‹</button>
+              <div style={{ padding: '0 14px', height: '100%', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
                 📅 {formatWeekLabel(weekOffset)}
               </div>
-              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>›</button>
+              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '0 12px', height: '100%', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', display: 'flex', alignItems: 'center' }}>›</button>
               {weekOffset !== 0 && (
-                <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid var(--border-default)', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+                <button onClick={() => setWeekOffset(0)} style={{ padding: '0 10px', height: '100%', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c', display: 'flex', alignItems: 'center' }}>이번주</button>
               )}
             </div>
           )}
 
           {dateMode === 'range' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', height: '34px', boxSizing: 'border-box' }}>
                 <input
                   type="date"
                   value={startDate}
                   onChange={e => setStartDate(e.target.value)}
                   style={{
-                    padding: '6px 10px',
+                    padding: '0 10px',
                     border: 'none',
                     outline: 'none',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer'
+                    color: '#1e293b',
+                    cursor: 'pointer',
+                    height: '100%',
+                    boxSizing: 'border-box'
                   }}
                 />
-                <span style={{ padding: '0 8px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid var(--border-default)', borderRight: '1px solid var(--border-default)', height: '30px', display: 'flex', alignItems: 'center' }}>~</span>
+                <span style={{ padding: '0 8px', color: '#94a3b8', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }}>~</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={e => setEndDate(e.target.value)}
                   style={{
-                    padding: '6px 10px',
+                    padding: '0 10px',
                     border: 'none',
                     outline: 'none',
-                    fontSize: '12px',
+                    fontSize: '12.5px',
                     fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer'
+                    color: '#1e293b',
+                    cursor: 'pointer',
+                    height: '100%',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={() => setRangePreset('today')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>오늘</button>
-                <button onClick={() => setRangePreset('week')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>이번주</button>
-                <button onClick={() => setRangePreset('month')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>이번달</button>
-                <button onClick={() => setRangePreset('all')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>전체</button>
+              <div style={{ display: 'flex', gap: '4px', height: '34px' }}>
+                <button onClick={() => setRangePreset('today')} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', height: '100%', boxSizing: 'border-box' }}>오늘</button>
+                <button onClick={() => setRangePreset('week')} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', height: '100%', boxSizing: 'border-box' }}>이번주</button>
+                <button onClick={() => setRangePreset('month')} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', height: '100%', boxSizing: 'border-box' }}>이번달</button>
+                <button onClick={() => setRangePreset('all')} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#475569', height: '100%', boxSizing: 'border-box' }}>전체</button>
               </div>
             </div>
           )}
         </div>
 
         {/* 얇은 수직 구분선 */}
-        <div style={{ width: '1px', height: '20px', background: 'var(--border-default)', margin: '0 4px', flexShrink: 0 }} />
+        <div style={{ width: '1px', height: '22px', background: '#cbd5e1', margin: '0 6px', flexShrink: 0 }} />
 
         {/* (2) 담당자/유형/상태 select 그룹 */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-          <select className="btn" style={{ padding: '6px 12px' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, height: '34px' }}>
+          <select className="btn" style={{ padding: '0 12px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#475569', cursor: 'pointer', backgroundColor: '#fff', boxSizing: 'border-box' }} value={filterAssignee} onChange={e => setFilterAssignee(e.target.value)}>
               <option>전체 담당자</option>
               {users.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
             </select>
-            <select className="btn" style={{ padding: '6px 12px' }} value={filterType} onChange={e => setFilterType(e.target.value)}>
+            <select className="btn" style={{ padding: '0 12px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#475569', cursor: 'pointer', backgroundColor: '#fff', boxSizing: 'border-box' }} value={filterType} onChange={e => setFilterType(e.target.value)}>
               <option>모든 유형</option>
               {Object.values(typeLabels).map(l => <option key={l}>{l}</option>)}
             </select>
-            <select className="btn" style={{ padding: '6px 12px' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <select className="btn" style={{ padding: '0 12px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, color: '#475569', cursor: 'pointer', backgroundColor: '#fff', boxSizing: 'border-box' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option>모든 상태</option>
               <option>시작 안 함 + 진행중</option>
               {Object.values(statusLabels).map(l => <option key={l}>{l}</option>)}
             </select>
             
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', height: '34px' }}>
               <button
                 type="button"
                 onClick={() => setShowColMenu(!showColMenu)}
                 className="btn"
-                style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '100%', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
+                style={{ padding: '0 12px', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700, color: '#475569', boxSizing: 'border-box', transition: 'all 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
               >
                 ⚙️ 열 설정
               </button>
               {showColMenu && (
                 <div style={{
-                  position: 'absolute', top: '35px', left: 0, background: '#fff', border: '1px solid var(--border-default)',
-                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', padding: '10px', zIndex: 100,
-                  width: '180px', maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px'
+                  position: 'absolute', top: '38px', left: 0, background: '#fff', border: '1px solid #cbd5e1',
+                  borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '12px', zIndex: 100,
+                  width: '180px', maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px'
                 }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '4px' }}>표시할 열 선택</div>
-                  <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '2px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>표시할 열 선택</div>
+                  <div style={{ display: 'flex', gap: '6px', marginBottom: '2px' }}>
                     <button
                       type="button"
                       onClick={() => {
                         const selectable = columns.filter(c => c.key !== 'select' && c.key !== 'title' && c.key !== 'actions').map(c => c.key);
                         setVisibleColumns(['select', 'title', 'actions', ...selectable]);
                       }}
-                      style={{ flex: 1, padding: '3px 0', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid var(--border-default)', borderRadius: '4px', backgroundColor: '#f8fafc' }}
+                      style={{ flex: 1, padding: '4px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff', color: '#475569' }}
                     >
                       전체 선택
                     </button>
@@ -609,7 +626,7 @@ export const TaskList: React.FC = () => {
                       onClick={() => {
                         setVisibleColumns(['select', 'title', 'actions']);
                       }}
-                      style={{ flex: 1, padding: '3px 0', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid var(--border-default)', borderRadius: '4px', backgroundColor: '#f8fafc' }}
+                      style={{ flex: 1, padding: '4px 0', fontSize: '11px', fontWeight: 700, cursor: 'pointer', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#ffffff', color: '#475569' }}
                     >
                       전체 해제
                     </button>
@@ -618,7 +635,7 @@ export const TaskList: React.FC = () => {
                     if (col.key === 'select' || col.key === 'title' || col.key === 'actions') return null;
                     const checked = visibleColumns.includes(col.key);
                     return (
-                      <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer', color: '#334155' }}>
+                      <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>
                         <input
                           type="checkbox"
                           checked={checked}
@@ -643,15 +660,16 @@ export const TaskList: React.FC = () => {
 
       {/* 가로 스크롤 최적화 컨테이너 */}
       <div className="table-scroll-container" style={{ flex: 1, overflow: 'auto', padding: '0 30px 30px' }}>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', width: 'max-content', minWidth: '100%' }}>
-          <table style={{ borderCollapse: 'collapse', fontSize: '0.82rem', tableLayout: 'fixed', width: 'max-content', backgroundColor: 'white' }}>
-            <thead style={{ position: 'sticky', top: 0, zIndex: 20, backgroundColor: '#f9fafb' }}>
-              <tr style={{ height: '42px', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', width: 'max-content', minWidth: '100%' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '13px', tableLayout: 'fixed', width: 'max-content', backgroundColor: 'white' }}>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 20, backgroundColor: '#f8fafc' }}>
+              <tr style={{ height: '42px', borderBottom: '1px solid #cbd5e1' }}>
                 {renderedColumns.map(col => (
                   <th key={col.key} onClick={() => handleSort(col.key)} style={{ 
-                    width: colWidths[col.key], padding: '0 8px', textAlign: 'left', color: '#374151', fontWeight: '700', borderRight: '1px solid #f3f4f6', position: 'relative', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    width: colWidths[col.key], padding: '0 8px', textAlign: 'left', color: '#475569', fontWeight: '750', borderRight: '1px solid #e2e8f0', position: 'relative', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     cursor: (col.key === 'select' || col.key === 'actions') ? 'default' : 'pointer',
-                    ...(col.key === 'title' ? { position: 'sticky', left: 0, zIndex: 30, backgroundColor: '#f9fafb', borderRight: '2px solid #e5e7eb' } : {})
+                    fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase',
+                    ...(col.key === 'title' ? { position: 'sticky', left: 0, zIndex: 30, backgroundColor: '#f8fafc', borderRight: '2px solid #cbd5e1' } : {})
                   }}>
                     {col.label} {sortField === col.key ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
                     <div 
@@ -672,7 +690,7 @@ export const TaskList: React.FC = () => {
                   if (col.key === 'actions') {
                     return (
                       <td key={col.key} style={{ textAlign: 'center' }}>
-                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold' }}>+</button>
+                        <button onClick={handleQuickAdd} style={{ backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#2563eb'} onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}>+</button>
                       </td>
                     );
                   }
@@ -682,7 +700,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineImportance}
                           onChange={e => setInlineImportance(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="A">A</option>
                           <option value="B">B</option>
@@ -697,7 +715,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineUrgency}
                           onChange={e => setInlineUrgency(Number(e.target.value))}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
@@ -706,7 +724,7 @@ export const TaskList: React.FC = () => {
                   }
                   if (col.key === 'quadrant') {
                     const quad = calculateQuadrant(inlineImportance, inlineUrgency);
-                    return <td key={col.key} style={{ padding: '0 8px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>{quad}</td>;
+                    return <td key={col.key} style={{ padding: '0 8px', fontWeight: 'bold', color: '#475569', fontSize: '12.5px' }}>{quad}</td>;
                   }
                   if (col.key === 'title') {
                     return (
@@ -716,7 +734,7 @@ export const TaskList: React.FC = () => {
                           value={quickTitle}
                           onChange={e => setQuickTitle(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && handleQuickAdd()}
-                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #86efac', borderRadius: '8px', outline: 'none', fontSize: '0.8rem' }} 
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', outline: 'none', fontSize: '13px', height: '30px', boxSizing: 'border-box' }} 
                         />
                       </td>
                     );
@@ -727,7 +745,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineStatus}
                           onChange={e => setInlineStatus(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="TODO">시작 안 함</option>
                           <option value="IN_PROGRESS">진행중</option>
@@ -743,7 +761,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineType}
                           onChange={e => setInlineType(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="PROJECT">📁 프로젝트</option>
                           <option value="DAILY">📝 일상업무</option>
@@ -759,7 +777,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineSchedule}
                           onChange={e => setInlineSchedule(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="SELF">스스로 계획</option>
                           <option value="SCHEDULED">일정기반</option>
@@ -776,7 +794,7 @@ export const TaskList: React.FC = () => {
                           placeholder="프로젝트명"
                           value={inlineProjectName}
                           onChange={e => setInlineProjectName(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem' }}
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', boxSizing: 'border-box' }}
                         />
                       </td>
                     );
@@ -788,7 +806,7 @@ export const TaskList: React.FC = () => {
                           placeholder="고객명"
                           value={inlineCustomerName}
                           onChange={e => setInlineCustomerName(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem' }}
+                          style={{ width: '100%', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', boxSizing: 'border-box' }}
                         />
                       </td>
                     );
@@ -799,7 +817,7 @@ export const TaskList: React.FC = () => {
                         <select
                           value={inlineAssignee}
                           onChange={e => setInlineAssignee(e.target.value)}
-                          style={{ width: '100%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.8rem', backgroundColor: '#fff' }}
+                          style={{ width: '100%', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '30px', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="">담당자 지정</option>
                           {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -807,7 +825,7 @@ export const TaskList: React.FC = () => {
                       </td>
                     );
                   }
-                  return <td key={col.key} style={{ borderRight: '1px solid #f3f4f6' }}></td>;
+                  return <td key={col.key} style={{ borderRight: '1px solid #cbd5e1' }}></td>;
                 })}
               </tr>
             </thead>
