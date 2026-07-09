@@ -649,26 +649,26 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       >
         {/* Header */}
         <div style={{
-          padding: '12px 20px', borderBottom: '1px solid #f1f5f9',
+          padding: '12px 20px', borderBottom: '1px solid #e2e8f0',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: '#f8fafc'
+          background: '#ffffff'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
               {initialTask ? '업무 상세 정보' : '새로운 업무 등록'}
             </h3>
-            {initialTask?.id && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>ID: {initialTask.id.slice(0,8)}...</span>}
+            {initialTask?.id && <span style={{ fontSize: '11px', color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>ID: {initialTask.id.slice(0,8)}...</span>}
           </div>
           <button
             onClick={onClose}
             style={{
               background: 'transparent', border: 'none', borderRadius: '4px',
               width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s',
-              fontSize: '1.1rem', lineHeight: 1
+              cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s',
+              fontSize: '18px', lineHeight: 1
             }}
-            onMouseOver={e => e.currentTarget.style.background = 'var(--border-color)'}
-            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+            onMouseOver={e => e.currentTarget.style.color = '#475569'}
+            onMouseOut={e => e.currentTarget.style.color = '#94a3b8'}
           >
             ✕
           </button>
@@ -678,7 +678,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           
           {errorMsg && (
-            <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#dc2626', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '6px', color: '#dc2626', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>⚠️</span> {errorMsg}
             </div>
           )}
@@ -689,27 +689,27 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               value={title} onChange={e => setTitle(e.target.value)}
               placeholder="업무명을 입력하세요..."
               style={{
-                width: '100%', border: 'none', borderBottom: '2px solid var(--border-color)',
-                fontSize: '1.2rem', fontWeight: 700, padding: '4px 0 8px 0', outline: 'none',
-                color: '#0f172a', transition: 'border-color 0.2s', background: 'transparent'
+                width: '100%', border: 'none', borderBottom: '2px solid #cbd5e1',
+                fontSize: '1.25rem', fontWeight: 700, padding: '4px 0 8px 0', outline: 'none',
+                color: '#1e293b', transition: 'border-color 0.2s', background: 'transparent'
               }}
-              onFocus={e => e.target.style.borderColor = 'var(--focus-ring)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#cbd5e1'}
             />
           </div>
 
           {/* Priority Box */}
-          <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', minWidth: '40px' }}>중요도</label>
-              <div style={{ display: 'flex', background: 'var(--border-color)', padding: '2px', borderRadius: '6px', flex: 1 }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', minWidth: '40px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>중요도</label>
+              <div style={{ display: 'flex', background: '#e2e8f0', padding: '2px', borderRadius: '6px', flex: 1 }}>
                 {(['A', 'B', 'C'] as const).map(v => (
                   <button
                     key={v} onClick={() => setImportance(v)}
                     style={{
-                      flex: 1, padding: '4px 0', border: 'none', borderRadius: '4px', fontWeight: 700, fontSize: '0.85rem',
+                      flex: 1, padding: '4px 0', border: 'none', borderRadius: '4px', fontWeight: 700, fontSize: '12.5px',
                       background: importance === v ? '#ffffff' : 'transparent',
-                      color: importance === v ? (v === 'A' ? '#ef4444' : v === 'B' ? '#3b82f6' : 'var(--text-secondary)') : 'var(--text-secondary)',
+                      color: importance === v ? (v === 'A' ? '#ef4444' : v === 'B' ? '#3b82f6' : '#64748b') : '#64748b',
                       boxShadow: importance === v ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
                       cursor: 'pointer', transition: 'all 0.2s'
                     }}
@@ -720,11 +720,11 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </div>
             </div>
             
-            <div style={{ width: '1px', background: 'var(--border-default)', height: '24px' }} />
+            <div style={{ width: '1px', background: '#cbd5e1', height: '24px' }} />
 
             <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
-                긴급도 <span style={{ color: urgency >= 6 ? '#ef4444' : '#3b82f6', marginLeft: '4px' }}>{urgency}</span>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                긴급도 <span style={{ color: urgency >= 6 ? '#ef4444' : '#3b82f6', marginLeft: '4px', fontWeight: 800 }}>{urgency}</span>
               </label>
               <input
                 type="range" min="1" max="10" step="1"
@@ -733,14 +733,14 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               />
             </div>
 
-            <div style={{ width: '1px', background: 'var(--border-default)', height: '24px' }} />
+            <div style={{ width: '1px', background: '#cbd5e1', height: '24px' }} />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>우선순위</span>
+              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>우선순위</span>
               <div style={{
                 background: currentQuadrant === 'Q1' ? '#fee2e2' : currentQuadrant === 'Q2' ? '#dbeafe' : currentQuadrant === 'Q3' ? '#fef9c3' : '#f1f5f9',
-                color: currentQuadrant === 'Q1' ? '#ef4444' : currentQuadrant === 'Q2' ? '#3b82f6' : currentQuadrant === 'Q3' ? '#ca8a04' : 'var(--text-secondary)',
-                fontWeight: 800, fontSize: '1rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid currentColor'
+                color: currentQuadrant === 'Q1' ? '#ef4444' : currentQuadrant === 'Q2' ? '#3b82f6' : currentQuadrant === 'Q3' ? '#ca8a04' : '#64748b',
+                fontWeight: 800, fontSize: '13px', padding: '3px 8px', borderRadius: '4px', border: '1px solid currentColor'
               }}>
                 {currentQuadrant}
               </div>
@@ -750,40 +750,40 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* Details Compact Row (8 Columns Grid) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px', alignItems: 'end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>위임자</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>위임자</label>
+              <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', backgroundColor: '#fff', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
                 <option value="">선택안함</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>수임자</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>수임자</label>
+              <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', backgroundColor: '#fff', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
                 <option value="">지정안함</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>등록일</label>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>등록일</label>
               <input
                 type="text"
                 readOnly
                 value={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR', { month:'2-digit', day:'2-digit' }) : '자동'}
                 title={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR') : '저장 시 자동 기입'}
-                style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-color)', outline: 'none', fontSize: '0.78rem', background: '#f8fafc', color: 'var(--text-muted)', cursor: 'default', height: '30px', textAlign: 'center' }}
+                style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', background: '#f1f5f9', color: '#64748b', cursor: 'default', height: '34px', textAlign: 'center', boxSizing: 'border-box' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>시작일</label>
-              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>시작일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', boxSizing: 'border-box' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>마감일</label>
-              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>마감일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', boxSizing: 'border-box' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>업무유형</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>업무유형</label>
+              <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
                 <option value="PROJECT">📁 프로젝트</option>
                 <option value="DAILY">📝 일상업무</option>
                 <option value="PERIODIC">🔄 주기업무</option>
@@ -791,16 +791,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>공개범위</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>공개범위</label>
+              <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
                 <option value="PUBLIC">🌐 전체공개</option>
                 <option value="RESTRICTED">👥 관련자공개</option>
                 <option value="PRIVATE">🔒 비공개</option>
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>상태</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', fontWeight: 600, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#0f172a', height: '30px' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</label>
+              <select style={{ width: '100%', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', fontWeight: 700, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#1e293b', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
                 <option value="TODO">시작안함</option>
                 <option value="IN_PROGRESS">진행중</option>
                 <option value="HOLDING">Holding</option>
@@ -812,19 +812,19 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>업무설명 및 메모</label>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>업무설명 및 메모</label>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {/* 거래처 지정 영역 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>🏢 거래처:</span>
+                  <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>🏢 거래처:</span>
                   {customerName ? (
-                    <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={customerName}>
+                    <span style={{ fontSize: '12px', color: '#0369a1', background: '#e0f2fe', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={customerName}>
                       {customerName}
                       <button
                         type="button"
                         onClick={() => { setCustomerName(''); setCustomerId(''); }}
-                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '0.7rem', fontWeight: 'bold' }}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '0 2px', fontSize: '11px', fontWeight: 'bold' }}
                         title="거래처 지정 취소"
                       >
                         ✕
@@ -835,18 +835,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       type="button"
                       onClick={() => setIsCustomerSearchOpen(true)}
                       style={{
-                        background: '#f1f5f9',
-                        border: '1px solid var(--border-default)',
+                        background: '#fff',
+                        border: '1px solid #cbd5e1',
                         borderRadius: '4px',
-                        padding: '2px 8px',
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        color: 'var(--text-secondary)',
+                        padding: '4px 10px',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: '#475569',
                         cursor: 'pointer',
-                        transition: 'background 0.2s'
+                        transition: 'all 0.2s',
+                        height: '28px',
+                        boxSizing: 'border-box'
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#fff'}
                     >
                       🔍 거래처 찾기
                     </button>
@@ -855,19 +857,21 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
                 {/* 미팅자 입력 영역 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>👥 미팅자:</span>
+                  <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>👥 미팅자:</span>
                   <input
                     type="text"
                     value={meetingPerson}
                     onChange={e => setMeetingPerson(e.target.value)}
                     placeholder="미팅 참석자 입력..."
                     style={{
-                      padding: '2px 6px',
+                      padding: '4px 8px',
                       borderRadius: '4px',
-                      border: '1px solid var(--border-default)',
-                      fontSize: '0.72rem',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '12px',
                       outline: 'none',
-                      width: '120px'
+                      width: '130px',
+                      height: '28px',
+                      boxSizing: 'border-box'
                     }}
                   />
                 </div>
@@ -876,10 +880,10 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             
             {/* AI prompt draft generator */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0', margin: '0 0 12px 0' }}>
-              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 🪄 AI 업무 상세 초안 자동 작성 (프롬프트 입력)
               </span>
-              <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+              <p style={{ fontSize: '12px', color: '#166534', margin: 0 }}>
                 기획하고자 하는 업무 내용, 담당자, 수행 일정을 한 줄로 적으시면 AI가 공식 업무 상세 기획서 초안을 에디터에 채워 드립니다.
               </p>
               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -888,25 +892,27 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   placeholder="예: 바이어 발주 수량 확인 후 포워딩 운송 일정 기획 수립."
                   value={aiPrompt}
                   onChange={e => setAiPrompt(e.target.value)}
-                  style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                  style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', backgroundColor: '#fff', boxSizing: 'border-box' }}
                 />
                 <button
                   type="button"
                   onClick={handleAiDraftCreate}
-                  style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                  style={{ padding: '0 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#15803d'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#16a34a'}
                 >
-                  🪄 초안 생성
+                  초안 생성
                 </button>
               </div>
             </div>
 
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
-                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
-                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
-                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', color: '#475569' }}>가</button>
+                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px', color: '#475569' }}>가</button>
+                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px', color: '#475569' }}>가</button>
+                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', color: '#475569' }}>
                     田 표 삽입
                   </button>
                 </div>
@@ -980,21 +986,21 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </div>
             )}
             {type === 'PERIODIC' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px dashed var(--border-default)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 시작일</label>
-                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반복 시작일</label>
+                  <input type="date" style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', boxSizing: 'border-box' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 빈도</label>
-                  <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={repeatCycle} onChange={e => setRepeatCycle(e.target.value)}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반복 빈도</label>
+                  <select style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', cursor: 'pointer', boxSizing: 'border-box' }} value={repeatCycle} onChange={e => setRepeatCycle(e.target.value)}>
                     <option value="매일">매일</option><option value="매주">매주</option><option value="매월">매월</option>
                     <option value="매분기">매분기</option><option value="매반기">매반기</option><option value="매년">매년</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 종료일</label>
-                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} />
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>반복 종료일</label>
+                  <input type="date" style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', boxSizing: 'border-box' }} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} />
                 </div>
               </div>
             )}
@@ -1003,23 +1009,26 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* External Links (다중 링크 관리 구조) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>외부 파일 링크</label>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>외부 파일 링크</label>
               <button
                 type="button"
                 onClick={() => setExternalFileLinks(prev => [...prev, ''])}
                 style={{
-                  background: '#f1f5f9',
-                  border: '1px solid var(--border-default)',
+                  background: '#fff',
+                  border: '1px solid #cbd5e1',
                   borderRadius: '4px',
-                  padding: '2px 8px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: 'var(--text-secondary)',
+                  padding: '4px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  color: '#475569',
                   cursor: 'pointer',
-                  transition: 'background 0.2s'
+                  transition: 'all 0.2s',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'}
-                onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
               >
                 ➕ 링크 추가
               </button>
@@ -1043,13 +1052,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                         setExternalFileLinks(updated);
                       }}
                       placeholder='Dropbox 웹에서 우클릭 → "링크 복사" 후 붙여넣으면 자동 변환됩니다'
-                      style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }}
+                      style={{ flex: 1, padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                     />
                     {link && (
                       <button
                         type="button"
                         onClick={() => setActiveModelessLink(link)}
-                        style={{ padding: '6px 10px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1', border: 'none', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}
+                        style={{ padding: '6px 12px', borderRadius: '4px', background: '#e0f2fe', color: '#0369a1', border: 'none', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', height: '34px' }}
                       >
                         🔗 열기
                       </button>
@@ -1067,9 +1076,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                         background: 'transparent',
                         border: 'none',
                         color: '#ef4444',
-                        fontSize: '1.05rem',
+                        fontSize: '15px',
                         cursor: 'pointer',
-                        padding: '4px 8px'
+                        padding: '4px 8px',
+                        height: '34px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                       title="링크 제거"
                     >
@@ -1077,7 +1090,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     </button>
                   </div>
                   {link && link.includes('dropbox.com') && link.includes('dl=0') && (
-                    <div style={{ fontSize: '0.7rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4, marginLeft: '4px' }}>✅ Dropbox 링크가 웹 뷰어(저장 없이 보기) 형식으로 자동 변환되었습니다</div>
+                    <div style={{ fontSize: '11px', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4, marginLeft: '4px', fontWeight: 500 }}>✅ Dropbox 링크가 웹 뷰어(저장 없이 보기) 형식으로 자동 변환되었습니다</div>
                   )}
                 </div>
               ))}
@@ -1086,16 +1099,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
           <div
-            style={{ background: '#f8fafc', border: '1px dashed var(--border-default)', padding: '8px 12px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
-            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--focus-ring)'; e.currentTarget.style.background = '#f0fdfa'; }}
-            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; }}
-            onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
+            style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', padding: '14px 18px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', outline: 'none' }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#f0fdfa'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
             onPaste={e => { const files = e.clipboardData?.files; if (files && files.length > 0) { e.preventDefault(); handleFileUpload(files); } }}
             tabIndex={0}
           >
-            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginBottom: '4px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+            <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px', fontWeight: 500 }}>📂 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
             <input type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="task-file-upload" />
-            <label htmlFor="task-file-upload" style={{ background: 'var(--focus-ring)', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+            <label htmlFor="task-file-upload" style={{ background: '#3b82f6', color: '#fff', padding: '5px 14px', borderRadius: '4px', fontSize: '11.5px', cursor: 'pointer', fontWeight: 700, display: 'inline-block', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#2563eb'} onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}>
               {isUploading ? '업로드 중...' : '파일 선택하기'}
             </label>
 
@@ -1140,20 +1153,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
+                    <h4 style={{ margin: 0, fontSize: '13px', color: '#1e293b', fontWeight: 750 }}>댓글</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>📋 검토요청 지정:</span>
+                       <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750 }}>📋 검토요청 지정:</span>
                       <select
                         value={reviewAssigneeId}
                         onChange={e => setReviewAssigneeId(e.target.value)}
                         style={{
-                          padding: '2px 6px',
+                          padding: '4px 8px',
                           borderRadius: '4px',
-                          border: '1px solid var(--border-default)',
-                          fontSize: '0.72rem',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '12px',
                           outline: 'none',
-                          background: '#fff',
-                          color: 'var(--text-secondary)',
+                          backgroundColor: '#fff',
+                          height: '28px',
                           cursor: 'pointer'
                         }}
                       >
@@ -1168,16 +1181,21 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   {/* 등록 버튼 */}
                   <button
                     onClick={handleAddComment}
+                    disabled={!newComment.trim()}
                     style={{
-                      background: 'var(--focus-ring)',
+                      background: '#3b82f6',
                       color: '#fff',
                       border: 'none',
                       padding: '5px 14px',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: '0.78rem'
+                      borderRadius: '4px',
+                      cursor: newComment.trim() ? 'pointer' : 'not-allowed',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      transition: 'background 0.2s',
+                      opacity: newComment.trim() ? 1 : 0.6
                     }}
+                    onMouseEnter={e => { if (newComment.trim()) e.currentTarget.style.background = '#2563eb'; }}
+                    onMouseLeave={e => { if (newComment.trim()) e.currentTarget.style.background = '#3b82f6'; }}
                   >
                     등록
                   </button>
@@ -1193,17 +1211,18 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     style={{
                       width: '100%',
                       padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-default)',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
                       outline: 'none',
-                      fontSize: '0.85rem',
+                      fontSize: '13px',
                       fontFamily: 'inherit',
                       resize: 'vertical',
                       minHeight: '60px',
-                      boxSizing: 'border-box'
+                      boxSizing: 'border-box',
+                      color: '#1e293b'
                     }}
-                    onFocus={e => e.target.style.borderColor = 'var(--focus-ring)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
+                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
                   />
                 </div>
 
