@@ -369,15 +369,25 @@ export const Orders: React.FC = () => {
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
     if (dateFilterType !== 'All') {
       result = result.filter(o => {
-        if (!o.etd) return false;
-        const d = new Date(o.etd);
-        if (isNaN(d.getTime())) return false;
+        let d: Date | null = null;
+        if (o.poDate) {
+          d = new Date(o.poDate);
+        } else if (o.createdAt) {
+          if (typeof (o.createdAt as any).toDate === 'function') {
+            d = (o.createdAt as any).toDate();
+          } else {
+            d = new Date(o.createdAt as any);
+          }
+        }
+        if (!d || isNaN(d.getTime())) return false;
         const y = d.getFullYear(), m = d.getMonth() + 1;
+        const formattedDateStr = d.toISOString().slice(0, 10);
+
         if (dateFilterType === 'Monthly') return y === selectedYear && m === selectedMonth;
         if (dateFilterType === 'Quarterly') return y === selectedYear && Math.floor((m-1)/3)+1 === selectedQuarter;
         if (dateFilterType === 'HalfYearly') return y === selectedYear && (m <= 6 ? 1 : 2) === selectedHalf;
         if (dateFilterType === 'Yearly') return y === selectedYear;
-        if (dateFilterType === 'Range') return o.etd >= rangeStart && o.etd <= rangeEnd;
+        if (dateFilterType === 'Range') return formattedDateStr >= rangeStart && formattedDateStr <= rangeEnd;
         return true;
       });
     }
