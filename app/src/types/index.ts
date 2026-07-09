@@ -220,4 +220,10 @@ export interface ImportRequest {
   taxInvoiceIssuedDate?: string; // 세금계산서 발행일
   paymentCollectedDate?: string; // 대금 수령일
   paymentCollectedAmount?: number; // 수령 금액
+
+  // ── 6단계: 손익검토 (최종) ──
+  profitReviewNote?: string; // 검토 코멘트 (마진 차이 원인 등)
+  profitReviewedBy?: string; // 검토자
+  profitReviewedDate?: string; // 검토 완료일
+  profitReviewCompleted?: boolean; // 손익검토 완료 여부
 }

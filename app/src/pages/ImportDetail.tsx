@@ -80,7 +80,7 @@ export const ImportDetail: React.FC = () => {
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
   const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
-  const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '로그'>('수입요청');
+  const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입요청');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
@@ -286,6 +286,7 @@ export const ImportDetail: React.FC = () => {
             { key: '운송사/관세사 선정', label: '④ 물류/통관' },
             { key: '서류', label: '서류' },
             { key: '정산', label: '⑤ 정산/완료' },
+            { key: '손익검토', label: '⑥ 손익검토' },
             { key: '로그', label: '로그' }
           ] as const).map(tab => (
             <button
@@ -1374,18 +1375,19 @@ export const ImportDetail: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, status: '업무 종료' } : r);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, status: '손익검토 대기' } : r);
                         saveToStorage(updated);
-                        alert('대금 수령이 확인되어 업무가 종료 처리되었습니다.');
+                        setActiveTab('손익검토');
+                        alert('대금 수령이 확인되었습니다. 마지막으로 ⑥ 손익검토 탭에서 최종 검토를 완료해주세요.');
                       }}
                       style={{ padding: '8px 16px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: request.status === '업무 종료' ? 'default' : 'pointer' }}
                       disabled={request.status === '업무 종료'}
                     >
-                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 대금 수령 확인 → 업무 종료 처리'}
+                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 대금 수령 확인 → 손익검토로 이동'}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>대금 수령일과 수령 금액을 입력하면 업무 종료 처리를 할 수 있습니다.</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>대금 수령일과 수령 금액을 입력하면 다음 단계로 진행할 수 있습니다.</div>
                 )}
               </div>
             </div>
@@ -1403,6 +1405,125 @@ export const ImportDetail: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === '손익검토' && (() => {
+          const plannedCost = (request.costBreakdown?.productCost || 0) + (request.costBreakdown?.freightCost || 0) + (request.costBreakdown?.customsCost || 0) + (request.costBreakdown?.otherCost || 0);
+          const plannedMargin = request.marginAmount || 0;
+          const plannedRevenue = request.customerQuoteAmount || 0;
+
+          const actualPurchaseCost = request.amount || 0;
+          const actualLogisticsCost = (request.freightAmount || 0) + (request.freightVat || 0);
+          const actualCustomsCost = (request.taxAmount || 0) + (request.taxVat || 0) + (request.customsTaxAmount || 0);
+          const actualTotalCost = actualPurchaseCost + actualLogisticsCost + actualCustomsCost;
+
+          const actualRevenue = request.paymentCollectedAmount || plannedRevenue;
+          const realizedMargin = actualRevenue - actualTotalCost;
+          const realizedMarginRate = actualRevenue ? (realizedMargin / actualRevenue) * 100 : 0;
+          const marginGap = realizedMargin - plannedMargin;
+
+          return (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              📊 ⑥ 손익검토 (최종)
+            </h3>
+
+            <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left' }}>구분</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>② 계획 (견적단계)</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>실적 (③④⑤ 반영)</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>차이</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>매입원가 (제품+운임+통관 등)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{plannedCost.toLocaleString()} 원</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{actualTotalCost.toLocaleString()} 원</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: actualTotalCost > plannedCost ? '#dc2626' : '#166534', fontWeight: 700 }}>
+                      {(actualTotalCost - plannedCost) >= 0 ? '+' : ''}{(actualTotalCost - plannedCost).toLocaleString()} 원
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>매출 (고객 청구/수금액)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{plannedRevenue.toLocaleString()} 원</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{actualRevenue.toLocaleString()} 원</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: actualRevenue >= plannedRevenue ? '#166534' : '#dc2626', fontWeight: 700 }}>
+                      {(actualRevenue - plannedRevenue) >= 0 ? '+' : ''}{(actualRevenue - plannedRevenue).toLocaleString()} 원
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f8fafc', height: '40px', borderTop: '2px solid var(--border-default)' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 800 }}>마진</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800 }}>{plannedMargin.toLocaleString()} 원 ({(request.marginRate || 0).toFixed(1)}%)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{realizedMargin.toLocaleString()} 원 ({realizedMarginRate.toFixed(1)}%)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: marginGap >= 0 ? '#166534' : '#dc2626' }}>
+                      {marginGap >= 0 ? '+' : ''}{marginGap.toLocaleString()} 원
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ background: marginGap >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${marginGap >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius: '8px', padding: '14px 16px', fontSize: '12.5px', color: marginGap >= 0 ? '#166534' : '#991b1b', marginBottom: '20px' }}>
+              {marginGap >= 0
+                ? `✅ 계획 대비 마진이 ${marginGap.toLocaleString()}원 초과 달성되었습니다.`
+                : `⚠️ 계획 대비 마진이 ${Math.abs(marginGap).toLocaleString()}원 부족합니다. 원인을 검토해주세요.`}
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>검토 코멘트 및 완료 처리</span>
+              <textarea
+                value={request.profitReviewNote || ''}
+                onChange={(e) => {
+                  const updated = importRequests.map(r => r.id === id ? { ...r, profitReviewNote: e.target.value } : r);
+                  saveToStorage(updated);
+                }}
+                rows={4}
+                placeholder="마진 차이 원인, 향후 개선사항 등을 기록하세요."
+                style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>검토자</label>
+                  <input
+                    type="text"
+                    value={request.profitReviewedBy || ''}
+                    onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, profitReviewedBy: e.target.value } : r);
+                      saveToStorage(updated);
+                    }}
+                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    placeholder="예: 김주한"
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>검토 완료일</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={request.profitReviewedDate || '-'}
+                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', background: '#f1f5f9' }}
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = importRequests.map(r => r.id === id ? { ...r, profitReviewCompleted: true, profitReviewedDate: new Date().toISOString().slice(0, 10), status: '업무 종료' } : r);
+                  saveToStorage(updated);
+                  alert('손익검토가 완료 처리되었습니다. 모든 업무 단계가 종료되었습니다.');
+                }}
+                disabled={!!request.profitReviewCompleted}
+                style={{ marginTop: '4px', padding: '10px 20px', background: request.profitReviewCompleted ? '#94a3b8' : '#1e3a8a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13.5px', fontWeight: 'bold', cursor: request.profitReviewCompleted ? 'default' : 'pointer', alignSelf: 'flex-start' }}
+              >
+                {request.profitReviewCompleted ? `✅ 검토 완료됨 (${request.profitReviewedDate})` : '✅ 손익검토 완료 처리'}
+              </button>
+            </div>
+          </div>
+          );
+        })()}
 
         {activeTab === '로그' && (
           <div>
@@ -1425,6 +1546,28 @@ export const ImportDetail: React.FC = () => {
                   <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📦 제품 명세 최종 확정</div>
                   <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                     총 {request.piItems.length}종 제품(총 {totalQty.toLocaleString()} EA)의 명세 정보가 저장되었습니다.
+                  </div>
+                </div>
+              )}
+
+              {request.paymentCollectedDate && (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#0f766e', border: '3px solid #fff', boxShadow: '0 0 0 3px #ccfbf1' }} />
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{request.paymentCollectedDate}</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>💰 대금 수령 확인</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    {(request.paymentCollectedAmount || 0).toLocaleString()}원 수령 완료. 손익검토 단계로 이동했습니다.
+                  </div>
+                </div>
+              )}
+
+              {request.profitReviewCompleted && (
+                <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: '-31.5px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', background: '#1e3a8a', border: '3px solid #fff', boxShadow: '0 0 0 3px #dbeafe' }} />
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{request.profitReviewedDate}</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>📊 손익검토 완료 (최종 종료)</div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    검토자: {request.profitReviewedBy || '-'}{request.profitReviewNote ? ` · ${request.profitReviewNote}` : ''}
                   </div>
                 </div>
               )}
