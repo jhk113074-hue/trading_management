@@ -61,7 +61,7 @@ body {
 
 .sidebar {
   background: var(--bg-sidebar);
-  border-right: 1px solid #e2e8f0; /* Clean Light Border */
+  border-right: 1px solid var(--border-color); /* Clean Light Border */
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -76,7 +76,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border-bottom: 1px solid #e2e8f0; /* Clean Light Border */
+  border-bottom: 1px solid var(--border-color); /* Clean Light Border */
   margin-bottom: 8px;
 }
 
@@ -96,12 +96,12 @@ body {
 .logo-text {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .logo-sub {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .sidebar-section {
@@ -296,7 +296,7 @@ body {
   .kanban-left-panel {
     width: 100% !important;
     border-right: none !important;
-    border-bottom: 1px solid #cbd5e1 !important;
+    border-bottom: 1px solid var(--border-default) !important;
     padding-right: 0 !important;
     padding-bottom: 20px !important;
   }

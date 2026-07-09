@@ -206,14 +206,14 @@ export const Customers: React.FC = () => {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -234,21 +234,21 @@ export const Customers: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
         <input 
           type="text" 
           placeholder="고객명, 코드, 국가 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '200px' }}
+          style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px', flex: '1', minWidth: '200px' }}
         />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px' }}>
           <option value="">전체 상태</option>
           <option value="Active">Active</option>
           <option value="Inactive">Inactive</option>
           <option value="Blocked">Blocked</option>
         </select>
-        <select value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+        <select value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px' }}>
           <option value="">전체 등급</option>
           <option value="S">S 등급</option>
           <option value="A">A 등급</option>
@@ -257,14 +257,14 @@ export const Customers: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ marginBottom: '12px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>
+      <div style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
         총 {filteredAndSorted.length}건
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid var(--border-color)' }}>
             <tr>
               <th onClick={() => handleSort('customerCode')} style={thStyle(0, { padding: '12px', cursor: 'pointer' })}>고객코드 {getSortIcon('customerCode')}<span {...resizerProps(0)} /></th>
               <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px', cursor: 'pointer' })}>고객명(영문/현지어) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
@@ -291,7 +291,7 @@ export const Customers: React.FC = () => {
                   <tr 
                     key={c.id} 
                     onClick={() => { setEditingCustId(c.id); setIsModalOpen(true); }}
-                    style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                    style={{ borderBottom: '1px solid var(--border-color)', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >

@@ -364,22 +364,22 @@ export const ApprovalSystem: React.FC = () => {
     const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
         <thead>
-          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">구분</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">상세 내역</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">비고</th>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default);">
+            <th style="border: 1px solid var(--border-default); padding: 8px;">구분</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">상세 내역</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">비고</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
         </tbody>
       </table>
@@ -392,55 +392,55 @@ export const ApprovalSystem: React.FC = () => {
     let templateHTML = '';
     if (templateType === 'expense') {
       templateHTML = `
-        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">지출결의 상세 보고</h2>
-        <p style="margin: 8px 0; color: #475569;">아래와 같이 지출결의 내역을 품의하오니 승인하여 주시기 바랍니다.</p>
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: var(--text-primary);">지출결의 상세 보고</h2>
+        <p style="margin: 8px 0; color: var(--text-secondary);">아래와 같이 지출결의 내역을 품의하오니 승인하여 주시기 바랍니다.</p>
         
         <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1; color: #334155;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">구분 (품목)</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 60px;">수량</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">단가</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">공급가액</th>
+            <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default); color: #334155;">
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: left;">구분 (품목)</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 60px;">수량</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: right; width: 120px;">단가</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: right; width: 120px;">공급가액</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">예: 해외 바이어 초청 식대</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">120.00</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">120.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">예: 해외 바이어 초청 식대</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">120.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">120.00</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">예: 샘플 제작 배송비</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">85.00</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">85.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">예: 샘플 제작 배송비</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">85.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">85.00</td>
             </tr>
           </tbody>
         </table>
         
-        <div style="background: #f8fafc; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; font-weight: bold; color: #1e293b;">
+        <div style="background: #f8fafc; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; font-weight: bold; color: var(--text-primary);">
           ※ 총 합계: USD 205.00
         </div>
         <p><br></p>
       `;
     } else {
       templateHTML = `
-        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기안 협조 품의</h2>
-        <p style="margin: 8px 0; color: #475569;">의안사항에 대하여 아래와 같이 기안하오니 재가하여 주시기 바랍니다.</p>
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: var(--text-primary);">업무 기안 협조 품의</h2>
+        <p style="margin: 8px 0; color: var(--text-secondary);">의안사항에 대하여 아래와 같이 기안하오니 재가하여 주시기 바랍니다.</p>
         
-        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">1. 기안 배경 및 목적</h3>
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: var(--focus-ring); font-weight: bold;">1. 기안 배경 및 목적</h3>
         <p style="margin: 4px 0 12px 0; color: #334155;">여기에 기안 배경을 상세히 기술하세요.</p>
         
-        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">2. 주요 실행 과제</h3>
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: var(--focus-ring); font-weight: bold;">2. 주요 실행 과제</h3>
         <ul style="margin: 4px 0 12px 20px; padding: 0; color: #334155;">
           <li style="margin-bottom: 4px;">주요 세부 실행 내용을 항목별로 작성하세요.</li>
           <li style="margin-bottom: 4px;">협조 부서 및 일정 계획을 포함하세요.</li>
         </ul>
         
-        <h3 style="font-size: 0.95rem; margin-top: 16px; color: #4f46e5; font-weight: bold;">3. 기대 효과</h3>
-        <blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 8px 0;">
+        <h3 style="font-size: 0.95rem; margin-top: 16px; color: var(--focus-ring); font-weight: bold;">3. 기대 효과</h3>
+        <blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 8px 0;">
           "업무 효율성 증대 및 무역 프로세스 단축 기대"
         </blockquote>
         <p><br></p>
@@ -470,10 +470,10 @@ export const ApprovalSystem: React.FC = () => {
         </div>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 6px; width: 50px;">번호</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px;">핵심 기안 항목 및 세부 사항</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; width: 80px;">AI 분석</th>
+            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 6px; width: 50px;">번호</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px;">핵심 기안 항목 및 세부 사항</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px; text-align: center; width: 80px;">AI 분석</th>
             </tr>
           </thead>
           <tbody>
@@ -483,9 +483,9 @@ export const ApprovalSystem: React.FC = () => {
         const cleaned = line.replace(/^\d+[\.\s\-]+/, '');
         summaryHTML += `
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #64748b;">${index + 1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; color: #334155;">${cleaned}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">
+            <td style="border: 1px solid var(--border-default); padding: 6px; font-weight: bold; color: var(--text-secondary);">${index + 1}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; color: #334155;">${cleaned}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; text-align: center;">
               <span style="background: #d1fae5; color: #065f46; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">이상없음</span>
             </td>
           </tr>
@@ -496,8 +496,8 @@ export const ApprovalSystem: React.FC = () => {
           </tbody>
         </table>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 원본 작성 내용 상단에 AI 요약 및 품목 정리표가 성공적으로 추가되었습니다.</p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 16px 0;" />
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 원본 작성 내용 상단에 AI 요약 및 품목 정리표가 성공적으로 추가되었습니다.</p>
+        <hr style="border: 0; border-top: 1px dashed var(--border-default); margin: 16px 0;" />
       `;
 
       const merged = summaryHTML + rawHTML;
@@ -537,8 +537,8 @@ export const ApprovalSystem: React.FC = () => {
           </p>
         </div>
 
-        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기안 품의서</h2>
-        <p style="margin: 8px 0; color: #475569;">사내 업무 경쟁력 확보 및 현업 요청 해결을 위해 아래와 같이 기안하오니 검토 후 최종 재가하여 주시기 바랍니다.</p>
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: var(--text-primary);">업무 기안 품의서</h2>
+        <p style="margin: 8px 0; color: var(--text-secondary);">사내 업무 경쟁력 확보 및 현업 요청 해결을 위해 아래와 같이 기안하오니 검토 후 최종 재가하여 주시기 바랍니다.</p>
 
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">1. 기안 목적 및 도입 배경</h3>
         <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
@@ -549,25 +549,25 @@ export const ApprovalSystem: React.FC = () => {
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">2. 청구 내역 및 세부 품목 단가</h3>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px;">도입 대상 세부 품목</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 60px;">수량</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">단가 (USD)</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; width: 120px;">합계 금액</th>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px;">도입 대상 세부 품목</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 60px;">수량</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: right; width: 120px;">단가 (USD)</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: right; width: 120px;">합계 금액</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">요청 도입 고성능 장비 (A타입 사양)</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">3</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">5,000.00</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">15,000.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">요청 도입 고성능 장비 (A타입 사양)</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">3</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">5,000.00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">15,000.00</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">기본 셋업 공임 및 라이선스 비용</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">1</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">0.00 (지원)</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: right; color: #334155;">무상 제공</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">기본 셋업 공임 및 라이선스 비용</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">1</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">0.00 (지원)</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: right; color: #334155;">무상 제공</td>
             </tr>
           </tbody>
         </table>
@@ -581,7 +581,7 @@ export const ApprovalSystem: React.FC = () => {
           <li style="margin-bottom: 4px;">최신 OS 보안 업데이트 지원을 통한 기업 정보 보안 유출 사고 선제 차단.</li>
         </ul>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 프롬프트에 기재해주신 핵심 요구사항을 분석하여 공식 비즈니스 서식으로 요약 작성되었습니다.</p>
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 위 초안은 프롬프트에 기재해주신 핵심 요구사항을 분석하여 공식 비즈니스 서식으로 요약 작성되었습니다.</p>
       `;
 
       if (editorRef.current) {
@@ -623,7 +623,7 @@ export const ApprovalSystem: React.FC = () => {
       } else if (text.startsWith('>')) {
         e.preventDefault();
         range.startContainer.textContent = text.replace(/^>\s*/, '');
-        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid var(--border-default); border-radius: 4px; margin: 8px 0; font-style: italic; color: var(--text-secondary);">${range.startContainer.textContent}</div><p><br></p>`;
         // replace content
         range.startContainer.textContent = '';
         document.execCommand('insertHTML', false, calloutHTML);
@@ -654,13 +654,13 @@ export const ApprovalSystem: React.FC = () => {
     if (command === 'table') {
       insertTable();
     } else if (command === 'callout') {
-      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
       document.execCommand('insertHTML', false, calloutHTML);
     } else if (command === 'divider') {
-      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid var(--border-default); margin: 16px 0;" /><p><br></p>`;
       document.execCommand('insertHTML', false, hrHTML);
     } else if (command === 'quote') {
-      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
+      const quoteHTML = `<blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
       document.execCommand('insertHTML', false, quoteHTML);
     }
     
@@ -699,7 +699,7 @@ export const ApprovalSystem: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', gap: '8px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
         <button
           onClick={() => setActiveTab('pending')}
           style={{
@@ -709,8 +709,8 @@ export const ApprovalSystem: React.FC = () => {
             fontSize: '13px',
             fontWeight: 800,
             cursor: 'pointer',
-            color: activeTab === 'pending' ? '#4f46e5' : '#64748b',
-            borderBottom: activeTab === 'pending' ? '2.5px solid #4f46e5' : 'none'
+            color: activeTab === 'pending' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'pending' ? '2.5px solid var(--primary-color)' : 'none'
           }}
         >
           📥 결재 대기 문서 ({pendingDocs.length})
@@ -724,8 +724,8 @@ export const ApprovalSystem: React.FC = () => {
             fontSize: '13px',
             fontWeight: 800,
             cursor: 'pointer',
-            color: activeTab === 'submitted' ? '#4f46e5' : '#64748b',
-            borderBottom: activeTab === 'submitted' ? '2.5px solid #4f46e5' : 'none'
+            color: activeTab === 'submitted' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'submitted' ? '2.5px solid var(--primary-color)' : 'none'
           }}
         >
           📤 나의 상신 문서 ({submittedDocs.length})
@@ -739,8 +739,8 @@ export const ApprovalSystem: React.FC = () => {
             fontSize: '13px',
             fontWeight: 800,
             cursor: 'pointer',
-            color: activeTab === 'archive' ? '#4f46e5' : '#64748b',
-            borderBottom: activeTab === 'archive' ? '2.5px solid #4f46e5' : 'none'
+            color: activeTab === 'archive' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'archive' ? '2.5px solid var(--primary-color)' : 'none'
           }}
         >
           📁 결재 완료 보관함 ({archiveDocs.length})
@@ -752,7 +752,7 @@ export const ApprovalSystem: React.FC = () => {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #e2e8f0', color: '#475569', textAlign: 'left', fontWeight: 'bold' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>
                 <th style={{ padding: '12px' }}>문서 종류</th>
                 <th style={{ padding: '12px' }}>기안 제목</th>
                 <th style={{ padding: '12px' }}>기안자</th>
@@ -764,7 +764,7 @@ export const ApprovalSystem: React.FC = () => {
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     보관함에 보관된 문서가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -795,9 +795,9 @@ export const ApprovalSystem: React.FC = () => {
                     <td style={{ padding: '12px', fontWeight: 800, color: '#0f172a' }}>
                       {doc.title} {doc.docType === 'EXPENSE' && `(${formatCurrency(doc.amount || 0, doc.currency)})`}
                     </td>
-                    <td style={{ padding: '12px', color: '#475569' }}>{doc.requesterName}</td>
-                    <td style={{ padding: '12px', color: '#64748b' }}>👤 {doc.approverName}</td>
-                    <td style={{ padding: '12px', color: '#94a3b8', fontSize: '11.5px' }}>{new Date(doc.createdAt).toLocaleString()}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>{doc.requesterName}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-secondary)' }}>👤 {doc.approverName}</td>
+                    <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '11.5px' }}>{new Date(doc.createdAt).toLocaleString()}</td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <span style={{
                         fontSize: '11.5px',
@@ -822,7 +822,7 @@ export const ApprovalSystem: React.FC = () => {
       {showDraftModal && (
         <div onPaste={handlePaste} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: 'var(--primary-color)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '15px', fontWeight: 800 }}>📝 새 결재 문서 기안 상신</span>
               <button onClick={() => setShowDraftModal(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
@@ -830,7 +830,7 @@ export const ApprovalSystem: React.FC = () => {
             <form onSubmit={handleCreateDraft} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결재 양식 및 템플릿 로드</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>결재 양식 및 템플릿 로드</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
@@ -842,9 +842,9 @@ export const ApprovalSystem: React.FC = () => {
                       flex: 1,
                       padding: '8px 0',
                       borderRadius: '6px',
-                      border: docType === 'DRAFT' ? '2px solid #4f46e5' : '1px solid #cbd5e1',
+                      border: docType === 'DRAFT' ? '2px solid var(--primary-color)' : '1px solid var(--border-default)',
                       background: docType === 'DRAFT' ? '#eff6ff' : '#fff',
-                      color: docType === 'DRAFT' ? '#4f46e5' : '#475569',
+                      color: docType === 'DRAFT' ? 'var(--primary-color)' : 'var(--text-secondary)',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
@@ -861,9 +861,9 @@ export const ApprovalSystem: React.FC = () => {
                       flex: 1,
                       padding: '8px 0',
                       borderRadius: '6px',
-                      border: docType === 'EXPENSE' ? '2px solid #4f46e5' : '1px solid #cbd5e1',
+                      border: docType === 'EXPENSE' ? '2px solid var(--primary-color)' : '1px solid var(--border-default)',
                       background: docType === 'EXPENSE' ? '#eff6ff' : '#fff',
-                      color: docType === 'EXPENSE' ? '#4f46e5' : '#475569',
+                      color: docType === 'EXPENSE' ? 'var(--primary-color)' : 'var(--text-secondary)',
                       fontWeight: 700,
                       cursor: 'pointer'
                     }}
@@ -887,7 +887,7 @@ export const ApprovalSystem: React.FC = () => {
                     placeholder="예: 개발서버 3대 신규 교체 구매 요청. 소요 예산 15000달러."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
                   />
                   <button
                     type="button"
@@ -900,36 +900,36 @@ export const ApprovalSystem: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>기안 제목 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>기안 제목 ★</label>
                 <input
                   type="text"
                   required
                   placeholder="예: [설계부] 서버 구매 품의서 건"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               {docType === 'EXPENSE' && (
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결의 금액 ★</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>결의 금액 ★</label>
                     <input
                       type="number"
                       required
                       placeholder="금액을 입력하세요"
                       value={amount}
                       onChange={e => setAmount(e.target.value)}
-                      style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                      style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '120px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>통화 선택</label>
+                    <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>통화 선택</label>
                     <select
                       value={currency}
                       onChange={e => setCurrency(e.target.value)}
-                      style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: '#fff' }}
+                      style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: '#fff' }}
                     >
                       <option value="USD">USD ($)</option>
                       <option value="KRW">KRW (₩)</option>
@@ -941,14 +941,14 @@ export const ApprovalSystem: React.FC = () => {
 
               {/* HTML Editor Component with Paste, KeyDown, Input events */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>기안 내용 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>기안 내용 ★</label>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
-                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
-                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
-                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       田 표 삽입
                     </button>
                   </div>
@@ -969,7 +969,7 @@ export const ApprovalSystem: React.FC = () => {
                   onPaste={handlePaste}
                   style={{
                     minHeight: '220px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     borderBottomLeftRadius: '6px',
                     borderBottomRightRadius: '6px',
                     padding: '12px',
@@ -988,7 +988,7 @@ export const ApprovalSystem: React.FC = () => {
                     top: '280px',
                     left: '12px',
                     background: '#fff',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     borderRadius: '8px',
                     zIndex: 10000,
@@ -997,17 +997,17 @@ export const ApprovalSystem: React.FC = () => {
                     flexDirection: 'column',
                     padding: '4px 0'
                   }}>
-                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
-                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>田</span> <b>표 삽입</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>💡</span> <b>콜아웃 상자</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>➖</span> <b>구분선</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12.5px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>✍️</span> <b>인용구 블록</b>
                     </button>
                   </div>
@@ -1024,14 +1024,14 @@ export const ApprovalSystem: React.FC = () => {
                   flexDirection: 'column',
                   gap: '6px',
                   background: isDraggingFile ? '#eff6ff' : '#f8fafc',
-                  border: isDraggingFile ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  border: isDraggingFile ? '2px dashed #3b82f6' : '1px dashed var(--border-default)',
                   padding: '16px',
                   borderRadius: '8px',
                   textAlign: 'center',
                   transition: 'all 0.15s'
                 }}
               >
-                <label style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                <label style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                   <span>📁 파일을 드래그하여 놓거나 클릭하여 선택</span>
                   <input
                     type="file"
@@ -1040,11 +1040,11 @@ export const ApprovalSystem: React.FC = () => {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <div style={{ fontSize: '10px', color: '#94a3b8' }}>화면 캡처를 에디터 안에 붙여넣기(Ctrl+V) 하여 첨부할 수도 있습니다. (개당 최대 500KB)</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>화면 캡처를 에디터 안에 붙여넣기(Ctrl+V) 하여 첨부할 수도 있습니다. (개당 최대 500KB)</div>
                 {attachments.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px', justifyContent: 'center' }}>
                     {attachments.map((file, idx) => (
-                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px', position: 'relative' }}>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '6px 10px', position: 'relative' }}>
                         {file.type.startsWith('image/') ? (
                           <img
                             src={file.data}
@@ -1053,7 +1053,7 @@ export const ApprovalSystem: React.FC = () => {
                             style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer' }}
                           />
                         ) : (
-                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold', color: '#64748b' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
                             FILE
                           </div>
                         )}
@@ -1072,12 +1072,12 @@ export const ApprovalSystem: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>결재선 지정 (결재권자) ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>결재선 지정 (결재권자) ★</label>
                 <select
                   required
                   value={selectedApproverId}
                   onChange={e => setSelectedApproverId(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: 'white' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: 'white' }}
                 >
                   <option value="">결재권자를 선택해 주세요</option>
                   {potentialApprovers.map(approver => (
@@ -1100,7 +1100,7 @@ export const ApprovalSystem: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowDraftModal(false)}
-                  style={{ flex: 1, padding: '12px 0', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, padding: '12px 0', background: 'var(--border-color)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                 >
                   취소
                 </button>
@@ -1117,7 +1117,7 @@ export const ApprovalSystem: React.FC = () => {
           <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             
             {/* Modal Header */}
-            <div style={{ padding: '16px 20px', background: '#1e293b', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: 'var(--text-primary)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '15px', fontWeight: 800 }}>📄 품의/결재 문서 상세보기</span>
               <button onClick={() => setSelectedDoc(null)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
@@ -1131,30 +1131,30 @@ export const ApprovalSystem: React.FC = () => {
                   <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
                     {selectedDoc.docType === 'EXPENSE' ? '지 출 결 의 서' : '기 안 품 의 서'}
                   </h1>
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>등록번호: {selectedDoc.id.substring(0, 8).toUpperCase()}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>등록번호: {selectedDoc.id.substring(0, 8).toUpperCase()}</span>
                 </div>
                 
-                <table style={{ border: '1px solid #cbd5e1', borderCollapse: 'collapse', textAlign: 'center', fontSize: '11px' }}>
+                <table style={{ border: '1px solid var(--border-default)', borderCollapse: 'collapse', textAlign: 'center', fontSize: '11px' }}>
                   <tbody>
                     <tr>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', background: '#f8fafc', color: '#475569', fontWeight: 'bold' }}>기안자</td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '4px 8px', background: '#f8fafc', color: '#475569', fontWeight: 'bold' }}>결재권자</td>
+                      <td style={{ border: '1px solid var(--border-default)', padding: '4px 8px', background: '#f8fafc', color: 'var(--text-secondary)', fontWeight: 'bold' }}>기안자</td>
+                      <td style={{ border: '1px solid var(--border-default)', padding: '4px 8px', background: '#f8fafc', color: 'var(--text-secondary)', fontWeight: 'bold' }}>결재권자</td>
                     </tr>
                     <tr style={{ height: '48px' }}>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '8px 12px', verticalAlign: 'middle' }}>
+                      <td style={{ border: '1px solid var(--border-default)', padding: '8px 12px', verticalAlign: 'middle' }}>
                         <div style={{ fontWeight: 800, color: '#334155' }}>{selectedDoc.requesterName}</div>
-                        <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>상신</div>
+                        <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>상신</div>
                       </td>
-                      <td style={{ border: '1px solid #cbd5e1', padding: '8px 12px', verticalAlign: 'middle', minWidth: '70px' }}>
+                      <td style={{ border: '1px solid var(--border-default)', padding: '8px 12px', verticalAlign: 'middle', minWidth: '70px' }}>
                         {selectedDoc.status === 'APPROVED' ? (
                           <>
                             <div style={{ fontWeight: 900, color: '#059669', fontSize: '12px' }}>✓ 승인</div>
-                            <div style={{ fontSize: '9px', color: '#94a3b8' }}>{selectedDoc.approvedBy}</div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{selectedDoc.approvedBy}</div>
                           </>
                         ) : selectedDoc.status === 'REJECTED' ? (
                           <>
                             <div style={{ fontWeight: 900, color: '#dc2626', fontSize: '12px' }}>✕ 반려</div>
-                            <div style={{ fontSize: '9px', color: '#94a3b8' }}>{selectedDoc.approvedBy}</div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{selectedDoc.approvedBy}</div>
                           </>
                         ) : (
                           <div style={{ color: '#d97706', fontStyle: 'italic' }}>대기중</div>
@@ -1166,7 +1166,7 @@ export const ApprovalSystem: React.FC = () => {
               </div>
 
               {/* Meta details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <div><strong>상신 일시:</strong> {new Date(selectedDoc.createdAt).toLocaleString()}</div>
                 <div><strong>결재 권한:</strong> {selectedDoc.approverName}</div>
                 {selectedDoc.docType === 'EXPENSE' && (
@@ -1180,7 +1180,7 @@ export const ApprovalSystem: React.FC = () => {
               <div
                 dangerouslySetInnerHTML={{ __html: selectedDoc.content }}
                 style={{
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-default)',
                   borderRadius: '8px',
                   padding: '20px',
                   minHeight: '120px',
@@ -1194,11 +1194,11 @@ export const ApprovalSystem: React.FC = () => {
 
               {/* View/Preview Attachments */}
               {selectedDoc.attachments && selectedDoc.attachments.length > 0 && (
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '12px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>📎 기안 증빙 첨부파일 ({selectedDoc.attachments.length}개)</div>
+                <div style={{ borderTop: '1px dashed var(--border-default)', paddingTop: '12px' }}>
+                  <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px' }}>📎 기안 증빙 첨부파일 ({selectedDoc.attachments.length}개)</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {selectedDoc.attachments.map((file, idx) => (
-                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 10px' }}>
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 10px' }}>
                         {file.type.startsWith('image/') ? (
                           <img
                             src={file.data}
@@ -1207,14 +1207,14 @@ export const ApprovalSystem: React.FC = () => {
                             style={{ width: '60px', height: '60px', borderRadius: '4px', objectFit: 'cover', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
                           />
                         ) : (
-                          <div style={{ width: '60px', height: '60px', borderRadius: '4px', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: '#475569' }}>
+                          <div style={{ width: '60px', height: '60px', borderRadius: '4px', background: 'var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
                             FILE
                           </div>
                         )}
                         <a
                           href={file.data}
                           download={file.name}
-                          style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 700, textDecoration: 'none', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          style={{ fontSize: '11px', color: 'var(--text-link)', fontWeight: 700, textDecoration: 'none', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                           title="다운로드"
                         >
                           📥 {file.name}
@@ -1234,22 +1234,22 @@ export const ApprovalSystem: React.FC = () => {
               )}
 
               {/* Comments Section */}
-              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#334155', margin: 0 }}>💬 결재 의견 / 댓글 ({selectedDoc.comments?.length || 0}개)</h4>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
                   {(!selectedDoc.comments || selectedDoc.comments.length === 0) ? (
-                    <div style={{ padding: '12px', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '6px', textAlign: 'center' }}>
+                    <div style={{ padding: '12px', fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', background: '#f8fafc', borderRadius: '6px', textAlign: 'center' }}>
                       등록된 의견이 없습니다.
                     </div>
                   ) : (
                     selectedDoc.comments.map((comm, idx) => (
-                      <div key={idx} style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '12.5px' }}>
+                      <div key={idx} style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '12.5px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                          <strong style={{ color: '#475569' }}>{comm.senderName}</strong>
-                          <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>{new Date(comm.createdAt).toLocaleString()}</span>
+                          <strong style={{ color: 'var(--text-secondary)' }}>{comm.senderName}</strong>
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{new Date(comm.createdAt).toLocaleString()}</span>
                         </div>
-                        <div style={{ color: '#1e293b', whiteSpace: 'pre-wrap' }}>{comm.content}</div>
+                        <div style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{comm.content}</div>
                       </div>
                     ))
                   )}
@@ -1264,11 +1264,11 @@ export const ApprovalSystem: React.FC = () => {
                     onKeyDown={e => {
                       if (e.key === 'Enter') handleAddComment();
                     }}
-                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }}
+                    style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }}
                   />
                   <button
                     onClick={handleAddComment}
-                    style={{ padding: '8px 14px', background: '#475569', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                    style={{ padding: '8px 14px', background: 'var(--text-secondary)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
                   >
                     의견 등록
                   </button>
@@ -1285,7 +1285,7 @@ export const ApprovalSystem: React.FC = () => {
                     placeholder="예: 예산 검토 필요 또는 품목 재선정 바람"
                     value={rejectReason}
                     onChange={e => setRejectReason(e.target.value)}
-                    style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                    style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
                   />
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '4px' }}>
                     <button
@@ -1296,7 +1296,7 @@ export const ApprovalSystem: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setShowRejectInput(false)}
-                      style={{ padding: '5px 12px', background: '#e2e8f0', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ padding: '5px 12px', background: 'var(--border-color)', border: 'none', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
                     >
                       취소
                     </button>
@@ -1306,7 +1306,7 @@ export const ApprovalSystem: React.FC = () => {
             </div>
 
             {/* Actions Footer */}
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
               {selectedDoc.status === 'PENDING' && selectedDoc.approverId === userProfile?.id && !showRejectInput && (
                 <>
                   <button
@@ -1325,7 +1325,7 @@ export const ApprovalSystem: React.FC = () => {
               )}
               <button
                 onClick={() => setSelectedDoc(null)}
-                style={{ padding: '8px 18px', background: '#e2e8f0', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ padding: '8px 18px', background: 'var(--border-color)', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
               >
                 닫기
               </button>
@@ -1369,20 +1369,20 @@ export const ApprovalSystem: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <span style={{ fontSize: '32px' }}>🤖</span>
-            <span style={{ fontSize: '14px', fontWeight: 850, color: '#1e293b', textAlign: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: 'var(--text-primary)', textAlign: 'center' }}>
               AI가 기안 내용을 정밀 분석하여 의사결정 요약문 및 표를 생성하고 있습니다...
             </span>
-            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0,
                 width: '60%',
-                background: '#4f46e5',
+                background: 'var(--focus-ring)',
                 borderRadius: '3px',
                 animation: 'pulse 1.5s infinite ease-in-out'
               }}></div>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>약 2초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

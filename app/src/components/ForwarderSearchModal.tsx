@@ -70,7 +70,7 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
         background: '#fff', borderRadius: '14px', width: '92%', maxWidth: '850px',
         height: '75vh', display: 'flex', flexDirection: 'column',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
-        overflow: 'hidden', border: '1px solid #e2e8f0',
+        overflow: 'hidden', border: '1px solid var(--border-color)',
         pointerEvents: 'auto',
         resize: 'both',
         minWidth: '550px', minHeight: '300px'
@@ -79,7 +79,7 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
         <div 
           onMouseDown={handleMouseDown}
           style={{
-            padding: '16px 20px', borderBottom: '1px solid #e2e8f0',
+            padding: '16px 20px', borderBottom: '1px solid var(--border-color)',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             background: '#f8fafc',
             cursor: 'move',
@@ -89,7 +89,7 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
             <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>🔍</span> 포워딩/운송 업체 검색 및 선택 (Subwindow)
             </h3>
-            <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#64748b' }}>
+            <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>
               목록의 업체를 더블 클릭하거나 [선택] 버튼을 눌러 지정할 수 있습니다.
             </p>
           </div>
@@ -97,13 +97,13 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
             onClick={onClose}
             style={{
               background: 'none', border: 'none', fontSize: '20px',
-              color: '#94a3b8', cursor: 'pointer', display: 'flex',
+              color: 'var(--text-muted)', cursor: 'pointer', display: 'flex',
               alignItems: 'center', justifyContent: 'center',
               padding: '4px', width: '32px', height: '32px',
               transition: 'color 0.15s'
             }}
             onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-            onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
           >
             ✕
           </button>
@@ -118,13 +118,13 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               flex: 1, padding: '8px 12px',
-              border: '1px solid #cbd5e1', borderRadius: '6px',
+              border: '1px solid var(--border-default)', borderRadius: '6px',
               fontSize: '12.5px', color: '#0f172a', outline: 'none',
               boxSizing: 'border-box',
               transition: 'border-color 0.15s'
             }}
             onFocus={e => e.target.style.borderColor = '#2563eb'}
-            onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
             autoFocus
           />
           <button 
@@ -144,13 +144,13 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
         {/* List Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
           {filteredForwarders.length === 0 ? (
-            <div style={{ padding: '60px 0', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
+            <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}>
               검색된 포워더/운송 업체가 없습니다.
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#475569', fontWeight: 700, background: '#f8fafc' }}>
+                <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 700, background: '#f8fafc' }}>
                   <th style={{ padding: '8px 10px' }}>업체명</th>
                   <th style={{ padding: '8px 10px' }}>사업자번호</th>
                   <th style={{ padding: '8px 10px' }}>대표자</th>
@@ -168,9 +168,9 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <td style={{ padding: '10px', fontWeight: 700, color: '#0f172a' }}>{s.name}</td>
-                    <td style={{ padding: '10px', color: '#475569' }}>{s.bizNumber || '-'}</td>
-                    <td style={{ padding: '10px', color: '#475569' }}>{s.representative || '-'}</td>
-                    <td style={{ padding: '10px', color: '#475569' }}>{s.phone || '-'}</td>
+                    <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.bizNumber || '-'}</td>
+                    <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.representative || '-'}</td>
+                    <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.phone || '-'}</td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
                       <button
                         onClick={() => onSelect(s)}

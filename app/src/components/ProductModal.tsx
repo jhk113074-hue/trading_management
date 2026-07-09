@@ -652,12 +652,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       pointerEvents: 'auto',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1' }}>
+      <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid var(--border-default)' }}>
         
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
-          style={{ padding: '20px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0', cursor: 'move', userSelect: 'none' }}>
+          style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0', cursor: 'move', userSelect: 'none' }}>
           <div>
             <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
               {initialProduct ? (isCopy ? 'Copy & Add Product Master' : 'Edit Product Master') : 'Add New Product Master'}
@@ -671,7 +671,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
         {/* Body */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', border: '1px solid #e8ecf0', padding: '4px', borderRadius: '8px', marginBottom: '22px' }}>
+          <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', border: '1px solid var(--border-color)', padding: '4px', borderRadius: '8px', marginBottom: '22px' }}>
             {[
                 { id: 1, label: '📋 1. 상품 스펙 및 패킹/기술자료' },
                 { id: 2, label: '💰 2. 공급 유통사 및 단가 이력' },
@@ -708,73 +708,73 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 120px 80px', gap: '8px' }}>
                   {/* 대분류 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>대분류</label>
+                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>대분류</label>
                     {isAddingLarge ? (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <input type="text" placeholder="새 대분류명" value={newLargeVal} onChange={e => setNewLargeVal(e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', outline: 'none' }} />
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', outline: 'none' }} />
                         <button type="button" onClick={() => registerNewCategory(newLargeVal, 'large')}
                           style={{ padding: '3px 7px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>확인</button>
                         <button type="button" onClick={() => { setIsAddingLarge(false); setNewLargeVal(''); }}
-                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
+                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <select value={formData.categoryLarge || ''} onChange={e => handleChange('categoryLarge', e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
                           <option value="">-- 선택 --</option>
                           {largeCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                         <button type="button" onClick={() => setIsAddingLarge(true)}
-                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
+                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
                       </div>
                     )}
                   </div>
                   {/* 중분류 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>중분류</label>
+                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>중분류</label>
                     {isAddingMedium ? (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <input type="text" placeholder="새 중분류명" value={newMediumVal} onChange={e => setNewMediumVal(e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', outline: 'none' }} />
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', outline: 'none' }} />
                         <button type="button" onClick={() => registerNewCategory(newMediumVal, 'medium')}
                           style={{ padding: '3px 7px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>확인</button>
                         <button type="button" onClick={() => { setIsAddingMedium(false); setNewMediumVal(''); }}
-                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
+                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <select value={formData.categoryMedium || ''} onChange={e => handleChange('categoryMedium', e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
                           <option value="">-- 선택 --</option>
                           {mediumCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                         <button type="button" onClick={() => setIsAddingMedium(true)}
-                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
+                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
                       </div>
                     )}
                   </div>
                   {/* 소분류 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>소분류</label>
+                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>소분류</label>
                     {isAddingSmall ? (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <input type="text" placeholder="새 소분류명" value={newSmallVal} onChange={e => setNewSmallVal(e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', outline: 'none' }} />
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', outline: 'none' }} />
                         <button type="button" onClick={() => registerNewCategory(newSmallVal, 'small')}
                           style={{ padding: '3px 7px', fontSize: '11px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>확인</button>
                         <button type="button" onClick={() => { setIsAddingSmall(false); setNewSmallVal(''); }}
-                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
+                          style={{ padding: '3px 6px', fontSize: '11px', background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✕</button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: '3px' }}>
                         <select value={formData.categorySmall || ''} onChange={e => handleChange('categorySmall', e.target.value)}
-                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid #e2e8f0', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
+                          style={{ flex: 1, padding: '5px 8px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '5px', background: '#fff', color: '#0f172a', outline: 'none' }}>
                           <option value="">-- 선택 --</option>
                           {smallCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                         <button type="button" onClick={() => setIsAddingSmall(true)}
-                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
+                          style={{ padding: '0 7px', fontSize: '13px', background: '#f8fafc', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>＋</button>
                       </div>
                     )}
                   </div>
@@ -786,12 +786,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
                 {/* 스펙 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                  <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>규격 / 스펙 (Spec)</label>
+                  <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>규격 / 스펙 (Spec)</label>
                   <input type="text" value={formData.spec || ''} onChange={(e: any) => handleChange('spec', e.target.value)}
                     placeholder="예: TPA Resin, Low Profile Additive 등"
-                    style={{ padding: '5px 9px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12.5px', color: '#334155', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                    style={{ padding: '5px 9px', border: '1px solid var(--border-color)', borderRadius: '5px', fontSize: '12.5px', color: '#334155', outline: 'none', width: '100%', boxSizing: 'border-box' }}
                     onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                    onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; }}
                   />
                 </div>
 
@@ -803,33 +803,33 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   <Input label="색상" value={formData.color} onChange={(v: any) => handleChange('color', v)} />
                   <Input label="재질" value={formData.material} onChange={(v: any) => handleChange('material', v)} />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>상세 설명</label>
+                    <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>상세 설명</label>
                     <input type="text" value={formData.description || ''} onChange={(e: any) => handleChange('description', e.target.value)}
                       placeholder="상품 상세 설명"
-                      style={{ padding: '5px 9px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', color: '#334155', outline: 'none', boxSizing: 'border-box' }}
+                      style={{ padding: '5px 9px', border: '1px solid var(--border-color)', borderRadius: '5px', fontSize: '12px', color: '#334155', outline: 'none', boxSizing: 'border-box' }}
                       onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
-                      onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                      onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; }}
                     />
                   </div>
                 </div>
 
                 {/* 이미지 — 컴팩트 한 줄 */}
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '6px', border: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                     {formData.imageUrl
                       ? <img src={formData.imageUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: '16px', color: '#94a3b8' }}>🖼️</span>}
+                      : <span style={{ fontSize: '16px', color: 'var(--text-muted)' }}>🖼️</span>}
                   </div>
                   <input type="file" id="product-image-upload" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload(e.target.files)} />
                   <label htmlFor="product-image-upload"
-                    style={{ padding: '4px 10px', background: '#f8fafc', color: '#475569', borderRadius: '5px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+                    style={{ padding: '4px 10px', background: '#f8fafc', color: 'var(--text-secondary)', borderRadius: '5px', fontSize: '11.5px', fontWeight: 600, cursor: 'pointer', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
                     {isImageUploading ? '업로드 중...' : '이미지 추가'}
                   </label>
                   <input type="text" value={formData.imageUrl || ''} onChange={(e) => handleChange('imageUrl', e.target.value)}
                     placeholder="이미지 URL 직접 입력"
-                    style={{ flex: 1, padding: '5px 9px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ flex: 1, padding: '5px 9px', border: '1px solid var(--border-color)', borderRadius: '5px', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
                     onFocus={e => { e.target.style.borderColor = '#2563eb'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; }}
+                    onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; }}
                   />
                   {formData.imageUrl && (
                     <button type="button" onClick={() => handleChange('imageUrl', '')}
@@ -844,8 +844,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 <div>
                   <button type="button" onClick={() => setOpenOptional(v => !v)}
                     style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', cursor: 'pointer', padding: '0', marginBottom: openOptional ? '8px' : '0' }}>
-                    <span style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🔑 바이어별 HS CODE</span>
-                    <span style={{ fontSize: '10px', color: '#94a3b8', transition: 'transform 0.15s', transform: openOptional ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▼</span>
+                    <span style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🔑 바이어별 HS CODE</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', transition: 'transform 0.15s', transform: openOptional ? 'rotate(180deg)' : 'none', display: 'inline-block' }}>▼</span>
                     {Object.keys(formData.customerHsCodes || {}).length > 0 && (
                       <span style={{ fontSize: '10px', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '10px', fontWeight: 700 }}>
                         {Object.keys(formData.customerHsCodes || {}).length}건
@@ -853,20 +853,20 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     )}
                   </button>
                   {openOptional && (
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '7px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ border: '1px solid var(--border-color)', borderRadius: '7px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {Object.keys(formData.customerHsCodes || {}).length > 0 && (
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                           <thead>
-                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                              <th style={{ padding: '5px 8px', color: '#64748b', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', textAlign: 'left' }}>고객사명</th>
-                              <th style={{ padding: '5px 8px', color: '#64748b', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', textAlign: 'left' }}>전용 HS CODE</th>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)' }}>
+                              <th style={{ padding: '5px 8px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', textAlign: 'left' }}>고객사명</th>
+                              <th style={{ padding: '5px 8px', color: 'var(--text-secondary)', fontWeight: 700, fontSize: '9.5px', textTransform: 'uppercase', textAlign: 'left' }}>전용 HS CODE</th>
                               <th style={{ width: '30px' }}></th>
                             </tr>
                           </thead>
                           <tbody>
                             {Object.entries(formData.customerHsCodes || {}).map(([cust, code]) => (
                               <tr key={cust} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                <td style={{ padding: '5px 8px', fontWeight: 600, color: '#1e293b' }}>{cust}</td>
+                                <td style={{ padding: '5px 8px', fontWeight: 600, color: 'var(--text-primary)' }}>{cust}</td>
                                 <td style={{ padding: '5px 8px', fontFamily: 'monospace', color: '#0f766e', fontWeight: 700 }}>{code as string}</td>
                                 <td style={{ textAlign: 'center' }}>
                                   <button type="button" onClick={() => {
@@ -882,14 +882,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       )}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '6px', alignItems: 'end' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>고객사명</label>
+                          <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>고객사명</label>
                           <input type="text" placeholder="예: KUWAIT CUSTOMER" value={newCustomerName} onChange={e => setNewCustomerName(e.target.value)}
-                            style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+                            style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                          <label style={{ fontSize: '9.5px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>전용 HS CODE</label>
+                          <label style={{ fontSize: '9.5px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>전용 HS CODE</label>
                           <input type="text" placeholder="예: 3901.20.9000" value={newCustomerHsCode} onChange={e => setNewCustomerHsCode(e.target.value)}
-                            style={{ padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
+                            style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '5px', fontSize: '12px', outline: 'none' }} />
                         </div>
                         <button type="button" onClick={() => {
                           if (!newCustomerName.trim() || !newCustomerHsCode.trim()) { alert('고객사명과 HS CODE를 입력해 주세요.'); return; }
@@ -1006,19 +1006,19 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           </div>
                           <div>
                             <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>담당자</div>
-                            <div style={{ fontSize: '12px', color: '#1e293b' }}>{formData.manufacturerContact || '-'}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{formData.manufacturerContact || '-'}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>이메일</div>
-                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerEmail || '-'}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerEmail || '-'}</div>
                           </div>
                           <div>
                             <div style={{ fontSize: '10px', color: '#6b7280', fontWeight: 600, marginBottom: '2px' }}>주소</div>
-                            <div style={{ fontSize: '12px', color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerAddress || '-'}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formData.manufacturerAddress || '-'}</div>
                           </div>
                         </div>
                       ) : (
-                        <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8fafc', borderRadius: '6px' }}>
+                        <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: '#f8fafc', borderRadius: '6px' }}>
                           제조사를 선택하면 상세 정보가 표시됩니다
                         </div>
                       )}
@@ -1105,7 +1105,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <tbody>
                         {(!formData.suppliers || formData.suppliers.length === 0) ? (
                           <tr>
-                            <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>등록된 거래 유통사가 없습니다. 상단에서 유통사를 검색해 추가해 주세요.</td>
+                            <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 거래 유통사가 없습니다. 상단에서 유통사를 검색해 추가해 주세요.</td>
                           </tr>
                         ) : (
                           formData.suppliers.map((sup, idx) => (
@@ -1137,7 +1137,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                   const email = found.purchaseEmail || found.email || '-';
                                   const addr = found.address || '-';
                                   return (
-                                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: 500, marginLeft: '12px', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', gap: '8px', flexWrap: 'wrap', border: '1px solid #e2e8f0' }}>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: '12px', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', gap: '8px', flexWrap: 'wrap', border: '1px solid var(--border-color)' }}>
                                       <span>👤 담당자: {contact}</span>
                                       <span>📱 Mobile: {phone}</span>
                                       <span>✉️ 이메일: {email}</span>
@@ -1191,13 +1191,13 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               {(latestPrice.currency || 'KRW')} {Number(latestPrice.price || 0).toLocaleString('ko-KR')}
                             </span>
                             <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>/ {formData.unit || 'KG'}</span>
-                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '8px' }}>적용일: {latestPrice.validFrom || '-'}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>적용일: {latestPrice.validFrom || '-'}</span>
                             {latestPrice.supplierName && (
-                              <span style={{ fontSize: '11px', color: '#64748b' }}>· {latestPrice.supplierName}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>· {latestPrice.supplierName}</span>
                             )}
                           </div>
                         ) : (
-                          <div style={{ fontSize: '13px', color: '#94a3b8' }}>등록된 단가 없음 — 아래에서 단가를 추가하세요</div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>등록된 단가 없음 — 아래에서 단가를 추가하세요</div>
                         )}
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#16a34a', background: '#dcfce7', padding: '6px 12px', borderRadius: '20px', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -1254,7 +1254,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <tbody>
                         {(!formData.purchasePrices || formData.purchasePrices.length === 0) ? (
                           <tr>
-                            <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
+                            <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
                           </tr>
                         ) : (
                           formData.purchasePrices.map((hist, idx) => (
@@ -1374,7 +1374,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
             {activeTab === 1 && (
               <>
                 {/* Packing Methods list */}
-                <div style={{ border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#2563eb', margin: 0 }}>📦 제품 패킹(포장) 방법 목록</h4>
@@ -1383,7 +1383,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         <select 
                           value={formData.unit ?? ''} 
                           onChange={e => handleChange('unit', e.target.value)} 
-                          style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                          style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
                         >
                           {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
@@ -1406,7 +1406,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
                     <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                        <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e8ecf0', textAlign: 'left' }}>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
                           <th style={{ padding: '8px' }}>포장 형태</th>
                           <th style={{ padding: '8px' }}>단위</th>
                           <th style={{ padding: '8px' }}>포장 규격 (WxLxH, 적재수량/중량, 순중량, 총중량)</th>
@@ -1418,7 +1418,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <tbody>
                         {(formData.packingMethods || []).length === 0 ? (
                           <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                               등록된 패킹 방법이 없습니다. 우측 상단의 버튼을 눌러 첫 번째 패킹 방법을 추가해 주세요.
                             </td>
                           </tr>
@@ -1430,16 +1430,16 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                : `Single: ${m.unitWidth || 0}x${m.unitLength || 0}x${m.unitHeight || 0} mm / ${m.qtyPerPallet || 0} EA / 순중량: ${m.unitWeight || 0} kg, 총중량: ${m.unitGrossWeight || 0} kg`;
 
                             return (
-                              <tr key={m.id} style={{ borderBottom: '1px solid #e8ecf0', background: m.isDefault ? '#eff6ff' : 'transparent' }}>
+                              <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)', background: m.isDefault ? '#eff6ff' : 'transparent' }}>
                                 <td style={{ padding: '8px', fontWeight: m.isDefault ? 700 : 500 }}>
                                   {m.name}
                                 </td>
                                 <td style={{ padding: '8px' }}>{m.unit}</td>
-                                <td style={{ padding: '8px', color: '#475569' }}>{specStr}</td>
+                                <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{specStr}</td>
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.stackable || 'Y'}</td>
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.rotation || 'Y'}</td>
                                 <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                  <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid #e8ecf0', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
+                                  <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid var(--border-color)', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
                                   <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
                                 </td>
                               </tr>
@@ -1454,9 +1454,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 {/* Add/Edit Packing Method Sub-form */}
                 {editingMethod && (
                   <div style={{ border: '1px solid #2563eb', borderRadius: '12px', padding: '20px', background: '#f8fafc', boxShadow: '0 4px 12px rgba(37,99,235,0.06)', marginTop: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                       <span style={{ fontSize: '16px' }}>⚙️</span>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                         {editingMethod.id ? '패킹 방법 수정' : '새 패킹 방법 등록'}
                       </h4>
                     </div>
@@ -1505,7 +1505,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               palletHeight: isPallet ? size.h : 0
                             }));
                           }} 
-                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {[
                             '단품', 'Paper Bag', 'Paper Box', 'Paper Box(1.2M)', 'Paper Box(1.7M)', 'Paper Box(50A)', 'Paper Box(100A)',
@@ -1522,7 +1522,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         <select 
                           value={editingMethod.unit} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, unit: e.target.value }))} 
-                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {['KG', 'BOX', 'M2', 'M', 'EA', 'SET'].map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
@@ -1534,7 +1534,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         <select 
                           value={editingMethod.stackable} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, stackable: e.target.value }))} 
-                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {['Y', 'N'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
@@ -1544,7 +1544,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         <select 
                           value={editingMethod.rotation} 
                           onChange={(e) => setEditingMethod((p: any) => ({ ...p, rotation: e.target.value }))} 
-                          style={{ padding: '7px 9px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
+                          style={{ padding: '7px 9px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff', outline: 'none' }}
                         >
                           {['Y', 'N'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
                         </select>
@@ -1556,7 +1556,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           <Input label="적재수량/중량 ★" value={editingMethod.qtyPerPallet} onChange={(v: any) => setEditingMethod((p: any) => ({ ...p, qtyPerPallet: v }))} type="number" labelColor="#d97706" />
                         </div>
                       ) : (
-                        <div style={{ gridColumn: 'span 2', padding: '10px 0', fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>단품 (적재정보 없음)</div>
+                        <div style={{ gridColumn: 'span 2', padding: '10px 0', fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>단품 (적재정보 없음)</div>
                       )}
 
                       {!editingMethod.packageType.includes('Pallet') ? (
@@ -1578,8 +1578,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '10px', marginTop: '14px' }}>
-                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '6px 12px', fontSize: '12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', color: '#475569', fontWeight: 600 }}>취소</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '14px' }}>
+                      <button type="button" onClick={() => setEditingMethod(null)} style={{ padding: '6px 12px', fontSize: '12px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 600 }}>취소</button>
                       <button type="button" onClick={handleSavePackingMethod} style={{ padding: '6px 14px', fontSize: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, boxShadow: '0 2px 4px rgba(37,99,235,0.2)' }}>저장 및 적용</button>
                     </div>
                   </div>
@@ -1591,7 +1591,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
             {activeTab === 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ fontSize: '13px', color: '#475569', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   📂 <strong>기술 자료 관리:</strong> 상품에 속한 TDS, MSDS 및 기타 기술 사양 문서를 업로드하고 통합 관리합니다. (각 카테고리별 최대 10MB)
                 </div>
 
@@ -1600,9 +1600,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     const docsOfCat = (formData.technicalDocuments || []).filter(d => d.category === cat);
                     
                     return (
-                      <div key={cat} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
+                      <div key={cat} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px', display: 'flex', flexDirection: 'column', minHeight: '220px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', marginBottom: '12px' }}>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                             {cat === 'TDS' ? '📄 TDS (Technical Data Sheet)' : cat === 'MSDS' ? '🛢️ MSDS (Material Safety Data Sheet)' : '📎 기타 기술자료'}
                           </span>
                           <span style={{ fontSize: '11px', background: cat === 'TDS' ? '#eff6ff' : cat === 'MSDS' ? '#fef2f2' : '#f0fdf4', color: cat === 'TDS' ? '#2563eb' : cat === 'MSDS' ? '#dc2626' : '#16a34a', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
@@ -1620,9 +1620,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           />
                           <label 
                             htmlFor={`file-upload-${cat}`} 
-                            style={{ display: 'block', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '10px', textAlign: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#475569', transition: 'border-color 0.2s' }}
+                            style={{ display: 'block', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '10px', textAlign: 'center', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'border-color 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.borderColor = '#3b82f6'}
-                            onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                            onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-default)'}
                           >
                             {isUploading ? '📤 업로드 중...' : '＋ 파일 추가하기'}
                           </label>
@@ -1631,7 +1631,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                         {/* File List */}
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '180px' }}>
                           {docsOfCat.length === 0 ? (
-                            <div style={{ margin: 'auto', fontSize: '11px', color: '#94a3b8', textAlign: 'center' }}>
+                            <div style={{ margin: 'auto', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
                               등록된 문서가 없습니다.
                             </div>
                           ) : (
@@ -1648,7 +1648,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                     {docItem.name}
                                   </span>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8' }}>({(docItem.size / 1024).toFixed(1)}KB)</span>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({(docItem.size / 1024).toFixed(1)}KB)</span>
                                     <button 
                                       type="button" 
                                       onClick={() => handleDocDelete(origIdx)} 
@@ -1672,8 +1672,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px' }}>
-          <button onClick={handleClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid #e8ecf0', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px' }}>
+          <button onClick={handleClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
           <button onClick={handleSave} disabled={isSaving} style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
             {isSaving ? '저장 중...' : '✔ 저장'}
           </button>
@@ -1686,14 +1686,14 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor }: any) => {
   const isRequired = label?.includes('★');
   const borderStyle = isRequired
-    ? '1.5px solid #94a3b8'
-    : '1px solid #e2e8f0';
+    ? '1.5px solid var(--text-muted)'
+    : '1px solid var(--border-color)';
   const fontStyle = isRequired
     ? { fontSize: '13px', fontWeight: 600, color: '#0f172a' }
     : disabled
-      ? { fontSize: '11.5px', color: '#94a3b8' }
+      ? { fontSize: '11.5px', color: 'var(--text-muted)' }
       : { fontSize: '12.5px', color: '#334155' };
-  const computedLabelColor = labelColor || (isRequired ? '#475569' : disabled ? '#b0bcc8' : '#64748b');
+  const computedLabelColor = labelColor || (isRequired ? 'var(--text-secondary)' : disabled ? '#b0bcc8' : 'var(--text-secondary)');
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
       <label style={{ fontSize: '9.5px', fontWeight: 700, color: computedLabelColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
@@ -1719,7 +1719,7 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
           transition: 'border-color 0.15s, box-shadow 0.15s'
         }}
         onFocus={e => { if (!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.1)'; } }}
-        onBlur={e => { e.target.style.borderColor = isRequired ? '#94a3b8' : '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+        onBlur={e => { e.target.style.borderColor = isRequired ? 'var(--text-muted)' : 'var(--border-color)'; e.target.style.boxShadow = 'none'; }}
       />
     </div>
   );

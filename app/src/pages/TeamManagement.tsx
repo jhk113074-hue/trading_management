@@ -160,7 +160,7 @@ export const TeamManagement: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
               <thead>
-              <tr style={{ borderBottom: '1px solid #f1f5f9', color: '#64748b', fontSize: '0.9rem' }}>
+              <tr style={{ borderBottom: '1px solid #f1f5f9', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이름</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이메일</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>부서</th>
@@ -176,10 +176,10 @@ export const TeamManagement: React.FC = () => {
                 <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
               ) : members.map(member => (
                 <tr key={member.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <td style={{ padding: '16px 24px', fontWeight: 'bold', color: '#1e293b' }}>{member.name}</td>
-                  <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.email}</td>
-                  <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.department || '-'}</td>
-                  <td style={{ padding: '16px 24px', color: '#64748b' }}>{member.position || '-'}</td>
+                  <td style={{ padding: '16px 24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{member.name}</td>
+                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.email}</td>
+                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.department || '-'}</td>
+                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.position || '-'}</td>
                   <td style={{ padding: '16px 24px', color: '#0f172a', fontWeight: 600 }}>{member.joinDate || member.createdAt?.split('T')[0] || '-'}</td>
                   <td style={{ padding: '16px 24px' }}>
                     <span className={`q-badge ${member.role === '관리자' ? 'q1' : 'q2'}`}>
@@ -191,7 +191,7 @@ export const TeamManagement: React.FC = () => {
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                     <button onClick={() => handleResetPassword(member.email)} className="btn" style={{ color: '#059669', border: 'none', padding: '4px 8px', marginRight: '8px' }}>비번 리셋</button>
-                    <button onClick={() => handleOpenEdit(member)} className="btn" style={{ color: '#4f46e5', border: 'none', padding: '4px 8px', marginRight: '8px' }}>수정</button>
+                    <button onClick={() => handleOpenEdit(member)} className="btn" style={{ color: 'var(--focus-ring)', border: 'none', padding: '4px 8px', marginRight: '8px' }}>수정</button>
                     <button onClick={() => handleDeleteMember(member.id)} className="btn" style={{ color: '#ef4444', border: 'none', padding: '4px 8px' }}>삭제</button>
                   </td>
                 </tr>
@@ -215,28 +215,28 @@ export const TeamManagement: React.FC = () => {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>이름</label>
-                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="성명을 입력하세요" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이름</label>
+                <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="성명을 입력하세요" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>이메일</label>
-                <input type="email" style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: editingId ? '#f1f5f9' : 'white', color: editingId ? '#94a3b8' : 'inherit' }} placeholder="이메일 주소" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} disabled={!!editingId} />
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이메일</label>
+                <input type="email" style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: editingId ? '#f1f5f9' : 'white', color: editingId ? 'var(--text-muted)' : 'inherit' }} placeholder="이메일 주소" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} disabled={!!editingId} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>부서</label>
-                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 경영지원, 설계팀, 생산관리 등" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})} />
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>부서</label>
+                <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 경영지원, 설계팀, 생산관리 등" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>직급 / 직위</label>
-                <input style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 대표이사, 부장, 사원 등" value={newMember.position} onChange={e => setNewMember({...newMember, position: e.target.value})} />
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>직급 / 직위</label>
+                <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 대표이사, 부장, 사원 등" value={newMember.position} onChange={e => setNewMember({...newMember, position: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>입사일</label>
-                <input type="date" style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.joinDate} onChange={e => setNewMember({...newMember, joinDate: e.target.value})} />
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>입사일</label>
+                <input type="date" style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.joinDate} onChange={e => setNewMember({...newMember, joinDate: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>권한 설정</label>
-                <select style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>권한 설정</label>
+                <select style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }} value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})}>
                   <option>팀원</option>
                   <option>매니저</option>
                   <option>관리자</option>

@@ -1181,13 +1181,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     const [isNewMode, setIsNewMode] = useState(false);
     const [newVal, setNewVal] = useState('');
     const selectStyle: React.CSSProperties = required
-      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
-      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '15px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
+      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
+      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
 
     if (isNewMode) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+          <label style={{ fontSize: '13px', fontWeight: 700, color: required ? 'var(--text-secondary)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
             {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
           </label>
           <div style={{ display: 'flex', gap: '3px', height: '32px' }}>
@@ -1202,7 +1202,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
               style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
             <button type="button" onClick={() => setIsNewMode(false)}
-              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              style={{ background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
         </div>
       );
@@ -1210,7 +1210,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 700, color: required ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+        <label style={{ fontSize: '13px', fontWeight: 700, color: required ? 'var(--text-secondary)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
           {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
         </label>
         <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
@@ -1857,7 +1857,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         display: 'flex',
         flexDirection: 'column',
         boxShadow: '0 20px 40px rgba(15,23,42,0.3)',
-        border: isMaximized ? 'none' : '2px solid #cbd5e1',
+        border: isMaximized ? 'none' : '2px solid var(--border-default)',
         resize: isMaximized ? 'none' : 'both',
         overflow: 'hidden',
         minWidth: isMaximized ? 'none' : '800px',
@@ -1867,7 +1867,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
-          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: isMaximized ? '0px' : '14px 14px 0 0', cursor: isMaximized ? 'default' : 'move', userSelect: 'none' }}>
+          style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: isMaximized ? '0px' : '14px 14px 0 0', cursor: isMaximized ? 'default' : 'move', userSelect: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
             <div>
               <div style={{ fontSize: '20px', fontWeight: 800, color: '#111827' }}>
@@ -1883,7 +1883,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <select
                   value={dropdownRevId}
                   onChange={(e) => setDropdownRevId(e.target.value)}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}
                 >
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
@@ -1978,7 +1978,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 placeholder="예: NATIONAL 바이어에게 볼트 5000개, 너트 3000개 견적서 작성해줘. 마진은 15%로 세팅."
                 value={aiPrompt}
                 onChange={e => setAiPrompt(e.target.value)}
-                style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
+                style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
               />
               <button
                 type="button"
@@ -1991,10 +1991,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
           
           {/* ── PI Document-style compact form (4 rows) ── */}
-          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
             {/* ── 섹션: 발행 정보 ── */}
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0' }}>발행 정보</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '8px', alignItems: 'end' }}>
@@ -2008,13 +2008,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* ── 섹션: 고객 및 거래 조건 ── */}
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #e2e8f0', marginTop: '4px' }}>고객 및 거래 조건</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)', marginTop: '4px' }}>고객 및 거래 조건</div>
 
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '8px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
+                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
                 <div style={{ position: 'relative', height: '32px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -2024,13 +2024,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
                       width: '100%', height: '32px', padding: '1px 32px 1px 8px',
-                      border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a',
+                      border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
                   {formData.customerId && (
                     <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
-                      style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                      style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
                       title="비우기">✕</button>
                   )}
                   <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
@@ -2056,17 +2056,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Line Items */}
-          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
+          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📦</span> 상품 라인 (Line Items)
               </h4>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={handleSimulation} style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>🚢 적재 시뮬레이션</button>
-                <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid #cbd5e1', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: '#475569' }}>＋ 상품 추가</button>
+                <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid var(--border-default)', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: 'var(--text-secondary)' }}>＋ 상품 추가</button>
               </div>
             </div>
-            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid var(--border-default)', borderRadius: '8px' }}>
               <table style={{ width: '100%', minWidth: '1066px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
@@ -2084,9 +2084,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -2108,7 +2108,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                   right: '24px',
                                   background: 'transparent',
                                   border: 'none',
-                                  color: '#94a3b8',
+                                  color: 'var(--text-muted)',
                                   cursor: 'pointer',
                                   fontSize: '11px',
                                   padding: '2px',
@@ -2175,8 +2175,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 title="선택된 상품 수정"
                                 style={{
                                   background: p ? '#fef08a' : '#f1f5f9',
-                                  border: p ? '1px solid #cbd5e1' : '1px solid #e2e8f0',
-                                  color: p ? '#a16207' : '#94a3b8',
+                                  border: p ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
+                                  color: p ? '#a16207' : 'var(--text-muted)',
                                   borderRadius: '4px',
                                   padding: '4px 6px',
                                   cursor: p ? 'pointer' : 'not-allowed',
@@ -2251,7 +2251,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                                 onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
                                 style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                               />
-                              <span style={{ fontSize: '13.5px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
+                              <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
                             </div>
                           );
                         })()}
@@ -2313,7 +2313,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           if (curCurrency === 'KRW') {
                             return (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <span style={{ fontSize: '12.5px', color: '#64748b', whiteSpace: 'nowrap' }}>기준환율:</span>
+                                <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>기준환율:</span>
                                 <input 
                                   type="text" 
                                   value={formatNumberWithCommas(it.exchangeRate)} 
@@ -2337,7 +2337,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             onChange={(e) => updateItem(idx, 'marginRate', parseCommas(e.target.value))} 
                             style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
                           />
-                          <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: 600 }}>%</span>
+                          <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>%</span>
                         </div>
                         {it.productCode && (
                           <div style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700, marginTop: '2px', textAlign: 'center', whiteSpace: 'nowrap' }} title="과거 거래 데이터 분석 기반 AI 추천 마진">
@@ -2388,7 +2388,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             type="button"
                             disabled={idx === 0}
                             onClick={() => moveItem(idx, 'up')} 
-                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
+                            style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 4px', cursor: idx === 0 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === 0 ? 0.3 : 1 }}
                           >
                             ▲
                           </button>
@@ -2396,7 +2396,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             type="button"
                             disabled={idx === items.length - 1}
                             onClick={() => moveItem(idx, 'down')} 
-                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === items.length - 1 ? 0.3 : 1 }}
+                            style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 4px', cursor: idx === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: '9px', opacity: idx === items.length - 1 ? 0.3 : 1 }}
                           >
                             ▼
                           </button>
@@ -2412,17 +2412,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
           {/* Extras and Totals */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
 
             {/* Freight Charges (USD) */}
-            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', padding: '12px 16px', borderRadius: '8px' }}>
+            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid var(--border-default)', padding: '12px 16px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
-                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: '#475569' }}>＋ 운송비 추가</button>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
+                <button type="button" onClick={addFreightCharge} style={{ background: 'none', border: '1px solid var(--border-default)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>＋ 운송비 추가</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {/* Freight Headers */}
-                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '12px', color: '#475569', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                <div style={{ display: 'flex', gap: '8px', padding: '0 40px 4px 0', borderBottom: '1px solid #f1f5f9', marginBottom: '2px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                   <div style={{ flex: 1.5 }}>Container Type</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>Qty</div>
                   <div style={{ flex: 1.5, textAlign: 'right' }}>Unit Price</div>
@@ -2446,7 +2446,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             updateFreightCharge(fcIdx, 'type', e.target.value);
                           }
                         }}
-                        style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', background: '#fff' }}
+                        style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff' }}
                       >
                         <optgroup label="컨테이너">
                           <option value="LCL">LCL</option>
@@ -2477,7 +2477,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           placeholder="항목명 직접 입력"
                           value={fc.type || ''}
                           onChange={e => updateFreightCharge(fcIdx, 'type', e.target.value)}
-                          style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid #0d9488', borderRadius: '4px', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                          style={{ width: '100%', height: '32px', padding: '5px 6px', border: '1px solid var(--focus-ring)', borderRadius: '4px', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                           autoFocus
                         />
                       )}
@@ -2487,7 +2487,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="수량" 
                       value={fc.qty ?? 1} 
                       onChange={e => updateFreightCharge(fcIdx, 'qty', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
+                      style={{ flex: 1, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
                     />
                     <input 
                       type="number" 
@@ -2495,7 +2495,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="금액 (USD)" 
                       value={fc.price ?? 0} 
                       onChange={e => updateFreightCharge(fcIdx, 'price', parseFloat(e.target.value) || 0)} 
-                      style={{ flex: 1.5, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
+                      style={{ flex: 1.5, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px', textAlign: 'right' }} 
                     />
                     <div style={{ flex: 1, textAlign: 'right', fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
                       ${((fc.qty || 0) * (fc.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -2505,7 +2505,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       placeholder="비고" 
                       value={fc.remarks || ''} 
                       onChange={e => updateFreightCharge(fcIdx, 'remarks', e.target.value)} 
-                      style={{ flex: 3.5, height: '32px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px' }} 
+                      style={{ flex: 3.5, height: '32px', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px' }} 
                     />
                     <button type="button" onClick={() => removeFreightCharge(fcIdx)} style={{ background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '13px' }}>✕</button>
                   </div>
@@ -2519,9 +2519,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Remarks */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            <label style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Remarks</label>
-            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '15px', color: '#334155', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5', fontFamily: 'monospace' }}></textarea>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
+            <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Remarks</label>
+            <textarea value={formData.remarks} onChange={(e) => setFormData(prev => ({...prev, remarks: e.target.value}))} rows={2} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15px', color: '#334155', width: '100%', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.5', fontFamily: 'monospace' }}></textarea>
           </div>
 
           {initialPI && (
@@ -2537,9 +2537,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
           )}
 
-          <div style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', border: '1.5px solid #334155', padding: '14px 22px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+          <div style={{ background: 'linear-gradient(135deg, #0f172a, var(--text-primary))', border: '1.5px solid #334155', padding: '14px 22px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>예상 총 이익:</span>
               <span style={{ color: '#4ade80', fontSize: '20px', fontWeight: 800, textShadow: '0 0 10px rgba(74,222,128,0.2)' }}>{(() => {
                 const totalProfit = items.reduce((sum, it) => {
                   const costUsd = it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400));
@@ -2553,15 +2553,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subtotal</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Subtotal</span>
                 <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginLeft: '8px' }}>${(formData.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extras</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extras</span>
                 <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginLeft: '8px' }}>${(formData.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grand Total</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--border-default)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Grand Total</span>
                 <span style={{ fontSize: '24px', fontWeight: 900, color: '#facc15', marginLeft: '10px', textShadow: '0 0 10px rgba(250,252,21,0.2)' }}>USD ${(formData.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
@@ -2570,15 +2570,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           {/* Attachments (Dropzone) */}
           <div 
             style={{ 
-              background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '20px', 
+              background: '#f8fafc', border: '2px dashed var(--border-default)', padding: '20px', 
               borderRadius: '8px', marginBottom: '16px', textAlign: 'center',
               position: 'relative', transition: 'all 0.2s'
             }}
             onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
-            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; }}
             onDrop={e => {
               e.preventDefault();
-              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.borderColor = 'var(--border-default)';
               e.currentTarget.style.background = '#f8fafc';
               handleFileUpload(e.dataTransfer.files);
             }}
@@ -2591,7 +2591,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             }}
             tabIndex={0}
           >
-            <div style={{ color: '#64748b', fontSize: '14px', marginBottom: '12px' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '12px' }}>
               📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.
             </div>
             <input 
@@ -2619,7 +2619,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <div 
                       key={idx} 
                       style={{ 
-                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', 
+                        background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', 
                         padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '10px', 
                         fontSize: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
                         transition: 'transform 0.15s, box-shadow 0.15s'
@@ -2635,10 +2635,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           <img 
                             src={att.url} 
                             alt={att.name} 
-                            style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                            style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-default)' }} 
                           />
                         ) : (
-                          <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                          <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                             {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                           </span>
                         )}
@@ -2648,12 +2648,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
                         <span 
                           onClick={() => { setActivePreviewUrl(att.url); setActivePreviewName(att.name); }}
-                          style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                           title="클릭하여 미리보기"
                         >
                           {att.name}
                         </span>
-                        <span style={{ color: '#64748b', fontSize: '10px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
                       </div>
 
                       {/* Action Buttons */}
@@ -2661,7 +2661,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         <button 
                           type="button" 
                           onClick={() => { setActivePreviewUrl(att.url); setActivePreviewName(att.name); }}
-                          style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                          style={{ background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
                           title="미리보기"
                         >
                           🔍
@@ -2683,7 +2683,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* 3D Container Loading Plan 시뮬레이션 첨부 */}
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', marginTop: '12px' }}>
             <div style={{ marginBottom: '8px', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 📦 3D Container Loading Plan 시뮬레이션 첨부
@@ -2692,13 +2692,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
               {/* .json file upload */}
-              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
+              <div style={{ background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 프로젝트 파일 (.json)</div>
                 {formData.containerSimulation?.simulationFileUrl ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: '#0f766e', fontWeight: 600 }}>📁 {formData.containerSimulation.simulationFileName || '프로젝트 파일 완료'}</span>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: '#e2e8f0', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
+                      <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: 'var(--border-color)', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
                       <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
                     </div>
                   </div>
@@ -2719,13 +2719,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
 
               {/* image upload */}
-              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
+              <div style={{ background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '8px 12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>시뮬레이션 결과 스크린샷 이미지 (.png/.jpg)</div>
                 {formData.containerSimulation?.simulationImageUrl ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid var(--border-default)', borderRadius: '4px' }} />
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: '#e2e8f0', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
+                      <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: 'var(--border-color)', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
                       <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
                     </div>
                   </div>
@@ -2750,7 +2750,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '8px' }}>
           {/* 왼쪽: 발주 액션 */}
           <div>
             {initialPI && (
@@ -2767,10 +2767,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
           {/* 오른쪽: 저장/출력 그룹 */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={handleCloseAttempt} style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #e2e8f0', background: '#fff', fontWeight: 500, fontSize: '12px', color: '#475569', cursor: 'pointer' }}>취소</button>
+            <button onClick={handleCloseAttempt} style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 500, fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>취소</button>
 
             {/* 구분선 */}
-            <div style={{ width: '1px', height: '24px', background: '#e2e8f0' }} />
+            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }} />
 
             <button type="button" onClick={() => generatePIPdf(formData as ProformaInvoice, items)}
               style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #fca5a5', background: '#fff', fontWeight: 600, fontSize: '12px', color: '#dc2626', cursor: 'pointer' }}>
@@ -2782,7 +2782,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </button>
 
             {/* 구분선 */}
-            <div style={{ width: '1px', height: '24px', background: '#e2e8f0' }} />
+            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }} />
 
             <button type="button" onClick={() => handleSave(false)} disabled={savingType !== null}
               style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}>
@@ -2903,7 +2903,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             >
               ✕
             </button>
-            <div style={{ fontWeight: 600, fontSize: '14px', color: '#1e293b', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               🔍 {activePreviewName}
             </div>
             {/\.(jpg|jpeg|png|gif|webp)$/i.test(activePreviewName) ? (
@@ -2936,19 +2936,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => {
   // A급(필수★): 15.5px bold #0f172a 테두리 강조
-  // C급(읽기전용/자동): 13.5px #94a3b8 배경 흐리게
+  // C급(읽기전용/자동): 13.5px var(--text-muted) 배경 흐리게
   const isRequired = label?.includes('★');
   const isReadOnly = disabled;
   const inputStyle: React.CSSProperties = isReadOnly
-    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: '#94a3b8', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
+    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: 'var(--text-muted)', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
     : isRequired
-      ? { padding: '4px 8px', border: '1.5px solid #94a3b8', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
-      : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
+      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
+      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: isReadOnly ? '#94a3b8' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+      <label style={{ fontSize: '13px', fontWeight: 700, color: isReadOnly ? 'var(--text-muted)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
         {label?.replace(' ★', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>★</span>}
-        {isReadOnly && <span style={{ color: '#94a3b8', fontWeight: 400 }}> (자동)</span>}
+        {isReadOnly && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> (자동)</span>}
       </label>
       <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
     </div>

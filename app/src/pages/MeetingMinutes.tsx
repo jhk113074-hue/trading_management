@@ -610,8 +610,8 @@ export const MeetingMinutes: React.FC = () => {
           </p>
         </div>
 
-        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">프로젝트 중요 현안 회의록</h2>
-        <p style="margin: 8px 0; color: #475569;">회의 참석 인원이 합의한 주요 사안 및 긴급 조치 계획을 하단과 같이 기록 및 공람합니다.</p>
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: var(--text-primary);">프로젝트 중요 현안 회의록</h2>
+        <p style="margin: 8px 0; color: var(--text-secondary);">회의 참석 인원이 합의한 주요 사안 및 긴급 조치 계획을 하단과 같이 기록 및 공람합니다.</p>
 
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">1. 회의 목적 및 주요 배경</h3>
         <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
@@ -622,22 +622,22 @@ export const MeetingMinutes: React.FC = () => {
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">2. 안건 실행 및 합의 결정 사항</h3>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px;">합의 사항 및 대안 과제</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">수행 주체</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">조치 일자</th>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px;">합의 사항 및 대안 과제</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">수행 주체</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">조치 일자</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">상차 야간 공정 셋팅 및 실시간 지연 알림 연동</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">공급사 물류팀</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">차주 월요일</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">상차 야간 공정 셋팅 및 실시간 지연 알림 연동</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">공급사 물류팀</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">차주 월요일</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">세관 통관 추가 보증서 서류 대만 바이어 송부</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">무역해외영업</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">세관 통관 추가 보증서 서류 대만 바이어 송부</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">무역해외영업</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
             </tr>
           </tbody>
         </table>
@@ -648,7 +648,7 @@ export const MeetingMinutes: React.FC = () => {
           <li style="margin-bottom: 4px;">추후 비상 스케줄 발생 시 실시간 연계 채널 확보.</li>
         </ul>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 본 회의록은 인공지능이 프롬프트를 번역 및 분석하여 표준 실무 회의록 본문 서식으로 자동 작성한 초안입니다.</p>
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 본 회의록은 인공지능이 프롬프트를 번역 및 분석하여 표준 실무 회의록 본문 서식으로 자동 작성한 초안입니다.</p>
       `;
 
       if (editorRef.current) {
@@ -682,13 +682,13 @@ export const MeetingMinutes: React.FC = () => {
           </p>
         </div>
         
-        <h3 style="font-size: 14.5px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 16px;">📋 안건 실행 우선순위 분석 테이블 (Action Items)</h3>
+        <h3 style="font-size: 14.5px; font-weight: bold; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-top: 16px;">📋 안건 실행 우선순위 분석 테이블 (Action Items)</h3>
         <table style="width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left; width: 50px;">번호</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: left;">회의 핵심 안건 및 결정사항</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">AI 매칭 우선도</th>
+            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: left; width: 50px;">번호</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: left;">회의 핵심 안건 및 결정사항</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">AI 매칭 우선도</th>
             </tr>
           </thead>
           <tbody>
@@ -709,15 +709,15 @@ export const MeetingMinutes: React.FC = () => {
           textColor = '#991b1b';
         } else if (line.includes('교육') || line.includes('정리') || line.includes('체크')) {
           priority = '하 (Low)';
-          badgeColor = '#e2e8f0';
-          textColor = '#475569';
+          badgeColor = 'var(--border-color)';
+          textColor = 'var(--text-secondary)';
         }
 
         summaryHTML += `
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; font-weight: bold; color: #64748b;">${index + 1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">${cleanedLine}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center;">
+            <td style="border: 1px solid var(--border-default); padding: 8px; font-weight: bold; color: var(--text-secondary);">${index + 1}</td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">${cleanedLine}</td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center;">
               <span style="background: ${badgeColor}; color: ${textColor}; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">${priority}</span>
             </td>
           </tr>
@@ -728,14 +728,14 @@ export const MeetingMinutes: React.FC = () => {
           </tbody>
         </table>
         
-        <h3 style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 20px;">💡 AI 공정 개선 검토 제안</h3>
-        <ul style="padding-left: 20px; font-size: 12.5px; color: #475569; line-height: 1.8;">
+        <h3 style="font-size: 14px; font-weight: bold; color: var(--text-primary); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-top: 20px;">💡 AI 공정 개선 검토 제안</h3>
+        <ul style="padding-left: 20px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.8;">
           <li>온도 기준치 초과 시 안전 경고 시스템은 최상위 긴급 점검 항목으로 상시 테스트 바랍니다.</li>
           <li>교육 완료 후, 베트남 현지 실물 확인과 연동하여 최종 검수를 완수해 주세요.</li>
         </ul>
         <br>
-        <p style="font-size: 12px; color: #94a3b8; font-style: italic;">* 원본 회의 내용 상단에 AI 분석 배너 및 우선순위 테이블이 삽입되었습니다.</p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 24px 0;" />
+        <p style="font-size: 12px; color: var(--text-muted); font-style: italic;">* 원본 회의 내용 상단에 AI 분석 배너 및 우선순위 테이블이 삽입되었습니다.</p>
+        <hr style="border: 0; border-top: 1px dashed var(--border-default); margin: 24px 0;" />
       `;
 
       const mergedHTML = summaryHTML + rawHTML;
@@ -903,19 +903,19 @@ export const MeetingMinutes: React.FC = () => {
         receiverName: receiver.name,
         title: `[회의록 공유] ${selectedMeeting.title}`,
         content: `
-          <div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin-bottom: 12px;">
+          <div style="background: #f1f5f9; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin-bottom: 12px;">
             <strong>📋 회의록 공유 알림</strong><br>
             ${userProfile?.name}님이 회의록을 공유했습니다. 아래 회의록 카드를 누르면 상세 화면으로 이동합니다.
           </div>
           <h3>제목: ${selectedMeeting.title}</h3>
           <p>일자: ${selectedMeeting.date} | 참석자: ${selectedMeeting.attendees || '미지정'}</p>
           ${selectedMeeting.projectName ? `<p>프로젝트: ${selectedMeeting.projectName}</p>` : ''}
-          <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" />
-          <div style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff;">
+          <hr style="border: 0; border-top: 1px solid var(--border-default); margin: 16px 0;" />
+          <div style="padding: 12px; border: 1px solid var(--border-default); border-radius: 6px; background: #fff;">
             ${selectedMeeting.content}
           </div>
           <br>
-          <a href="${window.location.origin}/meetings?id=${selectedMeeting.id}" style="display: inline-block; background: #4f46e5; color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">회의록으로 바로 이동</a>
+          <a href="${window.location.origin}/meetings?id=${selectedMeeting.id}" style="display: inline-block; background: var(--focus-ring); color: #fff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">회의록으로 바로 이동</a>
         `,
         isRead: false,
         createdAt: new Date().toISOString()
@@ -937,22 +937,22 @@ export const MeetingMinutes: React.FC = () => {
     const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
         <thead>
-          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">의제 및 안건</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">결정사항 / 담당자</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">목표 기한</th>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default);">
+            <th style="border: 1px solid var(--border-default); padding: 8px;">의제 및 안건</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">결정사항 / 담당자</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">목표 기한</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
         </tbody>
       </table>
@@ -987,7 +987,7 @@ export const MeetingMinutes: React.FC = () => {
       } else if (text.startsWith('>')) {
         e.preventDefault();
         range.startContainer.textContent = text.replace(/^>\s*/, '');
-        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid var(--border-default); border-radius: 4px; margin: 8px 0; font-style: italic; color: var(--text-secondary);">${range.startContainer.textContent}</div><p><br></p>`;
         range.startContainer.textContent = '';
         document.execCommand('insertHTML', false, calloutHTML);
       }
@@ -1019,13 +1019,13 @@ export const MeetingMinutes: React.FC = () => {
     if (command === 'table') {
       insertTable();
     } else if (command === 'callout') {
-      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>주요 협의결과:</b> 결정 및 수행 과제를 적으세요...</div><p><br></p>`;
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>주요 협의결과:</b> 결정 및 수행 과제를 적으세요...</div><p><br></p>`;
       document.execCommand('insertHTML', false, calloutHTML);
     } else if (command === 'divider') {
-      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid var(--border-default); margin: 16px 0;" /><p><br></p>`;
       document.execCommand('insertHTML', false, hrHTML);
     } else if (command === 'quote') {
-      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"의사결정 핵심 문장을 입력하세요."</blockquote><p><br></p>`;
+      const quoteHTML = `<blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 10px 0 10px 12px;">"의사결정 핵심 문장을 입력하세요."</blockquote><p><br></p>`;
       document.execCommand('insertHTML', false, quoteHTML);
     }
     
@@ -1070,12 +1070,12 @@ export const MeetingMinutes: React.FC = () => {
           placeholder="회의 제목, 참석자, 프로젝트 검색..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          style={{ flex: 1, minWidth: '200px', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+          style={{ flex: 1, minWidth: '200px', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
         />
         <select
           value={filterCustomer}
           onChange={e => setFilterCustomer(e.target.value)}
-          style={{ width: '180px', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
+          style={{ width: '180px', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
         >
           <option value="">모든 고객사 필터</option>
           {customers.map(c => (
@@ -1087,13 +1087,13 @@ export const MeetingMinutes: React.FC = () => {
           placeholder="프로젝트명 필터..."
           value={filterProject}
           onChange={e => setFilterProject(e.target.value)}
-          style={{ width: '180px', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+          style={{ width: '180px', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
         />
       </div>
 
       {/* Card Grid List */}
       {filteredMeetings.length === 0 ? (
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
           작성된 회의록이 없습니다. 새로운 회의록을 작성해보세요!
         </div>
       ) : (
@@ -1124,13 +1124,13 @@ export const MeetingMinutes: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>📅 {m.date}</span>
-                <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>📅 {m.date}</span>
+                <span style={{ fontSize: '11px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
                   작성: {m.createdByName}
                 </span>
               </div>
 
-              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: '#1e293b', lineHeight: 1.4 }}>{m.title}</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)', lineHeight: 1.4 }}>{m.title}</h3>
 
               {/* Company Badges */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -1155,13 +1155,13 @@ export const MeetingMinutes: React.FC = () => {
                   </span>
                 )}
                 {m.attachments && m.attachments.length > 0 && (
-                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: 'var(--text-secondary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
                     📎 첨부 ({m.attachments.length})
                   </span>
                 )}
               </div>
 
-              <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '50px', overflow: 'hidden' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '50px', overflow: 'hidden' }}>
                 <strong>참석자 목록:</strong>
                 {(m.companies || []).map((c, cIdx) => (
                   <span key={cIdx} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -1170,7 +1170,7 @@ export const MeetingMinutes: React.FC = () => {
                 ))}
               </div>
 
-              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '10px', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <button
                   onClick={e => { e.stopPropagation(); handleCopyLink(m); }}
                   style={{ background: '#e0f2fe', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#0369a1', cursor: 'pointer' }}
@@ -1180,7 +1180,7 @@ export const MeetingMinutes: React.FC = () => {
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     onClick={e => { e.stopPropagation(); handleOpenEditForm(m); }}
-                    style={{ background: '#f1f5f9', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                    style={{ background: '#f1f5f9', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}
                   >
                     수정
                   </button>
@@ -1210,8 +1210,8 @@ export const MeetingMinutes: React.FC = () => {
             
             {/* Drag drop overlay helper */}
             {isDraggingOver && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed #4f46e5', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span style={{ fontSize: '20px', fontWeight: 900, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed var(--focus-ring)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   📥 마우스를 놓아 클라우드 저장소에 파일 업로드 (무제한 용량 지원)
                 </span>
               </div>
@@ -1221,13 +1221,13 @@ export const MeetingMinutes: React.FC = () => {
             {isUploadingFile && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(255, 255, 255, 0.85)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
                 <div style={{ fontSize: '28px' }}>⏳</div>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                   대용량 파일을 클라우드 저장소(Firebase Storage)에 안전하게 업로드하는 중입니다...
                 </span>
               </div>
             )}
 
-            <div style={{ padding: '16px 24px', background: '#4f46e5', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 24px', background: 'var(--primary-color)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '15px', fontWeight: 800 }}>
                   {editId ? '📝 회의록 협업 작성 중' : '✍️ 새 회의록 협업 작성 중'}
@@ -1258,7 +1258,7 @@ export const MeetingMinutes: React.FC = () => {
                     placeholder="예: 대만 선적 일정 지연 대책 회의. 박현 차장, 바이어 배석."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
                   />
                   <button
                     type="button"
@@ -1272,24 +1272,24 @@ export const MeetingMinutes: React.FC = () => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>회의 일자 ★</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>회의 일자 ★</label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={e => handleLocalChange('date', e.target.value)}
-                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
                 
                 {/* 2단: 연계 고객사 (바이어) 선택 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 고객사 (바이어)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>연계 고객사 (바이어)</label>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <div style={{
                       flex: 1,
                       padding: '10px 12px',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-default)',
                       borderRadius: '6px',
                       fontSize: '13.5px',
                       background: '#fff',
@@ -1303,9 +1303,9 @@ export const MeetingMinutes: React.FC = () => {
                     onClick={() => setIsFormCustomerSearchOpen(true)}
                     >
                       {customerName ? (
-                        <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{customerName}</span>
+                        <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{customerName}</span>
                       ) : (
-                        <span style={{ color: '#94a3b8' }}>🔍 고객사 선택...</span>
+                        <span style={{ color: 'var(--text-muted)' }}>🔍 고객사 선택...</span>
                       )}
                     </div>
                     {customerName && (
@@ -1317,7 +1317,7 @@ export const MeetingMinutes: React.FC = () => {
                         }}
                         style={{
                           padding: '0 12px',
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border-default)',
                           borderRadius: '6px',
                           background: '#fee2e2',
                           color: '#b91c1c',
@@ -1335,7 +1335,7 @@ export const MeetingMinutes: React.FC = () => {
 
                 {/* 3단: 연계 프로젝트명 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>연계 프로젝트명</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>연계 프로젝트명</label>
                   <input
                     type="text"
                     placeholder="예: 삼익HDS 프로젝트"
@@ -1343,7 +1343,7 @@ export const MeetingMinutes: React.FC = () => {
                     onChange={e => handleLocalChange('projectName', e.target.value)}
                     onFocus={() => setShowProjDropdown(true)}
                     onBlur={() => setTimeout(() => setShowProjDropdown(false), 200)}
-                    style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                   
                   {/* 프로젝트 추천 드롭다운 */}
@@ -1354,7 +1354,7 @@ export const MeetingMinutes: React.FC = () => {
                       left: 0,
                       right: 0,
                       background: '#fff',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-default)',
                       borderRadius: '6px',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                       zIndex: 3500,
@@ -1362,7 +1362,7 @@ export const MeetingMinutes: React.FC = () => {
                       overflowY: 'auto',
                       marginTop: '4px'
                     }}>
-                      <div style={{ padding: '6px 10px', fontSize: '10.5px', fontWeight: 800, color: '#64748b', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                      <div style={{ padding: '6px 10px', fontSize: '10.5px', fontWeight: 800, color: 'var(--text-secondary)', background: '#f8fafc', borderBottom: '1px solid var(--border-color)' }}>
                         💡 고객사 관련 추천 프로젝트/PI 목록
                       </div>
                       {suggestedProjects.map((p, idx) => (
@@ -1392,7 +1392,7 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               {/* Companies and Attendees list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>👥 연계 참여업체 및 참석자 목록 ({companies.length})</span>
                   <button
@@ -1404,24 +1404,24 @@ export const MeetingMinutes: React.FC = () => {
                       setTempAttendees('');
                       setIsAddCompanyOpen(true);
                     }}
-                    style={{ padding: '4px 10px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                    style={{ padding: '4px 10px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
                   >
                     + 업체 추가하기
                   </button>
                 </div>
 
                 {companies.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '12px 0' }}>등록된 참여업체가 없습니다. 상단 버튼을 클릭하여 추가해 주세요.</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>등록된 참여업체가 없습니다. 상단 버튼을 클릭하여 추가해 주세요.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {companies.map((c, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '8px 12px' }}>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '8px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
                             {c.type === 'CUSTOMER' ? '고객사' : '공급사'}
                           </span>
                           <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>{c.companyName}</span>
-                          <span style={{ fontSize: '12.5px', color: '#64748b' }}>(참석자: {c.attendees})</span>
+                          <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>(참석자: {c.attendees})</span>
                         </div>
                         <button
                           type="button"
@@ -1437,26 +1437,26 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>회의 제목 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>회의 제목 ★</label>
                 <input
                   type="text"
                   required
                   placeholder="회의 핵심 안건 제목을 적어주세요"
                   value={title}
                   onChange={e => handleLocalChange('title', e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               {/* Rich Editor Block */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
-                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
-                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
-                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       田 표 삽입
                     </button>
                   </div>
@@ -1478,7 +1478,7 @@ export const MeetingMinutes: React.FC = () => {
                   onInput={handleEditorInput}
                   style={{
                     minHeight: '380px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     borderBottomLeftRadius: '6px',
                     borderBottomRightRadius: '6px',
                     padding: '16px',
@@ -1496,7 +1496,7 @@ export const MeetingMinutes: React.FC = () => {
                     top: '230px',
                     left: '12px',
                     background: '#fff',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     borderRadius: '8px',
                     zIndex: 10000,
@@ -1505,17 +1505,17 @@ export const MeetingMinutes: React.FC = () => {
                     flexDirection: 'column',
                     padding: '4px 0'
                   }}>
-                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
-                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>田</span> <b>표 삽입</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>💡</span> <b>콜아웃 상자</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>➖</span> <b>구분선</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>✍️</span> <b>인용구 블록</b>
                     </button>
                   </div>
@@ -1523,18 +1523,18 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               {/* Attachments Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 유첨파일 목록 (드래그&드롭 또는 Ctrl+V 캡처 가능)</span>
                 
                 {/* Visual drag area */}
-                <div style={{ border: '2px dashed #cbd5e1', borderRadius: '8px', padding: '16px', textAlign: 'center', background: '#fff', color: '#64748b', fontSize: '12.5px' }}>
+                <div style={{ border: '2px dashed var(--border-default)', borderRadius: '8px', padding: '16px', textAlign: 'center', background: '#fff', color: 'var(--text-secondary)', fontSize: '12.5px' }}>
                   이 영역에 파일을 끌어다 놓거나 화면을 캡처한 상태에서 <b>Ctrl + V</b>를 눌러 즉시 첨부하세요.
                 </div>
 
                 {attachments.length > 0 && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginTop: '10px' }}>
                     {attachments.map((file, fileIdx) => (
-                      <div key={fileIdx} style={{ position: 'relative', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                      <div key={fileIdx} style={{ position: 'relative', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                         {file.type.startsWith('image/') ? (
                           <img
                             src={file.data}
@@ -1553,12 +1553,12 @@ export const MeetingMinutes: React.FC = () => {
                               setPreviewFileName(file.name);
                               setPreviewFileType(file.type);
                             }}
-                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#64748b', cursor: 'pointer' }}
+                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: 'var(--text-secondary)', cursor: 'pointer' }}
                           >
                             📄
                           </div>
                         )}
-                        <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
                           {file.name}
                         </span>
                         <button
@@ -1637,7 +1637,7 @@ export const MeetingMinutes: React.FC = () => {
                     <textarea
                       readOnly
                       value={transcribedText}
-                      style={{ width: '100%', height: '120px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '8px', resize: 'none', outline: 'none', background: '#fafafa', color: '#334155' }}
+                      style={{ width: '100%', height: '120px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', padding: '8px', resize: 'none', outline: 'none', background: '#fafafa', color: '#334155' }}
                     />
                     <button
                       type="button"
@@ -1662,7 +1662,7 @@ export const MeetingMinutes: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleCancelForm}
-                  style={{ flex: 1, padding: '12px 0', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, padding: '12px 0', background: 'var(--border-color)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                 >
                   작성 취소 (임시저장 취소)
                 </button>
@@ -1716,14 +1716,14 @@ export const MeetingMinutes: React.FC = () => {
       {isAddCompanyOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '440px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: 'var(--primary-color)', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>👥 참여업체 추가</span>
               <button onClick={() => setIsAddCompanyOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>업체 유형</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>업체 유형</label>
                 <select
                   value={tempCompanyType}
                   onChange={e => {
@@ -1731,7 +1731,7 @@ export const MeetingMinutes: React.FC = () => {
                     setTempCompanyId('');
                     setTempCompanyName('');
                   }}
-                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
+                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', backgroundColor: '#fff', outline: 'none' }}
                 >
                   <option value="CUSTOMER">고객사 (Customer)</option>
                   <option value="SUPPLIER">공급업체 (Supplier)</option>
@@ -1739,7 +1739,7 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>업체 찾기 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>업체 찾기 ★</label>
                 {tempCompanyType === 'CUSTOMER' ? (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
@@ -1747,12 +1747,12 @@ export const MeetingMinutes: React.FC = () => {
                       readOnly
                       placeholder="고객사를 검색해 선택해주세요"
                       value={tempCompanyName}
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
                     />
                     <button
                       type="button"
                       onClick={() => setIsCustomerSearchOpen(true)}
-                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
+                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)' }}
                     >
                       🔍 찾기
                     </button>
@@ -1764,12 +1764,12 @@ export const MeetingMinutes: React.FC = () => {
                       readOnly
                       placeholder="공급업체를 검색해 선택해주세요"
                       value={tempCompanyName}
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
                     />
                     <button
                       type="button"
                       onClick={() => setIsSupplierSearchOpen(true)}
-                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#475569' }}
+                      style={{ padding: '8px 12px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: 'var(--text-secondary)' }}
                     >
                       🔍 찾기
                     </button>
@@ -1778,13 +1778,13 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자 명단</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참석자 명단</label>
                 <input
                   type="text"
                   placeholder="예: 김대리, 이과장"
                   value={tempAttendees}
                   onChange={e => setTempAttendees(e.target.value)}
-                  style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
                 />
               </div>
 
@@ -1792,14 +1792,14 @@ export const MeetingMinutes: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleAddCompanySubmit}
-                  style={{ flex: 1, padding: '10px 0', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '13px' }}
+                  style={{ flex: 1, padding: '10px 0', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '13px' }}
                 >
                   추가
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsAddCompanyOpen(false)}
-                  style={{ flex: 1, padding: '10px 0', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
+                  style={{ flex: 1, padding: '10px 0', background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
                 >
                   취소
                 </button>
@@ -1815,25 +1815,25 @@ export const MeetingMinutes: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '900px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
             
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>📅 {selectedMeeting.date}</span>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: '#1e293b' }}>{selectedMeeting.title}</h3>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>📅 {selectedMeeting.date}</span>
+                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: 'var(--text-primary)' }}>{selectedMeeting.title}</h3>
               </div>
-              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <button onClick={() => setIsDetailOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
 
             <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
               
               {/* Metadata area */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
                 {selectedMeeting.projectName && (
                   <div style={{ fontSize: '12.5px', color: '#334155' }}>
                     <strong>🚀 프로젝트:</strong> <span style={{ color: '#047857', fontWeight: 700 }}>{selectedMeeting.projectName}</span>
                   </div>
                 )}
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
                   <strong>👥 연계 참여업체 및 참석자:</strong>
                   {(selectedMeeting.companies || []).map((c, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: '8px', fontSize: '12.5px', color: '#334155' }}>
@@ -1845,7 +1845,7 @@ export const MeetingMinutes: React.FC = () => {
                   ))}
                 </div>
 
-                <div style={{ fontSize: '12px', color: '#64748b', borderTop: '1px solid #e2e8f0', paddingTop: '6px', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px' }}>
                   작성자: {selectedMeeting.createdByName} | 등록일: {new Date(selectedMeeting.createdAt).toLocaleString()}
                 </div>
               </div>
@@ -1856,7 +1856,7 @@ export const MeetingMinutes: React.FC = () => {
                 style={{
                   padding: '20px',
                   background: '#fff',
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   fontSize: '13.5px',
                   lineHeight: 1.7,
@@ -1867,11 +1867,11 @@ export const MeetingMinutes: React.FC = () => {
 
               {/* Detail Attachments Grid */}
               {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 첨부파일 ({selectedMeeting.attachments.length})</span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '10px' }}>
                     {selectedMeeting.attachments.map((file, fileIdx) => (
-                      <div key={fileIdx} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                      <div key={fileIdx} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                         {file.type.startsWith('image/') ? (
                           <img
                             src={file.data}
@@ -1890,12 +1890,12 @@ export const MeetingMinutes: React.FC = () => {
                               setPreviewFileName(file.name);
                               setPreviewFileType(file.type);
                             }}
-                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', color: '#64748b' }}
+                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', color: 'var(--text-secondary)' }}
                           >
                             📄
                           </div>
                         )}
-                        <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
                           {file.name}
                         </span>
                       </div>
@@ -1906,7 +1906,7 @@ export const MeetingMinutes: React.FC = () => {
 
             </div>
 
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 onClick={() => handleCopyLink(selectedMeeting)}
                 style={{ padding: '8px 16px', background: '#e0f2fe', color: '#0369a1', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
@@ -1922,13 +1922,13 @@ export const MeetingMinutes: React.FC = () => {
                 </button>
                 <button
                   onClick={() => { handleOpenEditForm(selectedMeeting); setIsDetailOpen(false); }}
-                  style={{ padding: '8px 16px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
                 >
                   수정하기
                 </button>
                 <button
                   onClick={() => setIsDetailOpen(false)}
-                  style={{ padding: '8px 16px', background: '#cbd5e1', color: '#1e293b', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', background: 'var(--border-default)', color: 'var(--text-primary)', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
                 >
                   닫기
                 </button>
@@ -1963,7 +1963,7 @@ export const MeetingMinutes: React.FC = () => {
             background: '#fff',
             borderRadius: '10px',
             boxShadow: '0 15px 35px rgba(15,23,42,0.25)',
-            border: '2px solid #cbd5e1',
+            border: '2px solid var(--border-default)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -1976,7 +1976,7 @@ export const MeetingMinutes: React.FC = () => {
             style={{
               padding: '10px 16px',
               background: '#f8fafc',
-              borderBottom: '1px solid #cbd5e1',
+              borderBottom: '1px solid var(--border-default)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1989,7 +1989,7 @@ export const MeetingMinutes: React.FC = () => {
               posStartRef.current = { x: subPosition.x, y: subPosition.y };
             }}
           >
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>📄</span>
               <span style={{ maxWidth: '480px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={previewFileName}>
                 {previewFileName} (미리보기)
@@ -2001,7 +2001,7 @@ export const MeetingMinutes: React.FC = () => {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#64748b',
+                color: 'var(--text-secondary)',
                 fontSize: '18px',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -2015,7 +2015,7 @@ export const MeetingMinutes: React.FC = () => {
           {/* Body Viewer Content */}
           <div style={{ flex: 1, padding: '12px', background: '#f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
             {previewFileType.startsWith('image/') ? (
-              <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <div style={{ width: '100%', height: '100%', overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#fff', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                 <img
                   src={previewFileUrl}
                   alt={previewFileName}
@@ -2029,7 +2029,7 @@ export const MeetingMinutes: React.FC = () => {
                 style={{ width: '100%', height: '100%', border: 'none', background: '#fff', borderRadius: '6px', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)' }}
               />
             ) : (
-              <div style={{ padding: '24px', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+              <div style={{ padding: '24px', textAlign: 'center', background: '#fff', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
                 <div style={{ fontSize: '42px', marginBottom: '12px' }}>📄</div>
                 <div style={{ fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '14px' }}>
                   이 파일 포맷은 바로 미리보기할 수 없습니다.
@@ -2039,7 +2039,7 @@ export const MeetingMinutes: React.FC = () => {
                   download={previewFileName}
                   style={{
                     padding: '8px 16px',
-                    background: '#4f46e5',
+                    background: 'var(--primary-color)',
                     color: '#fff',
                     textDecoration: 'none',
                     borderRadius: '6px',
@@ -2066,11 +2066,11 @@ export const MeetingMinutes: React.FC = () => {
             </div>
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>수신 대상 직원 선택</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>수신 대상 직원 선택</label>
                 <select
                   value={mailReceiverId}
                   onChange={e => setMailReceiverId(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', backgroundColor: '#fff', outline: 'none' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', backgroundColor: '#fff', outline: 'none' }}
                 >
                   <option value="">직원을 선택해 주세요</option>
                   {addressableUsers.map(u => (
@@ -2090,7 +2090,7 @@ export const MeetingMinutes: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setIsMailShareOpen(false)}
-                  style={{ flex: 1, padding: '10px 0', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
+                  style={{ flex: 1, padding: '10px 0', background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '13px' }}
                 >
                   취소
                 </button>
@@ -2105,20 +2105,20 @@ export const MeetingMinutes: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <span style={{ fontSize: '32px' }}>🤖</span>
-            <span style={{ fontSize: '14px', fontWeight: 850, color: '#1e293b', textAlign: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: 'var(--text-primary)', textAlign: 'center' }}>
               AI가 회의록 텍스트를 정밀 분석하여 요약 및 우선순위 테이블을 구조화하고 있습니다...
             </span>
-            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0,
                 width: '60%',
-                background: '#4f46e5',
+                background: 'var(--focus-ring)',
                 borderRadius: '3px',
                 animation: 'pulse 1.5s infinite ease-in-out'
               }}></div>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>약 2~3초의 시간이 소요됩니다.</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>약 2~3초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

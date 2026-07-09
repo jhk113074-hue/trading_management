@@ -53,7 +53,7 @@ const categoryColor = (c: Category) =>
   : c === 'UI/UX' ? '#8b5cf6'
   : c === '데이터' ? '#f59e0b'
   : c === '개선요청' ? '#0ea5e9'
-  : '#64748b';
+  : 'var(--text-secondary)';
 
 // ── 날짜 포맷 ─────────────────────────────────────────────────────────
 const fmtDate = (ts: Timestamp | null) => {
@@ -103,10 +103,10 @@ export const IssueBoard: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>🛠️ 프로그램 오류/수정 게시판</h1>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>프로그램 오류 및 기능 개선 요청을 등록하고 팔로업하세요</p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 3 }}>프로그램 오류 및 기능 개선 요청을 등록하고 팔로업하세요</p>
         </div>
         <button onClick={() => setShowCreateModal(true)} style={{
-          background: 'linear-gradient(135deg,#0d9488,#0891b2)',
+          background: 'linear-gradient(135deg,var(--focus-ring),#0891b2)',
           color: '#fff', border: 'none', borderRadius: 8,
           padding: '9px 20px', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
           boxShadow: '0 2px 8px rgba(13,148,136,0.3)'
@@ -125,12 +125,12 @@ export const IssueBoard: React.FC = () => {
             onClick={() => setFilterStatus(s.label as any)}
             style={{
               background: filterStatus === s.label ? s.bg : '#fff',
-              border: `2px solid ${filterStatus === s.label ? s.color : '#e8ecf0'}`,
+              border: `2px solid ${filterStatus === s.label ? s.color : 'var(--border-color)'}`,
               borderRadius: 10, padding: '12px 16px', cursor: 'pointer',
               transition: 'all 0.15s', textAlign: 'center'
             }}>
             <div style={{ fontSize: '1.6rem', fontWeight: 800, color: s.color }}>{s.count}</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{s.label}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{s.label}</div>
           </div>
         ))}
       </div>
@@ -140,9 +140,9 @@ export const IssueBoard: React.FC = () => {
         {(['전체', '기능오류', 'UI/UX', '데이터', '개선요청', '기타'] as const).map(c => (
           <button key={c} onClick={() => setFilterCategory(c as any)} style={{
             padding: '5px 14px', borderRadius: 20, border: '1.5px solid',
-            borderColor: filterCategory === c ? categoryColor(c as any) : '#e2e8f0',
+            borderColor: filterCategory === c ? categoryColor(c as any) : 'var(--border-color)',
             background: filterCategory === c ? categoryColor(c as any) : '#fff',
-            color: filterCategory === c ? '#fff' : '#64748b',
+            color: filterCategory === c ? '#fff' : 'var(--text-secondary)',
             fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s'
           }}>{c}</button>
         ))}
@@ -150,9 +150,9 @@ export const IssueBoard: React.FC = () => {
 
       {/* 이슈 목록 */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>로딩 중...</div>
+        <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>로딩 중...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>
+        <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</div>
           <div style={{ fontSize: '0.9rem' }}>등록된 이슈가 없습니다</div>
         </div>
@@ -189,22 +189,22 @@ const IssueRow: React.FC<{ issue: Issue; onClick: () => void }> = ({ issue, onCl
   const sc = statusColor(issue.status);
   return (
     <div onClick={onClick} style={{
-      background: '#fff', border: '1.5px solid #e8ecf0', borderRadius: 10,
+      background: '#fff', border: '1.5px solid var(--border-color)', borderRadius: 10,
       padding: '14px 18px', cursor: 'pointer', transition: 'all 0.15s',
       display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center'
     }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(13,148,136,0.1)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e8ecf0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--focus-ring)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 10px rgba(13,148,136,0.1)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-color)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
     >
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b' }}>No. {issue.issueNo || '-'}</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>No. {issue.issueNo || '-'}</span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: categoryColor(issue.category), background: `${categoryColor(issue.category)}18`, padding: '2px 8px', borderRadius: 10 }}>{issue.category}</span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: pc.text, background: pc.bg, padding: '2px 8px', borderRadius: 10 }}>{issue.priority}</span>
-          {issue.attachments?.length > 0 && <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>📎 {issue.attachments.length}</span>}
+          {issue.attachments?.length > 0 && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>📎 {issue.attachments.length}</span>}
         </div>
-        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#1e293b', marginBottom: 3 }}>{issue.title}</div>
-        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: 3 }}>{issue.title}</div>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
           {issue.createdBy} · {fmtDate(issue.createdAt)}
         </div>
       </div>
@@ -322,12 +322,12 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
       zIndex: 1000,
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid var(--border-default)', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
         <div 
           onMouseDown={handleMouseDown}
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, cursor: 'move', userSelect: 'none' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>🛠️ 프로그램 오류/수정 등록</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
         </div>
 
         <FieldLabel>제목 *</FieldLabel>
@@ -354,16 +354,16 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         {/* 파일 첨부 */}
         <FieldLabel>파일 첨부 (캡처 이미지 포함)</FieldLabel>
         <div
-          style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '16px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '8px' }}
-          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
-          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
-          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
+          style={{ background: '#f8fafc', border: '2px dashed var(--border-default)', padding: '16px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '8px' }}
+          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--focus-ring)'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; }}
+          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
           onClick={() => fileRef.current?.click()}
           tabIndex={0}
         >
-          <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
           <input ref={fileRef} type="file" multiple accept="image/*,.pdf,.xlsx,.xls,.docx,.doc" onChange={handleFiles} style={{ display: 'none' }} id="issue-create-file-upload" />
-          <label htmlFor="issue-create-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '7px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+          <label htmlFor="issue-create-file-upload" style={{ background: 'var(--focus-ring)', color: '#fff', padding: '7px 16px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
             파일 선택하기
           </label>
         </div>
@@ -392,8 +392,8 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-          <button onClick={onClose} style={{ ...btnStyle, background: '#f1f5f9', color: '#475569' }}>취소</button>
-          <button onClick={handleSubmit} disabled={saving} style={{ ...btnStyle, background: 'linear-gradient(135deg,#0d9488,#0891b2)', color: '#fff', opacity: saving ? 0.7 : 1 }}>
+          <button onClick={onClose} style={{ ...btnStyle, background: '#f1f5f9', color: 'var(--text-secondary)' }}>취소</button>
+          <button onClick={handleSubmit} disabled={saving} style={{ ...btnStyle, background: 'linear-gradient(135deg,var(--focus-ring),#0891b2)', color: '#fff', opacity: saving ? 0.7 : 1 }}>
             {saving ? '저장 중...' : '등록'}
           </button>
         </div>
@@ -599,18 +599,18 @@ const IssueDetailModal: React.FC<{
       zIndex: 1000,
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid #cbd5e1', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid var(--border-default)', overflow: 'hidden', padding: '16px' }} onClick={e => e.stopPropagation()}>
         {/* 헤더 */}
         <div 
           onMouseDown={handleMouseDown}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #cbd5e1', paddingBottom: 10, cursor: 'move', userSelect: 'none' }}>
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--border-default)', paddingBottom: 10, cursor: 'move', userSelect: 'none' }}>
           <div>
-            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#475569' }}>No. {issue.issueNo || '-'} 상세 정보</span>
-            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: 2 }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>No. {issue.issueNo || '-'} 상세 정보</span>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
               작성자: {issue.createdBy} · {fmtDate(issue.createdAt)}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
         </div>
 
         {/* Scrollable Contents Area */}
@@ -624,8 +624,8 @@ const IssueDetailModal: React.FC<{
                 const active = status === s;
                 return (
                   <button key={s} onClick={() => handleStatusChange(s)} style={{
-                    padding: '5px 16px', borderRadius: 20, border: `2px solid ${active ? sc.text : '#e2e8f0'}`,
-                    background: active ? sc.bg : '#fff', color: active ? sc.text : '#94a3b8',
+                    padding: '5px 16px', borderRadius: 20, border: `2px solid ${active ? sc.text : 'var(--border-color)'}`,
+                    background: active ? sc.bg : '#fff', color: active ? sc.text : 'var(--text-muted)',
                     fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', transition: 'all 0.15s'
                   }}>{s}</button>
                 );
@@ -655,19 +655,19 @@ const IssueDetailModal: React.FC<{
           <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
 
         {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: 6 }}>📎 파일 첨부 (드래그&드롭 / Ctrl+V)</div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>📎 파일 첨부 (드래그&드롭 / Ctrl+V)</div>
         <div
-          style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', padding: '14px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '16px' }}
-          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
-          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
-          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
+          style={{ background: '#f8fafc', border: '2px dashed var(--border-default)', padding: '14px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer', marginBottom: '16px' }}
+          onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--focus-ring)'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; }}
+          onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
           onPaste={e => { const pasteFiles = e.clipboardData?.files; if (pasteFiles && pasteFiles.length > 0) { e.preventDefault(); handleFileUpload(pasteFiles); } }}
           onClick={() => fileRef.current?.click()}
           tabIndex={0}
         >
-          <div style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '8px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
           <input ref={fileRef} type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="issue-detail-file-upload" />
-          <label htmlFor="issue-detail-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+          <label htmlFor="issue-detail-file-upload" style={{ background: 'var(--focus-ring)', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
             {isUploading ? '업로드 중...' : '파일 선택하기'}
           </label>
 
@@ -681,18 +681,18 @@ const IssueDetailModal: React.FC<{
                   setPreviewFile({ name: att.name, url: att.url, type: att.type });
                 };
                 return (
-                  <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div key={idx} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: (isImg || isPdf) ? 'pointer' : 'default' }} onClick={handlePreview} title={(isImg || isPdf) ? "클릭하여 미리보기" : ""}>
                       {isImg ? (
-                        <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                        <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-default)' }} />
                       ) : (
-                        <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                           {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                         </span>
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', cursor: (isImg || isPdf) ? 'pointer' : 'default' }} onClick={handlePreview}>
-                      <span style={{ color: '#1e293b', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>{att.name}</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={att.name}>{att.name}</span>
                     </div>
                     <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }}>
                       <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '3px 5px', fontSize: '10px', textDecoration: 'none' }} title="다운로드">⬇</a>
@@ -705,31 +705,31 @@ const IssueDetailModal: React.FC<{
           )}
         </div>
 
-        <hr style={{ border: 'none', borderTop: '1px solid #e8ecf0', margin: '16px 0' }} />
+        <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '16px 0' }} />
 
         {/* 댓글 목록 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <h4 style={{ margin: 0, fontSize: '0.85rem', color: '#0f172a' }}>댓글</h4>
-          <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
+          <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '120px', overflowY: 'auto' }}>
             {comments.map(c => (
               <div key={c.id}>
-                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '2px' }}>{c.createdBy} • {fmtDate(c.createdAt)}</div>
-                <div style={{ fontSize: '0.8rem', color: '#0f172a', background: '#fff', padding: '6px 8px', borderRadius: '0 6px 6px 6px', border: '1px solid #e2e8f0', display: 'inline-block' }}>{c.content}</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '2px' }}>{c.createdBy} • {fmtDate(c.createdAt)}</div>
+                <div style={{ fontSize: '0.8rem', color: '#0f172a', background: '#fff', padding: '6px 8px', borderRadius: '0 6px 6px 6px', border: '1px solid var(--border-color)', display: 'inline-block' }}>{c.content}</div>
               </div>
             ))}
-            {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
+            {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') postComment(); }} />
-            <button onClick={postComment} disabled={posting} style={{ background: '#0d9488', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
+            <input style={{ flex: 1, padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.8rem' }} value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="댓글 입력..." onKeyDown={e => { if (e.key === 'Enter') postComment(); }} />
+            <button onClick={postComment} disabled={posting} style={{ background: 'var(--focus-ring)', color: '#fff', border: 'none', padding: '0 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' }}>등록</button>
         </div>
         </div>
         </div>
 
         {/* Footer */}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12, borderTop: '1px solid #e8ecf0', paddingTop: 10 }}>
-          <button onClick={onClose} style={{ ...btnStyle, background: '#f1f5f9', color: '#475569' }}>닫기</button>
-          <button onClick={handleSaveChanges} disabled={savingChanges} style={{ ...btnStyle, background: 'linear-gradient(135deg,#0d9488,#0891b2)', color: '#fff', opacity: savingChanges ? 0.7 : 1 }}>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12, borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
+          <button onClick={onClose} style={{ ...btnStyle, background: '#f1f5f9', color: 'var(--text-secondary)' }}>닫기</button>
+          <button onClick={handleSaveChanges} disabled={savingChanges} style={{ ...btnStyle, background: 'linear-gradient(135deg,var(--focus-ring),#0891b2)', color: '#fff', opacity: savingChanges ? 0.7 : 1 }}>
             {savingChanges ? '수정 중...' : '저장'}
           </button>
         </div>
@@ -764,7 +764,7 @@ const FilePreviewModal: React.FC<{
         position: 'absolute', top: 20, right: 20, display: 'flex', gap: 12, zIndex: 10000
       }} onClick={e => e.stopPropagation()}>
         <a href={file.url} download={file.name} target="_blank" rel="noreferrer" style={{
-          background: '#0d9488', color: '#fff', border: 'none', borderRadius: '8px',
+          background: 'var(--focus-ring)', color: '#fff', border: 'none', borderRadius: '8px',
           padding: '8px 16px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
           boxShadow: '0 2px 8px rgba(13,148,136,0.3)', display: 'inline-block', cursor: 'pointer'
         }}>다운로드</a>
@@ -803,12 +803,12 @@ const FilePreviewModal: React.FC<{
             textAlign: 'center', maxWidth: '400px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
           }}>
             <div style={{ fontSize: '3rem', marginBottom: 12 }}>⚠️</div>
-            <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>미리보기 미지원 파일</div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>미리보기 미지원 파일</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
               이 파일 형식은 브라우저에서 직접 미리보기를 할 수 없습니다. 다운로드하여 확인해주세요.
             </div>
             <a href={file.url} download={file.name} target="_blank" rel="noreferrer" style={{
-              background: '#0d9488', color: '#fff', border: 'none', borderRadius: '8px',
+              background: 'var(--focus-ring)', color: '#fff', border: 'none', borderRadius: '8px',
               padding: '8px 20px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none',
               display: 'inline-block'
             }}>파일 다운로드</a>
@@ -821,13 +821,13 @@ const FilePreviewModal: React.FC<{
 
 // ── 공통 스타일 ────────────────────────────────────────────────────────
 const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: 5, marginTop: 12 }}>{children}</div>
+  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 5, marginTop: 12 }}>{children}</div>
 );
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid #e2e8f0',
+  width: '100%', padding: '9px 12px', borderRadius: 8, border: '1.5px solid var(--border-color)',
   fontSize: '0.85rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-  background: '#fff', color: '#1e293b'
+  background: '#fff', color: 'var(--text-primary)'
 };
 
 const btnStyle: React.CSSProperties = {

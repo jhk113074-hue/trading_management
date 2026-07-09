@@ -74,7 +74,7 @@ export const FilePreviewModal: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         zIndex: 10005,
-        border: '2px solid #cbd5e1',
+        border: '2px solid var(--border-default)',
         overflow: 'hidden',
         resize: 'both',
         userSelect: isDragging ? 'none' : 'auto'
@@ -85,7 +85,7 @@ export const FilePreviewModal: React.FC = () => {
         onMouseDown={handleMouseDown}
         style={{
           padding: '10px 16px',
-          borderBottom: '1px solid #cbd5e1',
+          borderBottom: '1px solid var(--border-default)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -96,7 +96,7 @@ export const FilePreviewModal: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', backgroundColor: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>⚡ 드래그 이동</span>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-secondary)', backgroundColor: 'var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>⚡ 드래그 이동</span>
           <span
             style={{
               fontWeight: 700,
@@ -138,7 +138,7 @@ export const FilePreviewModal: React.FC = () => {
             style={{
               background: 'none',
               border: 'none',
-              color: '#64748b',
+              color: 'var(--text-secondary)',
               fontSize: '18px',
               cursor: 'pointer',
               fontWeight: 'bold',
@@ -201,7 +201,7 @@ export const FilePreviewModal: React.FC = () => {
             }}
           >
             <div style={{ fontSize: '40px', marginBottom: '12px' }}>📁</div>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#1e293b', fontWeight: 700 }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', color: 'var(--text-primary)', fontWeight: 700 }}>
               미리보기를 지원하지 않는 형식입니다
             </h4>
             <a

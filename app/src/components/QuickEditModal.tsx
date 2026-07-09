@@ -260,7 +260,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             <select
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             >
               <option value="">고객사 직접 입력 또는 선택...</option>
               {customers.map(c => (
@@ -272,7 +272,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               placeholder="직접 입력 시 여기에 입력..."
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', marginTop: '4px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px', marginTop: '4px' }}
             />
           </div>
         );
@@ -313,7 +313,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="date"
                 value={cargoReadyDate}
                 onChange={(e) => setCargoReadyDate(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -322,7 +322,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="date"
                 value={cfsEntryDate}
                 onChange={(e) => setCfsEntryDate(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
           </div>
@@ -337,7 +337,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="date"
                 value={docsDeadlineDate}
                 onChange={(e) => setDocsDeadlineDate(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -346,7 +346,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="date"
                 value={etd}
                 onChange={(e) => setEtd(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -355,7 +355,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="date"
                 value={eta}
                 onChange={(e) => setEta(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
           </div>
@@ -371,7 +371,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 placeholder="예: 1x20' GP"
                 value={volume}
                 onChange={(e) => setVolume(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -381,7 +381,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 placeholder="예: EVER GIVEN V.0123W"
                 value={vessel}
                 onChange={(e) => setVessel(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
           </div>
@@ -397,7 +397,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               placeholder="예: 1x20' GP"
               value={volume}
               onChange={(e) => setVolume(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -411,7 +411,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               placeholder="예: EVER GIVEN V.0123W"
               value={vessel}
               onChange={(e) => setVessel(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -444,7 +444,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                     setForwarders([]);
                   }
                 }}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               >
                 <option value="">수동 금액 지정 (연동 없음)</option>
                 {quotations.map(q => (
@@ -463,10 +463,10 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 disabled={!!quotationId}
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', backgroundColor: quotationId ? '#f1f5f9' : '#fff' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px', backgroundColor: quotationId ? '#f1f5f9' : '#fff' }}
               />
               {quotationId && (
-                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   ※ PI와 연동 중입니다. PI 금액을 변경하려면 PI 모듈을 편집하시거나 연동을 해제해 주세요.
                 </span>
               )}
@@ -478,7 +478,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 type="number"
                 value={exchangeRate}
                 onChange={(e) => setExchangeRate(parseInt(e.target.value, 10) || 1400)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
           </div>
@@ -490,7 +490,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
+              <label style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 품목 및 공급사 상세 편집
               </label>
               <button
@@ -502,18 +502,18 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               </button>
             </div>
             
-            <div style={{ overflowX: 'auto', maxHeight: '350px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+            <div style={{ overflowX: 'auto', maxHeight: '350px', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left', minWidth: '700px' }}>
-                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 1 }}>
+                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border-color)', position: 'sticky', top: 0, zIndex: 1 }}>
                   <tr>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569' }}>품명</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '80px' }}>Grade</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '80px' }}>수량</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '70px' }}>단위</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '100px' }}>구입단가</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '80px' }}>통화</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '120px' }}>구입사(공급처)</th>
-                    <th style={{ padding: '8px', fontWeight: 600, color: '#475569', width: '50px', textAlign: 'center' }}>삭제</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)' }}>품명</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '80px' }}>Grade</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '80px' }}>수량</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '70px' }}>단위</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '100px' }}>구입단가</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '80px' }}>통화</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '120px' }}>구입사(공급처)</th>
+                    <th style={{ padding: '8px', fontWeight: 600, color: 'var(--text-secondary)', width: '50px', textAlign: 'center' }}>삭제</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -524,7 +524,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           type="text"
                           value={it.name || ''}
                           onChange={(e) => handleItemChange(idx, 'name', e.target.value)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
@@ -532,7 +532,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           type="text"
                           value={it.grade || ''}
                           onChange={(e) => handleItemChange(idx, 'grade', e.target.value)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
@@ -540,14 +540,14 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           type="number"
                           value={it.qty || 0}
                           onChange={(e) => handleItemChange(idx, 'qty', parseFloat(e.target.value) || 0)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <select
                           value={it.unit || 'kg'}
                           onChange={(e) => handleItemChange(idx, 'unit', e.target.value)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         >
                           <option value="kg">kg</option>
                           <option value="MT">MT</option>
@@ -562,14 +562,14 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           step="0.01"
                           value={it.unitPrice || 0}
                           onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
                         <select
                           value={it.currency || 'USD'}
                           onChange={(e) => handleItemChange(idx, 'currency', e.target.value)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                         >
                           <option value="USD">USD</option>
                           <option value="KRW">KRW</option>
@@ -580,7 +580,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                           type="text"
                           value={it.supplier || ''}
                           onChange={(e) => handleItemChange(idx, 'supplier', e.target.value)}
-                          style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                          style={{ width: '100%', padding: '6px', border: '1px solid var(--border-default)', borderRadius: '4px', boxSizing: 'border-box' }}
                           placeholder="공급업체명"
                         />
                       </td>
@@ -599,7 +599,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 </tbody>
               </table>
             </div>
-            <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'right' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
               총 품목 수: {items.length}개
             </div>
             {/* 포워딩회사 & 운송비 입력 영역 */}
@@ -615,20 +615,20 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               </div>
               {/* 헤더 라벨 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>포워딩사/운송사명</span>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>해상운임 (USD $)</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>포워딩사/운송사명</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>해상운임 (USD $)</span>
                 <span></span>
               </div>
               {/* 포워더 행 목록 */}
               {forwarders.length === 0 ? (
-                <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '12px' }}>운송사를 추가하세요</div>
+                <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>운송사를 추가하세요</div>
               ) : (
                 forwarders.map((fw, idx) => (
                    <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
                     <select
                       value={fw.name}
                       onChange={(e) => updateForwarder(idx, 'name', e.target.value)}
-                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', width: '100%', color: '#1e293b', fontWeight: 500 }}
+                      style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', width: '100%', color: 'var(--text-primary)', fontWeight: 500 }}
                     >
                       <option value="">-- 포워딩사 선택 --</option>
                       {suppliersList
@@ -668,9 +668,9 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
       case 'supplierRemitted':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>공급업체별 결제일 지정</label>
+            <label style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)' }}>공급업체별 결제일 지정</label>
             {suppliers.length === 0 ? (
-              <p style={{ fontSize: '13px', color: '#94a3b8' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                 ※ 품목에 등록된 구입사(공급처)가 없습니다. 먼저 품목에서 공급업체를 입력해 주세요.
               </p>
             ) : (
@@ -678,25 +678,25 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 {suppliers.map(sup => {
                   const pay = supplierPayments[sup] || { status: '미결제', date: '' };
                   return (
-                    <div key={sup} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div key={sup} style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ fontWeight: 600, color: '#334155', fontSize: '13px' }}>🏢 {sup}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <label style={{ fontSize: '11px', color: '#64748b' }}>결제상태</label>
+                          <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>결제상태</label>
                           <select
                             value={pay.status}
                             onChange={(e) => setSupplierPayments(prev => ({
                               ...prev,
                               [sup]: { ...prev[sup], status: e.target.value }
                             }))}
-                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                            style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12.5px' }}
                           >
                             <option value="미결제">미결제</option>
                             <option value="결제완료">결제완료</option>
                           </select>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <label style={{ fontSize: '11px', color: '#64748b' }}>결제일자</label>
+                          <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>결제일자</label>
                           <input
                             type="date"
                             value={pay.date || ''}
@@ -704,7 +704,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                               ...prev,
                               [sup]: { ...prev[sup], date: e.target.value }
                             }))}
-                            style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px' }}
+                            style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12.5px' }}
                           />
                         </div>
                       </div>
@@ -724,7 +724,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               type="date"
               value={ciPlSentDate}
               onChange={(e) => setCiPlSentDate(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -736,7 +736,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             <select
               value={incoterms}
               onChange={(e) => setIncoterms(e.target.value as any)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             >
               <option value="">조건 선택...</option>
               <option value="FOB">FOB</option>
@@ -758,7 +758,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               placeholder="예: L/C 90 days, T/T 30% advance"
               value={paymentTerms}
               onChange={(e) => setPaymentTerms(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -773,7 +773,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 placeholder="예: 010-12-345678U"
                 value={exportNo}
                 onChange={(e) => setExportNo(e.target.value)}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -783,7 +783,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
                 placeholder="예: 1400"
                 value={customsExchangeRate}
                 onChange={(e) => setCustomsExchangeRate(e.target.value === '' ? '' : Number(e.target.value))}
-                style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
               />
             </div>
           </div>
@@ -797,7 +797,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               type="date"
               value={docsSent}
               onChange={(e) => setDocsSent(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -810,7 +810,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               type="date"
               value={bankSubmitted}
               onChange={(e) => setBankSubmitted(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -824,7 +824,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               placeholder="예: DHL 1234567890"
               value={trackingNo}
               onChange={(e) => setTrackingNo(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -837,7 +837,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               type="date"
               value={paymentCollected}
               onChange={(e) => setPaymentCollected(e.target.value)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             />
           </div>
         );
@@ -849,7 +849,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px' }}
             >
               <option value="주문">주문</option>
               <option value="발주">발주</option>
@@ -868,7 +868,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               rows={4}
-              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical' }}
             />
           </div>
         );
@@ -896,7 +896,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           </div>
           <button
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#94a3b8' }}
+            style={{ background: 'transparent', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--text-muted)' }}
           >
             ✕
           </button>
@@ -912,7 +912,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
           <button
             onClick={onClose}
             disabled={isSaving}
-            style={{ padding: '9px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '9px 16px', background: '#f8fafc', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
             취소
           </button>

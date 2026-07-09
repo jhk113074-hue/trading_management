@@ -163,14 +163,14 @@ export const Suppliers: React.FC = () => {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -191,24 +191,24 @@ export const Suppliers: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
         <input 
           type="text" 
           placeholder="공급업체명, 코드, 사업자번호, 담당자 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', maxWidth: '400px' }}
+          style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px', flex: '1', maxWidth: '400px' }}
         />
       </div>
 
-      <div style={{ marginBottom: '12px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>
+      <div style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
         총 {filteredAndSorted.length}건
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #e2e8f0' }}>
+          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid var(--border-color)' }}>
             <tr>
               <th onClick={() => handleSort('supplierCode')} style={thStyle(0, { padding: '12px', cursor: 'pointer' })}>공급업체코드 {getSortIcon('supplierCode')}<span {...resizerProps(0)} /></th>
               <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px', cursor: 'pointer' })}>공급업체명 (대표자) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
@@ -229,7 +229,7 @@ export const Suppliers: React.FC = () => {
                 <tr 
                   key={s.id} 
                   onClick={() => { setEditingSupId(s.id); setIsModalOpen(true); }}
-                  style={{ borderBottom: '1px solid #e2e8f0', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                  style={{ borderBottom: '1px solid var(--border-color)', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >

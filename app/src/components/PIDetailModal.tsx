@@ -95,7 +95,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(6px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: '#fff', borderRadius: '14px', width: '900px', maxWidth: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.12)' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #e8ecf0', background: '#fafafa' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--border-color)', background: '#fafafa' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em', color: '#111827' }}>
               {resolvedPi.piNumber || '-'}
@@ -115,7 +115,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px' }}>
             
-            <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
+            <div style={{ background: '#f9fafb', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>📋 PI 정보</h4>
               <DetailRow label="견적 발행사" value={resolvedPi.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : '(주)와이에스에이씨씨 (YSACC CO.,LTD)'} valueColor={resolvedPi.issuingCompany === 'YS' ? '#059669' : '#2563eb'} bold />
               <DetailRow label="PI Number" value={resolvedPi.piNumber} />
@@ -124,7 +124,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
               <DetailRow label="Revision" value={resolvedPi.currentVersion ? `R${resolvedPi.currentVersion}` : '-'} />
             </div>
 
-            <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px' }}>
+            <div style={{ background: '#f9fafb', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>🏢 고객 정보</h4>
               <DetailRow label="Customer Name" value={resolvedPi.customerName} bold />
               <DetailRow label="Contact Person" value={resolvedPi.contactPerson} />
@@ -133,7 +133,7 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
               {resolvedPi.customerPhone && <DetailRow label="Tel" value={resolvedPi.customerPhone} />}
             </div>
 
-            <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px', gridColumn: '1 / -1' }}>
+            <div style={{ background: '#f9fafb', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', gridColumn: '1 / -1' }}>
               <h4 style={{ fontSize: '10px', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px', fontWeight: 700 }}>🚢 무역 조건 (Trade Terms)</h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'x-14px y-4px' }}>
                 <DetailRow label="Incoterms" value={pi.incoterms} />
@@ -183,22 +183,22 @@ export const PIDetailModal: React.FC<Props> = ({ pi, onClose, onEdit }) => {
             </table>
           </div>
 
-          <div style={{ background: '#f9fafb', border: '1px solid #e8ecf0', borderRadius: '8px', padding: '16px', textAlign: 'right', marginTop: '16px' }}>
-            <div style={{ fontSize: '13px', color: '#475569', marginBottom: '4px' }}>Subtotal: <b>${(pi.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</b></div>
-            <div style={{ fontSize: '13px', color: '#475569', marginBottom: '8px' }}>Extras: <b>${(pi.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</b></div>
+          <div style={{ background: '#f9fafb', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px', textAlign: 'right', marginTop: '16px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Subtotal: <b>${(pi.subtotalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</b></div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Extras: <b>${(pi.extrasUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</b></div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: '#059669', marginTop: '4px' }}>GRAND TOTAL: ${(pi.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
         </div>
 
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #e8ecf0', display: 'flex', gap: '10px', justifyContent: 'space-between', background: '#fafafa' }}>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px', justifyContent: 'space-between', background: '#fafafa' }}>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => generatePIPdf(resolvedPi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #dc2626', color: '#dc2626', opacity: loading ? 0.5 : 1 }}>📄 PDF</button>
             <button onClick={() => generatePIExcel(resolvedPi, items)} disabled={loading} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', background: '#fff', border: '1px solid #16a34a', color: '#16a34a', opacity: loading ? 0.5 : 1 }}>📊 Excel</button>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', color: '#475569' }}>닫기</button>
+            <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}>닫기</button>
             <button onClick={() => { onClose(); onEdit(); }} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: 'rgba(37,99,235,0.05)', border: '1px solid #2563eb', color: '#2563eb' }}>✏ 수정</button>
-            <button onClick={() => updateStatus('sent')} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid #cbd5e1', color: '#0369a1' }}>📨 Sent</button>
+            <button onClick={() => updateStatus('sent')} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#fff', border: '1px solid var(--border-default)', color: '#0369a1' }}>📨 Sent</button>
             <button onClick={() => updateStatus('confirmed')} style={{ padding: '9px 18px', borderRadius: '7px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', background: '#2563eb', border: 'none', color: '#fff' }}>✔ Confirmed</button>
           </div>
         </div>
@@ -215,5 +215,5 @@ const DetailRow = ({ label, value, bold = false, valueColor = '#111827' }: any) 
   </div>
 );
 
-const thStyle = { background: '#f9fafb', padding: '8px 10px', textAlign: 'left' as any, color: '#6b7280', borderBottom: '1px solid #e8ecf0', textTransform: 'uppercase' as any, letterSpacing: '0.04em', fontWeight: 600 };
+const thStyle = { background: '#f9fafb', padding: '8px 10px', textAlign: 'left' as any, color: '#6b7280', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase' as any, letterSpacing: '0.04em', fontWeight: 600 };
 const tdStyle = { padding: '9px 10px', borderBottom: '1px solid #f3f4f6' };

@@ -137,13 +137,13 @@ export const Tasks: React.FC = () => {
           onClick={handleOpenAdd}
           style={{ 
             padding: '12px 25px', 
-            backgroundColor: '#4f46e5', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '12px', 
-            fontWeight: 'bold', 
+            backgroundColor: 'var(--primary-color)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            fontWeight: 'bold',
             cursor: 'pointer',
-            boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)'
+            boxShadow: 'var(--shadow-brand)'
           }}
         >+ 새 업무 등록</button>
       </div>
@@ -153,7 +153,7 @@ export const Tasks: React.FC = () => {
           <div key={col} style={{ backgroundColor: '#f4f7fe', borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', padding: '0 5px' }}>
               <h3 style={{ fontSize: '1rem', color: '#1a1a2e', margin: 0 }}>{col}</h3>
-              <span style={{ backgroundColor: 'white', padding: '2px 10px', borderRadius: '15px', fontSize: '0.8rem', fontWeight: 'bold', color: '#4f46e5' }}>
+              <span style={{ backgroundColor: 'white', padding: '2px 10px', borderRadius: '15px', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
                 {tasks.filter(t => t.uiStatus === col).length}
               </span>
             </div>
@@ -181,7 +181,7 @@ export const Tasks: React.FC = () => {
                       borderRadius: '5px', 
                       fontWeight: 'bold',
                       backgroundColor: task.priority === '높음' ? '#fee2e2' : '#e0e7ff',
-                      color: task.priority === '높음' ? '#ef4444' : '#4f46e5'
+                      color: task.priority === '높음' ? '#ef4444' : 'var(--primary-color)'
                     }}>{task.priority}</span>
                     <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#cbd5e0' }}>✕</button>
                   </div>
@@ -202,27 +202,27 @@ export const Tasks: React.FC = () => {
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '25px', width: '500px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
             <h3 style={{ marginBottom: '25px', fontSize: '1.4rem' }}>{isEditing ? '업무 상세 및 수정' : '새 업무 등록'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input className="form-control" placeholder="제목" value={currentTask.title} onChange={e => setCurrentTask({...currentTask, title: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-              <textarea className="form-control" placeholder="설명" value={currentTask.description} onChange={e => setCurrentTask({...currentTask, description: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', height: '100px' }} />
+              <input className="form-control" placeholder="제목" value={currentTask.title} onChange={e => setCurrentTask({...currentTask, title: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }} />
+              <textarea className="form-control" placeholder="설명" value={currentTask.description} onChange={e => setCurrentTask({...currentTask, description: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', height: '100px' }} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <select value={currentTask.priority} onChange={e => setCurrentTask({...currentTask, priority: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <select value={currentTask.priority} onChange={e => setCurrentTask({...currentTask, priority: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <option>높음</option>
                   <option>보통</option>
                   <option>낮음</option>
                 </select>
-                <select value={currentTask.assignee} onChange={e => setCurrentTask({...currentTask, assignee: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <select value={currentTask.assignee} onChange={e => setCurrentTask({...currentTask, assignee: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <option value="">담당자 선택</option>
                   {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                <input type="date" value={currentTask.dueDate} onChange={e => setCurrentTask({...currentTask, dueDate: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-                <select value={currentTask.status} onChange={e => setCurrentTask({...currentTask, status: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <input type="date" value={currentTask.dueDate} onChange={e => setCurrentTask({...currentTask, dueDate: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }} />
+                <select value={currentTask.status} onChange={e => setCurrentTask({...currentTask, status: e.target.value})} style={{ padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   {columns.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '15px' }}>
-                <button onClick={handleSubmit} style={{ flex: 1, padding: '15px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold' }}>저장하기</button>
+                <button onClick={handleSubmit} style={{ flex: 1, padding: '15px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold' }}>저장하기</button>
                 <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '15px', backgroundColor: '#f4f7fe', color: '#4a5568', border: 'none', borderRadius: '12px' }}>취소</button>
               </div>
             </div>

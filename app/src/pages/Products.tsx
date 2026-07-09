@@ -341,14 +341,14 @@ export const Products: React.FC = () => {
         <div style={{ display: 'flex', gap: '6px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid #cbd5e1', color: '#475569', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
+            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -375,29 +375,29 @@ export const Products: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap', backgroundColor: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap', backgroundColor: '#fff', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
         <input
           type="text"
           placeholder="상품명, 코드, 스펙 검색..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: '7px', flex: '1', minWidth: '200px', fontSize: '13px', outline: 'none', color: '#1e293b' }}
+          style={{ padding: '7px 12px', border: '1px solid var(--border-color)', borderRadius: '7px', flex: '1', minWidth: '200px', fontSize: '13px', outline: 'none', color: 'var(--text-primary)' }}
         />
-        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
+        <select value={catLargeFilter} onChange={(e) => setCatLargeFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid var(--border-color)', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">전체 대분류</option>
           {categories.large.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
+        <select value={catMediumFilter} onChange={(e) => setCatMediumFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid var(--border-color)', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">전체 중분류</option>
           {categories.medium.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
+        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid var(--border-color)', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">통화(전체)</option>
           <option value="USD">USD</option>
           <option value="KRW">KRW</option>
           <option value="EUR">EUR</option>
         </select>
-        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
+        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '7px 10px', border: '1px solid var(--border-color)', borderRadius: '7px', fontSize: '12.5px', color: '#334155', outline: 'none', cursor: 'pointer' }}>
           <option value="">공급업체(전체)</option>
           {uniqueSuppliers.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -408,24 +408,24 @@ export const Products: React.FC = () => {
             style={{ padding: '7px 10px', border: '1px solid #fecaca', borderRadius: '7px', background: '#fef2f2', color: '#dc2626', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
           >✕ 초기화</button>
         )}
-        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '5px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', background: '#f1f5f9', padding: '5px 12px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
           총 {filteredAndSorted.length}건
-          {filteredAndSorted.length !== products.length && <span style={{ color: '#94a3b8', fontWeight: 400 }}> / 전체 {products.length}건</span>}
+          {filteredAndSorted.length !== products.length && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> / 전체 {products.length}건</span>}
         </span>
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid #e2e8f0', fontSize: '11px' }}>
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1.5px solid var(--border-color)', fontSize: '11px' }}>
             <tr>
-              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
-              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '9px 10px', cursor: 'pointer', textAlign: 'right', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
-              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
-              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' })}>관리<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('productCode')} style={thStyle(0, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품코드 {getSortIcon('productCode')}<span {...resizerProps(0)} /></th>
+              <th onClick={() => handleSort('nameKo')} style={thStyle(1, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>상품명 / 규격 {getSortIcon('nameKo')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('categoryLarge')} style={thStyle(2, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>분류 {getSortIcon('categoryLarge')}<span {...resizerProps(2)} /></th>
+              <th onClick={() => handleSort('purchasePrice')} style={thStyle(3, { padding: '9px 10px', cursor: 'pointer', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>단가(구매가) {getSortIcon('purchasePrice')}<span {...resizerProps(3)} /></th>
+              <th onClick={() => handleSort('supplierName')} style={thStyle(4, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>공급업체 / 제조사 {getSortIcon('supplierName')}<span {...resizerProps(4)} /></th>
+              <th onClick={() => handleSort('origin')} style={thStyle(5, { padding: '9px 10px', cursor: 'pointer', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>원산지 {getSortIcon('origin')}<span {...resizerProps(5)} /></th>
+              <th style={thStyle(6, { padding: '9px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' })}>관리<span {...resizerProps(6)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -462,11 +462,11 @@ export const Products: React.FC = () => {
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb' }}>{p.productCode || '-'}</div>
                       {p.hsCode && (
-                        <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', background: '#f1f5f9', padding: '1px 5px', borderRadius: '3px', display: 'inline-block', marginTop: '3px', fontWeight: 600 }}>
                           HS {p.hsCode}
                         </div>
                       )}
-                      <div style={{ fontSize: '10px', color: '#cbd5e1', marginTop: '2px' }}>{p.id}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--border-default)', marginTop: '2px' }}>{p.id}</div>
                     </td>
 
                     {/* 상품명 / 규격 — 핵심 정보 2줄로 압축 */}
@@ -475,24 +475,24 @@ export const Products: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f172a' }}>{p.nameKo || '-'}</span>
                         {p.nameEn && p.nameEn !== p.nameKo && (
-                          <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 400 }}>{p.nameEn}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>{p.nameEn}</span>
                         )}
                       </div>
                       {/* 2줄: 스펙 + UNIT/PLT/적재 뱃지 */}
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
                         {p.spec && (
-                          <span style={{ fontSize: '12px', color: '#64748b' }}>{p.spec}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{p.spec}</span>
                         )}
                         {(unitW || unitL || unitH || unitWt) ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                             <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>UNIT</span>
-                            <span style={{ fontSize: '11.5px', color: '#475569' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
+                            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{unitW}x{unitL}x{unitH} ({unitWt}kg)</span>
                           </span>
                         ) : null}
                         {(palletW || palletL || palletH) ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                             <span style={{ background: '#ecfeff', color: '#0891b2', padding: '0px 4px', borderRadius: '3px', fontWeight: 700, fontSize: '11px' }}>PLT</span>
-                            <span style={{ fontSize: '11.5px', color: '#475569' }}>{palletW}x{palletL}x{palletH}</span>
+                            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{palletW}x{palletL}x{palletH}</span>
                           </span>
                         ) : null}
                         {p.qtyPerPallet ? (
@@ -506,9 +506,9 @@ export const Products: React.FC = () => {
 
                     {/* 분류 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <div style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', background: '#f8fafc', border: '1px solid var(--border-color)', padding: '2px 7px', borderRadius: '4px', display: 'inline-block', lineHeight: 1.4 }}>
                         {p.categoryLarge || '-'}
-                        {p.categoryMedium && <span style={{ color: '#94a3b8' }}> &gt; {p.categoryMedium}</span>}
+                        {p.categoryMedium && <span style={{ color: 'var(--text-muted)' }}> &gt; {p.categoryMedium}</span>}
                       </div>
                     </td>
 
@@ -519,7 +519,7 @@ export const Products: React.FC = () => {
                       </div>
                       <div style={{ fontSize: '11px', color: '#2563eb', fontWeight: 700 }}>/ {p.unit || 'KG'}</div>
                       {(p.minOrderQty || 0) > 0 && (
-                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>MOQ {p.minOrderQty}</div>
                       )}
                     </td>
 
@@ -527,30 +527,30 @@ export const Products: React.FC = () => {
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
                       <div style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>{p.supplierName || '-'}</div>
                       {p.manufacturerName && p.manufacturerName !== p.supplierName && (
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>제조: </span>{p.manufacturerName}
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>제조: </span>{p.manufacturerName}
                         </div>
                       )}
                     </td>
 
                     {/* 원산지 */}
                     <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                      <span style={{ fontSize: '12px', color: '#64748b' }}>{p.origin || '-'}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{p.origin || '-'}</span>
                     </td>
 
                     {/* 관리 — 삭제는 수정 모달 안에서만, 목록에서는 숨김 */}
                     <td style={{ padding: '8px 10px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(false); setIsModalOpen(true); }}
-                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: '#475569', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
+                        style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', marginRight: '4px', fontWeight: 600, transition: 'all 0.1s' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-color)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
                       >수정</button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditingProdId(p.id); setIsCopyMode(true); setIsModalOpen(true); }}
-                        style={{ background: '#fff', border: '1px solid #e2e8f0', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: '#475569', fontWeight: 600 }}
+                        style={{ background: '#fff', border: '1px solid var(--border-color)', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#2563eb'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-color)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'; }}
                       >복사</button>
                     </td>
                   </tr>

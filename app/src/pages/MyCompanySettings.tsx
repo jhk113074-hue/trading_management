@@ -49,7 +49,7 @@ const renderFileThumbnail = (url: string, name: string) => {
         const target = e.target as HTMLElement;
         const parent = target.parentElement;
         if (parent) {
-          parent.innerHTML = `<div style="padding: 10px; text-align: center; font-size: 0.75rem; color: #475569; font-weight: 600;">📄 ${name || '첨부파일'}</div>`;
+          parent.innerHTML = `<div style="padding: 10px; text-align: center; font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">📄 ${name || '첨부파일'}</div>`;
         }
       }}
     />
@@ -125,7 +125,7 @@ const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) =
         width: '500px',
         height: '600px',
         backgroundColor: '#ffffff',
-        border: '1px solid #cbd5e1',
+        border: '1px solid var(--border-default)',
         borderRadius: '12px',
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         zIndex: 9999,
@@ -139,7 +139,7 @@ const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) =
         style={{
           padding: '12px 16px',
           background: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid var(--border-color)',
           cursor: 'move',
           display: 'flex',
           justifyContent: 'space-between',
@@ -147,7 +147,7 @@ const ModelessWindow: React.FC<ModelessWindowProps> = ({ name, url, onClose }) =
           userSelect: 'none'
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>
+        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
           📄 {name} 미리보기
         </span>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -372,24 +372,24 @@ export const MyCompanySettings: React.FC = () => {
     <div style={{ padding: '24px 30px', maxWidth: '900px' }}>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '26px', color: '#0f172a', marginBottom: '8px', fontWeight: 800, letterSpacing: '-0.025em' }}>🏢 자사 정보 관리</h1>
-        <p style={{ color: '#64748b' }}>견적서(PI), 발주서(PO) 등 수출 서류에 기본으로 표기되는 회사 정보를 관리합니다.</p>
+        <p style={{ color: 'var(--text-secondary)' }}>견적서(PI), 발주서(PO) 등 수출 서류에 기본으로 표기되는 회사 정보를 관리합니다.</p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {companies.map(comp => (
-          <div key={comp.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', overflow: 'hidden' }}>
-            <div style={{ background: '#f8fafc', padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div key={comp.id} style={{ background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', overflow: 'hidden' }}>
+            <div style={{ background: '#f8fafc', padding: '16px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f172a' }}>
                 {comp.id === 'YS' ? '영성ACC (YS ACC)' : '(주)와이에스에이씨씨 (YSACC CO.,LTD)'}
               </div>
               <div>
                 {editingId === comp.id ? (
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={handleCancel} disabled={saveLoading} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>취소</button>
+                    <button onClick={handleCancel} disabled={saveLoading} style={{ padding: '6px 12px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>취소</button>
                     <button onClick={handleSave} disabled={saveLoading} style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>저장</button>
                   </div>
                 ) : (
-                  <button onClick={() => handleEdit(comp)} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button onClick={() => handleEdit(comp)} style={{ padding: '6px 12px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     ✏️ 수정
                   </button>
                 )}
@@ -400,56 +400,56 @@ export const MyCompanySettings: React.FC = () => {
               {editingId === comp.id && editForm ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>상호명 (국문)</label>
-                    <input name="nameKo" value={editForm.nameKo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>상호명 (국문)</label>
+                    <input name="nameKo" value={editForm.nameKo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>상호명 (영문)</label>
-                    <input name="nameEn" value={editForm.nameEn || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>상호명 (영문)</label>
+                    <input name="nameEn" value={editForm.nameEn || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>사업자등록번호</label>
-                    <input name="bizNo" value={editForm.bizNo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>사업자등록번호</label>
+                    <input name="bizNo" value={editForm.bizNo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>주소 (국문)</label>
-                    <input name="addressKo" value={editForm.addressKo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>주소 (국문)</label>
+                    <input name="addressKo" value={editForm.addressKo || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>주소 (영문)</label>
-                    <input name="addressEn" value={editForm.addressEn || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>주소 (영문)</label>
+                    <input name="addressEn" value={editForm.addressEn || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>전화번호 (TEL)</label>
-                    <input name="phone" value={editForm.phone || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>전화번호 (TEL)</label>
+                    <input name="phone" value={editForm.phone || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>팩스번호 (FAX)</label>
-                    <input name="fax" value={editForm.fax || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>팩스번호 (FAX)</label>
+                    <input name="fax" value={editForm.fax || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>담당자</label>
-                    <input name="manager" value={editForm.manager || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>담당자</label>
+                    <input name="manager" value={editForm.manager || ''} onChange={handleChange} style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px' }} />
                   </div>
-                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 관리 (파일 선택 또는 업로드)</div>
+                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '8px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '12px' }}>첨부 파일 관리 (파일 선택 또는 업로드)</div>
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                       {/* 사업자등록증 */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>사업자등록증</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>사업자등록증</span>
                           {editForm.bizLicenseUrl && (
                             <button onClick={() => handleFileDelete('bizLicense')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
                           )}
                         </div>
                         {editForm.bizLicenseUrl ? (
-                          <div onClick={() => setModelessFile({ name: editForm.bizLicenseName || '사업자등록증', url: editForm.bizLicenseUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bizLicenseName || '사업자등록증', url: editForm.bizLicenseUrl! })} style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bizLicenseUrl, editForm.bizLicenseName || '사업자등록증')}
                           </div>
                         ) : (
                           <div>
                             <input type="file" id={`bizLicense_${comp.id}`} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'bizLicense')} />
-                            <label htmlFor={`bizLicense_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
+                            <label htmlFor={`bizLicense_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
                               <span>📁</span>
                               <span>{uploadingField === 'bizLicense' ? '업로드 중...' : '파일 선택'}</span>
                             </label>
@@ -460,19 +460,19 @@ export const MyCompanySettings: React.FC = () => {
                       {/* 통장사본 (원화) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (원화)</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (원화)</span>
                           {editForm.bankKrwUrl && (
                             <button onClick={() => handleFileDelete('bankKrw')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
                           )}
                         </div>
                         {editForm.bankKrwUrl ? (
-                          <div onClick={() => setModelessFile({ name: editForm.bankKrwName || '통장사본(원화)', url: editForm.bankKrwUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bankKrwName || '통장사본(원화)', url: editForm.bankKrwUrl! })} style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bankKrwUrl, editForm.bankKrwName || '통장사본(원화)')}
                           </div>
                         ) : (
                           <div>
                             <input type="file" id={`bankKrw_${comp.id}`} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'bankKrw')} />
-                            <label htmlFor={`bankKrw_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
+                            <label htmlFor={`bankKrw_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
                               <span>📁</span>
                               <span>{uploadingField === 'bankKrw' ? '업로드 중...' : '파일 선택'}</span>
                             </label>
@@ -483,19 +483,19 @@ export const MyCompanySettings: React.FC = () => {
                       {/* 통장사본 (외화) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (외화)</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (외화)</span>
                           {editForm.bankForeignUrl && (
                             <button onClick={() => handleFileDelete('bankForeign')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
                           )}
                         </div>
                         {editForm.bankForeignUrl ? (
-                          <div onClick={() => setModelessFile({ name: editForm.bankForeignName || '통장사본(외화)', url: editForm.bankForeignUrl! })} style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <div onClick={() => setModelessFile({ name: editForm.bankForeignName || '통장사본(외화)', url: editForm.bankForeignUrl! })} style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                             {renderFileThumbnail(editForm.bankForeignUrl, editForm.bankForeignName || '통장사본(외화)')}
                           </div>
                         ) : (
                           <div>
                             <input type="file" id={`bankForeign_${comp.id}`} style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'bankForeign')} />
-                            <label htmlFor={`bankForeign_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#64748b', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
+                            <label htmlFor={`bankForeign_${comp.id}`} style={{ display: 'flex', width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', flexDirection: 'column', gap: '4px' }}>
                               <span>📁</span>
                               <span>{uploadingField === 'bankForeign' ? '업로드 중...' : '파일 선택'}</span>
                             </label>
@@ -508,51 +508,51 @@ export const MyCompanySettings: React.FC = () => {
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>상호명 (국문)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>상호명 (국문)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.nameKo}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>상호명 (영문)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>상호명 (영문)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.nameEn}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>사업자등록번호</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>사업자등록번호</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.bizNo}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>주소 (국문)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>주소 (국문)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.addressKo}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>주소 (영문)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>주소 (영문)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.addressEn}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>전화번호 (TEL)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>전화번호 (TEL)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.phone || '-'}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>팩스번호 (FAX)</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>팩스번호 (FAX)</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.fax || '-'}</div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>담당자</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>담당자</div>
                     <div style={{ color: '#0f172a', fontWeight: 500 }}>{comp.manager || '-'}</div>
                   </div>
-                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '8px' }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 미리보기 (클릭 시 화면에서 바로 볼 수 있는 창 띄우기)</div>
+                  <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '8px' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '12px' }}>첨부 파일 미리보기 (클릭 시 화면에서 바로 볼 수 있는 창 띄우기)</div>
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                       {/* 사업자등록증 */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>사업자등록증</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>사업자등록증</div>
                         {comp.bizLicenseUrl ? (
                           <a href={comp.bizLicenseUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bizLicenseName || '사업자등록증', url: comp.bizLicenseUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                            <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bizLicenseUrl, comp.bizLicenseName || '사업자등록증')}
                             </div>
                           </a>
                         ) : (
-                          <div style={{ width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#94a3b8' }}>
+                          <div style={{ width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                             등록 안됨
                           </div>
                         )}
@@ -560,15 +560,15 @@ export const MyCompanySettings: React.FC = () => {
 
                       {/* 통장사본 (원화) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (원화)</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (원화)</div>
                         {comp.bankKrwUrl ? (
                           <a href={comp.bankKrwUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bankKrwName || '통장사본(원화)', url: comp.bankKrwUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                            <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bankKrwUrl, comp.bankKrwName || '통장사본(원화)')}
                             </div>
                           </a>
                         ) : (
-                          <div style={{ width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#94a3b8' }}>
+                          <div style={{ width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                             등록 안됨
                           </div>
                         )}
@@ -576,15 +576,15 @@ export const MyCompanySettings: React.FC = () => {
 
                       {/* 통장사본 (외화) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>통장사본 (외화)</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (외화)</div>
                         {comp.bankForeignUrl ? (
                           <a href={comp.bankForeignUrl} onClick={e => { e.preventDefault(); setModelessFile({ name: comp.bankForeignName || '통장사본(외화)', url: comp.bankForeignUrl! }); }} style={{ textDecoration: 'none', cursor: 'pointer' }}>
-                            <div style={{ width: '180px', height: '130px', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '180px', height: '130px', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               {renderFileThumbnail(comp.bankForeignUrl, comp.bankForeignName || '통장사본(외화)')}
                             </div>
                           </a>
                         ) : (
-                          <div style={{ width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: '#94a3b8' }}>
+                          <div style={{ width: '180px', height: '130px', border: '1px dashed var(--border-default)', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                             등록 안됨
                           </div>
                         )}
@@ -598,7 +598,7 @@ export const MyCompanySettings: React.FC = () => {
         ))}
 
         {companies.length === 0 && !loading && (
-          <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1', color: '#64748b' }}>
+          <div style={{ textAlign: 'center', padding: '40px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed var(--border-default)', color: 'var(--text-secondary)' }}>
             <p>등록된 자사 정보가 없습니다.</p>
             <button onClick={handleInitData} style={{ marginTop: '16px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>초기 데이터 생성하기</button>
           </div>

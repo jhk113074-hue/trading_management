@@ -100,22 +100,22 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
         <thead>
-          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">구분</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">상세 내역</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">비고</th>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default);">
+            <th style="border: 1px solid var(--border-default); padding: 8px;">구분</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">상세 내역</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">비고</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
         </tbody>
       </table>
@@ -149,7 +149,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
       } else if (text.startsWith('>')) {
         e.preventDefault();
         range.startContainer.textContent = text.replace(/^>\s*/, '');
-        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid var(--border-default); border-radius: 4px; margin: 8px 0; font-style: italic; color: var(--text-secondary);">${range.startContainer.textContent}</div><p><br></p>`;
         range.startContainer.textContent = '';
         document.execCommand('insertHTML', false, calloutHTML);
       }
@@ -185,8 +185,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           </p>
         </div>
 
-        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: #1e293b;">업무 기획 및 상세 추진안</h2>
-        <p style="margin: 8px 0; color: #475569;">태스크 목표 달성을 위해 아래 항목을 확인하고 담당자별 실행 방안을 실천해 주시기 바랍니다.</p>
+        <h2 style="font-size: 1.15rem; font-weight: bold; border-bottom: 2px solid #334155; padding-bottom: 6px; color: var(--text-primary);">업무 기획 및 상세 추진안</h2>
+        <p style="margin: 8px 0; color: var(--text-secondary);">태스크 목표 달성을 위해 아래 항목을 확인하고 담당자별 실행 방안을 실천해 주시기 바랍니다.</p>
 
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #db2777; font-weight: bold;">1. 수행 목표 및 개요</h3>
         <p style="margin: 4px 0 12px 0; color: #334155; line-height: 1.6;">
@@ -197,22 +197,22 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #db2777; font-weight: bold;">2. 단계별 마일스톤 및 수행 일정 표</h3>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px;">구체적 마일스톤 실행 내용</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">담당 부서</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">목표 기한</th>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px;">구체적 마일스톤 실행 내용</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">담당 부서</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">목표 기한</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">바이어 발주 요구 조건 정밀 분석 및 사양 확인</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">영업지원팀</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 수요일</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">바이어 발주 요구 조건 정밀 분석 및 사양 확인</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">영업지원팀</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">내주 수요일</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">인프라 자원 연동 모니터링 및 트래픽 테스트</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">IT기획실</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">차주 금요일</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">인프라 자원 연동 모니터링 및 트래픽 테스트</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">IT기획실</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">차주 금요일</td>
             </tr>
           </tbody>
         </table>
@@ -223,7 +223,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           <li style="margin-bottom: 4px;">작업 지연 요인 식별 시 즉각 보고 및 서브 벤더 대안 스케줄링.</li>
         </ul>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 AI 기획 봇이 실무 기획서 표준 템플릿에 맞추어 구성한 상세 실행 내용입니다.</p>
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 위 초안은 AI 기획 봇이 실무 기획서 표준 템플릿에 맞추어 구성한 상세 실행 내용입니다.</p>
       `;
 
       if (editorRef.current) {
@@ -253,10 +253,10 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         </div>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 6px; width: 50px;">번호</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px;">AI 추천 핵심 수행 과제</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; width: 80px;">중요도</th>
+            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 6px; width: 50px;">번호</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px;">AI 추천 핵심 수행 과제</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px; text-align: center; width: 80px;">중요도</th>
             </tr>
           </thead>
           <tbody>
@@ -266,9 +266,9 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         const cleaned = line.replace(/^\d+[\.\s\-]+/, '');
         summaryHTML += `
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #64748b;">${index + 1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; color: #334155;">${cleaned}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">
+            <td style="border: 1px solid var(--border-default); padding: 6px; font-weight: bold; color: var(--text-secondary);">${index + 1}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; color: #334155;">${cleaned}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; text-align: center;">
               <span style="background: #fce7f3; color: #9d174d; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">필수진행</span>
             </td>
           </tr>
@@ -279,8 +279,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           </tbody>
         </table>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 원본 작성 내용 상단에 AI 요약 및 과제 정리표가 자동으로 매칭되었습니다.</p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 16px 0;" />
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 원본 작성 내용 상단에 AI 요약 및 과제 정리표가 자동으로 매칭되었습니다.</p>
+        <hr style="border: 0; border-top: 1px dashed var(--border-default); margin: 16px 0;" />
       `;
 
       const merged = summaryHTML + rawHTML;
@@ -305,13 +305,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
     if (command === 'table') {
       insertTable();
     } else if (command === 'callout') {
-      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
       document.execCommand('insertHTML', false, calloutHTML);
     } else if (command === 'divider') {
-      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid var(--border-default); margin: 16px 0;" /><p><br></p>`;
       document.execCommand('insertHTML', false, hrHTML);
     } else if (command === 'quote') {
-      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
+      const quoteHTML = `<blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
       document.execCommand('insertHTML', false, quoteHTML);
     }
     
@@ -657,17 +657,17 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
               {initialTask ? '업무 상세 정보' : '새로운 업무 등록'}
             </h3>
-            {initialTask?.id && <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px' }}>ID: {initialTask.id.slice(0,8)}...</span>}
+            {initialTask?.id && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>ID: {initialTask.id.slice(0,8)}...</span>}
           </div>
           <button
             onClick={onClose}
             style={{
               background: 'transparent', border: 'none', borderRadius: '4px',
               width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: '#64748b', transition: 'all 0.2s',
+              cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s',
               fontSize: '1.1rem', lineHeight: 1
             }}
-            onMouseOver={e => e.currentTarget.style.background = '#e2e8f0'}
+            onMouseOver={e => e.currentTarget.style.background = 'var(--border-color)'}
             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
           >
             ✕
@@ -689,27 +689,27 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               value={title} onChange={e => setTitle(e.target.value)}
               placeholder="업무명을 입력하세요..."
               style={{
-                width: '100%', border: 'none', borderBottom: '2px solid #e2e8f0',
+                width: '100%', border: 'none', borderBottom: '2px solid var(--border-color)',
                 fontSize: '1.2rem', fontWeight: 700, padding: '4px 0 8px 0', outline: 'none',
                 color: '#0f172a', transition: 'border-color 0.2s', background: 'transparent'
               }}
-              onFocus={e => e.target.style.borderColor = '#0d9488'}
-              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              onFocus={e => e.target.style.borderColor = 'var(--focus-ring)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
             />
           </div>
 
           {/* Priority Box */}
-          <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center' }}>
+          <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', gap: '20px', alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', minWidth: '40px' }}>중요도</label>
-              <div style={{ display: 'flex', background: '#e2e8f0', padding: '2px', borderRadius: '6px', flex: 1 }}>
+              <div style={{ display: 'flex', background: 'var(--border-color)', padding: '2px', borderRadius: '6px', flex: 1 }}>
                 {(['A', 'B', 'C'] as const).map(v => (
                   <button
                     key={v} onClick={() => setImportance(v)}
                     style={{
                       flex: 1, padding: '4px 0', border: 'none', borderRadius: '4px', fontWeight: 700, fontSize: '0.85rem',
                       background: importance === v ? '#ffffff' : 'transparent',
-                      color: importance === v ? (v === 'A' ? '#ef4444' : v === 'B' ? '#3b82f6' : '#64748b') : '#64748b',
+                      color: importance === v ? (v === 'A' ? '#ef4444' : v === 'B' ? '#3b82f6' : 'var(--text-secondary)') : 'var(--text-secondary)',
                       boxShadow: importance === v ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
                       cursor: 'pointer', transition: 'all 0.2s'
                     }}
@@ -720,7 +720,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </div>
             </div>
             
-            <div style={{ width: '1px', background: '#cbd5e1', height: '24px' }} />
+            <div style={{ width: '1px', background: 'var(--border-default)', height: '24px' }} />
 
             <div style={{ flex: 1.5, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
@@ -733,13 +733,13 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               />
             </div>
 
-            <div style={{ width: '1px', background: '#cbd5e1', height: '24px' }} />
+            <div style={{ width: '1px', background: 'var(--border-default)', height: '24px' }} />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>우선순위</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>우선순위</span>
               <div style={{
                 background: currentQuadrant === 'Q1' ? '#fee2e2' : currentQuadrant === 'Q2' ? '#dbeafe' : currentQuadrant === 'Q3' ? '#fef9c3' : '#f1f5f9',
-                color: currentQuadrant === 'Q1' ? '#ef4444' : currentQuadrant === 'Q2' ? '#3b82f6' : currentQuadrant === 'Q3' ? '#ca8a04' : '#64748b',
+                color: currentQuadrant === 'Q1' ? '#ef4444' : currentQuadrant === 'Q2' ? '#3b82f6' : currentQuadrant === 'Q3' ? '#ca8a04' : 'var(--text-secondary)',
                 fontWeight: 800, fontSize: '1rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid currentColor'
               }}>
                 {currentQuadrant}
@@ -750,40 +750,40 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* Details Compact Row (8 Columns Grid) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px', alignItems: 'end' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>위임자</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>위임자</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={requesterId} onChange={e => setRequesterId(e.target.value)}>
                 <option value="">선택안함</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>수임자</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>수임자</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', backgroundColor: '#fff', height: '30px' }} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
                 <option value="">지정안함</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>등록일</label>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>등록일</label>
               <input
                 type="text"
                 readOnly
                 value={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR', { month:'2-digit', day:'2-digit' }) : '자동'}
                 title={initialTask?.createdAt ? new Date(initialTask.createdAt).toLocaleDateString('ko-KR') : '저장 시 자동 기입'}
-                style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.78rem', background: '#f8fafc', color: '#94a3b8', cursor: 'default', height: '30px', textAlign: 'center' }}
+                style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-color)', outline: 'none', fontSize: '0.78rem', background: '#f8fafc', color: 'var(--text-muted)', cursor: 'default', height: '30px', textAlign: 'center' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>시작일</label>
-              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>시작일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>마감일</label>
-              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>마감일</label>
+              <input type="date" style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={dueDate} onChange={e => setDueDate(e.target.value)} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>업무유형</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>업무유형</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={type} onChange={e => setType(e.target.value as TaskType)}>
                 <option value="PROJECT">📁 프로젝트</option>
                 <option value="DAILY">📝 일상업무</option>
                 <option value="PERIODIC">🔄 주기업무</option>
@@ -791,16 +791,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>공개범위</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>공개범위</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', height: '30px' }} value={visibility} onChange={e => setVisibility(e.target.value as Visibility)}>
                 <option value="PUBLIC">🌐 전체공개</option>
                 <option value="RESTRICTED">👥 관련자공개</option>
                 <option value="PRIVATE">🔒 비공개</option>
               </select>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>상태</label>
-              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.78rem', fontWeight: 600, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#0f172a', height: '30px' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
+              <label style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>상태</label>
+              <select style={{ width: '100%', padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.78rem', fontWeight: 600, color: status === 'DONE' ? '#16a34a' : status === 'HOLDING' ? '#ca8a04' : '#0f172a', height: '30px' }} value={status} onChange={e => setStatus(e.target.value as TaskStatus)}>
                 <option value="TODO">시작안함</option>
                 <option value="IN_PROGRESS">진행중</option>
                 <option value="HOLDING">Holding</option>
@@ -812,12 +812,12 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>업무설명 및 메모</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>업무설명 및 메모</label>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {/* 거래처 지정 영역 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>🏢 거래처:</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>🏢 거래처:</span>
                   {customerName ? (
                     <span style={{ fontSize: '0.75rem', color: '#0369a1', background: '#e0f2fe', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={customerName}>
                       {customerName}
@@ -836,16 +836,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       onClick={() => setIsCustomerSearchOpen(true)}
                       style={{
                         background: '#f1f5f9',
-                        border: '1px solid #cbd5e1',
+                        border: '1px solid var(--border-default)',
                         borderRadius: '4px',
                         padding: '2px 8px',
                         fontSize: '0.7rem',
                         fontWeight: 600,
-                        color: '#475569',
+                        color: 'var(--text-secondary)',
                         cursor: 'pointer',
                         transition: 'background 0.2s'
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'}
                       onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
                     >
                       🔍 거래처 찾기
@@ -855,7 +855,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
                 {/* 미팅자 입력 영역 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>👥 미팅자:</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>👥 미팅자:</span>
                   <input
                     type="text"
                     value={meetingPerson}
@@ -864,7 +864,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                     style={{
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-default)',
                       fontSize: '0.72rem',
                       outline: 'none',
                       width: '120px'
@@ -888,7 +888,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   placeholder="예: 바이어 발주 수량 확인 후 포워딩 운송 일정 기획 수립."
                   value={aiPrompt}
                   onChange={e => setAiPrompt(e.target.value)}
-                  style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                  style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
                 />
                 <button
                   type="button"
@@ -901,12 +901,12 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             </div>
 
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
-                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
-                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
-                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
+                  <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
+                  <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
+                  <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     田 표 삽입
                   </button>
                 </div>
@@ -926,7 +926,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 onInput={handleEditorInput}
                 style={{
                   minHeight: '220px',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-default)',
                   borderBottomLeftRadius: '6px',
                   borderBottomRightRadius: '6px',
                   padding: '12px',
@@ -944,7 +944,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   top: '250px',
                   left: '12px',
                   background: '#fff',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-default)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   borderRadius: '8px',
                   zIndex: 10000,
@@ -953,17 +953,17 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   flexDirection: 'column',
                   padding: '4px 0'
                 }}>
-                  <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
-                  <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                  <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                  <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                     <span>田</span> <b>표 삽입</b>
                   </button>
-                  <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                  <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                     <span>💡</span> <b>콜아웃 상자</b>
                   </button>
-                  <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                  <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                     <span>➖</span> <b>구분선</b>
                   </button>
-                  <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                  <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                     <span>✍️</span> <b>인용구 블록</b>
                   </button>
                 </div>
@@ -975,26 +975,26 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {visibility === 'RESTRICTED' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>관련자 지정 (쉼표로 구분)</label>
-                <input style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={relatedUsers} onChange={e => setRelatedUsers(e.target.value)} placeholder="예: 김대리, 박과장" />
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>관련자 지정 (쉼표로 구분)</label>
+                <input style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={relatedUsers} onChange={e => setRelatedUsers(e.target.value)} placeholder="예: 김대리, 박과장" />
               </div>
             )}
             {type === 'PERIODIC' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px dashed var(--border-default)' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>반복 시작일</label>
-                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 시작일</label>
+                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>반복 빈도</label>
-                  <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={repeatCycle} onChange={e => setRepeatCycle(e.target.value)}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 빈도</label>
+                  <select style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={repeatCycle} onChange={e => setRepeatCycle(e.target.value)}>
                     <option value="매일">매일</option><option value="매주">매주</option><option value="매월">매월</option>
                     <option value="매분기">매분기</option><option value="매반기">매반기</option><option value="매년">매년</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>반복 종료일</label>
-                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} />
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>반복 종료일</label>
+                  <input type="date" style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }} value={recurrenceEndDate} onChange={e => setRecurrenceEndDate(e.target.value)} />
                 </div>
               </div>
             )}
@@ -1003,22 +1003,22 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
           {/* External Links (다중 링크 관리 구조) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>외부 파일 링크</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>외부 파일 링크</label>
               <button
                 type="button"
                 onClick={() => setExternalFileLinks(prev => [...prev, ''])}
                 style={{
                   background: '#f1f5f9',
-                  border: '1px solid #cbd5e1',
+                  border: '1px solid var(--border-default)',
                   borderRadius: '4px',
                   padding: '2px 8px',
                   fontSize: '0.75rem',
                   fontWeight: 600,
-                  color: '#475569',
+                  color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   transition: 'background 0.2s'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--border-color)'}
                 onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
               >
                 ➕ 링크 추가
@@ -1043,7 +1043,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                         setExternalFileLinks(updated);
                       }}
                       placeholder='Dropbox 웹에서 우클릭 → "링크 복사" 후 붙여넣으면 자동 변환됩니다'
-                      style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '0.85rem' }}
+                      style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-default)', outline: 'none', fontSize: '0.85rem' }}
                     />
                     {link && (
                       <button
@@ -1086,16 +1086,16 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
           <div
-            style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', padding: '8px 12px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
-            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
-            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
-            onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
+            style={{ background: '#f8fafc', border: '1px dashed var(--border-default)', padding: '8px 12px', borderRadius: '8px', textAlign: 'center', transition: 'all 0.2s' }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--focus-ring)'; e.currentTarget.style.background = '#f0fdfa'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.background = '#f8fafc'; handleFileUpload(e.dataTransfer.files); }}
             onPaste={e => { const files = e.clipboardData?.files; if (files && files.length > 0) { e.preventDefault(); handleFileUpload(files); } }}
             tabIndex={0}
           >
-            <div style={{ color: '#64748b', fontSize: '11px', marginBottom: '4px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginBottom: '4px' }}>📁 이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</div>
             <input type="file" multiple onChange={e => handleFileUpload(e.target.files)} style={{ display: 'none' }} id="task-file-upload" />
-            <label htmlFor="task-file-upload" style={{ background: '#0d9488', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
+            <label htmlFor="task-file-upload" style={{ background: 'var(--focus-ring)', color: '#fff', padding: '4px 12px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 600, display: 'inline-block' }}>
               {isUploading ? '업로드 중...' : '파일 선택하기'}
             </label>
 
@@ -1106,22 +1106,22 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   const isPdf = /\.pdf$/i.test(att.name);
                   const isExcel = /\.(xls|xlsx)$/i.test(att.name);
                   return (
-                    <div key={idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                    <div key={idx} style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                       <div onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ cursor: 'pointer' }} title="클릭하여 미리보기">
                         {isImg ? (
-                          <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                          <img src={att.url} alt={att.name} style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-default)' }} />
                         ) : (
-                          <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                          <span style={{ fontSize: '16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                             {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                           </span>
                         )}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
-                        <span onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ color: '#1e293b', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} title="클릭하여 미리보기">{att.name}</span>
-                        <span style={{ color: '#64748b', fontSize: '9px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
+                        <span onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ color: 'var(--text-primary)', fontWeight: 600, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }} title="클릭하여 미리보기">{att.name}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '9px' }}>({(att.size / 1024).toFixed(1)}KB)</span>
                       </div>
                       <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }}>
-                        <button type="button" onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }} title="미리보기">🔍</button>
+                        <button type="button" onClick={() => { setPreviewUrl(att.url); setPreviewName(att.name); }} style={{ background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }} title="미리보기">🔍</button>
                         <a href={att.url} download={att.name} target="_blank" rel="noreferrer" style={{ background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px', textDecoration: 'none' }} title="다운로드">⬇</a>
                         <button type="button" onClick={() => handleDeleteAttachment(idx)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '2px 4px', fontSize: '10px' }} title="삭제">✕</button>
                       </div>
@@ -1134,7 +1134,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
           {/* Comments (Only for existing tasks) */}
           {initialTask && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
 
               {/* Comments */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1142,18 +1142,18 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <h4 style={{ margin: 0, fontSize: '0.9rem', color: '#0f172a' }}>댓글</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>📋 검토요청 지정:</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>📋 검토요청 지정:</span>
                       <select
                         value={reviewAssigneeId}
                         onChange={e => setReviewAssigneeId(e.target.value)}
                         style={{
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          border: '1px solid #cbd5e1',
+                          border: '1px solid var(--border-default)',
                           fontSize: '0.72rem',
                           outline: 'none',
                           background: '#fff',
-                          color: '#475569',
+                          color: 'var(--text-secondary)',
                           cursor: 'pointer'
                         }}
                       >
@@ -1169,7 +1169,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                   <button
                     onClick={handleAddComment}
                     style={{
-                      background: '#0d9488',
+                      background: 'var(--focus-ring)',
                       color: '#fff',
                       border: 'none',
                       padding: '5px 14px',
@@ -1194,7 +1194,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #cbd5e1',
+                      border: '1px solid var(--border-default)',
                       outline: 'none',
                       fontSize: '0.85rem',
                       fontFamily: 'inherit',
@@ -1202,20 +1202,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       minHeight: '60px',
                       boxSizing: 'border-box'
                     }}
-                    onFocus={e => e.target.style.borderColor = '#0d9488'}
-                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                    onFocus={e => e.target.style.borderColor = 'var(--focus-ring)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--border-default)'}
                   />
                 </div>
 
                 {/* 댓글 목록 */}
-                <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
+                <div style={{ background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--border-color)', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {comments.map(c => {
                     const isOwnComment = c.createdBy === userProfile?.id;
                     const isEditing = editingCommentId === c.id;
 
                     return (
                       <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <strong>{c.creatorName}</strong> • {new Date(c.createdAt).toLocaleDateString()}
                             {c.reviewAssigneeName && (
@@ -1232,7 +1232,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                                   setEditingCommentId(c.id);
                                   setEditingCommentContent(c.content);
                                 }}
-                                style={{ background: 'none', border: 'none', color: '#0d9488', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+                                style={{ background: 'none', border: 'none', color: 'var(--focus-ring)', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
                               >
                                 수정
                               </button>
@@ -1256,7 +1256,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                                 width: '100%',
                                 padding: '6px 8px',
                                 borderRadius: '4px',
-                                border: '1px solid #0d9488',
+                                border: '1px solid var(--focus-ring)',
                                 outline: 'none',
                                 fontSize: '0.8rem',
                                 fontFamily: 'inherit',
@@ -1267,14 +1267,14 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                               <button
                                 type="button"
                                 onClick={() => setEditingCommentId(null)}
-                                style={{ padding: '2px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer' }}
+                                style={{ padding: '2px 8px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer' }}
                               >
                                 취소
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateComment(c.id, editingCommentContent)}
-                                style={{ padding: '2px 8px', background: '#0d9488', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 'bold' }}
+                                style={{ padding: '2px 8px', background: 'var(--focus-ring)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 'bold' }}
                               >
                                 저장
                               </button>
@@ -1287,7 +1287,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                             background: '#fff',
                             padding: '6px 8px',
                             borderRadius: '0 6px 6px 6px',
-                            border: '1px solid #e2e8f0',
+                            border: '1px solid var(--border-color)',
                             display: 'inline-block',
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-all',
@@ -1300,7 +1300,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                       </div>
                     );
                   })}
-                  {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
+                  {comments.length === 0 && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>댓글 없음</div>}
                 </div>
               </div>
             </div>
@@ -1314,11 +1314,11 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
           >
             <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', maxWidth: '90vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>{previewName}</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <a href={previewUrl} download={previewName} target="_blank" rel="noreferrer" style={{ padding: '5px 12px', background: '#3b82f6', color: '#fff', borderRadius: '6px', fontSize: '12px', textDecoration: 'none', fontWeight: 600 }}>⬇ 다운로드</a>
-                  <button onClick={() => setPreviewUrl(null)} style={{ padding: '5px 10px', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>✕ 닫기</button>
+                  <button onClick={() => setPreviewUrl(null)} style={{ padding: '5px 10px', background: 'var(--border-color)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>✕ 닫기</button>
                 </div>
               </div>
               <div style={{ overflow: 'auto', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1327,7 +1327,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
                 ) : /\.pdf$/i.test(previewName) ? (
                   <iframe src={previewUrl} title={previewName} style={{ width: '75vw', height: '70vh', border: 'none', borderRadius: '6px' }} />
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>📎</div>
                     <div style={{ marginBottom: '16px', fontWeight: 600 }}>{previewName}</div>
                     <a href={previewUrl} download={previewName} target="_blank" rel="noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 700 }}>⬇ 다운로드하여 열기</a>
@@ -1381,7 +1381,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             background: '#fff',
             borderRadius: '12px',
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1)',
-            border: '1px solid #cbd5e1',
+            border: '1px solid var(--border-default)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
@@ -1392,7 +1392,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
               style={{
                 padding: '10px 16px',
                 background: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
+                borderBottom: '1px solid var(--border-color)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -1466,7 +1466,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
 
         {/* Footer */}
         <div style={{
-          padding: '12px 20px', borderTop: '1px solid #e2e8f0',
+          padding: '12px 20px', borderTop: '1px solid var(--border-color)',
           display: 'flex', justifyContent: 'flex-end', gap: '8px',
           background: '#f8fafc'
         }}>
@@ -1474,8 +1474,8 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             onClick={onClose}
             disabled={isSaving}
             style={{
-              padding: '8px 16px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px',
-              fontSize: '0.85rem', fontWeight: 600, color: '#475569', cursor: isSaving ? 'not-allowed' : 'pointer',
+              padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px',
+              fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: isSaving ? 'not-allowed' : 'pointer',
               opacity: isSaving ? 0.6 : 1
             }}
           >
@@ -1485,7 +1485,7 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
             onClick={handleSave}
             disabled={isSaving}
             style={{
-              padding: '8px 24px', background: '#0d9488', border: 'none', borderRadius: '6px',
+              padding: '8px 24px', background: 'var(--focus-ring)', border: 'none', borderRadius: '6px',
               fontSize: '0.85rem', fontWeight: 700, color: '#fff', cursor: isSaving ? 'not-allowed' : 'pointer',
               boxShadow: '0 2px 4px -1px rgba(13, 148, 136, 0.2)',
               opacity: isSaving ? 0.6 : 1
@@ -1500,20 +1500,20 @@ export const TaskModal: React.FC<Props> = ({ initialTask, onClose, onSave }) => 
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <span style={{ fontSize: '32px' }}>🤖</span>
-            <span style={{ fontSize: '14px', fontWeight: 850, color: '#1e293b', textAlign: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: 'var(--text-primary)', textAlign: 'center' }}>
               AI가 업무 기획 및 지시 내용을 정밀 분석하여 요약 및 수행 일정표를 설계 중입니다...
             </span>
-            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0,
                 width: '60%',
-                background: '#4f46e5',
+                background: 'var(--focus-ring)',
                 borderRadius: '3px',
                 animation: 'pulse 1.5s infinite ease-in-out'
               }}></div>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>약 2초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

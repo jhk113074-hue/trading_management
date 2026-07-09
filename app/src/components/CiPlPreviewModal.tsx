@@ -130,7 +130,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
     display: 'flex',
     flexDirection: 'column',
     zIndex: 10000,
-    border: '2px solid #cbd5e1',
+    border: '2px solid var(--border-default)',
     userSelect: isDragging ? 'none' : 'auto'
   };
 
@@ -162,20 +162,20 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
         onMouseDown={handleMouseDown}
         style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '10px 16px', borderBottom: '1px solid #cbd5e1', backgroundColor: '#f1f5f9',
+          padding: '10px 16px', borderBottom: '1px solid var(--border-default)', backgroundColor: '#f1f5f9',
           borderTopLeftRadius: '10px', borderTopRightRadius: '10px', cursor: 'move',
           userSelect: 'none'
         }}
       >
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', marginRight: '8px' }}>⚡ 드래그하여 이동 가능</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)', marginRight: '8px' }}>⚡ 드래그하여 이동 가능</span>
           <button
             onClick={(e) => { e.stopPropagation(); setActiveTab('CI'); }}
             style={{
               padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
-              border: activeTab === 'CI' ? 'none' : '1px solid #cbd5e1',
+              border: activeTab === 'CI' ? 'none' : '1px solid var(--border-default)',
               backgroundColor: activeTab === 'CI' ? '#2563eb' : '#fff',
-              color: activeTab === 'CI' ? '#fff' : '#475569'
+              color: activeTab === 'CI' ? '#fff' : 'var(--text-secondary)'
             }}
           >
             Invoice
@@ -184,9 +184,9 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
             onClick={(e) => { e.stopPropagation(); setActiveTab('PL'); }}
             style={{
               padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
-              border: activeTab === 'PL' ? 'none' : '1px solid #cbd5e1',
+              border: activeTab === 'PL' ? 'none' : '1px solid var(--border-default)',
               backgroundColor: activeTab === 'PL' ? '#2563eb' : '#fff',
-              color: activeTab === 'PL' ? '#fff' : '#475569'
+              color: activeTab === 'PL' ? '#fff' : 'var(--text-secondary)'
             }}
           >
             Packing List
@@ -206,7 +206,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
               📥 Excel 다운로드
             </button>
           )}
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', fontWeight: 'bold' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 'bold' }}>✕</button>
         </div>
       </div>
 
@@ -224,36 +224,36 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                 <tbody>
                   <tr>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>Shipper / Beneficiary / Manufacturer</div>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>Shipper / Beneficiary / Manufacturer</div>
                       <div style={{ whiteSpace: 'pre-line', fontWeight: 600 }}>{data.customShipperText || shipperAddress}</div>
                     </td>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>
                         {activeTab === 'CI' ? 'Invoice No. & Date' : 'Packing List No. & Date'}
                       </div>
                       <div style={{ fontWeight: 'bold' }}>{data.piNumber || '-'} / {data.invoiceDate || '-'}</div>
-                      <div style={{ marginTop: '10px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#475569' }}>L/C No. & Date</div>
+                      <div style={{ marginTop: '10px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: 'var(--text-secondary)' }}>L/C No. & Date</div>
                       <div>{data.lcNo || 'N/A'} {data.lcDate ? `/ ${data.lcDate}` : ''}</div>
                     </td>
                   </tr>
                   <tr>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>Applicant (Buyer)</div>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>Applicant (Buyer)</div>
                       <div style={{ fontWeight: 'bold' }}>{data.customerName}</div>
                       <div style={{ whiteSpace: 'pre-line', marginTop: '4px' }}>{data.customerAddress || ''}</div>
                     </td>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>L/C Issuing Bank</div>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>L/C Issuing Bank</div>
                       <div>{data.lcIssuingBank || 'N/A'}</div>
                     </td>
                   </tr>
                   <tr>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>Notify Party</div>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>Notify Party</div>
                       <div style={{ whiteSpace: 'pre-line' }}>{data.notifyParty || 'SAME AS APPLICANT'}</div>
                     </td>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: '#475569' }}>Remarks</div>
+                      <div style={{ fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px', fontSize: '10px', color: 'var(--text-secondary)' }}>Remarks</div>
                       <div style={{ whiteSpace: 'pre-line' }}>{data.remarks || '-'}</div>
                     </td>
                   </tr>
@@ -261,17 +261,17 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                     <td style={tdHeaderStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Port of Loading</div>
+                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Port of Loading</div>
                           <div style={{ fontWeight: 'bold' }}>{data.portOfLoading || '-'}</div>
                         </div>
                         <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Port of Discharge</div>
+                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Port of Discharge</div>
                           <div style={{ fontWeight: 'bold' }}>{data.portOfDischarge || '-'}</div>
                         </div>
                       </div>
                     </td>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Payment Terms</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Payment Terms</div>
                       <div style={{ fontWeight: 'bold' }}>{data.paymentTerms || '-'}</div>
                     </td>
                   </tr>
@@ -279,17 +279,17 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                     <td style={tdHeaderStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Vessel Name & Voyage No.</div>
+                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Vessel Name & Voyage No.</div>
                           <div>{data.vesselName || '-'}</div>
                         </div>
                         <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Sailing on or about</div>
+                          <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Sailing on or about</div>
                           <div>{data.etd || '-'}</div>
                         </div>
                       </div>
                     </td>
                     <td style={tdHeaderStyle}>
-                      <div style={{ fontWeight: 'bold', fontSize: '10px', color: '#475569' }}>Delivery Terms (Incoterms)</div>
+                      <div style={{ fontWeight: 'bold', fontSize: '10px', color: 'var(--text-secondary)' }}>Delivery Terms (Incoterms)</div>
                       <div style={{ fontWeight: 'bold' }}>{data.deliveryTerms || '-'}</div>
                     </td>
                   </tr>
@@ -319,7 +319,7 @@ export const CiPlPreviewModal: React.FC<CiPlPreviewModalProps> = ({ isOpen, onCl
                         )}
                         <td style={tdItemStyle}>
                           <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-                          {item.hsCode && <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>HS CODE: {item.hsCode}</div>}
+                          {item.hsCode && <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>HS CODE: {item.hsCode}</div>}
                         </td>
                         <td style={{ ...tdItemStyle, textAlign: 'right' }}>{item.qty.toLocaleString()} {item.unit}</td>
                         <td style={{ ...tdItemStyle, textAlign: 'right' }}>${Number(item.unitPrice).toFixed(2)}</td>

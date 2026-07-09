@@ -340,30 +340,30 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         {/* Body Container (Ultra Compact, scrollable only if screen is tiny) */}
         {activeTab === 'crm' ? (
           <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
                   💼 CRM 연동 업무 및 회의록 이력 ({crmTasks.length}건)
                 </span>
-                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                   * 거래처명이 "{formData.name || initialCustomer?.name || ''}"로 지정된 데이터 리스트입니다.
                 </span>
               </div>
               
               {isLoadingTasks ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '13px' }}>
+                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)', fontSize: '13px' }}>
                   ⏳ 업무 이력을 불러오는 중입니다...
                 </div>
               ) : crmTasks.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8', fontSize: '13px' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
                   📭 등록된 연동 업무 히스토리가 없습니다.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {crmTasks.map((t) => (
-                    <div key={t.id} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
+                    <div key={t.id} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', background: '#fff' }}>
                       {/* 업무 / 회의록 요약 헤더 */}
-                      <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', flexWrap: 'wrap', gap: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ 
                             fontSize: '10.5px', 
@@ -387,14 +387,14 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                               중요도: {t.importance || 'B'}
                             </span>
                           )}
-                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e293b' }}>{t.title}</span>
+                          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)' }}>{t.title}</span>
                           {t.crmType === 'MEETING' && t.projectName && (
-                            <span style={{ fontSize: '11px', color: '#0d9488', background: '#f0fdfa', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
+                            <span style={{ fontSize: '11px', color: 'var(--focus-ring)', background: '#f0fdfa', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
                               🚀 {t.projectName}
                             </span>
                           )}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                           {t.crmType === 'MEETING' ? (
                             <>작성: <strong style={{ color: '#334155' }}>{t.createdByName || '시스템'}</strong> | 회의일: {t.date || t.createdAt?.substring(0,10)}</>
                           ) : (
@@ -406,7 +406,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                       {/* 업무 / 회의록 본문 설명 및 메모 */}
                       <div 
                         style={{ padding: '12px', background: '#ffffff', fontSize: '13px', color: '#334155', lineHeight: '1.6', fontFamily: 'inherit' }}
-                        dangerouslySetInnerHTML={{ __html: t.content || t.description || '<span style="color: #94a3b8; font-style: italic;">작성된 내용이 없습니다.</span>' }}
+                        dangerouslySetInnerHTML={{ __html: t.content || t.description || '<span style="color: var(--text-muted); font-style: italic;">작성된 내용이 없습니다.</span>' }}
                       />
                     </div>
                   ))}
@@ -418,8 +418,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
           <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
             
             {/* SECTION 1: 회사 기본 규격 */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                 <span style={{ color: '#2563eb' }}>🏢</span> 회사 기본 정보 (Company Profile)
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
@@ -446,8 +446,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               
               {/* 무역/선적 스펙 */}
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                   <span style={{ color: '#1d4ed8' }}>🚢</span> 무역 거래 및 선적 조건
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -460,9 +460,9 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
               </div>
 
               {/* 세무/금융 금융계좌 (2줄로 나누어 공간 최적 확보) */}
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
-                  <span style={{ color: '#475569' }}>💳</span> 세무 등록 및 외환 계좌 정보
+              <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>💳</span> 세무 등록 및 외환 계좌 정보
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <Input label="TAX-ID / VAT" value={formData.taxId} onChange={(v: any) => handleChange('taxId', v)} placeholder="VAT Number" />
@@ -476,8 +476,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
 
             {/* SECTION 3: 다중 담당자 입체 관리 */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
-              <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
                 <span style={{ color: '#7e22ce' }}>👥</span> 바이어 담당자 명부 관리 (Multiple Contacts)
               </div>
 
@@ -485,23 +485,23 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
               <div style={{ display: 'flex', gap: '6px', background: '#faf5ff', padding: '8px 10px', borderRadius: '5px', border: '1px solid #f3e8ff', marginBottom: '8px', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>담당자명 *</label>
-                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" value={newContactName} onChange={e => setNewContactName(e.target.value)} placeholder="예: John Smith" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>직책/부서</label>
-                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" value={newContactPosition} onChange={e => setNewContactPosition(e.target.value)} placeholder="예: Sourcing Mgr" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>연락처 (Mobile)</label>
-                  <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" value={newContactPhone} onChange={e => setNewContactPhone(e.target.value)} placeholder="예: +971-50-XXX" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>이메일 주소</label>
-                  <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input type="email" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} placeholder="예: john@buyer.com" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 <div style={{ flex: 2.2, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <label style={{ fontSize: '9px', fontWeight: 700, color: '#6b7280' }}>비고 (역할 등)</label>
-                  <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" value={newContactRemarks} onChange={e => setNewContactRemarks(e.target.value)} placeholder="예: 주 통신 채널" style={{ boxSizing: 'border-box', width: '100%', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
                 </div>
                 {editingContactId ? (
                   <div style={{ display: 'flex', gap: '4px' }}>
@@ -533,7 +533,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         setEditingContactId(null);
                         setNewContactName(''); setNewContactPosition(''); setNewContactPhone(''); setNewContactEmail(''); setNewContactRemarks('');
                       }}
-                      style={{ background: '#64748b', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
+                      style={{ background: 'var(--text-secondary)', color: '#fff', border: 'none', borderRadius: '4px', padding: '5px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', height: '26px', whiteSpace: 'nowrap' }}
                     >
                       취소
                     </button>
@@ -566,10 +566,10 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
               </div>
 
               {/* 테이블 명부 */}
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '5px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '5px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 700 }}>
                       <th style={{ padding: '5px 8px', width: '45px', textAlign: 'center' }}>대표</th>
                       <th style={{ padding: '5px 8px', width: '140px' }}>이름 (직책)</th>
                       <th style={{ padding: '5px 8px', width: '230px' }}>연락망 (연락처 / 이메일)</th>
@@ -583,8 +583,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                           <input type="radio" checked={c.isPrimary} onChange={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.map((ct: any) => ({ ...ct, isPrimary: ct.id === c.id })) }))} />
                         </td>
-                        <td style={{ padding: '5px 8px' }}>{c.name}<br /><span style={{ color: '#64748b' }}>{c.position}</span></td>
-                        <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: '#64748b' }}>{c.email}</span></td>
+                        <td style={{ padding: '5px 8px' }}>{c.name}<br /><span style={{ color: 'var(--text-secondary)' }}>{c.position}</span></td>
+                        <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: 'var(--text-secondary)' }}>{c.email}</span></td>
                         <td style={{ padding: '5px 8px' }}>{c.remarks}</td>
                         <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                           <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px' }}>수정</button>
@@ -598,7 +598,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             </div>
 
             {/* 특이사항 / 비고 */}
-            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px' }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
               <Input label="바이어 특이사항 / 종합 비고 (General Remarks)" value={formData.remarks} onChange={(v: any) => handleChange('remarks', v)} placeholder="예: 바이어 신용 등급 및 특이 조항 등" />
             </div>
 
@@ -606,8 +606,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
         )}
 
         {/* Footer */}
-        <div style={{ padding: '10px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button onClick={handleClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#64748b', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
+        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button onClick={handleClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border-default)', background: '#fff', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
           <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '5px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '11.5px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>
             {isSaving ? '저장 중...' : '✔ 고객 정보 저장'}
           </button>

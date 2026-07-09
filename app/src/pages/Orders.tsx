@@ -272,9 +272,9 @@ export const Orders: React.FC = () => {
 
   // ── 공통 필터 바 ──────────────────────────────────────────────────────────
   const FilterBar = () => (
-    <div style={{ display: 'flex', gap: '8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '10px 16px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ display: 'flex', gap: '8px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 16px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       {/* 뷰 전환 탭 */}
-      <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '6px', padding: '2px', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-color)', flexShrink: 0 }}>
         {([
           { mode: 'list',   label: '📋 목록 보기' },
           { mode: 'kanban', label: '🗂 칸반 보기' },
@@ -286,7 +286,7 @@ export const Orders: React.FC = () => {
             style={{
               padding: '6px 14px', border: 'none', borderRadius: '4px',
               background: viewMode === mode ? '#fff' : 'transparent',
-              color: viewMode === mode ? '#1e293b' : '#64748b',
+              color: viewMode === mode ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontWeight: viewMode === mode ? 700 : 500,
               fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s',
               boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
@@ -304,7 +304,7 @@ export const Orders: React.FC = () => {
       </div>
 
       {/* 구분선 */}
-      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 8px', flexShrink: 0 }} />
+      <div style={{ width: '1px', height: '24px', background: 'var(--border-default)', margin: '0 8px', flexShrink: 0 }} />
 
       {[
         { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All','전체'], ...customers.map(c => [c, c])] },
@@ -313,13 +313,13 @@ export const Orders: React.FC = () => {
         { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All','전체 오더'],['Urgent','⚠️ 긴급만']] },
       ].map(({ label, value, set, opts }) => (
         <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-          <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>{label}</label>
-          <select value={value} onChange={e => set(e.target.value)} style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer' }}>
+          <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{label}</label>
+          <select value={value} onChange={e => set(e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer' }}>
             {opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
       ))}
-      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
+      <div style={{ width: '1px', height: '24px', background: 'var(--border-default)', margin: '0 4px', flexShrink: 0 }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
         <label style={{ fontSize: '9px', fontWeight: 700, color: '#2563eb', letterSpacing: '0.05em' }}>조회 기간</label>
         <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '5px 8px', border: '1.5px solid #2563eb', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
@@ -333,32 +333,32 @@ export const Orders: React.FC = () => {
       </div>
       {['Monthly','Quarterly','HalfYearly','Yearly'].includes(dateFilterType) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-          <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>년도</label>
-          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
+          <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>년도</label>
+          <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
             {[2024,2025,2026,2027,2028].map(y => <option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
       )}
       {dateFilterType === 'Monthly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-          <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>월</label>
-          <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
+          <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>월</label>
+          <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
             {Array.from({length:12},(_,i)=>i+1).map(m => <option key={m} value={m}>{m}월</option>)}
           </select>
         </div>
       )}
       {dateFilterType === 'Quarterly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-          <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>분기</label>
-          <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
+          <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>분기</label>
+          <select value={selectedQuarter} onChange={e => setSelectedQuarter(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
             {[1,2,3,4].map(q => <option key={q} value={q}>{q}분기</option>)}
           </select>
         </div>
       )}
       {dateFilterType === 'HalfYearly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
-          <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>반기</label>
-          <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
+          <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>반기</label>
+          <select value={selectedHalf} onChange={e => setSelectedHalf(Number(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', outline: 'none' }}>
             <option value={1}>상반기</option><option value={2}>하반기</option>
           </select>
         </div>
@@ -366,13 +366,13 @@ export const Orders: React.FC = () => {
       {dateFilterType === 'Range' && (
         <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', flexShrink: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>시작일</label>
-            <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+            <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)' }}>시작일</label>
+            <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
           </div>
-          <span style={{ paddingBottom: '6px', color: '#94a3b8', fontWeight: 700, fontSize: '12px' }}>~</span>
+          <span style={{ paddingBottom: '6px', color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px' }}>~</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <label style={{ fontSize: '9px', fontWeight: 700, color: '#64748b' }}>종료일</label>
-            <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+            <label style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)' }}>종료일</label>
+            <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
           </div>
         </div>
       )}
@@ -384,9 +384,9 @@ export const Orders: React.FC = () => {
     const pi = quotations.find(q => q.id === order.quotationId);
     const amount = pi?.totalUsd || order.totalAmount || 0;
     const { pct } = getOverallProgress(order);
-    const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
+    const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : 'var(--text-secondary)';
     const lvlBg   = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
-    const lvlBdr  = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#e2e8f0';
+    const lvlBdr  = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : 'var(--border-color)';
     const sc = (order as any).stageCompletion as Record<StageKey, Record<string, boolean>> | undefined;
     const currentStepKey = stepToStageKey[mapStatusToStep(order.status || '')] as StageKey;
 
@@ -394,7 +394,7 @@ export const Orders: React.FC = () => {
       <div
         onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
         style={{
-          background: '#fff', border: `1px solid ${order.nextAction.level === 'RED' ? '#fecaca' : '#e2e8f0'}`,
+          background: '#fff', border: `1px solid ${order.nextAction.level === 'RED' ? '#fecaca' : 'var(--border-color)'}`,
           borderRadius: '10px', padding: compact ? '10px 12px' : '14px 16px',
           cursor: 'pointer', transition: 'all 0.15s',
           boxShadow: order.nextAction.level === 'RED' ? '0 0 0 1px #fecaca' : '0 1px 3px rgba(0,0,0,0.05)',
@@ -406,10 +406,10 @@ export const Orders: React.FC = () => {
         {/* 카드 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
-            <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {order.ciNumber || order.id}
             </span>
-            <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {order.customer}
             </span>
           </div>
@@ -427,10 +427,10 @@ export const Orders: React.FC = () => {
         {sc && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '9.5px', color: '#94a3b8', fontWeight: 500 }}>전체 진행률</span>
+              <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 500 }}>전체 진행률</span>
               <span style={{ fontSize: '9.5px', fontWeight: 700, color: pct === 100 ? '#10b981' : '#2563eb' }}>{pct}%</span>
             </div>
-            <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '2px', transition: 'width 0.3s' }} />
             </div>
           </div>
@@ -443,7 +443,7 @@ export const Orders: React.FC = () => {
               const { done, total } = getStageProgress(order, sk);
               const isCurrent = sk === currentStepKey;
               const isDone = total > 0 && done === total;
-              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : '#e2e8f0';
+              const color = isDone ? '#10b981' : isCurrent ? '#2563eb' : done > 0 ? '#93c5fd' : 'var(--border-color)';
               const stageLabels: Record<StageKey, string> = { 수주정보: 'PO', 소싱발주: '소싱', 물류선적: '선적', 서류관리: '서류', 정산결제: '정산' };
               return (
                 <div key={sk} title={`${stageLabels[sk]}: ${done}/${total}`} style={{ flex: 1, height: '5px', borderRadius: '3px', background: color, transition: 'background 0.2s' }} />
@@ -460,7 +460,7 @@ export const Orders: React.FC = () => {
 
         {/* 날짜 */}
         {order.poDate && (
-          <span style={{ fontSize: '9.5px', color: '#cbd5e1', fontWeight: 500 }}>PO접수 {order.poDate}</span>
+          <span style={{ fontSize: '9.5px', color: 'var(--border-default)', fontWeight: 500 }}>PO접수 {order.poDate}</span>
         )}
       </div>
     );
@@ -473,7 +473,7 @@ export const Orders: React.FC = () => {
     { step: '물류/선적', key: '물류/선적', icon: '🚢', color: '#7c3aed', bg: '#f5f3ff' },
     { step: '서류관리', key: '서류관리', icon: '📄', color: '#b45309', bg: '#fffbeb' },
     { step: '정산/결제', key: '정산/결제', icon: '💰', color: '#065f46', bg: '#f0fdf4' },
-    { step: '완료', key: '완료', icon: '✅', color: '#475569', bg: '#f1f5f9' },
+    { step: '완료', key: '완료', icon: '✅', color: 'var(--text-secondary)', bg: '#f1f5f9' },
   ];
 
   const KanbanView = () => (
@@ -507,7 +507,7 @@ export const Orders: React.FC = () => {
             {/* 카드 목록 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {colOrders.length === 0 ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: '#cbd5e1', fontSize: '11.5px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--border-default)', fontSize: '11.5px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                   오더 없음
                 </div>
               ) : (
@@ -540,7 +540,7 @@ export const Orders: React.FC = () => {
         </div>
         {/* 할 일 행 */}
         {orders.length === 0 ? (
-          <div style={{ padding: '14px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0' }}>
+          <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
             해당 없음
           </div>
         ) : orders.map(o => {
@@ -565,14 +565,14 @@ export const Orders: React.FC = () => {
               {/* 오더 정보 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {o.ciNumber || o.id}
                   </span>
                   <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '8px', background: o.issuingCompany === 'YSACC' ? '#dbeafe' : '#fef9c3', color: o.issuingCompany === 'YSACC' ? '#1e40af' : '#ca8a04' }}>
                     {o.issuingCompany === 'YSACC' ? 'YSACC' : '영성'}
                   </span>
                 </div>
-                <span style={{ fontSize: '11.5px', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {o.customer}
                 </span>
               </div>
@@ -583,18 +583,18 @@ export const Orders: React.FC = () => {
                   <span>{icon}</span>
                   <span>{o.nextAction.text}</span>
                 </div>
-                <span style={{ fontSize: '10.5px', color: '#94a3b8', paddingLeft: '2px' }}>
-                  현재 단계: <strong style={{ color: '#475569' }}>{currentStep}</strong>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', paddingLeft: '2px' }}>
+                  현재 단계: <strong style={{ color: 'var(--text-secondary)' }}>{currentStep}</strong>
                   {o.poDate && <span> · PO {o.poDate}</span>}
                 </span>
               </div>
 
               {/* 진행률 */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minWidth: '80px' }}>
-                <div style={{ width: '80px', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: '80px', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: pct === 100 ? '#10b981' : 'linear-gradient(90deg, #3b82f6, #10b981)', borderRadius: '3px' }} />
                 </div>
-                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{pct}% 완료</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{pct}% 완료</span>
               </div>
 
               {/* 금액 + 이동 버튼 */}
@@ -614,23 +614,23 @@ export const Orders: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <TodoSection title="🔴 오늘 즉시 처리" icon="⚠️" orders={redOrders}    color="#dc2626" bg="#fef2f2" border="#fecaca" />
         <TodoSection title="🟡 이번 주 처리 필요" icon="⏰" orders={orangeOrders} color="#d97706" bg="#fffbeb" border="#fef3c7" />
-        <TodoSection title="✅ 진행 중 (정상)" icon="→"  orders={whiteOrders}  color="#475569" bg="#f8fafc" border="#e2e8f0" />
+        <TodoSection title="✅ 진행 중 (정상)" icon="→"  orders={whiteOrders}  color="var(--text-secondary)" bg="#f8fafc" border="var(--border-color)" />
       </div>
     );
   };
 
   // ── 목록 뷰 (기존) ────────────────────────────────────────────────────────
   const ListView = () => (
-    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
+    <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
       {loading ? (
-        <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>주문 정보를 로딩 중입니다...</div>
+        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>주문 정보를 로딩 중입니다...</div>
       ) : processedOrders.length === 0 ? (
-        <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>등록된 주문 정보가 없습니다.</div>
+        <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 주문 정보가 없습니다.</div>
       ) : (
         <>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
-              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+              <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
                 <tr>
                   {['날짜','주문번호','수주사','발주사','발주액','ETD','ETA','단계','다음단계'].map((h, hIdx) => (
                     <th 
@@ -638,7 +638,7 @@ export const Orders: React.FC = () => {
                       style={thStyle(hIdx, { 
                         padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
                         fontWeight: 700, 
-                        color: '#475569', 
+                        color: 'var(--text-secondary)', 
                         fontSize: '14.5px', 
                         letterSpacing: '0.05em', 
                         textAlign: 'center', 
@@ -648,7 +648,7 @@ export const Orders: React.FC = () => {
                       {h === '단계' ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                           <span style={{ fontSize: '14.5px', fontWeight: 700 }}>단계</span>
-                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                          <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                             {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
                               <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
                             ))}
@@ -666,9 +666,9 @@ export const Orders: React.FC = () => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = order.totalAmount || pi?.totalUsd || 0;
                   const { pct } = getOverallProgress(order);
-                  const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
+                  const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : 'var(--text-secondary)';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
-                  const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#e2e8f0';
+                  const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : 'var(--border-color)';
                   
                   const isYS = order.issuingCompany === 'YS';
                   const issuerBadge = isYS
@@ -694,19 +694,19 @@ export const Orders: React.FC = () => {
                     <tr
                       key={order.id}
                       onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-                      style={{ borderBottom: '1px solid #e2e8f0', height: '60px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                      style={{ borderBottom: '1px solid var(--border-color)', height: '60px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
+                      <td style={getTdStyle(0, { color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
                       <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13.5px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
-                      <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13.5px' })} title={order.customer}>{order.customer}</td>
+                      <td style={getTdStyle(3, { color: 'var(--text-primary)', fontWeight: 600, fontSize: '13.5px' })} title={order.customer}>{order.customer}</td>
                       <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14.5px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(5, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
-                      <td style={getTdStyle(6, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
+                      <td style={getTdStyle(5, { color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
+                      <td style={getTdStyle(6, { color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
                       {/* 단계 */}
                       <td style={getTdStyle(7)}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -723,7 +723,7 @@ export const Orders: React.FC = () => {
                               }}>
                                {displayStage}
                              </span>
-                             <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
+                             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
                                {pct}%
                              </span>
                            </div>
@@ -733,7 +733,7 @@ export const Orders: React.FC = () => {
                               const isDone = total > 0 && done === total;
                               const isWorking = done > 0 && done < total;
                               const statusText = isDone ? '완료' : (isWorking ? '작업중' : '미작업');
-                              const color = isDone ? '#10b981' : isWorking ? '#2563eb' : '#cbd5e1';
+                              const color = isDone ? '#10b981' : isWorking ? '#2563eb' : 'var(--border-default)';
                               const labelMap: Record<string, string> = {
                                 '수주정보': '수주정보',
                                 '소싱발주': '소싱/발주',
@@ -767,12 +767,12 @@ export const Orders: React.FC = () => {
                   );
                 })}
                 {processedOrders.length > 0 && (
-                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid #cbd5e1' }}>
+                  <tr style={{ backgroundColor: '#f8fafc', borderTop: '2.5px solid var(--border-default)' }}>
                     <td style={{ width: colWidths[0], minWidth: colWidths[0], maxWidth: colWidths[0], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[1], minWidth: colWidths[1], maxWidth: colWidths[1], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[2], minWidth: colWidths[2], maxWidth: colWidths[2], boxSizing: 'border-box' }} />
                     {/* 발주사 열에 '합계' 텍스트 배치 */}
-                    <td style={{ padding: '14px 16px', color: '#1e293b', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }}>
+                    <td style={{ padding: '14px 16px', color: 'var(--text-primary)', textAlign: 'right', fontSize: '16px', fontWeight: 800, width: colWidths[3], minWidth: colWidths[3], maxWidth: colWidths[3], boxSizing: 'border-box' }}>
                       합계
                     </td>
                     {/* 발주액 열에 실제 합계 금액 배치 */}
@@ -791,9 +791,9 @@ export const Orders: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '11.5px', color: '#64748b', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 700, color: '#475569' }}>💡 진행바 색상:</span>
-            {[['#10b981','완료'],['#2563eb','작업중'],['#cbd5e1','미작업']].map(([c,l]) => (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '14px', padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', fontSize: '11.5px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>💡 진행바 색상:</span>
+            {[['#10b981','완료'],['#2563eb','작업중'],['var(--border-default)','미작업']].map(([c,l]) => (
               <div key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <div style={{ width: '16px', height: '5px', borderRadius: '3px', background: c }} /> {l}
               </div>
@@ -816,8 +816,8 @@ export const Orders: React.FC = () => {
             value={issuingCompanyFilter} 
             onChange={e => setIssuingCompanyFilter(e.target.value)} 
             style={{ 
-              padding: '6px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', 
-              fontSize: '14px', fontWeight: 700, color: '#475569', 
+              padding: '6px 12px', border: '1.5px solid var(--border-default)', borderRadius: '6px', 
+              fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', 
               outline: 'none', background: '#fff', cursor: 'pointer',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
@@ -837,26 +837,26 @@ export const Orders: React.FC = () => {
 
       {/* 스탯 카드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '10px' }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 중 오더</span>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>진행 중 오더</span>
           <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{stats.activeCount} 건</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>진행 수주금액</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>진행 수주금액</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#475569' }}>매출액 (ETD 기준)</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>매출액 (ETD 기준)</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '22px', fontWeight: 900, color: '#d97706' }}>${stats.salesTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : '#475569' }}>오늘 처리 필요 (긴급)</span>
+        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '14px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : 'var(--text-secondary)' }}>오늘 처리 필요 (긴급)</span>
           <div style={{ fontSize: '22px', fontWeight: 900, color: stats.urgentCount > 0 ? '#dc2626' : '#0f172a' }}>{stats.urgentCount} 건</div>
         </div>
       </div>
@@ -868,11 +868,11 @@ export const Orders: React.FC = () => {
 
       {/* 뷰 컨텐츠 */}
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
           주문 정보를 로딩 중입니다...
         </div>
       ) : processedOrders.length === 0 ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#64748b', background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)', background: '#fff', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
           등록된 주문이 없습니다.
         </div>
       ) : viewMode === 'kanban' ? (

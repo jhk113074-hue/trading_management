@@ -296,12 +296,12 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
       <div style={{ background: '#fff', borderRadius: '12px', width: '95%', maxWidth: '1050px', maxHeight: '95vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
         
         {/* Header */}
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: '12px 12px 0 0' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderRadius: '12px 12px 0 0' }}>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>도착보고 상세정보 및 다중 패킹 정보 입력 ({supplierName})</div>
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>도착보고서 출력을 위해 선적(Shipping) 정보 및 패킹(Packing) 규격을 입력해주세요.</div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>도착보고 상세정보 및 다중 패킹 정보 입력 ({supplierName})</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>도착보고서 출력을 위해 선적(Shipping) 정보 및 패킹(Packing) 규격을 입력해주세요.</div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body */}
@@ -312,61 +312,61 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
             <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid #3b82f6', paddingBottom: '4px' }}>1. 선적 및 입고 정보 (Shipping Info)</h4>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>1) Shipper (송하인)</label>
-              <textarea rows={3} value={shipperVal} onChange={e => setShipperVal(e.target.value)} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>1) Shipper (송하인)</label>
+              <textarea rows={3} value={shipperVal} onChange={e => setShipperVal(e.target.value)} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>2) For Account & Risk Messrs. (수하인)</label>
-              <textarea rows={3} value={consigneeVal} onChange={e => setConsigneeVal(e.target.value)} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>2) For Account & Risk Messrs. (수하인)</label>
+              <textarea rows={3} value={consigneeVal} onChange={e => setConsigneeVal(e.target.value)} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>3) Notify Party (통지처)</label>
-              <input type="text" value={formData.notifyParty} onChange={e => setFormData(p => ({ ...p, notifyParty: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>3) Notify Party (통지처)</label>
+              <input type="text" value={formData.notifyParty} onChange={e => setFormData(p => ({ ...p, notifyParty: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>4) Port of Loading (선적항)</label>
-                <input type="text" value={formData.portOfLoading} onChange={e => setFormData(p => ({ ...p, portOfLoading: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>4) Port of Loading (선적항)</label>
+                <input type="text" value={formData.portOfLoading} onChange={e => setFormData(p => ({ ...p, portOfLoading: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>5) Final Destination (목적지)</label>
-                <input type="text" value={formData.finalDestination} onChange={e => setFormData(p => ({ ...p, finalDestination: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>5) Final Destination (목적지)</label>
+                <input type="text" value={formData.finalDestination} onChange={e => setFormData(p => ({ ...p, finalDestination: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>6) Carrier (선명/항차)</label>
-                <input type="text" value={formData.carrier} onChange={e => setFormData(p => ({ ...p, carrier: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>6) Carrier (선명/항차)</label>
+                <input type="text" value={formData.carrier} onChange={e => setFormData(p => ({ ...p, carrier: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>7) Sailing Date (출항일)</label>
-                <input type="text" value={formData.sailingOnOrAbout} onChange={e => setFormData(p => ({ ...p, sailingOnOrAbout: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>7) Sailing Date (출항일)</label>
+                <input type="text" value={formData.sailingOnOrAbout} onChange={e => setFormData(p => ({ ...p, sailingOnOrAbout: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '8px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>8) Booking No.</label>
-                <input type="text" value={formData.bookingNo} onChange={e => setFormData(p => ({ ...p, bookingNo: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>8) Booking No.</label>
+                <input type="text" value={formData.bookingNo} onChange={e => setFormData(p => ({ ...p, bookingNo: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>9) 입고요청일</label>
-                <input type="text" value={formData.cfsEta} onChange={e => setFormData(p => ({ ...p, cfsEta: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>9) 입고요청일</label>
+                <input type="text" value={formData.cfsEta} onChange={e => setFormData(p => ({ ...p, cfsEta: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }} />
               </div>
             </div>
 
             {/* CFS Address with Dropdown/Database Selection */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', position: 'relative' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>입고지 (CFS) 선택/신규등록</label>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>입고지 (CFS) 선택/신규등록</label>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <select
                   value={formData.cfsAddress}
                   onChange={e => setFormData(p => ({ ...p, cfsAddress: e.target.value }))}
-                  style={{ flex: 1, padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
+                  style={{ flex: 1, padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
                 >
                   {cfsList.map((addr, idx) => (
                     <option key={idx} value={addr}>{addr.substring(0, 50)}...</option>
@@ -387,7 +387,7 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
                     placeholder="신규 CFS 주소 및 담당자 정보 입력..."
                     value={newCfsVal}
                     onChange={e => setNewCfsVal(e.target.value)}
-                    style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '6px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '11.5px', outline: 'none', background: '#fff' }}
                   />
                   <button
                     type="button"
@@ -401,14 +401,14 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>특이사항 (Remarks)</label>
-              <textarea rows={2} value={formData.remarks} onChange={e => setFormData(p => ({ ...p, remarks: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
+              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>특이사항 (Remarks)</label>
+              <textarea rows={2} value={formData.remarks} onChange={e => setFormData(p => ({ ...p, remarks: e.target.value }))} style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '11.5px', outline: 'none' }} />
             </div>
           </div>
 
           {/* Section 2: 다중 패킹 정보 리스트 에디터 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '72vh', overflowY: 'auto', paddingRight: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0d9488', paddingBottom: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--focus-ring)', paddingBottom: '4px' }}>
               <h4 style={{ margin: '0', fontSize: '13px', fontWeight: 800, color: '#0f766e' }}>2. 패킹 및 화물 상세 목록 (Packing Info List)</h4>
               <button
                 type="button"
@@ -436,37 +436,37 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2.5fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>10) Marks</label>
-                    <textarea rows={2} value={item.marks || ''} onChange={e => updatePackingItem(idx, 'marks', e.target.value)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>10) Marks</label>
+                    <textarea rows={2} value={item.marks || ''} onChange={e => updatePackingItem(idx, 'marks', e.target.value)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>11) Description of Goods (품명)</label>
-                    <textarea rows={2} value={item.descOfGoods || ''} onChange={e => updatePackingItem(idx, 'descOfGoods', e.target.value)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>11) Description of Goods (품명)</label>
+                    <textarea rows={2} value={item.descOfGoods || ''} onChange={e => updatePackingItem(idx, 'descOfGoods', e.target.value)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>12) Qty (수량)</label>
-                    <input type="number" value={item.qty || ''} onChange={e => updatePackingItem(idx, 'qty', parseInt(e.target.value, 10) || 0)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>12) Qty (수량)</label>
+                    <input type="number" value={item.qty || ''} onChange={e => updatePackingItem(idx, 'qty', parseInt(e.target.value, 10) || 0)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>13) Package (단위)</label>
-                    <input type="text" value={item.packageType || ''} onChange={e => updatePackingItem(idx, 'packageType', e.target.value)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>13) Package (단위)</label>
+                    <input type="text" value={item.packageType || ''} onChange={e => updatePackingItem(idx, 'packageType', e.target.value)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11.5px', outline: 'none', background: '#fff' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>14) Net Wt (kg)</label>
-                    <input type="number" value={item.netWeight || ''} onChange={e => updatePackingItem(idx, 'netWeight', parseFloat(e.target.value) || 0)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>14) Net Wt (kg)</label>
+                    <input type="number" value={item.netWeight || ''} onChange={e => updatePackingItem(idx, 'netWeight', parseFloat(e.target.value) || 0)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>15) Gross Wt (kg)</label>
-                    <input type="number" value={item.grossWeight || ''} onChange={e => updatePackingItem(idx, 'grossWeight', parseFloat(e.target.value) || 0)} style={{ padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
+                    <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>15) Gross Wt (kg)</label>
+                    <input type="number" value={item.grossWeight || ''} onChange={e => updatePackingItem(idx, 'grossWeight', parseFloat(e.target.value) || 0)} style={{ padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11.5px', textAlign: 'right', outline: 'none', background: '#fff' }} />
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <label style={{ fontSize: '10.5px', fontWeight: 600, color: '#475569' }}>16) Measurement (용적/규격)</label>
-                  <input type="text" value={item.measurement || ''} onChange={e => updatePackingItem(idx, 'measurement', e.target.value)} placeholder="예: 1150×1250×1800" style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
+                  <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>16) Measurement (용적/규격)</label>
+                  <input type="text" value={item.measurement || ''} onChange={e => updatePackingItem(idx, 'measurement', e.target.value)} placeholder="예: 1150×1250×1800" style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', background: '#fff' }} />
                 </div>
               </div>
             ))}
@@ -475,8 +475,8 @@ export const ArrivalReportModal: React.FC<Props> = ({ supplierName, orderInfo, p
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderRadius: '0 0 12px 12px' }}>
-          <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '12.5px', color: '#475569', cursor: 'pointer', fontWeight: 600 }}>취소</button>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderRadius: '0 0 12px 12px' }}>
+          <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid var(--border-default)', background: '#fff', fontSize: '12.5px', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}>취소</button>
           <button onClick={handleSave} style={{ padding: '6px 18px', borderRadius: '6px', border: 'none', background: '#2563eb', fontSize: '12.5px', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>💾 저장 후 인쇄</button>
         </div>
 

@@ -133,7 +133,7 @@ export const AuthCallback: React.FC = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+      background: 'linear-gradient(135deg, #0f172a 0%, var(--text-primary) 100%)',
       padding: '24px',
       fontFamily: "'Outfit', 'Inter', sans-serif"
     }}>
@@ -186,7 +186,7 @@ export const AuthCallback: React.FC = () => {
             <h2 style={{ fontSize: '1.6rem', color: '#ffffff', fontWeight: 800, marginBottom: '12px' }}>
               Microsoft 계정 연동 중
             </h2>
-            <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '32px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '32px' }}>
               평생 만료 없는 무제한 연동 마스터키(Refresh Token)를<br />안전하게 갱신하고 있습니다.
             </p>
             <div style={{
@@ -209,7 +209,7 @@ export const AuthCallback: React.FC = () => {
             <p style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 600, marginBottom: '8px' }}>
               축하합니다! Microsoft To Do 무제한 연동에 성공했습니다.
             </p>
-            <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '32px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '32px' }}>
               이제 1시간 만료 없이 평생 자동으로 동기화됩니다.
             </p>
             <div style={{

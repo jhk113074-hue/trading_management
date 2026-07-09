@@ -446,18 +446,18 @@ export const Imports: React.FC = () => {
       {/* Title Header */}
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>수입관리</h2>
-        <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>수입운송 진행 및 의뢰관리 목록입니다.</p>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>수입운송 진행 및 의뢰관리 목록입니다.</p>
       </div>
 
       {/* Filter panel */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
-          <select style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', background: '#fff', outline: 'none' }}>
+          <select style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', background: '#fff', outline: 'none' }}>
             <option>기간선택</option>
             <option>최근 1주일</option>
             <option>최근 1개월</option>
           </select>
-          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', overflow: 'hidden', maxWidth: '320px', width: '100%' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', overflow: 'hidden', maxWidth: '320px', width: '100%' }}>
             <input 
               type="text" 
               placeholder="의뢰번호, 품명, 출발지 검색..." 
@@ -475,31 +475,31 @@ export const Imports: React.FC = () => {
           >
             신규 수입건 추가
           </button>
-          <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
             목록 받기
           </button>
-          <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
+          <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
             테이블 설정
           </button>
         </div>
       </div>
 
       {/* Main Table Grid */}
-      <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', height: '44px' }}>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px' }}>주문번호</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>PO번호</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '150px' }}>수입처</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '180px' }}>품명</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '160px' }}>운송내용</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'center' }}>수입주체</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '160px' }}>경로</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px' }}>최종고객</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '100px' }}>담당자</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '140px', textAlign: 'right' }}>수입금액</th>
-              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: '#475569', width: '70px', textAlign: 'center' }}>관리</th>
+            <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '44px' }}>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '100px' }}>주문번호</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '180px' }}>PO번호</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '150px' }}>수입처</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '180px' }}>품명</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '160px' }}>운송내용</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '140px', textAlign: 'center' }}>수입주체</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '160px' }}>경로</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '140px' }}>최종고객</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '100px' }}>담당자</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '140px', textAlign: 'right' }}>수입금액</th>
+              <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '70px', textAlign: 'center' }}>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -512,13 +512,13 @@ export const Imports: React.FC = () => {
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
                 {/* 주문번호 */}
-                <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 700, color: '#475569' }}>
+                <td style={{ padding: '12px 16px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                   {req.id}
                 </td>
 
                 {/* PO번호 */}
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {req.poNumber && req.poNumber !== '-' ? req.poNumber : '-'}
                   </span>
                 </td>
@@ -536,8 +536,8 @@ export const Imports: React.FC = () => {
                 {/* 운송내용 */}
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{req.transportType}</span>
-                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>{req.volume}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>{req.transportType}</span>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{req.volume}</span>
                   </div>
                 </td>
 
@@ -556,7 +556,7 @@ export const Imports: React.FC = () => {
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       📍 {req.routeFrom} ➔
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)' }}>
                       ⚓ {req.routeTo}
                     </span>
                   </div>
@@ -652,17 +652,17 @@ export const Imports: React.FC = () => {
           }}>
             <div 
               onMouseDown={handleHeaderMouseDown}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
             >
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>신규수입등록 📌 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>신규수입등록 📌 <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
             </div>
             
             <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
               {/* 기본 수입주체 & 수입처 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입주체 구분</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입주체 구분</label>
                   <select 
                     value={newRequest.importCompany || 'YSACC'} 
                     onChange={e => {
@@ -673,14 +673,14 @@ export const Imports: React.FC = () => {
                         return { ...p, importCompany: comp, poNumber: nextPo, id: tempId };
                       });
                     }}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>
                     <option value="YS">YS (영성ACC)</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입처 (공급업체관리 연결)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입처 (공급업체관리 연결)</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input 
                       type="text"
@@ -688,7 +688,7 @@ export const Imports: React.FC = () => {
                       required
                       placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
                       value={newRequest.importerName || ''}
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
                     />
                     <button
                       type="button"
@@ -704,23 +704,23 @@ export const Imports: React.FC = () => {
               {/* PO 번호 & PI 번호 라인 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
                   <input 
                     type="text" 
                     required
                     value={editingRequest?.poNumber || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, poNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PO-YSACC-BOR-2026-01"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PI 번호 (상대회사 제공)</label>
                   <input 
                     type="text" 
                     value={editingRequest?.piNumber || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, piNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PI20260701-01"
                   />
                 </div>
@@ -729,23 +729,23 @@ export const Imports: React.FC = () => {
               {/* PO 번호 & PI 번호 라인 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
                   <input 
                     type="text" 
                     required
                     value={newRequest.poNumber || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, poNumber: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PO-YSACC-BOR-2026-01"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PI 번호 (상대회사 제공)</label>
                   <input 
                     type="text" 
                     value={newRequest.piNumber || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, piNumber: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PI20260701-01"
                   />
                 </div>
@@ -754,21 +754,21 @@ export const Imports: React.FC = () => {
               {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>최종고객</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
                   <input 
                     type="text" 
                     value={newRequest.finalCustomer || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, finalCustomer: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: 최종 납품처 기입"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>INCOTERMS</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>INCOTERMS</label>
                   <select 
                     value={newRequest.incoterms || 'FOB'} 
                     onChange={e => setNewRequest(p => ({ ...p, incoterms: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="FOB">FOB</option>
                     <option value="FCA">FCA</option>
@@ -780,12 +780,12 @@ export const Imports: React.FC = () => {
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>B/L (AWB) 번호</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>B/L (AWB) 번호</label>
                   <input 
                     type="text" 
                     value={newRequest.blAwb || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, blAwb: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: B/L 번호 직접 입력"
                   />
                 </div>
@@ -794,21 +794,21 @@ export const Imports: React.FC = () => {
               {/* PAYMENT TERMS & 운송수단 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PAYMENT TERMS</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PAYMENT TERMS</label>
                   <input 
                     type="text" 
                     value={newRequest.paymentTerms || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, paymentTerms: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: 100% T/T in advance"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>운송수단</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>운송수단</label>
                   <select 
                     value={newRequest.transportType || 'By Sea'} 
                     onChange={e => setNewRequest(p => ({ ...p, transportType: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="By Sea">By Sea</option>
                     <option value="By Air">By Air</option>
@@ -820,54 +820,54 @@ export const Imports: React.FC = () => {
               {/* 출발PORT & 도착PORT & 견적 운임 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>출발 PORT</label>
                   <input 
                     type="text" 
                     required
                     value={newRequest.pol || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, pol: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: SHANGHAI PORT, CHINA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>도착 PORT</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>도착 PORT</label>
                   <input 
                     type="text" 
                     required
                     value={newRequest.pod || ''} 
                     onChange={e => setNewRequest(p => ({ ...p, pod: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: INCHEON PORT, KOREA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>원산지 (Origin)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>원산지 (Origin)</label>
                   <input 
                     type="text" 
                     required
                     value={newRequest.origin || 'CHINA'} 
                     onChange={e => setNewRequest(p => ({ ...p, origin: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: CHINA, KOREA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>견적 운임 (₩)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>견적 운임 (₩)</label>
                   <input 
                     type="number" 
                     value={newRequest.amount} 
                     onChange={e => setNewRequest(p => ({ ...p, amount: Number(e.target.value) }))}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: 500000"
                   />
                 </div>
               </div>
 
               {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+              <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 수입 제품 및 패킹 명세 목록</span>
                   <button 
                     type="button" 
                     onClick={() => setNewRequest(p => ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }] }))}
@@ -880,7 +880,7 @@ export const Imports: React.FC = () => {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1000px' }}>
                     <thead>
-                      <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '30px' }}>
+                      <tr style={{ background: 'var(--border-color)', borderBottom: '1px solid var(--border-default)', height: '30px' }}>
                         <th style={{ padding: '4px', width: '30px', textAlign: 'center' }}>No</th>
                         <th style={{ padding: '4px', textAlign: 'left', minWidth: '180px' }}>DESCRIPTION OF COMMODITY</th>
                         <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
@@ -897,7 +897,7 @@ export const Imports: React.FC = () => {
                     </thead>
                     <tbody>
                       {(newRequest.piItems || []).map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                           <td style={{ padding: '4px' }}>
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -912,7 +912,7 @@ export const Imports: React.FC = () => {
                                     return { ...p, piItems: next };
                                   });
                                 }}
-                                style={{ flex: 1, padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                                style={{ flex: 1, padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                                 placeholder="예: E-GLASS SURFACE TISSUE"
                               />
                               <button
@@ -921,7 +921,7 @@ export const Imports: React.FC = () => {
                                   setProductSearchTargetIdx(idx);
                                   setShowProductSearch(true);
                                 }}
-                                style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                                 title="상품 DB에서 가져오기"
                               >
                                 🔍
@@ -940,7 +940,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -955,7 +955,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -970,7 +970,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -985,7 +985,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -997,7 +997,7 @@ export const Imports: React.FC = () => {
                                   ? String(((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toFixed(2))
                                   : ''
                               } 
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: 'var(--text-secondary)', fontWeight: 'bold' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1012,7 +1012,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                               placeholder="예: 110*110*120"
                             />
                           </td>
@@ -1028,7 +1028,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0.0"
                             />
                           </td>
@@ -1044,7 +1044,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0"
                             />
                           </td>
@@ -1060,7 +1060,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0"
                             />
                           </td>
@@ -1079,7 +1079,7 @@ export const Imports: React.FC = () => {
                       ))}
 
                       {/* 제일 밑줄에 nos of package and CBM and weight의 합계를 보여주는 요약행 */}
-                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid #cbd5e1' }}>
+                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid var(--border-default)' }}>
                         <td colSpan={3} style={{ padding: '6px 8px', textAlign: 'center' }}>[합계 요약 (Total Summary)]</td>
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1e3a8a' }}>
                           {(newRequest.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0)}
@@ -1107,7 +1107,7 @@ export const Imports: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setShowAddModal(false)}
-                  style={{ padding: '8px 16px', background: '#f1f5f9', border: 'none', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', background: '#f1f5f9', border: 'none', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   취소
                 </button>
@@ -1209,17 +1209,17 @@ export const Imports: React.FC = () => {
           }}>
             <div 
               onMouseDown={handleHeaderMouseDown}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
             >
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#1e293b' }}>수입 의뢰 건 수정 📌 <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
-              <button onClick={() => { setShowEditModal(false); setEditingRequest(null); }} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>수입 의뢰 건 수정 📌 <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
+              <button onClick={() => { setShowEditModal(false); setEditingRequest(null); }} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
             </div>
             
             <form onSubmit={handleEditRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, paddingRight: '4px' }}>
               {/* 기본 수입주체 & 수입처 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입주체 구분</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입주체 구분</label>
                   <select 
                     value={editingRequest?.importCompany || 'YSACC'} 
                     onChange={e => {
@@ -1230,14 +1230,14 @@ export const Imports: React.FC = () => {
                         return { ...p, importCompany: comp, poNumber: nextPo };
                       });
                     }}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>
                     <option value="YS">YS (영성ACC)</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>수입처 (공급업체관리 연결)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입처 (공급업체관리 연결)</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input 
                       type="text"
@@ -1245,7 +1245,7 @@ export const Imports: React.FC = () => {
                       required
                       placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
                       value={editingRequest.importerName || ''}
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
                     />
                     <button
                       type="button"
@@ -1261,23 +1261,23 @@ export const Imports: React.FC = () => {
               {/* PO 번호 & PI 번호 라인 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
                   <input 
                     type="text" 
                     required
                     value={editingRequest?.poNumber || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, poNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PO-YSACC-BOR-2026-01"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PI 번호 (상대회사 제공)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PI 번호 (상대회사 제공)</label>
                   <input 
                     type="text" 
                     value={editingRequest?.piNumber || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, piNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: PI20260701-01"
                   />
                 </div>
@@ -1286,21 +1286,21 @@ export const Imports: React.FC = () => {
               {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>최종고객</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
                   <input 
                     type="text" 
                     value={editingRequest.finalCustomer || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, finalCustomer: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: 최종 납품처 기입"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>INCOTERMS</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>INCOTERMS</label>
                   <select 
                     value={editingRequest.incoterms || 'FOB'} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, incoterms: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="EXW">EXW</option>
                     <option value="FCA">FCA</option>
@@ -1312,12 +1312,12 @@ export const Imports: React.FC = () => {
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>B/L (AWB) 번호</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>B/L (AWB) 번호</label>
                   <input 
                     type="text" 
                     value={editingRequest.blAwb || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, blAwb: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: B/L 번호 직접 입력"
                   />
                 </div>
@@ -1326,21 +1326,21 @@ export const Imports: React.FC = () => {
               {/* PAYMENT TERMS & 운송수단 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>PAYMENT TERMS</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PAYMENT TERMS</label>
                   <input 
                     type="text" 
                     value={editingRequest.paymentTerms || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, paymentTerms: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: 100% T/T in advance"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>운송수단</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>운송수단</label>
                   <select 
                     value={editingRequest.transportType || 'By Sea'} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, transportType: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
                   >
                     <option value="By Sea">By Sea</option>
                     <option value="By Air">By Air</option>
@@ -1352,53 +1352,53 @@ export const Imports: React.FC = () => {
               {/* 출발PORT & 도착PORT & 견적 운임 */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>출발 PORT</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>출발 PORT</label>
                   <input 
                     type="text" 
                     required
                     value={editingRequest.pol || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, pol: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: SHANGHAI PORT, CHINA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>도착 PORT</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>도착 PORT</label>
                   <input 
                     type="text" 
                     required
                     value={editingRequest.pod || ''} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, pod: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: INCHEON PORT, KOREA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>원산지 (Origin)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>원산지 (Origin)</label>
                   <input 
                     type="text" 
                     required
                     value={editingRequest.origin || 'CHINA'} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, origin: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                     placeholder="예: CHINA, KOREA"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>견적 운임 (₩)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>견적 운임 (₩)</label>
                   <input 
                     type="number" 
                     value={editingRequest.amount} 
                     onChange={e => setEditingRequest(p => p ? ({ ...p, amount: Number(e.target.value) }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                   />
                 </div>
               </div>
 
               {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}
-              <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
+              <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 수입 제품 및 패킹 명세 목록</span>
                   <button 
                     type="button" 
                     onClick={() => setEditingRequest(p => p ? ({ ...p, piItems: [...(p.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }] }) : null)}
@@ -1411,7 +1411,7 @@ export const Imports: React.FC = () => {
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '1000px' }}>
                     <thead>
-                      <tr style={{ background: '#e2e8f0', borderBottom: '1px solid #cbd5e1', height: '30px' }}>
+                      <tr style={{ background: 'var(--border-color)', borderBottom: '1px solid var(--border-default)', height: '30px' }}>
                         <th style={{ padding: '4px', width: '30px', textAlign: 'center' }}>No</th>
                         <th style={{ padding: '4px', textAlign: 'left', minWidth: '180px' }}>DESCRIPTION OF COMMODITY</th>
                         <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
@@ -1428,7 +1428,7 @@ export const Imports: React.FC = () => {
                     </thead>
                     <tbody>
                       {(editingRequest.piItems || []).map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                           <td style={{ padding: '4px' }}>
                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -1444,7 +1444,7 @@ export const Imports: React.FC = () => {
                                     return { ...p, piItems: next };
                                   });
                                 }}
-                                style={{ flex: 1, padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                                style={{ flex: 1, padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                                 placeholder="예: E-GLASS SURFACE TISSUE"
                               />
                               <button
@@ -1453,7 +1453,7 @@ export const Imports: React.FC = () => {
                                   setProductSearchTargetIdx(idx);
                                   setShowProductSearch(true);
                                 }}
-                                style={{ padding: '3px 6px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
                                 title="상품 DB에서 가져오기"
                               >
                                 🔍
@@ -1473,7 +1473,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1489,7 +1489,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1505,7 +1505,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1521,7 +1521,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1533,7 +1533,7 @@ export const Imports: React.FC = () => {
                                   ? String(((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toFixed(2))
                                   : ''
                               } 
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: '#f1f5f9', color: 'var(--text-secondary)', fontWeight: 'bold' }}
                             />
                           </td>
                           <td style={{ padding: '4px' }}>
@@ -1549,7 +1549,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
                               placeholder="예: 110*110*120"
                             />
                           </td>
@@ -1566,7 +1566,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0.0"
                             />
                           </td>
@@ -1583,7 +1583,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0"
                             />
                           </td>
@@ -1600,7 +1600,7 @@ export const Imports: React.FC = () => {
                                   return { ...p, piItems: next };
                                 });
                               }}
-                              style={{ width: '100%', padding: '3px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '3px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                               placeholder="0"
                             />
                           </td>
@@ -1619,7 +1619,7 @@ export const Imports: React.FC = () => {
                       ))}
 
                       {/* 제일 밑줄에 nos of package and CBM and weight의 합계를 보여주는 요약행 */}
-                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid #cbd5e1' }}>
+                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', height: '32px', borderTop: '2px solid var(--border-default)' }}>
                         <td colSpan={3} style={{ padding: '6px 8px', textAlign: 'center' }}>[합계 요약 (Total Summary)]</td>
                         <td style={{ padding: '6px 8px', textAlign: 'right', color: '#1e3a8a' }}>
                           {(editingRequest.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0)}
@@ -1647,7 +1647,7 @@ export const Imports: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => { setShowEditModal(false); setEditingRequest(null); }}
-                  style={{ padding: '8px 16px', background: '#f1f5f9', border: 'none', color: '#475569', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', background: '#f1f5f9', border: 'none', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   취소
                 </button>

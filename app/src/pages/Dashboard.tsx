@@ -198,12 +198,12 @@ const WorldClocks: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center', position: 'relative' }}>
-        <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748b', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           🌐 세계 시각:
         </span>
         {clocks.map((c, idx) => (
           <React.Fragment key={c.zone + '_' + idx}>
-            {idx > 0 && <span style={{ color: '#e2e8f0', fontSize: '10px' }}>|</span>}
+            {idx > 0 && <span style={{ color: 'var(--border-color)', fontSize: '10px' }}>|</span>}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#334155' }}>
               <img 
                 src={`https://flagcdn.com/w20/${c.code}.png`}
@@ -211,9 +211,9 @@ const WorldClocks: React.FC = () => {
                 width="15" 
                 height="11" 
                 alt={c.label} 
-                style={{ borderRadius: '1.5px', border: '1px solid #cbd5e1', objectFit: 'cover', display: 'inline-block' }} 
+                style={{ borderRadius: '1.5px', border: '1px solid var(--border-default)', objectFit: 'cover', display: 'inline-block' }} 
               />
-              <span style={{ color: '#64748b', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '9.5px', fontWeight: 600 }}>{c.label}</span>
               <span style={{ color: '#0f172a', fontFamily: 'monospace', fontSize: '11px' }}>{formatTime(c.zone)}</span>
             </div>
           </React.Fragment>
@@ -221,7 +221,7 @@ const WorldClocks: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowSettings(!showSettings)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px', marginLeft: '8px', color: '#64748b' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', padding: '2px', marginLeft: '8px', color: 'var(--text-secondary)' }}
           title="세계 시각 국가 추가/관리"
         >
           ⚙️
@@ -230,16 +230,16 @@ const WorldClocks: React.FC = () => {
 
       {/* Inline Settings Panel */}
       {showSettings && (
-        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#475569' }}>⚙️ 세계 시각 표시 국가 관리</span>
-            <button type="button" onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', color: '#94a3b8' }}>✕ 닫기</button>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>⚙️ 세계 시각 표시 국가 관리</span>
+            <button type="button" onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕ 닫기</button>
           </div>
 
           {/* Current Countries List with delete actions */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid var(--border-default)' }}>
             {clocks.map((c, idx) => (
-              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', background: '#f1f5f9', color: '#334155', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+              <span key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', background: '#f1f5f9', color: '#334155', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                 <img src={`https://flagcdn.com/w20/${c.code}.png`} width="12" height="9" alt={c.label} style={{ objectFit: 'cover' }} />
                 <span>{c.label}</span>
                 <button type="button" onClick={() => handleRemoveCountry(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', fontSize: '10px', color: '#ef4444', fontWeight: 'bold' }}>✕</button>
@@ -273,31 +273,31 @@ const WorldClocks: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>국가 한글명</label>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>국가 한글명</label>
               <input 
                 type="text" 
                 placeholder="예: 일본" 
                 value={newLabel} 
                 onChange={e => setNewLabel(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>국가코드 (ISO 2자리)</label>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>국가코드 (ISO 2자리)</label>
               <input 
                 type="text" 
                 placeholder="예: jp" 
                 value={newCode} 
                 onChange={e => setNewCode(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>표준 시간대</label>
+              <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>표준 시간대</label>
               <select 
                 value={newZone} 
                 onChange={e => setNewZone(e.target.value)} 
-                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', backgroundColor: '#fff' }}
+                style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', backgroundColor: '#fff' }}
               >
                 {COMMON_TIMEZONES.map(z => (
                   <option key={z.value} value={z.value}>{z.label}</option>
@@ -573,7 +573,7 @@ export const Dashboard: React.FC = () => {
         style={{
           minHeight: '33px',
           background: dateStr === activeDateEventsList ? '#f0fdf4' : (isCurrentMonth ? '#fff' : '#f8fafc'),
-          border: '1px solid #e2e8f0',
+          border: '1px solid var(--border-color)',
           borderRadius: '6px',
           padding: '2px 4px',
           display: 'flex',
@@ -584,14 +584,14 @@ export const Dashboard: React.FC = () => {
           transition: 'all 0.1s',
           boxShadow: dateStr === activeDateEventsList ? 'inset 0 0 0 2px #10b981' : (isToday ? 'inset 0 0 0 1.5px #3b82f6' : 'none')
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = '#94a3b8'; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-muted)'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1px' }}>
           <span style={{
             fontSize: '11px',
             fontWeight: 800,
-            color: isToday ? '#fff' : (!isCurrentMonth ? '#cbd5e1' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : '#475569'),
+            color: isToday ? '#fff' : (!isCurrentMonth ? 'var(--border-default)' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : 'var(--text-secondary)'),
             background: isToday ? '#3b82f6' : 'transparent',
             borderRadius: isToday ? '50%' : 'none',
             width: isToday ? '18px' : 'auto',
@@ -605,7 +605,7 @@ export const Dashboard: React.FC = () => {
           {holiday && (
             <span
               className="holiday-badge"
-              style={{ color: holiday.country === 'KR' ? '#ef4444' : '#0d9488' }}
+              style={{ color: holiday.country === 'KR' ? '#ef4444' : 'var(--focus-ring)' }}
               title={holiday.name}
             >
               {holiday.country === 'KR' ? `🇰🇷 ${holiday.name}` : `🇦🇪 ${holiday.name}`}
@@ -632,7 +632,7 @@ export const Dashboard: React.FC = () => {
             );
           })}
           {dayEvents.length > 4 && (
-            <span style={{ fontSize: '7px', fontWeight: 900, color: '#64748b', lineHeight: 1 }}>+</span>
+            <span style={{ fontSize: '7px', fontWeight: 900, color: 'var(--text-secondary)', lineHeight: 1 }}>+</span>
           )}
         </div>
       </div>
@@ -917,18 +917,18 @@ export const Dashboard: React.FC = () => {
   const handleAssigneeDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     (e.currentTarget as HTMLElement).style.background = 'rgba(190, 18, 60, 0.08)';
-    (e.currentTarget as HTMLElement).style.borderColor = '#be123c';
+    (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary-color)';
   };
 
   const handleAssigneeDragLeave = (e: React.DragEvent) => {
     (e.currentTarget as HTMLElement).style.background = '';
-    (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1';
+    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)';
   };
 
   const handleAssigneeDrop = async (e: React.DragEvent, assigneeId: string) => {
     e.preventDefault();
     (e.currentTarget as HTMLElement).style.background = '';
-    (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1';
+    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-default)';
     const taskId = e.dataTransfer.getData('taskId');
     if (!taskId) return;
     const task = tasks.find(t => t.id === taskId);
@@ -997,7 +997,7 @@ export const Dashboard: React.FC = () => {
       Q1: { color: '#ef4444', bg: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.2)' },
       Q2: { color: '#3b82f6', bg: '#eff6ff', border: '1px solid rgba(59, 130, 246, 0.2)' },
       Q3: { color: '#f59e0b', bg: '#fffbeb', border: '1px solid rgba(245, 158, 11, 0.2)' },
-      Q4: { color: '#94a3b8', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
+      Q4: { color: 'var(--text-muted)', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
     };
     const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
 
@@ -1022,8 +1022,8 @@ export const Dashboard: React.FC = () => {
           }}>{quad}</span>
         </div>
         <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap' }}>
-          {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: '#64748b' }}>{task.projectName}</span>}
-          {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : '#64748b' }}>📅 {task.dueDate}</span>}
+          {task.projectName && <span style={{ fontSize: '0.7rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 5px', color: 'var(--text-secondary)' }}>{task.projectName}</span>}
+          {task.dueDate && <span style={{ fontSize: '0.7rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : 'var(--text-secondary)' }}>📅 {task.dueDate}</span>}
           {(task.commentCount ?? 0) > 0 && (
             <span 
               className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
@@ -1343,13 +1343,13 @@ export const Dashboard: React.FC = () => {
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '17.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '17.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   📅 YSACC 스케줄러
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                   <button
                     onClick={handlePrevMonth}
-                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
                   >
                     ◀
                   </button>
@@ -1358,7 +1358,7 @@ export const Dashboard: React.FC = () => {
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
+                    style={{ padding: '2px 6px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 700 }}
                   >
                     ▶
                   </button>
@@ -1380,9 +1380,9 @@ export const Dashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column' }}>
 
                 {/* 요일 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', marginBottom: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
                   {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                    <span key={day} style={{ fontSize: '11px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : '#64748b' }}>
+                    <span key={day} style={{ fontSize: '11px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : 'var(--text-secondary)' }}>
                       {day}
                     </span>
                   ))}
@@ -1395,12 +1395,12 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 일정 목록 영역 - 좌우 분할 (오늘의 일정 / 이번달 전체 일정) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderLeft: '1px solid #cbd5e1', paddingLeft: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
                 
                 {/* 1. 오늘의 일정 */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#be123c', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📌 <span>오늘의 일정 ({
                         calendarEvents.filter(e => {
                           const todayStr = new Date().toISOString().split('T')[0];
@@ -1441,7 +1441,7 @@ export const Dashboard: React.FC = () => {
                       const end = e.endDate || start;
                       return todayStr >= start && todayStr <= end;
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         오늘 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -1494,11 +1494,11 @@ export const Dashboard: React.FC = () => {
                                 {!e.isPublic && <span>🔒</span>}
                                 <strong>{e.title}</strong>
                               </span>
-                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
                                 {e.type}
                               </span>
                             </div>
-                            <div style={{ fontSize: '9.5px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                            <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
                               <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                               <span>👤 {e.creatorName}</span>
                             </div>
@@ -1512,7 +1512,7 @@ export const Dashboard: React.FC = () => {
                 {/* 2. 이번달 전체 일정 */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📋 <span>{currentMonth + 1}월 전체 일정 ({
                         calendarEvents.filter(e => {
                           const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
@@ -1527,7 +1527,7 @@ export const Dashboard: React.FC = () => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #e2e8f0', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         이번 달에 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -1578,11 +1578,11 @@ export const Dashboard: React.FC = () => {
                                 {!e.isPublic && <span>🔒</span>}
                                 <strong>{e.title}</strong>
                               </span>
-                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: '#64748b' }}>
+                              <span style={{ fontSize: '9px', background: '#fff', padding: '1px 3px', borderRadius: '3px', border: `1px solid ${colors.border}`, color: 'var(--text-secondary)' }}>
                                 {e.type}
                               </span>
                             </div>
-                            <div style={{ fontSize: '9.5px', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
+                            <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '1px' }}>
                               <span>📅 {e.startDate === e.endDate ? e.startDate.slice(5) : `${e.startDate.slice(5)}~${(e.endDate || '').slice(5)}`}</span>
                               <span>⏱ {e.startTime || '09:00'}~{e.endTime || '18:00'}</span>
                             </div>
@@ -1599,7 +1599,7 @@ export const Dashboard: React.FC = () => {
 
             {/* ── 오른쪽 (50%): 무역실시간매출및PI현황 ── */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px 16px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '8px', order: 1 }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 2px 0' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 2px 0' }}>
                 <span>📊 무역 실시간 매출 및 PI 현황</span>
                 <span style={{ fontSize: '0.85rem', background: 'var(--primary-color)', color: '#fff', padding: '1px 6px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
               </h2>
@@ -1612,7 +1612,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
                   <span>영성ACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsCount}</span> 건</span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
+                  <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
                   <span>(주)YSACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
                 </div>
               </div>
@@ -1624,9 +1624,9 @@ export const Dashboard: React.FC = () => {
                   수주 금액
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
+                  <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
+                  <span>(주)YSACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
                 </div>
               </div>
 
@@ -1637,9 +1637,9 @@ export const Dashboard: React.FC = () => {
                   당월 매출 (ETD 기준)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
+                  <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
+                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
                 </div>
               </div>
 
@@ -1650,9 +1650,9 @@ export const Dashboard: React.FC = () => {
                   전체 누적 매출금액
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
+                  <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
+                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
                 </div>
               </div>
             </div>
@@ -1683,18 +1683,18 @@ export const Dashboard: React.FC = () => {
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '70vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 제목 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>일정 제목 ★</label>
                 <input
                   type="text"
                   placeholder="일정 제목을 입력하세요"
                   value={eventForm.title}
                   onChange={e => setEventForm(prev => ({ ...prev, title: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 구분</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>일정 구분</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {['개인일정', '미팅', '출장', '기타'].map(t => (
                     <button
@@ -1705,9 +1705,9 @@ export const Dashboard: React.FC = () => {
                         flex: 1,
                         padding: '6px 0',
                         borderRadius: '6px',
-                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid var(--border-default)',
                         background: eventForm.type === t ? '#eff6ff' : '#fff',
-                        color: eventForm.type === t ? '#1e40af' : '#475569',
+                        color: eventForm.type === t ? '#1e40af' : 'var(--text-secondary)',
                         fontWeight: 700,
                         fontSize: '12.5px',
                         cursor: 'pointer'
@@ -1721,42 +1721,42 @@ export const Dashboard: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작일</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>시작일</label>
                   <input
                     type="date"
                     value={eventForm.startDate}
                     onChange={e => setEventForm(prev => ({ ...prev, startDate: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작시간</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>시작시간</label>
                   <input
                     type="time"
                     value={eventForm.startTime}
                     onChange={e => setEventForm(prev => ({ ...prev, startTime: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료일</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>종료일</label>
                   <input
                     type="date"
                     value={eventForm.endDate}
                     onChange={e => setEventForm(prev => ({ ...prev, endDate: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료시간</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>종료시간</label>
                   <input
                     type="time"
                     value={eventForm.endTime}
                     onChange={e => setEventForm(prev => ({ ...prev, endTime: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
               </div>
@@ -1769,30 +1769,30 @@ export const Dashboard: React.FC = () => {
                   onChange={e => setEventForm(prev => ({ ...prev, isPublic: e.target.checked }))}
                   style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 />
-                <label htmlFor="isPublic" style={{ fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                <label htmlFor="isPublic" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                   📢 부서/회사 전체에 공유 (체크 시 모든 멤버에게 보임)
                 </label>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자/미팅 대상</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참석자/미팅 대상</label>
                 <input
                   type="text"
                   placeholder="참석 멤버 또는 바이어 명"
                   value={eventForm.participants}
                   onChange={e => setEventForm(prev => ({ ...prev, participants: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>상세 내용/메모</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>상세 내용/메모</label>
                 <textarea
                   rows={3}
                   placeholder="상세한 일정을 기록하세요"
                   value={eventForm.description}
                   onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
 
@@ -1806,7 +1806,7 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px',
-                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed var(--border-default)',
                   borderRadius: '8px',
                   padding: '12px',
                   background: dragOverEventUpload ? '#eff6ff' : '#f8fafc',
@@ -1815,12 +1815,12 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
                   <label 
                     style={{
                       fontSize: '11px',
-                      background: '#e2e8f0',
-                      color: '#475569',
+                      background: 'var(--border-color)',
+                      color: 'var(--text-secondary)',
                       padding: '2px 8px',
                       borderRadius: '4px',
                       cursor: 'pointer',
@@ -1856,7 +1856,7 @@ export const Dashboard: React.FC = () => {
                           key={fIdx} 
                           style={{ 
                             background: '#fff', 
-                            border: '1px solid #cbd5e1', 
+                            border: '1px solid var(--border-default)', 
                             borderRadius: '8px', 
                             padding: '6px 10px', 
                             display: 'flex', 
@@ -1877,10 +1877,10 @@ export const Dashboard: React.FC = () => {
                               <img 
                                 src={file.url} 
                                 alt={file.name} 
-                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-default)' }} 
                               />
                             ) : (
-                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                                 {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                               </span>
                             )}
@@ -1890,12 +1890,12 @@ export const Dashboard: React.FC = () => {
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
                             <span 
                               onClick={() => setPreviewFile({ name: file.name, url: file.url })}
-                              style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                              style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                               title="클릭하여 미리보기"
                             >
                               {file.name}
                             </span>
-                            <span style={{ color: '#64748b', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
                           </div>
 
                           {/* Action buttons */}
@@ -1903,7 +1903,7 @@ export const Dashboard: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => setPreviewFile({ name: file.name, url: file.url })}
-                              style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              style={{ background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
                               title="미리보기"
                             >
                               🔍
@@ -1922,7 +1922,7 @@ export const Dashboard: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
                     파일을 드래그해서 여기 놓거나, 캡처 화면을 클릭 후 붙여넣기(Ctrl+V) 하세요.
                   </div>
                 )}
@@ -1934,11 +1934,11 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => setSelectedDateForEvent(null)}
-                style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                style={{ padding: '8px 16px', background: 'var(--border-color)', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
               >
                 취소
               </button>
@@ -1975,23 +1975,23 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '70vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#64748b' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 <span>등록자: <strong>{selectedEventForView.creatorName}</strong></span>
                 <span>{selectedEventForView.isPublic ? '📢 회사 공유 일정' : '🔒 개인 일정'}</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 제목 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>일정 제목 ★</label>
                 <input
                   type="text"
                   value={eventForm.title}
                   onChange={e => setEventForm(prev => ({ ...prev, title: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>일정 구분</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>일정 구분</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {['개인일정', '미팅', '출장', '기타'].map(t => (
                     <button
@@ -2002,9 +2002,9 @@ export const Dashboard: React.FC = () => {
                         flex: 1,
                         padding: '6px 0',
                         borderRadius: '6px',
-                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid #cbd5e1',
+                        border: eventForm.type === t ? '2px solid #3b82f6' : '1px solid var(--border-default)',
                         background: eventForm.type === t ? '#eff6ff' : '#fff',
-                        color: eventForm.type === t ? '#1e40af' : '#475569',
+                        color: eventForm.type === t ? '#1e40af' : 'var(--text-secondary)',
                         fontWeight: 700,
                         fontSize: '12.5px',
                         cursor: 'pointer'
@@ -2018,42 +2018,42 @@ export const Dashboard: React.FC = () => {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작일</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>시작일</label>
                   <input
                     type="date"
                     value={eventForm.startDate}
                     onChange={e => setEventForm(prev => ({ ...prev, startDate: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>시작시간</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>시작시간</label>
                   <input
                     type="time"
                     value={eventForm.startTime}
                     onChange={e => setEventForm(prev => ({ ...prev, startTime: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료일</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>종료일</label>
                   <input
                     type="date"
                     value={eventForm.endDate}
                     onChange={e => setEventForm(prev => ({ ...prev, endDate: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>종료시간</label>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>종료시간</label>
                   <input
                     type="time"
                     value={eventForm.endTime}
                     onChange={e => setEventForm(prev => ({ ...prev, endTime: e.target.value }))}
-                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                   />
                 </div>
               </div>
@@ -2066,28 +2066,28 @@ export const Dashboard: React.FC = () => {
                   onChange={e => setEventForm(prev => ({ ...prev, isPublic: e.target.checked }))}
                   style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 />
-                <label htmlFor="isPublicEdit" style={{ fontSize: '13px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                <label htmlFor="isPublicEdit" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                   📢 부서/회사 전체에 공유 (체크 시 모든 멤버에게 보임)
                 </label>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>참석자/미팅 대상</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>참석자/미팅 대상</label>
                 <input
                   type="text"
                   value={eventForm.participants}
                   onChange={e => setEventForm(prev => ({ ...prev, participants: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13px' }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>상세 내용/메모</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>상세 내용/메모</label>
                 <textarea
                   rows={3}
                   value={eventForm.description}
                   onChange={e => setEventForm(prev => ({ ...prev, description: e.target.value }))}
-                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '13.5px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
                 />
               </div>
 
@@ -2101,7 +2101,7 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px',
-                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed #cbd5e1',
+                  border: dragOverEventUpload ? '2px dashed #3b82f6' : '1px dashed var(--border-default)',
                   borderRadius: '8px',
                   padding: '12px',
                   background: dragOverEventUpload ? '#eff6ff' : '#f8fafc',
@@ -2110,12 +2110,12 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>📎 파일 첨부 (드래그 & 드롭 및 Ctrl+V 화면 캡처 지원)</label>
                   <label 
                     style={{
                       fontSize: '11px',
-                      background: '#e2e8f0',
-                      color: '#475569',
+                      background: 'var(--border-color)',
+                      color: 'var(--text-secondary)',
                       padding: '2px 8px',
                       borderRadius: '4px',
                       cursor: 'pointer',
@@ -2151,7 +2151,7 @@ export const Dashboard: React.FC = () => {
                           key={fIdx} 
                           style={{ 
                             background: '#fff', 
-                            border: '1px solid #cbd5e1', 
+                            border: '1px solid var(--border-default)', 
                             borderRadius: '8px', 
                             padding: '6px 10px', 
                             display: 'flex', 
@@ -2172,10 +2172,10 @@ export const Dashboard: React.FC = () => {
                               <img 
                                 src={file.url} 
                                 alt={file.name} 
-                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #cbd5e1' }} 
+                                style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-default)' }} 
                               />
                             ) : (
-                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                              <span style={{ fontSize: '20px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', borderRadius: '4px', border: '1px solid var(--border-default)' }}>
                                 {isPdf ? '📄' : isExcel ? '📊' : '📎'}
                               </span>
                             )}
@@ -2185,12 +2185,12 @@ export const Dashboard: React.FC = () => {
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
                             <span 
                               onClick={() => setPreviewFile({ name: file.name, url: file.url })}
-                              style={{ color: '#1e293b', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                              style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'none', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
                               title="클릭하여 미리보기"
                             >
                               {file.name}
                             </span>
-                            <span style={{ color: '#64748b', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>({(file.size / 1024).toFixed(1)}KB)</span>
                           </div>
 
                           {/* Action buttons */}
@@ -2198,7 +2198,7 @@ export const Dashboard: React.FC = () => {
                             <button 
                               type="button" 
                               onClick={() => setPreviewFile({ name: file.name, url: file.url })}
-                              style={{ background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                              style={{ background: '#f1f5f9', color: 'var(--text-secondary)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}
                               title="미리보기"
                             >
                               🔍
@@ -2217,7 +2217,7 @@ export const Dashboard: React.FC = () => {
                     })}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11.5px', padding: '16px 0', pointerEvents: 'none' }}>
                     파일을 드래그해서 여기 놓거나, 캡처 화면을 클릭 후 붙여넣기(Ctrl+V) 하세요.
                   </div>
                 )}
@@ -2229,7 +2229,7 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+            <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
               <div>
                 {(selectedEventForView.creatorId === currentUser?.uid || userProfile?.role === 'admin') && (
                   <button
@@ -2245,7 +2245,7 @@ export const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedEventForView(null)}
-                  style={{ padding: '8px 16px', background: '#e2e8f0', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ padding: '8px 16px', background: 'var(--border-color)', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
                 >
                   닫기
                 </button>
@@ -2279,14 +2279,14 @@ export const Dashboard: React.FC = () => {
         {/* Date Mode Taps & Date Navigator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* ── 조회 모드 탭 ── */}
-          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
             <button
               onClick={() => setDateMode('daily')}
               style={{
                 padding: '6px 12px',
                 border: 'none',
                 background: dateMode === 'daily' ? '#3b82f6' : '#fff',
-                color: dateMode === 'daily' ? '#fff' : '#475569',
+                color: dateMode === 'daily' ? '#fff' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 fontWeight: 700,
                 fontSize: '12px',
@@ -2301,12 +2301,12 @@ export const Dashboard: React.FC = () => {
                 padding: '6px 12px',
                 border: 'none',
                 background: dateMode === 'weekly' ? '#3b82f6' : '#fff',
-                color: dateMode === 'weekly' ? '#fff' : '#475569',
+                color: dateMode === 'weekly' ? '#fff' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 fontWeight: 700,
                 fontSize: '12px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid #cbd5e1'
+                borderLeft: '1px solid var(--border-default)'
               }}
             >
               주간
@@ -2317,12 +2317,12 @@ export const Dashboard: React.FC = () => {
                 padding: '6px 12px',
                 border: 'none',
                 background: dateMode === 'range' ? '#3b82f6' : '#fff',
-                color: dateMode === 'range' ? '#fff' : '#475569',
+                color: dateMode === 'range' ? '#fff' : 'var(--text-secondary)',
                 cursor: 'pointer',
                 fontWeight: 700,
                 fontSize: '12px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid #cbd5e1'
+                borderLeft: '1px solid var(--border-default)'
               }}
             >
               기간 검색
@@ -2331,8 +2331,8 @@ export const Dashboard: React.FC = () => {
 
           {/* ── 상세 날짜 선택 영역 ── */}
           {dateMode === 'daily' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-              <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid #e2e8f0' }}>‹</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+              <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid var(--border-color)' }}>‹</button>
               <input
                 type="date"
                 value={selectedDate}
@@ -2343,19 +2343,19 @@ export const Dashboard: React.FC = () => {
                   outline: 'none',
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: '#1e293b',
+                  color: 'var(--text-primary)',
                   cursor: 'pointer',
                   background: '#fff'
                 }}
               />
-              <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid #e2e8f0' }}>›</button>
+              <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid var(--border-color)' }}>›</button>
               {selectedDate !== new Date().toISOString().split('T')[0] && (
                 <button
                   onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
                   style={{
                     padding: '6px 12px',
                     border: 'none',
-                    borderLeft: '1px solid #e2e8f0',
+                    borderLeft: '1px solid var(--border-color)',
                     background: '#f0fdf4',
                     cursor: 'pointer',
                     fontSize: '11px',
@@ -2370,21 +2370,21 @@ export const Dashboard: React.FC = () => {
           )}
 
           {dateMode === 'weekly' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
               <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>‹</button>
-              <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap' }}>
+              <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid var(--border-default)', borderRight: '1px solid var(--border-default)', whiteSpace: 'nowrap' }}>
                 📅 {formatWeekLabel(weekOffset)}
               </div>
               <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>›</button>
               {weekOffset !== 0 && (
-                <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+                <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid var(--border-default)', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
               )}
             </div>
           )}
 
           {dateMode === 'range' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
                 <input
                   type="date"
                   value={startDate}
@@ -2395,11 +2395,11 @@ export const Dashboard: React.FC = () => {
                     outline: 'none',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#1e293b',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer'
                   }}
                 />
-                <span style={{ padding: '0 8px', color: '#94a3b8', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', height: '30px', display: 'flex', alignItems: 'center' }}>~</span>
+                <span style={{ padding: '0 8px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, background: '#f8fafc', borderLeft: '1px solid var(--border-default)', borderRight: '1px solid var(--border-default)', height: '30px', display: 'flex', alignItems: 'center' }}>~</span>
                 <input
                   type="date"
                   value={endDate}
@@ -2410,16 +2410,16 @@ export const Dashboard: React.FC = () => {
                     outline: 'none',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#1e293b',
+                    color: 'var(--text-primary)',
                     cursor: 'pointer'
                   }}
                 />
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={() => setRangePreset('today')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>오늘</button>
-                <button onClick={() => setRangePreset('week')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번주</button>
-                <button onClick={() => setRangePreset('month')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>이번달</button>
-                <button onClick={() => setRangePreset('all')} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#475569' }}>전체</button>
+                <button onClick={() => setRangePreset('today')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>오늘</button>
+                <button onClick={() => setRangePreset('week')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>이번주</button>
+                <button onClick={() => setRangePreset('month')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>이번달</button>
+                <button onClick={() => setRangePreset('all')} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>전체</button>
               </div>
             </div>
           )}
@@ -2430,9 +2430,9 @@ export const Dashboard: React.FC = () => {
       <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         
         {/* Left Side Panel (담당자별 배당 현황 & 미배당 업무) */}
-        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px', borderRight: '1px solid #e2e8f0', paddingRight: '16px', overflowY: 'auto' }}>
+        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px', borderRight: '1px solid var(--border-color)', paddingRight: '16px', overflowY: 'auto' }}>
           <div>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
             <div style={{ fontSize: '0.78rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
               <span>📂</span> 미배당 업무 <span style={{ color: '#ca8a04', fontWeight: 800 }}>{unassignedTasks.length}건</span>
             </div>
@@ -2452,20 +2452,20 @@ export const Dashboard: React.FC = () => {
                   padding: '8px 12px',
                   borderRadius: '8px',
                   background: filter === '내 업무' ? 'rgba(190, 18, 60, 0.08)' : '#fff',
-                  border: filter === '내 업무' ? '1px solid #be123c' : '1px solid #cbd5e1',
+                  border: filter === '내 업무' ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg,#be123c,#9f1239)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                     {userProfile?.name?.charAt(0) || '나'}
                   </div>
                   <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {userProfile?.name} (본인)
                     </div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                       총 {tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건
                     </div>
                   </div>
@@ -2491,25 +2491,25 @@ export const Dashboard: React.FC = () => {
                       padding: '8px 12px',
                       borderRadius: '8px',
                       background: isSelected ? 'rgba(190, 18, 60, 0.08)' : '#fff',
-                      border: isSelected ? '1px solid #be123c' : '1px solid #cbd5e1',
+                      border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                       cursor: 'pointer',
                       transition: 'all 0.2s'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg, #0d9488, #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {u.name?.charAt(0)}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {u.name} ({u.department || '담당자'})
                         </div>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
                           총 {mTasks.length}건
                         </div>
                       </div>
                     </div>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }} />
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} />
                   </div>
                 );
               })}
@@ -2524,11 +2524,11 @@ export const Dashboard: React.FC = () => {
                   padding: '8px 12px',
                   borderRadius: '8px',
                   background: filter === '전체' ? 'rgba(190, 18, 60, 0.08)' : '#fff',
-                  border: filter === '전체' ? '1px solid #be123c' : '1px solid #cbd5e1',
+                  border: filter === '전체' ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   fontWeight: 700,
-                  color: filter === '전체' ? '#be123c' : '#475569',
+                  color: filter === '전체' ? 'var(--primary-color)' : 'var(--text-secondary)',
                   transition: 'all 0.2s'
                 }}
               >
@@ -2537,16 +2537,16 @@ export const Dashboard: React.FC = () => {
             </div>
             
             {/* 담당자 추가 */}
-            <a href="/team-management" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: '#64748b', marginTop: '10px', fontWeight: 600 }}>
+            <a href="/team-management" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: 'var(--text-secondary)', marginTop: '10px', fontWeight: 600 }}>
               ✉ 담당자 추가
             </a>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '4px 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
 
           {/* Unassigned Tasks Section */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '150px' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#475569', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>✉</span> 미배당 — 드래그하여 배정
             </div>
             
@@ -2556,7 +2556,7 @@ export const Dashboard: React.FC = () => {
               onDrop={handleUnassignedDrop}
               style={{
                 flex: 1,
-                border: '1px solid #cbd5e1',
+                border: '1px solid var(--border-default)',
                 borderRadius: '8px',
                 background: '#fff',
                 padding: '8px',
@@ -2569,7 +2569,7 @@ export const Dashboard: React.FC = () => {
               }}
             >
               {unassignedTasks.length === 0 ? (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: '6px', color: '#94a3b8', fontSize: '0.72rem', textAlign: 'center', padding: '10px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border-color)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '0.72rem', textAlign: 'center', padding: '10px' }}>
                   미배당 업무가 없습니다.<br/>여기에 카드를 놓아 배정을 취소할 수 있습니다.
                 </div>
               ) : (
@@ -2579,8 +2579,8 @@ export const Dashboard: React.FC = () => {
 
             {/* Quick add unassigned task input */}
             <div style={{ marginTop: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', padding: '6px 10px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>＋</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '6px 10px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>＋</span>
                 <input
                   value={delegatedQuickTitle}
                   onChange={e => setDelegatedQuickTitle(e.target.value)}
@@ -2597,31 +2597,31 @@ export const Dashboard: React.FC = () => {
         <div className="kanban-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0, width: '100%', overflow: 'hidden' }}>
           
           {/* Active Assignee Info Header & Filters */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '10px', padding: '12px 16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '10px', padding: '12px 16px', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg,#be123c,#9f1239)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>
                 {activeUser?.name?.slice(0, 2) || '전체'}
               </div>
               <div>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                   {activeUser ? activeUser.name : '전체 담당자'}
-                  <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 500, marginLeft: '6px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: '6px' }}>
                     {activeUser ? (activeUser.department || activeUser.role || '담당자') : '통합 업무 조회'}
                   </span>
                 </h3>
-                <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
-                  대기 <span style={{ color: '#3b82f6', fontWeight: 700 }}>{activeUserStats.todo}</span> · 진행 <span style={{ color: '#166534', fontWeight: 700 }}>{activeUserStats.doing}</span> · 완료 <span style={{ color: '#475569', fontWeight: 700 }}>{activeUserStats.done}</span> · 보류 <span style={{ color: '#b45309', fontWeight: 700 }}>{activeUserStats.holding}</span> (총 {activeUserStats.total}건)
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  대기 <span style={{ color: '#3b82f6', fontWeight: 700 }}>{activeUserStats.todo}</span> · 진행 <span style={{ color: '#166534', fontWeight: 700 }}>{activeUserStats.doing}</span> · 완료 <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{activeUserStats.done}</span> · 보류 <span style={{ color: '#b45309', fontWeight: 700 }}>{activeUserStats.holding}</span> (총 {activeUserStats.total}건)
                 </div>
               </div>
             </div>
 
             {/* Quadrant Filters */}
             <div style={{ display: 'flex', gap: '4px' }}>
-              <button onClick={() => setQuadrantFilter('ALL')} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'ALL' ? '#3b82f6' : 'white', color: quadrantFilter === 'ALL' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 700 }}>전체</button>
+              <button onClick={() => setQuadrantFilter('ALL')} style={{ padding: '4px 10px', border: '1px solid var(--border-default)', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'ALL' ? '#3b82f6' : 'white', color: quadrantFilter === 'ALL' ? 'white' : '#4b5563', cursor: 'pointer', fontWeight: 700 }}>전체</button>
               <button onClick={() => setQuadrantFilter('Q1')} style={{ padding: '4px 10px', border: '1px solid #fee2e2', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'Q1' ? '#ef4444' : 'white', color: quadrantFilter === 'Q1' ? 'white' : '#ef4444', cursor: 'pointer', fontWeight: 700 }}>Q1 긴급·중요</button>
               <button onClick={() => setQuadrantFilter('Q2')} style={{ padding: '4px 10px', border: '1px solid #dbeafe', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'Q2' ? '#3b82f6' : 'white', color: quadrantFilter === 'Q2' ? 'white' : '#2563eb', cursor: 'pointer', fontWeight: 700 }}>Q2 중요</button>
               <button onClick={() => setQuadrantFilter('Q3')} style={{ padding: '4px 10px', border: '1px solid #fef3c7', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'Q3' ? '#f59e0b' : 'white', color: quadrantFilter === 'Q3' ? 'white' : '#d97706', cursor: 'pointer', fontWeight: 700 }}>Q3</button>
-              <button onClick={() => setQuadrantFilter('Q4')} style={{ padding: '4px 10px', border: '1px solid #f1f5f9', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'Q4' ? '#94a3b8' : 'white', color: quadrantFilter === 'Q4' ? 'white' : '#475569', cursor: 'pointer', fontWeight: 700 }}>Q4</button>
+              <button onClick={() => setQuadrantFilter('Q4')} style={{ padding: '4px 10px', border: '1px solid #f1f5f9', borderRadius: '20px', fontSize: '0.72rem', background: quadrantFilter === 'Q4' ? 'var(--text-muted)' : 'white', color: quadrantFilter === 'Q4' ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontWeight: 700 }}>Q4</button>
             </div>
           </div>
 
@@ -2716,7 +2716,7 @@ export const Dashboard: React.FC = () => {
                           background: '#fff',
                           borderRadius: '6px',
                           padding: '8px 10px',
-                          border: '1px solid #e2e8f0',
+                          border: '1px solid var(--border-color)',
                           cursor: 'grab',
                           boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                           display: 'flex',
@@ -2729,7 +2729,7 @@ export const Dashboard: React.FC = () => {
                           <div style={{
                                 fontSize: '0.78rem',
                                 fontWeight: 700,
-                                color: '#1e293b',
+                                color: 'var(--text-primary)',
                                 flex: 1,
                                 lineHeight: '1.3'
                               }}>{task.title}</div>
@@ -2739,7 +2739,7 @@ export const Dashboard: React.FC = () => {
                               Q1: { color: '#ef4444', bg: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.2)' },
                               Q2: { color: '#3b82f6', bg: '#eff6ff', border: '1px solid rgba(59, 130, 246, 0.2)' },
                               Q3: { color: '#f59e0b', bg: '#fffbeb', border: '1px solid rgba(245, 158, 11, 0.2)' },
-                              Q4: { color: '#94a3b8', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
+                              Q4: { color: 'var(--text-muted)', bg: '#f8fafc', border: '1px solid rgba(148, 163, 184, 0.2)' }
                             };
                             const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
                             return (
@@ -2772,7 +2772,7 @@ export const Dashboard: React.FC = () => {
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                             <span>마감 {task.dueDate || '-'}</span>
                             {(task.commentCount ?? 0) > 0 && (
@@ -2784,7 +2784,7 @@ export const Dashboard: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div style={{ color: '#0d9488', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
+                          <div style={{ color: 'var(--focus-ring)', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
                         </div>
                       </div>
                     ))}
@@ -2796,7 +2796,7 @@ export const Dashboard: React.FC = () => {
                       value={quickTaskTitle}
                       onChange={(e) => setQuickTaskTitle(e.target.value)}
                       onKeyDown={handleQuickAdd}
-                      style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px dashed #cbd5e1', background: 'transparent', fontSize: '0.72rem', outline: 'none' }} 
+                      style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px dashed var(--border-default)', background: 'transparent', fontSize: '0.72rem', outline: 'none' }} 
                     />
                   )}
                 </div>
@@ -2850,7 +2850,7 @@ export const Dashboard: React.FC = () => {
             <div
               style={{
                 padding: '14px 20px',
-                background: '#1e293b',
+                background: 'var(--text-primary)',
                 color: '#fff',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -2885,7 +2885,7 @@ export const Dashboard: React.FC = () => {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#94a3b8',
+                    color: 'var(--text-muted)',
                     fontSize: '18px',
                     cursor: 'pointer',
                     fontWeight: 700,
@@ -2910,10 +2910,10 @@ export const Dashboard: React.FC = () => {
                   style={{ width: '100%', height: '70vh', border: 'none', borderRadius: '4px', background: '#fff' }}
                 />
               ) : (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
                   <div style={{ fontSize: '48px', marginBottom: '12px' }}>📁</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>미리보기를 지원하지 않는 파일 형식입니다.</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '20px' }}>파일을 다운로드하여 로컬 기기에서 확인해 주세요.</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>파일을 다운로드하여 로컬 기기에서 확인해 주세요.</div>
                   <a
                     href={previewFile.url}
                     download={previewFile.name}

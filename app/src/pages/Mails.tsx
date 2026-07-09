@@ -263,22 +263,22 @@ export const Mails: React.FC = () => {
     const tableHTML = `
       <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
         <thead>
-          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">구분</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">상세 내역</th>
-            <th style="border: 1px solid #cbd5e1; padding: 8px;">비고</th>
+          <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default);">
+            <th style="border: 1px solid var(--border-default); padding: 8px;">구분</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">상세 내역</th>
+            <th style="border: 1px solid var(--border-default); padding: 8px;">비고</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 8px; height: 24px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px; height: 24px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
+            <td style="border: 1px solid var(--border-default); padding: 8px;"></td>
           </tr>
         </tbody>
       </table>
@@ -293,27 +293,27 @@ export const Mails: React.FC = () => {
     let templateHTML = '';
     if (type === 'work') {
       templateHTML = `
-        <div style="background: #f8fafc; padding: 16px; border-left: 4px solid #3b82f6; border-radius: 4px; margin: 8px 0; color: #1e293b;">
+        <div style="background: #f8fafc; padding: 16px; border-left: 4px solid #3b82f6; border-radius: 4px; margin: 8px 0; color: var(--text-primary);">
           <h2 style="font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: #3b82f6;">📁 업무 연락 및 협조 요청</h2>
           수신 부서원 및 제위께 아래 건에 대한 협조를 정중히 부탁드립니다.
         </div>
         
-        <h3 style="font-size: 0.95rem; margin-top: 16px; font-weight: bold; color: #1e293b;">■ 상세 요청 내용</h3>
-        <p style="margin: 4px 0 12px 0; color: #475569;">요청 사유 및 기한을 정확히 적어주세요.</p>
+        <h3 style="font-size: 0.95rem; margin-top: 16px; font-weight: bold; color: var(--text-primary);">■ 상세 요청 내용</h3>
+        <p style="margin: 4px 0 12px 0; color: var(--text-secondary);">요청 사유 및 기한을 정확히 적어주세요.</p>
         
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px; width: 100px;">요청 일시</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px;">세부 수행 업무</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; width: 100px;">기한</th>
+            <tr style="background: #f1f5f9; font-weight: bold; border: 1px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px; width: 100px;">요청 일시</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px;">세부 수행 업무</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; width: 100px;">기한</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px;">${new Date().toISOString().split('T')[0]}</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px;">업무 내용을 입력하세요.</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px;">오후 6시까지</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px;">${new Date().toISOString().split('T')[0]}</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px;">업무 내용을 입력하세요.</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px;">오후 6시까지</td>
             </tr>
           </tbody>
         </table>
@@ -321,15 +321,15 @@ export const Mails: React.FC = () => {
       `;
     } else {
       templateHTML = `
-        <div style="background: #f1f5f9; padding: 16px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #1e293b;">
-          <h2 style="font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: #4f46e5;">📢 사내 공지 사항</h2>
+        <div style="background: #f1f5f9; padding: 16px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin: 8px 0; color: var(--text-primary);">
+          <h2 style="font-size: 1.15rem; font-weight: bold; margin: 0 0 8px 0; color: var(--focus-ring);">📢 사내 공지 사항</h2>
           임직원 여러분께 사내 주요 소식을 아래와 같이 공지합니다.
         </div>
         
-        <h3 style="font-size: 0.95rem; margin-top: 16px; font-weight: bold; color: #1e293b;">■ 상세 내용</h3>
-        <p style="margin: 4px 0 12px 0; color: #475569;">여기에 공지할 본문 내용을 기재하세요.</p>
+        <h3 style="font-size: 0.95rem; margin-top: 16px; font-weight: bold; color: var(--text-primary);">■ 상세 내용</h3>
+        <p style="margin: 4px 0 12px 0; color: var(--text-secondary);">여기에 공지할 본문 내용을 기재하세요.</p>
         
-        <blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 12px 0;">
+        <blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 12px 0;">
           "신속히 전파하여 주시기 바라며, 협조 감사드립니다."
         </blockquote>
         <p><br></p>
@@ -375,22 +375,22 @@ export const Mails: React.FC = () => {
         <h3 style="font-size: 0.95rem; margin-top: 18px; color: #16a34a; font-weight: bold;">■ 세부 협조 요청 및 처리 대상</h3>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 8px;">주요 협조 필요 업무</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">수행 주체</th>
-              <th style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; width: 100px;">마감 기한</th>
+            <tr style="background: #f8fafc; font-weight: bold; border: 1px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 8px;">주요 협조 필요 업무</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">수행 주체</th>
+              <th style="border: 1px solid var(--border-default); padding: 8px; text-align: center; width: 100px;">마감 기한</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">업무 피드백 세부 내역 작성 및 양식 검토</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">수신 담당자</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">금일 18:00</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">업무 피드백 세부 내역 작성 및 양식 검토</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">수신 담당자</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">금일 18:00</td>
             </tr>
             <tr>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; color: #334155;">세관 통관 추가 조치 보완 서류 송부 확인</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">무역팀 담당</td>
-              <td style="border: 1px solid #cbd5e1; padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; color: #334155;">세관 통관 추가 조치 보완 서류 송부 확인</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">무역팀 담당</td>
+              <td style="border: 1px solid var(--border-default); padding: 8px; text-align: center; color: #334155;">내주 금요일</td>
             </tr>
           </tbody>
         </table>
@@ -399,7 +399,7 @@ export const Mails: React.FC = () => {
           "차질 없는 업무 전개를 위해 기한 내 회신을 요청드립니다."
         </blockquote>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 위 초안은 프롬프트 요구조건에 부합하도록 격식 있는 비즈니스 문체로 정리되었습니다.</p>
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 위 초안은 프롬프트 요구조건에 부합하도록 격식 있는 비즈니스 문체로 정리되었습니다.</p>
       `;
 
       if (editorRef.current) {
@@ -429,10 +429,10 @@ export const Mails: React.FC = () => {
         </div>
         <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px;">
           <thead>
-            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid #cbd5e1;">
-              <th style="border: 1px solid #cbd5e1; padding: 6px; width: 50px;">번호</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px;">핵심 전달/요청 조치사항</th>
-              <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; width: 80px;">AI 매칭</th>
+            <tr style="background: #f8fafc; font-weight: bold; border-bottom: 2px solid var(--border-default);">
+              <th style="border: 1px solid var(--border-default); padding: 6px; width: 50px;">번호</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px;">핵심 전달/요청 조치사항</th>
+              <th style="border: 1px solid var(--border-default); padding: 6px; text-align: center; width: 80px;">AI 매칭</th>
             </tr>
           </thead>
           <tbody>
@@ -442,9 +442,9 @@ export const Mails: React.FC = () => {
         const cleaned = line.replace(/^\d+[\.\s\-]+/, '');
         summaryHTML += `
           <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold; color: #64748b;">${index + 1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; color: #334155;">${cleaned}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">
+            <td style="border: 1px solid var(--border-default); padding: 6px; font-weight: bold; color: var(--text-secondary);">${index + 1}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; color: #334155;">${cleaned}</td>
+            <td style="border: 1px solid var(--border-default); padding: 6px; text-align: center;">
               <span style="background: #fee2e2; color: #991b1b; padding: 2px 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">확인요망</span>
             </td>
           </tr>
@@ -455,8 +455,8 @@ export const Mails: React.FC = () => {
           </tbody>
         </table>
         <br>
-        <p style="font-size: 11px; color: #94a3b8; font-style: italic;">* 원본 작성 내용 상단에 AI 요약 분석이 성공적으로 포함되었습니다.</p>
-        <hr style="border: 0; border-top: 1px dashed #cbd5e1; margin: 16px 0;" />
+        <p style="font-size: 11px; color: var(--text-muted); font-style: italic;">* 원본 작성 내용 상단에 AI 요약 분석이 성공적으로 포함되었습니다.</p>
+        <hr style="border: 0; border-top: 1px dashed var(--border-default); margin: 16px 0;" />
       `;
 
       const merged = summaryHTML + rawHTML;
@@ -494,7 +494,7 @@ export const Mails: React.FC = () => {
       } else if (text.startsWith('>')) {
         e.preventDefault();
         range.startContainer.textContent = text.replace(/^>\s*/, '');
-        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid #cbd5e1; border-radius: 4px; margin: 8px 0; font-style: italic; color: #475569;">${range.startContainer.textContent}</div><p><br></p>`;
+        const calloutHTML = `<div style="background: #f1f5f9; padding: 10px 14px; border-left: 4px solid var(--border-default); border-radius: 4px; margin: 8px 0; font-style: italic; color: var(--text-secondary);">${range.startContainer.textContent}</div><p><br></p>`;
         range.startContainer.textContent = '';
         document.execCommand('insertHTML', false, calloutHTML);
       }
@@ -523,13 +523,13 @@ export const Mails: React.FC = () => {
     if (command === 'table') {
       insertTable();
     } else if (command === 'callout') {
-      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid #4f46e5; border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
+      const calloutHTML = `<div style="background: #f1f5f9; padding: 12px; border-left: 4px solid var(--focus-ring); border-radius: 4px; margin: 8px 0; color: #334155;">💡 <b>안내/공지:</b> 내용을 작성하세요...</div><p><br></p>`;
       document.execCommand('insertHTML', false, calloutHTML);
     } else if (command === 'divider') {
-      const hrHTML = `<hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 16px 0;" /><p><br></p>`;
+      const hrHTML = `<hr style="border: 0; border-top: 1px solid var(--border-default); margin: 16px 0;" /><p><br></p>`;
       document.execCommand('insertHTML', false, hrHTML);
     } else if (command === 'quote') {
-      const quoteHTML = `<blockquote style="border-left: 4px solid #cbd5e1; padding-left: 12px; color: #64748b; font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
+      const quoteHTML = `<blockquote style="border-left: 4px solid var(--border-default); padding-left: 12px; color: var(--text-secondary); font-style: italic; margin: 10px 0 10px 12px;">"인용 내용을 작성하세요."</blockquote><p><br></p>`;
       document.execCommand('insertHTML', false, quoteHTML);
     }
     
@@ -575,7 +575,7 @@ export const Mails: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', gap: '8px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
         <button
           onClick={() => { setActiveTab('inbox'); setSelectedMail(null); }}
           style={{
@@ -585,8 +585,8 @@ export const Mails: React.FC = () => {
             fontSize: '13.5px',
             fontWeight: 800,
             cursor: 'pointer',
-            color: activeTab === 'inbox' ? '#4f46e5' : '#64748b',
-            borderBottom: activeTab === 'inbox' ? '2.5px solid #4f46e5' : 'none'
+            color: activeTab === 'inbox' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'inbox' ? '2.5px solid var(--primary-color)' : 'none'
           }}
         >
           📥 받은 쪽지함 ({inboxMails.filter(m => !m.isRead).length} 안읽음 / {inboxMails.length} 전체)
@@ -600,8 +600,8 @@ export const Mails: React.FC = () => {
             fontSize: '13.5px',
             fontWeight: 800,
             cursor: 'pointer',
-            color: activeTab === 'sent' ? '#4f46e5' : '#64748b',
-            borderBottom: activeTab === 'sent' ? '2.5px solid #4f46e5' : 'none'
+            color: activeTab === 'sent' ? 'var(--primary-color)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'sent' ? '2.5px solid var(--primary-color)' : 'none'
           }}
         >
           📤 보낸 쪽지함 ({sentMails.length})
@@ -615,7 +615,7 @@ export const Mails: React.FC = () => {
         <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', height: 'fit-content' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontWeight: 700 }}>
                 <th style={{ padding: '12px', width: '140px' }}>{activeTab === 'inbox' ? '보낸 사람' : '받는 사람'}</th>
                 <th style={{ padding: '12px' }}>쪽지 제목</th>
                 <th style={{ padding: '12px' }}>발송 일시</th>
@@ -625,7 +625,7 @@ export const Mails: React.FC = () => {
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                  <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     주고받은 쪽지가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -654,17 +654,17 @@ export const Mails: React.FC = () => {
                         }
                       }}
                     >
-                      <td style={{ padding: '12px', color: '#1e293b' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-primary)' }}>
                         {activeTab === 'inbox' ? (
                           mail.senderName === '시스템 알림' ? (
                             <span style={{ color: '#dc2626', fontWeight: 800 }}>🤖 {mail.senderName}</span>
                           ) : mail.senderName
                         ) : mail.receiverName}
                       </td>
-                      <td style={{ padding: '12px', color: isUnread ? '#0f172a' : '#475569' }}>
+                      <td style={{ padding: '12px', color: isUnread ? '#0f172a' : 'var(--text-secondary)' }}>
                         {mail.title}
                       </td>
-                      <td style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
                         {new Date(mail.createdAt).toLocaleString()}
                       </td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
@@ -675,7 +675,7 @@ export const Mails: React.FC = () => {
                             padding: '2px 6px',
                             borderRadius: '12px',
                             background: isUnread ? '#fee2e2' : '#f1f5f9',
-                            color: isUnread ? '#dc2626' : '#64748b'
+                            color: isUnread ? '#dc2626' : 'var(--text-secondary)'
                           }}>
                             {isUnread ? '안읽음' : '읽음'}
                           </span>
@@ -716,11 +716,11 @@ export const Mails: React.FC = () => {
         {/* Mail Content Reader View */}
         {selectedMail && (
           <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: 'fit-content' }}>
-            <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(selectedMail.createdAt).toLocaleString()}</span>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: '#1e293b' }}>{selectedMail.title}</h3>
-                <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '6px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{new Date(selectedMail.createdAt).toLocaleString()}</span>
+                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 850, color: 'var(--text-primary)' }}>{selectedMail.title}</h3>
+                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '6px' }}>
                   <span><b>보낸이:</b> {selectedMail.senderName}</span>
                   <span style={{ marginLeft: '12px' }}><b>받는이:</b> {selectedMail.receiverName}</span>
                   {selectedMail.scheduledAt && (
@@ -734,14 +734,14 @@ export const Mails: React.FC = () => {
                 {activeTab === 'inbox' && (
                   <button
                     onClick={() => handleReplyMail(selectedMail)}
-                    style={{ padding: '6px 12px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                    style={{ padding: '6px 12px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                   >
                     답장 쓰기
                   </button>
                 )}
                 <button
                   onClick={() => setSelectedMail(null)}
-                  style={{ padding: '6px 12px', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                 >
                   닫기
                 </button>
@@ -765,11 +765,11 @@ export const Mails: React.FC = () => {
 
             {/* Attachments inside Read Panel */}
             {selectedMail.attachments && selectedMail.attachments.length > 0 && (
-              <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>📎 첨부파일 ({selectedMail.attachments.length})</span>
+              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-secondary)' }}>📎 첨부파일 ({selectedMail.attachments.length})</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                   {selectedMail.attachments.map((file, fIdx) => (
-                    <div key={fIdx} style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100px' }}>
+                    <div key={fIdx} style={{ border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '100px' }}>
                       {file.type.startsWith('image/') ? (
                         <img
                           src={file.data}
@@ -778,9 +778,9 @@ export const Mails: React.FC = () => {
                           style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'zoom-in' }}
                         />
                       ) : (
-                        <a href={file.data} download={file.name} style={{ height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', textDecoration: 'none', color: '#64748b' }}>📄</a>
+                        <a href={file.data} download={file.name} style={{ height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', textDecoration: 'none', color: 'var(--text-secondary)' }}>📄</a>
                       )}
-                      <span style={{ fontSize: '9px', color: '#475569', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }} title={file.name}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }} title={file.name}>
                         {file.name}
                       </span>
                     </div>
@@ -805,14 +805,14 @@ export const Mails: React.FC = () => {
             
             {/* Drag drop overlay helper */}
             {isDraggingFile && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed #4f46e5', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: '#4f46e5', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(42, 162, 177, 0.15)', border: '4px dashed var(--focus-ring)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   📥 파일을 여기에 놓아 첨부 (500KB 이하)
                 </span>
               </div>
             )}
 
-            <div style={{ padding: '16px 20px', background: '#4f46e5', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '16px 20px', background: 'var(--primary-color)', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>📣 새 쪽지 보내기</span>
               <button onClick={() => setIsComposeModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
             </div>
@@ -821,19 +821,19 @@ export const Mails: React.FC = () => {
               
               {/* Template triggers */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>쪽지 양식 템플릿 로드</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>쪽지 양식 템플릿 로드</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
                     onClick={() => applyMailTemplate('work')}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
+                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid var(--border-default)', background: '#fff', color: 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
                   >
                     업무 연락 양식 적용
                   </button>
                   <button
                     type="button"
                     onClick={() => applyMailTemplate('notice')}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
+                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid var(--border-default)', background: '#fff', color: 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
                   >
                     공지 사항 양식 적용
                   </button>
@@ -854,7 +854,7 @@ export const Mails: React.FC = () => {
                     placeholder="예: 수출 신고서 피드백 오늘 오후 6시까지 검토 요청."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    style={{ flex: 1, padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                    style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
                   />
                   <button
                     type="button"
@@ -867,12 +867,12 @@ export const Mails: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>받는 사람 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>받는 사람 ★</label>
                 <select
                   required
                   value={selectedReceiverId}
                   onChange={e => setSelectedReceiverId(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: 'white' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: 'white' }}
                 >
                   <option value="">수신자를 선택해 주세요</option>
                   <option value={userProfile?.id}>📝 나에게 쓰기 (내게 메모 보내기)</option>
@@ -885,19 +885,19 @@ export const Mails: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>제목 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>제목 ★</label>
                 <input
                   type="text"
                   required
                   placeholder="제목을 입력하세요"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
                 />
               </div>
 
               {/* Scheduled Send options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -908,13 +908,13 @@ export const Mails: React.FC = () => {
                 </label>
                 {isScheduled && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                    <label style={{ fontSize: '11px', color: '#64748b' }}>발송 예약 일시</label>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>발송 예약 일시</label>
                     <input
                       type="datetime-local"
                       required={isScheduled}
                       value={scheduledAt}
                       onChange={e => setScheduledAt(e.target.value)}
-                      style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                      style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
                     />
                   </div>
                 )}
@@ -922,14 +922,14 @@ export const Mails: React.FC = () => {
 
               {/* Rich Text Editor */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>내용 ★</label>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>내용 ★</label>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
-                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
-                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
-                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       田 표 삽입
                     </button>
                   </div>
@@ -949,7 +949,7 @@ export const Mails: React.FC = () => {
                   onInput={handleEditorInput}
                   style={{
                     minHeight: '200px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     borderBottomLeftRadius: '6px',
                     borderBottomRightRadius: '6px',
                     padding: '12px',
@@ -967,7 +967,7 @@ export const Mails: React.FC = () => {
                     top: '110px',
                     left: '12px',
                     background: '#fff',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid var(--border-default)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                     borderRadius: '8px',
                     zIndex: 10000,
@@ -976,17 +976,17 @@ export const Mails: React.FC = () => {
                     flexDirection: 'column',
                     padding: '4px 0'
                   }}>
-                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
-                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <div style={{ padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)', borderBottom: '1px solid #f1f5f9' }}>블록 명령어 선택</div>
+                    <button type="button" onClick={() => handleSelectSlashCommand('table')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>田</span> <b>표 삽입</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('callout')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>💡</span> <b>안내/공지 상자</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('divider')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>➖</span> <b>구분선</b>
                     </button>
-                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: '#1e293b' }}>
+                    <button type="button" onClick={() => handleSelectSlashCommand('quote')} style={{ padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '8px', color: 'var(--text-primary)' }}>
                       <span>✍️</span> <b>인용구 블록</b>
                     </button>
                   </div>
@@ -995,7 +995,7 @@ export const Mails: React.FC = () => {
 
               {/* Attachments List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>📎 첨부파일 목록</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>📎 첨부파일 목록</span>
                 <input
                   type="file"
                   multiple
@@ -1005,13 +1005,13 @@ export const Mails: React.FC = () => {
                 {attachments.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
                     {attachments.map((file, idx) => (
-                      <div key={idx} style={{ position: 'relative', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '80px' }}>
+                      <div key={idx} style={{ position: 'relative', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '4px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '80px' }}>
                         {file.type.startsWith('image/') ? (
                           <img src={file.data} alt={file.name} style={{ width: '100%', height: '50px', objectFit: 'cover', borderRadius: '2px' }} />
                         ) : (
-                          <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: '#64748b' }}>📄</div>
+                          <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: 'var(--text-secondary)' }}>📄</div>
                         )}
-                        <span style={{ fontSize: '8px', color: '#475569', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        <span style={{ fontSize: '8px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }}>
                           {file.name}
                         </span>
                         <button
@@ -1039,7 +1039,7 @@ export const Mails: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsComposeModalOpen(false)}
-                  style={{ flex: 1, padding: '12px 0', background: '#cbd5e1', color: '#1e293b', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, padding: '12px 0', background: 'var(--border-default)', color: 'var(--text-primary)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
                 >
                   취소
                 </button>
@@ -1065,20 +1065,20 @@ export const Mails: React.FC = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', width: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
             <span style={{ fontSize: '32px' }}>🤖</span>
-            <span style={{ fontSize: '14px', fontWeight: 850, color: '#1e293b', textAlign: 'center' }}>
+            <span style={{ fontSize: '14px', fontWeight: 850, color: 'var(--text-primary)', textAlign: 'center' }}>
               AI가 쪽지 본문을 정밀 분석하여 요약 및 액션 아이템 테이블을 생성 중입니다...
             </span>
-            <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '6px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
               <div style={{
                 position: 'absolute',
                 top: 0, left: 0, bottom: 0,
                 width: '60%',
-                background: '#4f46e5',
+                background: 'var(--focus-ring)',
                 borderRadius: '3px',
                 animation: 'pulse 1.5s infinite ease-in-out'
               }}></div>
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>약 2초의 시간이 소요됩니다.</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>약 2초의 시간이 소요됩니다.</span>
           </div>
         </div>
       )}

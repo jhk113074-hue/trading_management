@@ -6,7 +6,7 @@ import type { TaskStatus, Task } from '../types';
 import { TaskModal } from '../components/TaskModal';
 
 const STATUS_COLUMNS: { status: TaskStatus; label: string; color: string; bg: string }[] = [
-  { status: 'TODO',        label: '업무대기', color: '#64748b', bg: '#f1f5f9' },
+  { status: 'TODO',        label: '업무대기', color: 'var(--text-secondary)', bg: '#f1f5f9' },
   { status: 'IN_PROGRESS', label: '업무중',   color: '#2563eb', bg: '#eff6ff' },
   { status: 'DONE',        label: '완료',     color: '#16a34a', bg: '#f0fdf4' },
   { status: 'HOLDING',     label: '보류',     color: '#d97706', bg: '#fffbeb' },
@@ -71,12 +71,12 @@ export const Board: React.FC = () => {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
       {/* Filter Bar */}
-      <div style={{ padding: '14px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', background: '#fff' }}>
+      <div style={{ padding: '14px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', background: '#fff' }}>
         <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111827' }}>📋 업무 보드</h2>
         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
           color: showOnlyMine ? '#2563eb' : '#6b7280',
           background: showOnlyMine ? '#eff6ff' : '#f1f5f9',
-          padding: '5px 12px', borderRadius: '20px', border: showOnlyMine ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+          padding: '5px 12px', borderRadius: '20px', border: showOnlyMine ? '1px solid #93c5fd' : '1px solid var(--border-color)',
           transition: 'all 0.2s'
         }}>
           <input type="checkbox" checked={showOnlyMine} onChange={e => setShowOnlyMine(e.target.checked)}
@@ -168,7 +168,7 @@ export const Board: React.FC = () => {
                 })}
 
                 {colTasks.length === 0 && (
-                  <div style={{ textAlign: 'center', color: '#cbd5e1', fontSize: '12px', padding: '30px 0' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--border-default)', fontSize: '12px', padding: '30px 0' }}>
                     여기에 드래그하세요
                   </div>
                 )}
@@ -195,7 +195,7 @@ export const Board: React.FC = () => {
               <div><span style={{ color: '#6b7280' }}>유형:</span> {selectedTask.type}</div>
               <div><span style={{ color: '#6b7280' }}>사분면:</span> {selectedTask.quadrant}</div>
               {selectedTask.projectName && <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#6b7280' }}>프로젝트:</span> {selectedTask.projectName}</div>}
-              {selectedTask.description && <div dangerouslySetInnerHTML={{ __html: selectedTask.description }} style={{ gridColumn: 'span 2', color: '#475569', marginTop: '8px', overflowX: 'auto' }} />}
+              {selectedTask.description && <div dangerouslySetInnerHTML={{ __html: selectedTask.description }} style={{ gridColumn: 'span 2', color: 'var(--text-secondary)', marginTop: '8px', overflowX: 'auto' }} />}
             </div>
           </div>
         </div>

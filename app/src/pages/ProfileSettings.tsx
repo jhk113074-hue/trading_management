@@ -88,8 +88,8 @@ export const ProfileSettings: React.FC = () => {
 
   return (
     <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '1.8rem', color: '#1e293b', marginBottom: '8px', fontWeight: 800 }}>⚙️ 내 정보 수정</h2>
-      <p style={{ color: '#64748b', marginBottom: '32px' }}>이메일 및 접속 비밀번호를 안전하게 변경하세요.</p>
+      <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '8px', fontWeight: 800 }}>⚙️ 내 정보 수정</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>이메일 및 접속 비밀번호를 안전하게 변경하세요.</p>
 
       <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
         
@@ -108,13 +108,13 @@ export const ProfileSettings: React.FC = () => {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* 현재 계정 정보 안내 */}
-          <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '4px' }}>현재 로그인 계정</div>
+          <div style={{ padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>현재 로그인 계정</div>
             <div style={{ fontWeight: 700, color: '#334155' }}>{userProfile?.email}</div>
           </div>
 
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
-            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
+            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>
               현재 비밀번호 <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input 
@@ -123,44 +123,44 @@ export const ProfileSettings: React.FC = () => {
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
               placeholder="본인 확인을 위해 현재 비밀번호를 입력하세요"
-              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+              style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '0.95rem' }}
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: '#f8fafc', padding: '24px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>새로운 이메일 (선택)</label>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>새로운 이메일 (선택)</label>
               <input 
                 type="email" 
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="변경할 이메일 주소"
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '0.95rem' }}
               />
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>* 이메일을 변경하지 않으려면 비워두세요.</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>* 이메일을 변경하지 않으려면 비워두세요.</div>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>새로운 비밀번호 (선택)</label>
+              <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>새로운 비밀번호 (선택)</label>
               <input 
                 type="password" 
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="새로운 비밀번호 (6자리 이상)"
-                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '0.95rem' }}
               />
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '6px' }}>* 비밀번호를 변경하지 않으려면 비워두세요.</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>* 비밀번호를 변경하지 않으려면 비워두세요.</div>
             </div>
 
             {newPassword && (
               <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>새 비밀번호 확인</label>
+                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '8px' }}>새 비밀번호 확인</label>
                 <input 
                   type="password" 
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="새로운 비밀번호 재입력"
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)', fontSize: '0.95rem' }}
                 />
               </div>
             )}
