@@ -346,15 +346,15 @@ export const ProformaInvoices: React.FC = () => {
     <div className="page-container" style={{ padding: '24px 30px', background: '#f8fafc', minHeight: '100vh', fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>견적관리</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>견적관리</h1>
           <select 
             value={filterIssuer} 
             onChange={e => setFilterIssuer(e.target.value)} 
             style={{ 
-              padding: '6px 12px', border: '1.5px solid var(--border-default)', borderRadius: '6px', 
-              fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', 
+              padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', 
+              fontSize: '13px', fontWeight: 700, color: '#475569', 
               outline: 'none', background: '#fff', cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              height: '34px', boxSizing: 'border-box'
             }}
           >
             <option value="All">🏢 전체 ISSUER</option>
@@ -365,27 +365,26 @@ export const ProformaInvoices: React.FC = () => {
         <button 
           onClick={() => { setSelectedPiId(null); setIsFormOpen(true); }}
           style={{ 
-            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', 
+            background: '#3b82f6', 
             color: 'white', 
-            padding: '10px 20px', 
-            borderRadius: '8px', 
+            padding: '0 16px', 
+            borderRadius: '4px', 
             border: 'none', 
             cursor: 'pointer', 
             fontWeight: 700,
-            fontSize: '14px',
-            boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)',
-            transition: 'transform 0.15s, box-shadow 0.15s',
+            fontSize: '12.5px',
+            transition: 'background 0.2s',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '6px',
+            height: '34px',
+            boxSizing: 'border-box'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 6px 14px rgba(37, 99, 235, 0.3)';
+            e.currentTarget.style.background = '#2563eb';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 10px rgba(37, 99, 235, 0.2)';
+            e.currentTarget.style.background = '#3b82f6';
           }}
         >
           <span>➕</span> New PI
@@ -394,26 +393,26 @@ export const ProformaInvoices: React.FC = () => {
 
       {/* 간단 대시보드 스탯 카드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>총 견적 건수</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: {piStats.quotesYsaccCount}건 / 영성ACC: {piStats.quotesYsCount}건)</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 견적 건수</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: {piStats.quotesYsaccCount}건 / 영성ACC: {piStats.quotesYsCount}건)</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{piStats.totalQuotesCount} 건</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{piStats.totalQuotesCount} 건</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>총 견적금액</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.quotesYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.quotesYsAmount).toLocaleString()})</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 견적금액</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.quotesYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.quotesYsAmount).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalQuotesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#0f766e' }}>${piStats.totalQuotesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>수주 확정 (수주율)</span>
-            <span style={{ fontSize: '10.5px', color: '#1e40af', fontWeight: 700 }}>총수주: ${piStats.totalConfirmedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br/><span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.confirmedYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.confirmedYsAmount).toLocaleString()})</span></span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>수주 확정 (수주율)</span>
+            <span style={{ fontSize: '10.5px', color: '#1e40af', fontWeight: 700 }}>총수주: ${piStats.totalConfirmedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br/><span style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(piStats.confirmedYsaccAmount).toLocaleString()} / 영성ACC: ${Math.round(piStats.confirmedYsAmount).toLocaleString()})</span></span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb', textAlign: 'right' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
+          <div style={{ fontSize: '18px', fontWeight: 900, color: '#2563eb', textAlign: 'right' }}>{piStats.confirmedCount} 건 ({piStats.conversionRate.toFixed(1)}%)</div>
         </div>
       </div>
 
@@ -426,16 +425,16 @@ export const ProformaInvoices: React.FC = () => {
         alignItems: 'center',
         background: '#ffffff',
         padding: '10px 16px',
-        borderRadius: '10px',
-        border: '1px solid var(--border-color)',
+        borderRadius: '4px',
+        border: '1px solid #cbd5e1',
         boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
         overflowX: 'auto'
       }}>
         
         {/* ── 조회 기간 필터 ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>조회 기간</span>
-          <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '5px 8px', border: '1.5px solid #2563eb', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
+          <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</span>
+          <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '0 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '12.5px', backgroundColor: '#fff', color: '#3b82f6', fontWeight: 600, outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}>
             <option value="All">전체 기간</option>
             <option value="Monthly">월별</option>
             <option value="Quarterly">분기별</option>
@@ -448,7 +447,7 @@ export const ProformaInvoices: React.FC = () => {
         {/* 년도/월 상세 선택기 */}
         {['Monthly', 'Quarterly', 'HalfYearly', 'Yearly'].includes(dateFilterType) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', background: '#fff', outline: 'none' }}>
+            <select value={selectedYear} onChange={e => setSelectedYear(parseInt(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box' }}>
               {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}년</option>)}
             </select>
           </div>
@@ -456,7 +455,7 @@ export const ProformaInvoices: React.FC = () => {
 
         {dateFilterType === 'Monthly' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', background: '#fff', outline: 'none' }}>
+            <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box' }}>
               {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
             </select>
           </div>
@@ -464,7 +463,7 @@ export const ProformaInvoices: React.FC = () => {
 
         {dateFilterType === 'Quarterly' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <select value={selectedQuarter} onChange={e => setSelectedQuarter(parseInt(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', background: '#fff', outline: 'none' }}>
+            <select value={selectedQuarter} onChange={e => setSelectedQuarter(parseInt(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box' }}>
               {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q}분기</option>)}
             </select>
           </div>
@@ -472,7 +471,7 @@ export const ProformaInvoices: React.FC = () => {
 
         {dateFilterType === 'HalfYearly' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <select value={selectedHalf} onChange={e => setSelectedHalf(parseInt(e.target.value))} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', background: '#fff', outline: 'none' }}>
+            <select value={selectedHalf} onChange={e => setSelectedHalf(parseInt(e.target.value))} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box' }}>
               <option value={1}>상반기</option>
               <option value={2}>하반기</option>
             </select>
@@ -481,13 +480,13 @@ export const ProformaInvoices: React.FC = () => {
 
         {dateFilterType === 'Range' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }} />
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>~</span>
-            <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none' }} />
+            <input type="date" value={rangeStart} onChange={e => setRangeStart(e.target.value)} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', height: '34px', boxSizing: 'border-box' }} />
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>~</span>
+            <input type="date" value={rangeEnd} onChange={e => setRangeEnd(e.target.value)} style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', height: '34px', boxSizing: 'border-box' }} />
           </div>
         )}
         
-        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', minWidth: '150px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', outline: 'none', background: '#fff', flexShrink: 0 }}>
+        <select value={filterCustomer} onChange={e => setFilterCustomer(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px', maxWidth: '170px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', flexShrink: 0, height: '34px', boxSizing: 'border-box', cursor: 'pointer' }}>
           <option value="">👥 전체 고객</option>
           {Object.entries(customers).map(([id, c]) => (
             <option key={id} value={id}>{c.name}</option>
@@ -495,13 +494,13 @@ export const ProformaInvoices: React.FC = () => {
         </select>
 
         
-        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', width: '150px', fontSize: '13px', outline: 'none', flexShrink: 0 }} />
+        <input type="text" placeholder="🔍 PI Number 검색..." value={filterPiNum} onChange={e => setFilterPiNum(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '150px', fontSize: '13px', outline: 'none', flexShrink: 0, height: '34px', boxSizing: 'border-box', color: '#1e293b' }} />
 
         {/* PI 상태 필터 */}
         <select
           value={filterPiStatus}
           onChange={e => setFilterPiStatus(e.target.value)}
-          style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', minWidth: '110px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', outline: 'none', background: '#fff', cursor: 'pointer', flexShrink: 0 }}
+          style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '110px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff', cursor: 'pointer', flexShrink: 0, height: '34px', boxSizing: 'border-box' }}
         >
           <option value="All">📋 전체 상태</option>
           <option value="협상중">협상중</option>
@@ -510,49 +509,49 @@ export const ProformaInvoices: React.FC = () => {
           <option value="만료">만료</option>
         </select>
  
-        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>
+        <span style={{ marginLeft: 'auto', fontSize: '13px', fontWeight: 700, color: '#475569', background: '#f1f5f9', padding: '4px 10px', borderRadius: '20px', flexShrink: 0 }}>
           총 {filteredAndSorted.length}건
         </span>
       </div>
 
       {/* Table Card */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
             <tr>
-              <th onClick={() => handleSort('piDate')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-color)', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('piDate')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 DATE {getSortIcon('piDate')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piDate', e)} />
               </th>
-              <th onClick={() => handleSort('piNumber')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-color)', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('piNumber')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 PI NUMBER {getSortIcon('piNumber')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piNumber', e)} />
               </th>
-              <th onClick={() => handleSort('customerName')} style={{ padding: '12px 10px', cursor: 'pointer', borderRight: '1px solid var(--border-color)', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('customerName')} style={{ padding: '12px 10px', cursor: 'pointer', borderRight: '1px solid #cbd5e1', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 CUSTOMER {getSortIcon('customerName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('customerName', e)} />
               </th>
-              <th style={{ padding: '12px 10px', borderRight: '1px solid var(--border-color)', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th style={{ padding: '12px 10px', borderRight: '1px solid #cbd5e1', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 ITEMS
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('itemsSummary', e)} />
               </th>
-              <th onClick={() => handleSort('totalUsd')} style={{ padding: '12px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-color)', width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('totalUsd')} style={{ padding: '12px 10px', cursor: 'pointer', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 TOTAL (USD) {getSortIcon('totalUsd')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('totalUsd', e)} />
               </th>
-              <th style={{ padding: '12px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-color)', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th style={{ padding: '12px 10px', textAlign: 'center', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 ISSUER
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('issuingCompany', e)} />
               </th>
-              <th onClick={() => handleSort('createdByName')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid var(--border-color)', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>
+              <th onClick={() => handleSort('createdByName')} style={{ padding: '12px 10px', cursor: 'pointer', whiteSpace: 'nowrap', borderRight: '1px solid #cbd5e1', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', textAlign: 'center', userSelect: 'none', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
                 WRITER {getSortIcon('createdByName')}
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('createdByName', e)} />
               </th>
-              <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.piStatus, minWidth: colWidths.piStatus, maxWidth: colWidths.piStatus, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em', borderRight: '1px solid var(--border-color)', position: 'relative' }}>
+              <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.piStatus, minWidth: colWidths.piStatus, maxWidth: colWidths.piStatus, boxSizing: 'border-box', overflow: 'hidden', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', borderRight: '1px solid #cbd5e1', position: 'relative' }}>
                 STATUS
                 <ResizeHandle onMouseDown={(e) => handleResizeStart('piStatus', e)} />
               </th>
-              <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>작업</th>
+              <th style={{ padding: '12px 10px', textAlign: 'center', width: colWidths.action, minWidth: colWidths.action, maxWidth: colWidths.action, boxSizing: 'border-box', overflow: 'hidden', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -563,8 +562,8 @@ export const ProformaInvoices: React.FC = () => {
             ) : (
               filteredAndSorted.map(p => {
                 const issuerBadge = p.issuingCompany === 'YS' 
-                                 ? <span style={{ fontSize: '12px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
-                                 : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+                                 ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>영성ACC</span>
+                                 : <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>YSACC</span>;
 
                 // PI 상태 배지
                 const piStatus = getPiStatus(p);
@@ -572,7 +571,7 @@ export const ProformaInvoices: React.FC = () => {
                   '협상중':  { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
                   '수주확정': { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
                   '취소':    { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
-                  '만료':    { bg: '#f8fafc', color: 'var(--text-muted)', border: 'var(--border-color)' },
+                  '만료':    { bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
                 };
                 const sc = piStatusConfig[piStatus] || piStatusConfig['협상중'];
 
@@ -582,21 +581,21 @@ export const ProformaInvoices: React.FC = () => {
                 return (
                   <tr 
                     key={p.id} 
-                    style={{ borderBottom: '1px solid var(--border-color)', height: '60px', transition: 'background-color 0.2s' }} 
+                    style={{ borderBottom: '1px solid #cbd5e1', height: '56px', transition: 'background-color 0.2s' }} 
                     className="hover-row"
                     onClick={() => { setSelectedPiId(p.id); setIsFormOpen(true); }}
                   >
-                    <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
+                    <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piDate, minWidth: colWidths.piDate, maxWidth: colWidths.piDate, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'center', color: '#64748b', fontSize: '13px', fontWeight: 500 }}>{p.piDate || '-'}</td>
                     <td style={{ padding: '9px 10px', whiteSpace: 'nowrap', width: colWidths.piNumber, minWidth: colWidths.piNumber, maxWidth: colWidths.piNumber, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', verticalAlign: 'middle', textAlign: 'left' }}>
-                      <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '13.5px' }}>{p.piNumber || '-'}</span>
+                      <span style={{ color: '#2563eb', fontWeight: 700, fontSize: '13px' }}>{p.piNumber || '-'}</span>
                       {p.currentVersion && p.currentVersion > 1 && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '11.5px', fontWeight: 600, marginLeft: '6px' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 600, marginLeft: '6px' }}>
                           R{p.currentVersion - 1}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: 'var(--text-primary)', fontWeight: 600, fontSize: '13.5px' }}>{customers[p.customerId]?.name || '-'}</td>
-                    <td style={{ padding: '9px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12.5px', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '9px 10px', width: colWidths.customerName, minWidth: colWidths.customerName, maxWidth: colWidths.customerName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#1e293b', fontWeight: 600, fontSize: '13px' }}>{customers[p.customerId]?.name || '-'}</td>
+                    <td style={{ padding: '9px 10px', width: colWidths.itemsSummary, minWidth: colWidths.itemsSummary, maxWidth: colWidths.itemsSummary, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12.5px', color: '#475569', verticalAlign: 'middle' }}>
                       {p.itemsSummary && p.itemsSummary.length > 0 ? (
                         <span title={p.itemsSummary.join(', ')}>
                           {p.itemsSummary[0]}
@@ -608,11 +607,11 @@ export const ProformaInvoices: React.FC = () => {
                         </span>
                       ) : '-'}
                     </td>
-                    <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '14.5px' }}>
+                    <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: 700, width: colWidths.totalUsd, minWidth: colWidths.totalUsd, maxWidth: colWidths.totalUsd, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', color: '#0f766e', fontSize: '14px' }}>
                       ${(p.totalUsd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap', width: colWidths.issuingCompany, minWidth: colWidths.issuingCompany, maxWidth: colWidths.issuingCompany, boxSizing: 'border-box', overflow: 'hidden', verticalAlign: 'middle' }}>{issuerBadge}</td>
-                    <td style={{ padding: '9px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500 }}>
+                    <td style={{ padding: '9px 10px', width: colWidths.createdByName, minWidth: colWidths.createdByName, maxWidth: colWidths.createdByName, boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', verticalAlign: 'middle', textAlign: 'center', color: '#475569', fontSize: '13px', fontWeight: 500 }}>
                       {(() => {
                         let name = p.createdByName || '-';
                         if (name === 'jhkim1130' || name.includes('김주한')) return '김주한';
@@ -637,7 +636,7 @@ export const ProformaInvoices: React.FC = () => {
                         }}
                         style={{
                           background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                          borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: 700,
+                          borderRadius: '4px', padding: '4px 10px', fontSize: '12px', fontWeight: 700,
                           cursor: 'pointer', outline: 'none', width: '100%', textAlign: 'center',
                           appearance: 'none', WebkitAppearance: 'none'
                         }}
@@ -655,8 +654,8 @@ export const ProformaInvoices: React.FC = () => {
                             onClick={() => navigate(`/orders/${linkedOrder.id}?step=수주정보`)}
                             style={{
                               background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe',
-                              padding: '3px 9px', fontSize: '12px', fontWeight: 700,
-                              cursor: 'pointer', borderRadius: '6px', transition: 'all 0.15s', whiteSpace: 'nowrap'
+                              padding: '4px 10px', fontSize: '11.5px', fontWeight: 700,
+                              cursor: 'pointer', borderRadius: '4px', transition: 'all 0.15s', whiteSpace: 'nowrap'
                             }}
                             onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; }}
                             onMouseLeave={e => { e.currentTarget.style.background = '#eff6ff'; }}
@@ -668,12 +667,12 @@ export const ProformaInvoices: React.FC = () => {
                           <button
                             onClick={() => navigate(`/orders?createFromPi=${p.id}`)}
                             style={{
-                              background: '#f8fafc', color: 'var(--text-secondary)', border: '1px solid var(--border-color)',
-                              padding: '3px 9px', fontSize: '12px', fontWeight: 700,
-                              cursor: 'pointer', borderRadius: '6px', transition: 'all 0.15s', whiteSpace: 'nowrap'
+                              background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1',
+                              padding: '4px 10px', fontSize: '11.5px', fontWeight: 700,
+                              cursor: 'pointer', borderRadius: '4px', transition: 'all 0.15s', whiteSpace: 'nowrap'
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#1e293b'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#475569'; }}
                             title="이 PI로 주문 생성"
                           >
                             주문생성
