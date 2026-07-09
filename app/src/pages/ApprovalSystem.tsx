@@ -718,16 +718,35 @@ export const ApprovalSystem: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 850, color: 'var(--primary-color)', margin: 0 }}>✍️ 전자결재 시스템</h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>온라인 기안 상신, 결재선 지정, 실시간 품의서 결재 및 반려 보관 시스템입니다.</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>✍️ 전자결재 시스템</h2>
+          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '6px 0 0 0' }}>온라인 기안 상신, 결재선 지정, 실시간 품의서 결재 및 반려 보관 시스템입니다.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => { setAttachments([]); setShowDraftModal(true); }}>
+        <button 
+          onClick={() => { setAttachments([]); setShowDraftModal(true); }}
+          style={{
+            background: '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '0 16px',
+            height: '34px',
+            fontSize: '12.5px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            boxSizing: 'border-box'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+        >
           📝 새 결재 기안서 작성
         </button>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', gap: '8px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #cbd5e1', gap: '8px' }}>
         <button
           onClick={() => setActiveTab('pending')}
           style={{
@@ -735,10 +754,10 @@ export const ApprovalSystem: React.FC = () => {
             border: 'none',
             background: 'none',
             fontSize: '13px',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
-            color: activeTab === 'pending' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: activeTab === 'pending' ? '2.5px solid var(--primary-color)' : 'none'
+            color: activeTab === 'pending' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'pending' ? '2.5px solid #3b82f6' : 'none'
           }}
         >
           📥 결재 대기 문서 ({pendingDocs.length})
@@ -750,10 +769,10 @@ export const ApprovalSystem: React.FC = () => {
             border: 'none',
             background: 'none',
             fontSize: '13px',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
-            color: activeTab === 'submitted' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: activeTab === 'submitted' ? '2.5px solid var(--primary-color)' : 'none'
+            color: activeTab === 'submitted' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'submitted' ? '2.5px solid #3b82f6' : 'none'
           }}
         >
           📤 나의 상신 문서 ({submittedDocs.length})
@@ -765,10 +784,10 @@ export const ApprovalSystem: React.FC = () => {
             border: 'none',
             background: 'none',
             fontSize: '13px',
-            fontWeight: 800,
+            fontWeight: 700,
             cursor: 'pointer',
-            color: activeTab === 'archive' ? 'var(--primary-color)' : 'var(--text-secondary)',
-            borderBottom: activeTab === 'archive' ? '2.5px solid var(--primary-color)' : 'none'
+            color: activeTab === 'archive' ? '#3b82f6' : '#64748b',
+            borderBottom: activeTab === 'archive' ? '2.5px solid #3b82f6' : 'none'
           }}
         >
           📁 결재 완료 보관함 ({archiveDocs.length})
@@ -776,23 +795,23 @@ export const ApprovalSystem: React.FC = () => {
       </div>
 
       {/* List Container */}
-      <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+      <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', textAlign: 'left', fontWeight: 'bold' }}>
-                <th style={{ padding: '12px' }}>문서 종류</th>
-                <th style={{ padding: '12px' }}>기안 제목</th>
-                <th style={{ padding: '12px' }}>기안자</th>
-                <th style={{ padding: '12px' }}>결재선 (결재권자)</th>
-                <th style={{ padding: '12px' }}>기안일시</th>
-                <th style={{ padding: '12px', textAlign: 'center' }}>결재 상태</th>
+              <tr style={{ borderBottom: '1px solid #cbd5e1', color: '#475569', textAlign: 'left', fontWeight: 'bold' }}>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>문서 종류</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안 제목</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안자</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재선 (결재권자)</th>
+                <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>기안일시</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 상태</th>
               </tr>
             </thead>
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
                     보관함에 보관된 문서가 존재하지 않습니다.
                   </td>
                 </tr>
