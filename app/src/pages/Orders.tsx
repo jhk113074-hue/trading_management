@@ -166,15 +166,168 @@ export const Orders: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // 🔗 createFromPi 감지 시 백그라운드로 즉각 주문 자동 생성 및 저장
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const piId = params.get('createFromPi');
-    if (piId) {
-      setSelectedQuotationId(piId);
-      setIsModalOpen(true);
-      navigate('/orders', { replace: true });
+    if (piId && quotations.length > 0) {
+      const targetPi = quotations.find(q => q.id === piId);
+      if (targetPi) {
+        setLoading(true);
+        // 주문 자동 생성 로직 실행
+        const createOrder = async () => {
+          try {
+            const { collection, doc, setDoc, getDocs, serverTimestamp } = await import('firebase/firestore');
+            const orderRef = doc(collection(db, 'companies', COMPANY_ID, 'orders'));
+            const compPrefix = targetPi.issuingCompany === 'YS' ? 'YS' : 'YSACC';
+            const ciNumber = `CI-${compPrefix}-${targetPi.piNumber || targetPi.id}`;
+
+            // 1. 최신 리비전 및 line_items 로드
+            const revSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID, 'proforma_invoices', piId), 'revisions'));
+            let mappedItems: any[] = [];
+            
+            if (!revSnap.empty) {
+              const sortedRevs = revSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any))
+                .sort((a: any, b: any) => (Number(b.version) || 0) - (Number(a.version) || 0));
+              const latestRev = sortedRevs[0];
+              const latestRevDoc = revSnap.docs.find((d: any) => d.id === latestRev.id);
+              
+              if (latestRevDoc) {
+                const liSnap = await getDocs(collection(latestRevDoc.ref, 'line_items'));
+                const quoteItems = liSnap.docs.map((d: any) => d.data() as any);
+                
+                if (quoteItems.length > 0) {
+                  const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
+                  const currentProducts = prodSnap.docs.map((d: any) => ({ id: d.id, ...d.data() } as any));
+                  
+                  mappedItems = quoteItems.map((qi: any, idx: number) => {
+                    let rawCode = qi.productCode || '';
+                    if (rawCode.startsWith('[') && rawCode.includes(']')) {
+                      rawCode = rawCode.substring(1, rawCode.indexOf(']')).trim();
+                    }
+                    const cleanRaw = rawCode.trim().toUpperCase();
+                    const matchedProd = currentProducts.find((p: any) => 
+                      (p.productCode || '').trim().toUpperCase() === cleanRaw || 
+                      p.id.trim().toUpperCase() === cleanRaw
+                    );
+                    
+                    const contactInfo = [matchedProd?.supplierEmail, matchedProd?.supplierPhone].filter(Boolean).join(' / ');
+                    const orderPrice = qi.salePriceUsd || 0;
+                    const qty = qi.quantity || 0;
+                    const amt = parseFloat((qty * orderPrice).toFixed(2));
+                    
+                    let purchasePrice = 0;
+                    let purchaseCurrency = 'USD';
+                    if (qi.purchasePriceKrw && qi.purchasePriceKrw > 0) {
+                      purchasePrice = qi.purchasePriceKrw;
+                      purchaseCurrency = 'KRW';
+                    } else if (qi.purchasePriceUsd && qi.purchasePriceUsd > 0) {
+                      purchasePrice = qi.purchasePriceUsd;
+                      purchaseCurrency = 'USD';
+                    } else if (matchedProd) {
+                      purchasePrice = matchedProd.purchasePrice || 0;
+                      purchaseCurrency = matchedProd.currency === 'KRW' ? 'KRW' : 'USD';
+                    }
+                    
+                    return {
+                      itemId: String(idx + 1),
+                      name: qi.productCode ? `[${qi.productCode}] ${qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''}` : (qi.description || matchedProd?.nameEn || matchedProd?.nameKo || ''),
+                      supplier: matchedProd?.supplierName || (qi.supplierName !== 'undefined' ? qi.supplierName : '') || '',
+                      supplierContact: contactInfo || '',
+                      grade: qi.spec || qi.grade || matchedProd?.spec || '',
+                      qty,
+                      unit: qi.unit || 'kg',
+                      unitPrice: orderPrice,
+                      purchaseUnitPrice: purchasePrice,
+                      purchaseUnitCurrency: purchaseCurrency,
+                      originalPurchasePrice: purchasePrice,
+                      originalPurchaseCurrency: purchaseCurrency,
+                      amount: amt,
+                      currency: 'USD'
+                    };
+                  });
+                }
+              }
+            }
+
+            // 매핑된 품목이 없을 때 예외 방지 대체값
+            if (mappedItems.length === 0) {
+              mappedItems = [{
+                itemId: '1',
+                name: targetPi.itemsSummary?.[0] || 'PI ITEM',
+                supplier: '',
+                supplierContact: '',
+                grade: '',
+                qty: 1,
+                unit: 'EA',
+                unitPrice: targetPi.totalUsd || 0,
+                purchaseUnitPrice: targetPi.totalUsd || 0,
+                purchaseUnitCurrency: 'USD',
+                amount: targetPi.totalUsd || 0,
+                currency: 'USD'
+              }];
+            }
+
+            const orderPayload: any = {
+              id: orderRef.id,
+              ciNumber: ciNumber,
+              custPo: targetPi.yourRef || '',
+              quotationId: piId,
+              customer: targetPi.customerName || '',
+              manager: currentUser,
+              incoterms: targetPi.incoterms || 'FOB',
+              paymentTerms: targetPi.paymentTerms || '',
+              poDate: new Date().toISOString().split('T')[0],
+              requestedDelivery: targetPi.validUntilDate || '',
+              remark: targetPi.remarks || '',
+              status: '주문',
+              items: mappedItems,
+              totalAmount: targetPi.totalUsd || 0,
+              currency: 'USD',
+              exchangeRate: targetPi.exchangeRate || 1400,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              issuingCompany: targetPi.issuingCompany || 'YSACC',
+              forwarders: (targetPi.freightCharges || []).map((fc: any) => ({
+                name: fc.type || fc.name || 'FOB CHARGES',
+                amountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0)),
+                budgetAmountUsd: fc.amount || ((fc.qty || 1) * (fc.price || 0))
+              })),
+              piNumber: targetPi.piNumber || '',
+              customerAddress: targetPi.customerAddress || '',
+              contactPerson: targetPi.contactPerson || '',
+              portOfLoading: targetPi.departurePort || '',
+              portOfDischarge: targetPi.destinationPort || '',
+              packagingSpec: targetPi.packagingSpec || '',
+              shippingMethod: targetPi.shippingMethod || '',
+              deliveryTerm: targetPi.deliveryTerm || '',
+              origin: targetPi.origin || '',
+              yourRef: targetPi.yourRef || '',
+              piDate: targetPi.piDate || '',
+              validUntilDate: targetPi.validUntilDate || ''
+            };
+
+            // 1. Order 도큐먼트 즉시 생성
+            await setDoc(orderRef, orderPayload);
+
+            // 2. PI 도큐먼트 상태 PO확정 처리
+            const quoteRef = doc(db, 'companies', COMPANY_ID, 'proforma_invoices', piId);
+            await setDoc(quoteRef, { status: 'PO확정', updatedAt: serverTimestamp() }, { merge: true });
+
+            alert(`✅ PI 정보로 주문(${ciNumber})이 즉시 자동 생성되었습니다.`);
+          } catch (err: any) {
+            console.error('Failed to auto-create order from PI:', err);
+            alert('주문 자동 생성 오류: ' + err.message);
+          } finally {
+            setLoading(false);
+            navigate('/orders', { replace: true });
+          }
+        };
+
+        createOrder();
+      }
     }
-  }, [navigate]);
+  }, [window.location.search, quotations, navigate, currentUser]);
 
   const getNextAction = (order: Order): NextAction => {
     const todoText = getNextTodoItem(order);
