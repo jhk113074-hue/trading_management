@@ -326,9 +326,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
+      const nextX = Math.max(10, Math.min(window.innerWidth - 300, e.clientX - dragOffset.x));
+      const nextY = Math.max(10, Math.min(window.innerHeight - 150, e.clientY - dragOffset.y));
       setModalPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
+        x: nextX,
+        y: nextY
       });
     };
 
