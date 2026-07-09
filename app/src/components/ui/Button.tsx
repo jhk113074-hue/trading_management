@@ -93,3 +93,38 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+export interface IconButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'style'> {
+  'aria-label': string;
+  style?: React.CSSProperties;
+}
+
+/** 정사각형 아이콘 전용 버튼 — 테이블 행 액션, 토스트 닫기 등. */
+export const IconButton: React.FC<IconButtonProps> = ({ style, disabled, children, ...rest }) => {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      disabled={disabled}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '32px',
+        height: '32px',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border-color)',
+        background: hover && !disabled ? '#F1F1F2' : '#fff',
+        color: 'var(--text-secondary)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'background-color 120ms',
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+};

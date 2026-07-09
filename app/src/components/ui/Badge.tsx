@@ -39,3 +39,39 @@ export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children, style 
     </span>
   );
 };
+
+export interface TagProps {
+  children: React.ReactNode;
+  onRemove?: () => void;
+  style?: React.CSSProperties;
+}
+
+/** 필터/속성 칩 — 상태 표시용 Badge와 달리 제거 가능한 속성 표시에 사용 (예: 국가, 카테고리 필터). */
+export const Tag: React.FC<TagProps> = ({ children, onRemove, style }) => (
+  <span
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '2px 8px',
+      borderRadius: 'var(--radius-xs)',
+      fontSize: '11px',
+      background: '#F1F1F2',
+      color: 'var(--text-secondary)',
+      border: '1px solid var(--border-color)',
+      ...style,
+    }}
+  >
+    {children}
+    {onRemove && (
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="제거"
+        style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'inherit', display: 'inline-flex', padding: 0, fontSize: '12px', lineHeight: 1 }}
+      >
+        ×
+      </button>
+    )}
+  </span>
+);

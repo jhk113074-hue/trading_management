@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
   /* ── YSACC 디자인시스템 (로그인 화면 기준으로 통일) ── */
@@ -23,6 +23,25 @@
   --focus-ring: #2AA2B1; /* Aqua accent */
   --q1-color: #BD1723;
 
+  /* Aqua accent 스케일 (claude.ai Design "YSACC Design System" 기준 포팅) */
+  --aqua-50: #E6F5F7;
+  --aqua-100: #C2E7EB;
+  --aqua-500: #158C9B;
+  --aqua-600: #0F7288;
+
+  /* 시맨틱 상태 색상 — Alert/Toast/Badge/Tag 공용 */
+  --color-success: #178A54;
+  --color-success-bg: #E7F5EE;
+  --color-warning: #C77D00;
+  --color-warning-bg: #FBF0DD;
+  --color-info: #2A6F9E;
+  --color-info-bg: #E4EFF6;
+  --color-danger: #BD1723; /* = primary-color, 의도적으로 브랜드 레드 공유 */
+  --color-danger-bg: #FBE9EA;
+
+  /* 어두운 표면 (로그인/히어로 패널) */
+  --surface-dark: #161617;
+
   /* 반경 스케일 */
   --radius-xs: 3px;
   --radius-sm: 5px;
@@ -32,13 +51,21 @@
   --radius-pill: 999px;
 
   /* 그림자 스케일 */
+  --shadow-xs: 0 1px 2px rgba(22,22,23,0.04);
+  --shadow-sm: 0 1px 3px rgba(22,22,23,0.06), 0 1px 2px rgba(22,22,23,0.04);
+  --shadow-md: 0 4px 10px rgba(22,22,23,0.08), 0 2px 4px rgba(22,22,23,0.05);
   --shadow-lg: 0 12px 28px rgba(22,22,23,0.12), 0 4px 8px rgba(22,22,23,0.05);
   --shadow-brand: 0 6px 18px rgba(189,23,35,0.22);
   --shadow-focus: 0 0 0 3px rgba(42,162,177,0.35);
 
+  /* 모션 */
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+
   /* 폰트 */
   --font-display: 'Archivo', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
 }
 
 * {
