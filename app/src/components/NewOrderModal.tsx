@@ -10,6 +10,8 @@ import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 import { PISearchModal } from './PISearchModal';
 
+import { DateInput } from './ui/DateInput';
+
 const getRawProductCode = (code: string | undefined): string => {
   if (!code) return '';
   const val = code.trim();
@@ -726,12 +728,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PO 접수일 <span style={{ color: '#ef4444' }}>*</span></label>
-              <input type="date" value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
+              <DateInput value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>요청 납기일</label>
-              <input type="date" value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
+              <DateInput value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: 'span 2' }}>
@@ -801,11 +803,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PI 발행일</label>
-                <input type="date" value={formData.piDate} onChange={e => handleFormDataChange('piDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
+                <DateInput value={formData.piDate} onChange={e => handleFormDataChange('piDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PI 유효기한</label>
-                <input type="date" value={formData.validUntilDate} onChange={e => handleFormDataChange('validUntilDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
+                <DateInput value={formData.validUntilDate} onChange={e => handleFormDataChange('validUntilDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: 'span 2' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 주소 (Customer Address)</label>

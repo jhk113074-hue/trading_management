@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
+import { DateInput } from '../components/ui/DateInput';
 
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
@@ -4971,7 +4972,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PO 접수일 (CI 작성일)</span>
-                <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                <DateInput value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
@@ -5059,7 +5060,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
-                <input type="date" value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+                <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
@@ -5099,7 +5100,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>LC ISSUING DATE</span>
-                  <input type="date" value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
+                  <DateInput value={basicForm.lcIssuingDate} onChange={e => setBasicForm(prev => ({ ...prev, lcIssuingDate: e.target.value }))} disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '5px', fontSize: '14.5px', background: isEditing ? '#fff' : '#f8fafc', outline: 'none' }} />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 3' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#1e40af' }}>DESCRIPTION</span>
@@ -6672,19 +6673,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>DOC CLS</span>
-                        <input type="date" value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput value={basicForm.docCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, docCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>CARGO CLS</span>
-                        <input type="date" value={basicForm.cargoCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, cargoCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput value={basicForm.cargoCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, cargoCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
-                        <input type="date" value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
-                        <input type="date" value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
+                        <DateInput value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                     </div>
 
@@ -6705,7 +6706,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>컨테이너(CFS)입고일</span>
-                        <input type="date" value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '37px' }} />
+                        <DateInput value={basicForm.cfsEntryDate} onChange={e => setBasicForm(p => ({ ...p, cfsEntryDate: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '37px' }} />
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -9523,7 +9524,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>작성일자 (Invoice Date)</span>
-                            <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            <DateInput value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                         </div>
 
@@ -9545,7 +9546,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>출항예정일 (ETD)</span>
-                            <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                            <DateInput value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                         </div>
 

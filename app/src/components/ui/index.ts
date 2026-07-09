@@ -18,3 +18,5 @@ export { Dialog } from './Dialog';
 export type { DialogProps } from './Dialog';
 export { Table } from './Table';
 export type { TableProps, TableColumn } from './Table';
+export { DateInput } from './DateInput';
+export type { DateInputProps } from './DateInput';

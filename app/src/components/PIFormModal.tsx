@@ -11,6 +11,8 @@ import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
 
+import { DateInput } from './ui/DateInput';
+
 const getProductPackingMethods = (product: any): any[] => {
   if (!product) return [{
     id: 'default_injected',
@@ -2989,7 +2991,11 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
         {label?.replace(' ★', '').replace('★', '').replace(' *', '').replace('*', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>*</span>}
         {isReadOnly && <span style={{ color: '#94a3b8', fontWeight: 400 }}> (자동)</span>}
       </label>
-      <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
+      {type === 'date' ? (
+        <DateInput value={value ?? ''} onChange={(e: any) => onChange?.(e.target.value)} disabled={disabled} style={inputStyle} />
+      ) : (
+        <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
+      )}
     </div>
   );
 };

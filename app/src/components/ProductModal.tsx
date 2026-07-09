@@ -4,6 +4,7 @@ import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebas
 import { db, COMPANY_ID, storage } from '../firebase';
 import type { Product } from '../types/product';
 import { previewFile } from './FilePreviewModal';
+import { DateInput } from './ui/DateInput';
 
 interface Props {
   initialProduct?: Product;
@@ -1268,8 +1269,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           formData.purchasePrices.map((hist, idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #cbd5e1' }}>
                               <td style={{ padding: '6px 8px' }}>
-                                <input
-                                  type="date"
+                                <DateInput
                                   value={hist.validFrom}
                                   onChange={e => {
                                     const val = e.target.value;
