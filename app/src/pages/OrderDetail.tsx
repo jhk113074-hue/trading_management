@@ -2975,23 +2975,27 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           <div
             tabIndex={0}
             style={{
-              background: '#ffffff',
-              border: '1.5px dashed #cbd5e1',
-              padding: '12px 10px',
-              borderRadius: '6px',
-              textAlign: 'center',
+              background: '#f8fafc',
+              border: '1px dashed #cbd5e1',
+              padding: '24px 16px',
+              borderRadius: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
               cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
               outline: 'none',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#f8fafc'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
-            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.background = '#eff6ff'; }}
-            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#ffffff'; }}
+            onFocus={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
+            onDragLeave={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
             onDrop={e => {
               e.preventDefault();
               e.currentTarget.style.borderColor = '#cbd5e1';
-              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.background = '#f8fafc';
               if (uploadingField !== null) return;
               if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
@@ -3028,9 +3032,32 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               }
             }}
           >
-            <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              {uploadingField === fieldName ? '⏳ 업로드 중...' : '📥 클릭, 드래그&드롭 혹은 화면캡처 붙여넣기(Ctrl+V)'}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+              <span>📂</span>
+              <span>이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</span>
+            </div>
+            
+            <button
+              type="button"
+              disabled={uploadingField !== null}
+              style={{
+                background: '#3b82f6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}
+            >
+              {uploadingField === fieldName ? '업로드 중...' : '파일 선택하기'}
+            </button>
+
             <input
               type="file"
               id={inputDocId}
