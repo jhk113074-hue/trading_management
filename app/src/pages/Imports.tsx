@@ -266,6 +266,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     amount: 500000,
     importCompany: 'YSACC',
     importerName: '',
+    quoteNumber: '',
     finalCustomer: '',
     incoterms: 'FOB',
     paymentTerms: '100% T/T in advance',
@@ -878,176 +879,121 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </div>
             
             <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '6px' }}>
-              {/* 1단계: 수입요청 접수 정보 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>📥 요청 접수일</label>
-                  <input
-                    type="date"
-                    value={newRequest.requestDate || ''}
-                    onChange={e => setNewRequest(p => ({ ...p, requestDate: e.target.value }))}
-                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
-                  />
+              {/* 📥 신규수입등록 초소형 접수 정보 그리드 (2줄 압축형) */}
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                
+                {/* 1줄: 기본 수신/접수 메타 정보 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr 1.8fr', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>📅 요청 접수일</label>
+                    <input
+                      type="date"
+                      value={newRequest.requestDate || ''}
+                      onChange={e => setNewRequest(p => ({ ...p, requestDate: e.target.value }))}
+                      style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>고객사 담당자</label>
+                    <input
+                      type="text"
+                      value={newRequest.requestedBy || ''}
+                      onChange={e => setNewRequest(p => ({ ...p, requestedBy: e.target.value }))}
+                      placeholder="예: 홍길동 과장"
+                      style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입주체 구분</label>
+                    <select 
+                      value={newRequest.importCompany || 'YSACC'} 
+                      onChange={e => {
+                        const comp = e.target.value as any;
+                        setNewRequest(p => {
+                          const tempId = p.id || Math.floor(100000 + Math.random() * 900000).toString();
+                          const nextQuoteNo = `QT-${comp}-${new Date().toISOString().slice(2,10).replace(/-/g,'')}-${tempId.slice(-3)}`;
+                          return { ...p, importCompany: comp, quoteNumber: nextQuoteNo, id: tempId };
+                        });
+                      }}
+                      style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="YSACC">YSACC</option>
+                      <option value="YS">YS (영성ACC)</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type="text" 
+                        readOnly
+                        value={newRequest.finalCustomer || ''} 
+                        style={{ flex: 1, padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#e2e8f0', color: '#334155' }}
+                        placeholder="우측 [검색] 지정"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { setCustomerSelectTarget('new'); setShowCustomerModal(true); }}
+                        style={{ padding: '5px 10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔍 검색
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>고객사 담당자</label>
-                  <input
-                    type="text"
-                    value={newRequest.requestedBy || ''}
-                    onChange={e => setNewRequest(p => ({ ...p, requestedBy: e.target.value }))}
-                    placeholder="예: 홍길동 과장"
-                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
-                  />
+
+                {/* 2줄: 공급업체 연결 및 고객 제시용 견적번호 단일화 */}
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>🤝 수입처 (공급업체관리 연결)</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input 
+                        type="text"
+                        readOnly
+                        required
+                        placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
+                        value={newRequest.importerName || ''}
+                        style={{ flex: 1, padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#e2e8f0', color: '#334155', fontWeight: 600 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSupplierSearch(true)}
+                        style={{ padding: '5px 10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔍 검색
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>📄 고객 제시용 견적번호 (자동생성/수정가능)</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={newRequest.quoteNumber || ''} 
+                      onChange={e => setNewRequest(p => ({ ...p, quoteNumber: e.target.value }))}
+                      style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
+                      placeholder="예: QT-YSACC-20260709-001"
+                    />
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>요청 내용 메모</label>
+
+                {/* 3줄: 요청 상세 메모 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>📝 요청 내용 메모</label>
                   <input
                     type="text"
                     value={newRequest.requestNote || ''}
                     onChange={e => setNewRequest(p => ({ ...p, requestNote: e.target.value }))}
                     placeholder="고객사로부터 받은 수입요청 내용 요약"
-                    style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                    style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
                   />
                 </div>
               </div>
 
-              {/* 기본 수입주체 & 수입처 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입주체 구분</label>
-                  <select 
-                    value={newRequest.importCompany || 'YSACC'} 
-                    onChange={e => {
-                      const comp = e.target.value as any;
-                      setNewRequest(p => {
-                        const tempId = p.id || Math.floor(100000 + Math.random() * 900000).toString();
-                        const nextPo = computePoNumber(comp, p.importerName || '', tempId);
-                        return { ...p, importCompany: comp, poNumber: nextPo, id: tempId };
-                      });
-                    }}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#fff' }}
-                  >
-                    <option value="YSACC">YSACC</option>
-                    <option value="YS">YS (영성ACC)</option>
-                  </select>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>수입처 (공급업체관리 연결)</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="text"
-                      readOnly
-                      required
-                      placeholder="우측 [검색] 버튼을 눌러 공급업체 선택"
-                      value={newRequest.importerName || ''}
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc', color: '#334155', fontWeight: 600 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowSupplierSearch(true)}
-                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      🔍 검색
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* PO 번호 & PI 번호 라인 */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={editingRequest?.poNumber || ''} 
-                    onChange={e => setEditingRequest(p => p ? ({ ...p, poNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                    placeholder="예: PO-YSACC-BOR-2026-01"
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PI 번호 (상대회사 제공)</label>
-                  <input 
-                    type="text" 
-                    value={editingRequest?.piNumber || ''} 
-                    onChange={e => setEditingRequest(p => p ? ({ ...p, piNumber: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                    placeholder="예: PI20260701-01"
-                  />
-                </div>
-              </div>
-
-              {/* PO 번호 & PI 번호 라인 */}
+              {/* 수입 실무에 필요한 무역정보 세팅 영역 (실무모드일 경우에만 표시) */}
               {!isQuoteMode && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PO 번호 (자동 넘버링 / 수정가능)</label>
-                    <input 
-                      type="text" 
-                      required={!isQuoteMode}
-                      value={newRequest.poNumber || ''} 
-                      onChange={e => setNewRequest(p => ({ ...p, poNumber: e.target.value }))}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                      placeholder="예: PO-YSACC-BOR-2026-01"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PI 번호 (상대회사 제공)</label>
-                    <input 
-                      type="text" 
-                      value={newRequest.piNumber || ''} 
-                      onChange={e => setNewRequest(p => ({ ...p, piNumber: e.target.value }))}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                      placeholder="예: PI20260701-01"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
-              {isQuoteMode ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="text" 
-                      readOnly
-                      value={newRequest.finalCustomer || ''} 
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
-                      placeholder="우측 [검색] 버튼으로 고객사 지정"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setCustomerSelectTarget('new'); setShowCustomerModal(true); }}
-                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      🔍 검색
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <input 
-                          type="text" 
-                          readOnly
-                          value={newRequest.finalCustomer || ''} 
-                          style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
-                          placeholder="우측 [검색] 버튼으로 고객사 지정"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => { setCustomerSelectTarget('new'); setShowCustomerModal(true); }}
-                          style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          🔍 검색
-                        </button>
-                      </div>
-                    </div>
+                <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>INCOTERMS</label>
                       <select 
@@ -1074,20 +1020,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         placeholder="예: B/L 번호 직접 입력"
                       />
                     </div>
-                  </div>
-
-                  {/* PAYMENT TERMS & 운송수단 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PAYMENT TERMS</label>
-                      <input 
-                        type="text" 
-                        value={newRequest.paymentTerms || ''} 
-                        onChange={e => setNewRequest(p => ({ ...p, paymentTerms: e.target.value }))}
-                        style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                        placeholder="예: 100% T/T in advance"
-                      />
-                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>운송수단</label>
                       <select 
@@ -1102,8 +1034,22 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     </div>
                   </div>
 
-                  {/* 출발PORT & 도착PORT & 견적 운임 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
+                  {/* PAYMENT TERMS & 운송수단 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>PAYMENT TERMS</label>
+                      <input 
+                        type="text" 
+                        value={newRequest.paymentTerms || ''} 
+                        onChange={e => setNewRequest(p => ({ ...p, paymentTerms: e.target.value }))}
+                        style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                        placeholder="예: 100% T/T in advance"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 출발PORT & 도착PORT & 원산지 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '8px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>출발 PORT</label>
                       <input 
@@ -1137,18 +1083,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         placeholder="예: CHINA, KOREA"
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>견적 운임 (₩)</label>
-                      <input 
-                        type="number" 
-                        value={newRequest.amount} 
-                        onChange={e => setNewRequest(p => ({ ...p, amount: Number(e.target.value) }))}
-                        style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                        placeholder="예: 500000"
-                      />
-                    </div>
                   </div>
-                </>
+                </div>
               )}
 
               {/* 4. 동적 통합 수입 제품 및 패킹 테이블 */}

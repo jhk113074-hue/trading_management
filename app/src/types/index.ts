@@ -123,6 +123,7 @@ export interface ImportRequest {
   blAwb?: string;
   poNumber?: string;
   piNumber?: string;
+  quoteNumber?: string;
   forwarderName?: string;
   itemName: string;
   transportType: string;
