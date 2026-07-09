@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { User } from '../types';
@@ -88,6 +88,22 @@ export const Mails: React.FC = () => {
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleDeleteMail = async (mailId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("이 쪽지를 정말로 삭제하시겠습니까?")) return;
+    try {
+      await deleteDoc(doc(db, 'mails', mailId));
+      alert("쪽지가 삭제되었습니다.");
+      if (selectedMail?.id === mailId) {
+        setSelectedMail(null);
+      }
+      fetchMailsData();
+    } catch (err) {
+      console.error("Failed to delete mail:", err);
+      alert("삭제에 실패했습니다.");
+    }
   };
 
   const fetchMailsData = async () => {
@@ -664,12 +680,13 @@ export const Mails: React.FC = () => {
                 <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>쪽지 제목</th>
                 <th style={{ padding: '12px', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발송 일시</th>
                 <th style={{ padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</th>
+                <th style={{ padding: '12px', width: '60px', textAlign: 'center', fontSize: '11px', fontWeight: '750', letterSpacing: '0.02em', textTransform: 'uppercase' }}></th>
               </tr>
             </thead>
             <tbody>
               {activeList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
+                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px' }}>
                     주고받은 쪽지가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -748,6 +765,27 @@ export const Mails: React.FC = () => {
                             </span>
                           )
                         )}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteMail(mail.id, e)}
+                          style={{
+                            background: '#fef2f2',
+                            color: '#ef4444',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            padding: '4px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                        >
+                          삭제
+                        </button>
                       </td>
                     </tr>
                   );
