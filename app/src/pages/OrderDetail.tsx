@@ -4897,52 +4897,52 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             
             {/* 줄 1: 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 1.2fr 1fr 1fr 1fr', gap: '10px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발행사 (발주서 기준)</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.6fr 1.2fr 1fr 1fr 1.2fr', gap: '10px', width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>발행사 (발주서 기준)</span>
                 {isEditing ? (
-                  <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', fontWeight: 700, background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-                    <option value="YSACC">YSACC (와이에스에이씨씨)</option>
-                    <option value="YS">영성ACC (YS ACC)</option>
+                  <select value={basicForm.issuingCompany} onChange={e => setBasicForm(prev => ({ ...prev, issuingCompany: e.target.value as 'YSACC' | 'YS' }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', fontWeight: 700, background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                    <option value="YSACC">YSACC</option>
+                    <option value="YS">영성ACC</option>
                   </select>
                 ) : (
-                  <input type="text" value={order.issuingCompany === 'YS' ? '영성ACC (YS ACC)' : 'YSACC (와이에스에이씨씨)'} disabled style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                  <input type="text" value={order.issuingCompany === 'YS' ? '영성ACC' : 'YSACC'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당 영업사원</span>
-                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>담당 영업사원</span>
+                <input type="text" value={basicForm.manager} onChange={e => setBasicForm(prev => ({ ...prev, manager: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>확정 CI 번호</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>확정 CI 번호</span>
                 <input
                   type="text"
                   placeholder="CI 번호 입력"
                   value={basicForm.ciNumber}
                   onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))}
-                  style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PO 접수일 (CI 작성일)</span>
-                <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PO 접수일 (CI 작성일)</span>
+                <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(prev => ({ ...prev, poDate: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 PO 번호</span>
-                <input type="text" value={basicForm.custPo || ''} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>고객사 PO 번호</span>
+                <input type="text" value={basicForm.custPo || ''} onChange={e => setBasicForm(prev => ({ ...prev, custPo: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연결된 견적서 (PI)</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>연결된 견적서 (PI)</span>
                 {isEditing ? (
                   <select
                     value={basicForm.quotationId}
                     onChange={e => setBasicForm(prev => ({ ...prev, quotationId: e.target.value }))}
-                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}
                   >
                     <option value="">연결 안 함</option>
                     {piList.map(p => (
@@ -4954,7 +4954,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     type="text"
                     value={basicForm.quotationId ? (piList.find(p => p.id === basicForm.quotationId)?.piNumber || basicForm.quotationId) : '연결 안 함'}
                     disabled
-                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }}
                   />
                 )}
               </div>
