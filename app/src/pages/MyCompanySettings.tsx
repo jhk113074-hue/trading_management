@@ -456,7 +456,7 @@ export const MyCompanySettings: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>사업자등록증</span>
                           {editForm.bizLicenseUrl && (
-                            <button onClick={() => handleFileDelete('bizLicense')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
+                            <button onClick={() => handleFileDelete('bizLicense')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>🗑️</button>
                           )}
                         </div>
                         {editForm.bizLicenseUrl ? (
@@ -479,7 +479,7 @@ export const MyCompanySettings: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
                           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (원화)</span>
                           {editForm.bankKrwUrl && (
-                            <button onClick={() => handleFileDelete('bankKrw')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
+                            <button onClick={() => handleFileDelete('bankKrw')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>🗑️</button>
                           )}
                         </div>
                         {editForm.bankKrwUrl ? (
@@ -502,7 +502,7 @@ export const MyCompanySettings: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '180px' }}>
                           <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>통장사본 (외화)</span>
                           {editForm.bankForeignUrl && (
-                            <button onClick={() => handleFileDelete('bankForeign')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}>삭제</button>
+                            <button onClick={() => handleFileDelete('bankForeign')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>🗑️</button>
                           )}
                         </div>
                         {editForm.bankForeignUrl ? (

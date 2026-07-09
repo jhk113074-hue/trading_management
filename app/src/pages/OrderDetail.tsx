@@ -8080,7 +8080,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               {basicForm.actualContainerSimulation?.simulationFileUrl ? (
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                   <a href={basicForm.actualContainerSimulation.simulationFileUrl} download style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '13.5px', fontWeight: 700 }}>다운로드</a>
-                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                                 </div>
                               ) : (
                                 <div>
@@ -8095,7 +8095,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                                   <img src={basicForm.actualContainerSimulation.simulationImageUrl} alt="Actual Screenshot" style={{ width: '48px', height: '32px', objectFit: 'contain', border: '1px solid var(--border-default)', borderRadius: '4px' }} />
                                   <button type="button" onClick={() => previewFile(basicForm.actualContainerSimulation.simulationImageUrl, '실제 결과 스크린샷')} style={{ padding: '4px 8px', background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}>보기</button>
-                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                                  <button type="button" onClick={() => setBasicForm(prev => ({ ...prev, actualContainerSimulation: { ...(prev.actualContainerSimulation || {}), simulationImageUrl: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                                 </div>
                               ) : (
                                 <div>

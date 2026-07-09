@@ -2718,7 +2718,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <span style={{ fontSize: '12px', color: '#0f766e', fontWeight: 600 }}>📁 {formData.containerSimulation.simulationFileName || '프로젝트 파일 완료'}</span>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <a href={formData.containerSimulation.simulationFileUrl} download style={{ padding: '4px 10px', background: 'var(--border-color)', borderRadius: '4px', textDecoration: 'none', color: '#334155', fontSize: '11px', fontWeight: 700 }}>다운로드</a>
-                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationFileUrl: '', simulationFileName: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                     </div>
                   </div>
                 ) : (
@@ -2745,7 +2745,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     <img src={formData.containerSimulation.simulationImageUrl} alt="Simulation Screenshot" style={{ width: '60px', height: '40px', objectFit: 'contain', border: '1px solid var(--border-default)', borderRadius: '4px' }} />
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button type="button" onClick={() => { setActivePreviewUrl(formData.containerSimulation?.simulationImageUrl || ''); setActivePreviewName('시뮬레이션 이미지'); }} style={{ padding: '4px 10px', background: 'var(--border-color)', border: 'none', borderRadius: '4px', color: '#334155', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>확대보기</button>
-                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} style={{ padding: '4px 10px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>삭제</button>
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, containerSimulation: { ...(prev.containerSimulation || {}), simulationImageUrl: '' } }))} title="삭제" style={{ padding: '4px 8px', background: '#fee2e2', border: 'none', borderRadius: '4px', color: '#dc2626', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                     </div>
                   </div>
                 ) : (

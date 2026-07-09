@@ -770,21 +770,25 @@ export const Mails: React.FC = () => {
                         <button
                           type="button"
                           onClick={(e) => handleDeleteMail(mail.id, e)}
+                          title="이 쪽지 삭제"
                           style={{
                             background: '#fef2f2',
                             color: '#ef4444',
                             border: '1px solid #cbd5e1',
                             borderRadius: '4px',
-                            padding: '4px 8px',
-                            fontSize: '11px',
-                            fontWeight: 700,
+                            padding: '4px 6px',
+                            fontSize: '13px',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            lineHeight: 1
                           }}
                           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.borderColor = '#ef4444'; }}
                           onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
                         >
-                          삭제
+                          🗑️
                         </button>
                       </td>
                     </tr>

@@ -331,10 +331,11 @@ export const Customers: React.FC = () => {
                       >✏ 수정</button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }}
-                        style={{ background: '#fecaca', color: '#991b1b', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, transition: 'background 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fca5a5'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fecaca'}
-                      >✕ 삭제</button>
+                        title="삭제"
+                        style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #cbd5e1', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', transition: 'background 0.2s', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                      >🗑️</button>
                     </td>
                   </tr>
                 );

@@ -836,7 +836,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                   />
                   {formData.imageUrl && (
                     <button type="button" onClick={() => handleChange('imageUrl', '')}
-                      style={{ padding: '4px 8px', background: '#fff', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '5px', fontSize: '11px', cursor: 'pointer', whiteSpace: 'nowrap' }}>삭제</button>
+                      title="삭제"
+                      style={{ padding: '4px 6px', background: '#fef2f2', color: '#ef4444', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                   )}
                 </div>
 
@@ -1446,8 +1447,8 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.stackable || 'Y'}</td>
                                 <td style={{ padding: '8px', textAlign: 'center' }}>{m.rotation || 'Y'}</td>
                                 <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                  <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid var(--border-color)', borderRadius: '4px', marginRight: '4px', cursor: 'pointer' }}>수정</button>
-                                  <button type="button" onClick={() => handleDeletePackingMethod(m.id)} style={{ padding: '3px 8px', fontSize: '11px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>삭제</button>
+                                  <button type="button" onClick={() => setEditingMethod({ ...m })} style={{ padding: '3px 8px', fontSize: '11px', background: '#f3f4f6', border: '1px solid var(--border-color)', borderRadius: '4px', marginRight: '8px', cursor: 'pointer' }}>수정</button>
+                                  <button type="button" onClick={() => handleDeletePackingMethod(m.id)} title="삭제" style={{ padding: '3px 6px', fontSize: '13px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🗑️</button>
                                 </td>
                               </tr>
                             );

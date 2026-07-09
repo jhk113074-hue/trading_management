@@ -190,9 +190,9 @@ export const TeamManagement: React.FC = () => {
                     {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : '-'}
                   </td>
                   <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                    <button onClick={() => handleResetPassword(member.email)} className="btn" style={{ color: '#059669', border: 'none', padding: '4px 8px', marginRight: '8px' }}>비번 리셋</button>
-                    <button onClick={() => handleOpenEdit(member)} className="btn" style={{ color: 'var(--focus-ring)', border: 'none', padding: '4px 8px', marginRight: '8px' }}>수정</button>
-                    <button onClick={() => handleDeleteMember(member.id)} className="btn" style={{ color: '#ef4444', border: 'none', padding: '4px 8px' }}>삭제</button>
+                    <button onClick={() => handleResetPassword(member.email)} className="btn" style={{ color: '#059669', border: 'none', padding: '4px 8px', marginRight: '8px', cursor: 'pointer' }}>비번 리셋</button>
+                    <button onClick={() => handleOpenEdit(member)} className="btn" style={{ color: 'var(--focus-ring)', border: 'none', padding: '4px 8px', marginRight: '8px', cursor: 'pointer' }}>수정</button>
+                    <button onClick={() => handleDeleteMember(member.id)} title="삭제" style={{ color: '#ef4444', border: 'none', padding: '4px 6px', background: 'none', fontSize: '14px', cursor: 'pointer' }}>🗑️</button>
                   </td>
                 </tr>
               ))}

@@ -587,8 +587,8 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                         <td style={{ padding: '5px 8px' }}>{c.phone}<br /><span style={{ color: 'var(--text-secondary)' }}>{c.email}</span></td>
                         <td style={{ padding: '5px 8px' }}>{c.remarks}</td>
                         <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                          <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '8px' }}>수정</button>
-                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.filter((ct: any) => ct.id !== c.id) }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>삭제</button>
+                          <button type="button" onClick={() => { setEditingContactId(c.id); setNewContactName(c.name); setNewContactPosition(c.position || ''); setNewContactPhone(c.phone || ''); setNewContactEmail(c.email || ''); setNewContactRemarks(c.remarks || ''); }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', marginRight: '12px', fontSize: '13px', fontWeight: 600 }}>수정</button>
+                          <button type="button" onClick={() => setFormData(prev => ({ ...prev, contacts: prev.contacts?.filter((ct: any) => ct.id !== c.id) }))} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px' }}>🗑️</button>
                         </td>
                       </tr>
                     ))}

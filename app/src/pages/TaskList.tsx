@@ -921,7 +921,8 @@ export const TaskList: React.FC = () => {
                       return (
                         <td style={{ padding: '0 12px', textAlign: 'center' }}>
                           <button onClick={(e) => { e.stopPropagation(); if (window.confirm('정말 삭제하시겠습니까?')) deleteTask(task.id); }}
-                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>삭제</button>
+                            title="삭제"
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>🗑️</button>
                         </td>
                       );
                     default:

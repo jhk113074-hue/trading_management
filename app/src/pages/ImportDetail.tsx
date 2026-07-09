@@ -1471,7 +1471,7 @@ export const ImportDetail: React.FC = () => {
                       <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.ciPl.url, documents.ciPl.name)}>
                         📄 {documents.ciPl.name} (미리보기)
                       </span>
-                      <button onClick={() => handleFileDelete('ciPl')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                      <button onClick={() => handleFileDelete('ciPl')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
                     </div>
                   ) : (
                     <div style={{ position: 'relative', border: '1px dashed var(--border-default)', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', background: '#fff', cursor: 'pointer' }}>
@@ -1592,7 +1592,7 @@ export const ImportDetail: React.FC = () => {
                         <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.etc.url, documents.etc.name)}>
                           📄 {documents.etc.name}
                         </span>
-                        <button onClick={() => handleFileDelete('etc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                        <button onClick={() => handleFileDelete('etc')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
                       </div>
                     ) : (
                       <div style={{ position: 'relative', border: '1px dashed var(--border-default)', padding: '20px 12px', borderRadius: '6px', textAlign: 'center', fontSize: '12px', color: 'var(--text-secondary)', background: '#fff', cursor: 'pointer' }}>
@@ -1721,7 +1721,7 @@ export const ImportDetail: React.FC = () => {
                       <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.freightDoc.url, documents.freightDoc.name)}>
                         📄 {documents.freightDoc.name}
                       </span>
-                      <button onClick={() => handleFileDelete('freightDoc' as any)} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕ 삭제</button>
+                      <button onClick={() => handleFileDelete('freightDoc' as any)} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
                     </div>
                   ) : (
                     <div style={{ position: 'relative', border: '1px dashed var(--border-default)', padding: '24px 14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text-secondary)', background: '#fff', cursor: 'pointer' }}>
