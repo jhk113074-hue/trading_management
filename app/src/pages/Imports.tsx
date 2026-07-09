@@ -4,6 +4,8 @@ import type { ImportRequest } from '../types';
 import { db, COMPANY_ID } from '../firebase';
 import { collection, doc, getDocs, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import type { Customer } from '../types/customer';
 const getSellerAbbr = (name: string): string => {
   if (!name) return 'SUP';
   const words = name.replace(/[^a-zA-Z\s]/g, '').toUpperCase().split(/\s+/).filter(Boolean);
@@ -210,6 +212,17 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   }, []);
 
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [customerSelectTarget, setCustomerSelectTarget] = useState<'new' | 'edit'>('new');
+
+  // 고객사(바이어) DB 실시간 동기화 로드
+  useEffect(() => {
+    const unsub = onSnapshot(collection(doc(db, 'companies', COMPANY_ID), 'customers'), (snap) => {
+      setCustomers(snap.docs.map(d => ({ id: d.id, ...d.data() } as Customer)));
+    });
+    return () => unsub();
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
   
   const loadSuppliers = async () => {
@@ -995,27 +1008,45 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
               {isQuoteMode ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
-                  <input 
-                    type="text" 
-                    value={newRequest.finalCustomer || ''} 
-                    onChange={e => setNewRequest(p => ({ ...p, finalCustomer: e.target.value }))}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                    placeholder="예: 최종 납품처 기입"
-                  />
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      readOnly
+                      value={newRequest.finalCustomer || ''} 
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                      placeholder="우측 [검색] 버튼으로 고객사 지정"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setCustomerSelectTarget('new'); setShowCustomerModal(true); }}
+                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
-                      <input 
-                        type="text" 
-                        value={newRequest.finalCustomer || ''} 
-                        onChange={e => setNewRequest(p => ({ ...p, finalCustomer: e.target.value }))}
-                        style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                        placeholder="예: 최종 납품처 기입"
-                      />
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input 
+                          type="text" 
+                          readOnly
+                          value={newRequest.finalCustomer || ''} 
+                          style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                          placeholder="우측 [검색] 버튼으로 고객사 지정"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setCustomerSelectTarget('new'); setShowCustomerModal(true); }}
+                          style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          🔍 검색
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>INCOTERMS</label>
@@ -1847,27 +1878,45 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               {/* 최종고객 & INCOTERMS & B/L AWB 번호 */}
               {isQuoteMode ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
-                  <input 
-                    type="text" 
-                    value={editingRequest.finalCustomer || ''} 
-                    onChange={e => setEditingRequest(p => p ? ({ ...p, finalCustomer: e.target.value }) : null)}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                    placeholder="예: 최종 납품처 기입"
-                  />
+                  <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      readOnly
+                      value={editingRequest.finalCustomer || ''} 
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                      placeholder="우측 [검색] 버튼으로 고객사 지정"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setCustomerSelectTarget('edit'); setShowCustomerModal(true); }}
+                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객</label>
-                      <input 
-                        type="text" 
-                        value={editingRequest.finalCustomer || ''} 
-                        onChange={e => setEditingRequest(p => p ? ({ ...p, finalCustomer: e.target.value }) : null)}
-                        style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
-                        placeholder="예: 최종 납품처 기입"
-                      />
+                      <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>최종고객 (고객사 DB 연계)</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input 
+                          type="text" 
+                          readOnly
+                          value={editingRequest.finalCustomer || ''} 
+                          style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                          placeholder="우측 [검색] 버튼으로 고객사 지정"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setCustomerSelectTarget('edit'); setShowCustomerModal(true); }}
+                          style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          🔍 검색
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>INCOTERMS</label>
@@ -2547,6 +2596,22 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </form>
           </div>
         </div>
+      )}
+
+      {/* 🔍 바이어(최종고객) 검색 모달 */}
+      {showCustomerModal && (
+        <CustomerSearchModal
+          customers={customers}
+          onClose={() => setShowCustomerModal(false)}
+          onSelect={(cust) => {
+            if (customerSelectTarget === 'new') {
+              setNewRequest(p => ({ ...p, finalCustomer: cust.name }));
+            } else {
+              setEditingRequest(p => p ? ({ ...p, finalCustomer: cust.name }) : null);
+            }
+            setShowCustomerModal(false);
+          }}
+        />
       )}
     </div>
   );
