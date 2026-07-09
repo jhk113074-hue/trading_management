@@ -1997,7 +1997,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1.6fr 2fr 2fr 0.9fr 1.2fr', gap: '8px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', alignItems: 'end' }}>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
@@ -2011,7 +2011,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)', marginTop: '4px' }}>고객 및 거래 조건</div>
 
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.8fr 0.9fr 62px 1.5fr 1.8fr', gap: '8px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
@@ -2046,7 +2046,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* ── Row 4: Departure | Packing | Shipping | Delivery | Origin ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr 1.5fr 1fr', gap: '8px', alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
               <CompactComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
               <CompactComboSelect label="Packing Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
               <CompactComboSelect label="Shipping" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
@@ -2366,10 +2366,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>
                       ${((it.salePriceUsd || 0) * (it.quantity || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a' }}>
+                    <td style={{ padding: '4px', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '15px', color: '#16a34a', fontVariantNumeric: 'tabular-nums' }}>
                       ${(it.quantity ? (((it.salePriceUsd || 0) - (it.purchasePriceUsd > 0 ? it.purchasePriceUsd : ((it.purchasePriceKrw || 0) / (it.exchangeRate || formData.exchangeRate || 1400)))) * it.quantity) : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td style={{ padding: '4px' }}>
@@ -2790,10 +2790,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </button>
 
             {initialPI && (
-              <button type="button" onClick={() => handleSave(true)} disabled={savingType !== null}
-                style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}>
-                {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
-              </button>
+              <>
+                {/* 오클릭 방지: 일반저장과 시각적 구분을 위한 여백 겸 구분선 */}
+                <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 2px' }} />
+                <button type="button" onClick={() => {
+                  if (!window.confirm('Revision으로 저장하시겠습니까?\n(변경 사유가 기록에 남고 버전이 올라갑니다.)')) return;
+                  handleSave(true);
+                }} disabled={savingType !== null}
+                  style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}>
+                  {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -2940,10 +2947,10 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
   const isRequired = label?.includes('★');
   const isReadOnly = disabled;
   const inputStyle: React.CSSProperties = isReadOnly
-    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: 'var(--text-muted)', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%' }
+    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: 'var(--text-muted)', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%', fontVariantNumeric: 'tabular-nums' }
     : isRequired
-      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' }
-      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none' };
+      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none', fontVariantNumeric: 'tabular-nums' }
+      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none', fontVariantNumeric: 'tabular-nums' };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
       <label style={{ fontSize: '13px', fontWeight: 700, color: isReadOnly ? 'var(--text-muted)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
@@ -2956,7 +2963,7 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
 };
 
 
-const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '15px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const };
+const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '15px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const, fontVariantNumeric: 'tabular-nums' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
