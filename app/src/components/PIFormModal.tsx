@@ -1981,11 +1981,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, backgroundColor: '#fff' }}>
 
           {/* AI prompt draft generator */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
               🪄 AI 견적서 초안 자동 생성 (프롬프트 입력)
             </span>
-            <p style={{ fontSize: '11.5px', color: '#166534', margin: 0 }}>
+            <p style={{ fontSize: '11px', color: '#64748b', margin: 0, fontWeight: 500 }}>
               거래 바이어명, 구매할 상품 종류(볼트/너트), 수량 및 타겟 마진율을 입력해 주시면 AI가 견적 내역과 단가를 일괄 구성합니다.
             </p>
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -1994,12 +1994,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 placeholder="예: NATIONAL 바이어에게 볼트 5000개, 너트 3000개 견적서 작성해줘. 마진은 15%로 세팅."
                 value={aiPrompt}
                 onChange={e => setAiPrompt(e.target.value)}
-                style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none', backgroundColor: '#fff' }}
+                style={{ flex: 1, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', height: '34px', boxSizing: 'border-box', fontWeight: 600, color: '#1e293b' }}
               />
               <button
                 type="button"
                 onClick={handleAiDraftCreate}
-                style={{ padding: '8px 16px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ padding: '0 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', height: '34px', transition: 'background 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
               >
                 🪄 초안 생성
               </button>
@@ -2007,10 +2009,10 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
           
           {/* ── PI Document-style compact form (4 rows) ── */}
-          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
             {/* ── 섹션: 발행 정보 ── */}
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)' }}>발행 정보</div>
+            <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', letterSpacing: '0.02em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #cbd5e1' }}>발행 정보</div>
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', alignItems: 'end' }}>
@@ -2024,7 +2026,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             </div>
 
             {/* ── 섹션: 고객 및 거래 조건 ── */}
-            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)', marginTop: '4px' }}>고객 및 거래 조건</div>
+            <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', letterSpacing: '0.02em', textTransform: 'uppercase', paddingBottom: '6px', borderBottom: '1px solid #cbd5e1', marginTop: '4px' }}>고객 및 거래 조건</div>
 
             {/* ── Row 3: Customer | 주소 | 담당 | Incoterms | Dest.Port | Payment ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
@@ -2071,30 +2073,30 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {/* Line Items */}
-          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '2px solid #f1f5f9', paddingBottom: '10px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ background: '#ffffff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #cbd5e1', paddingBottom: '10px' }}>
+              <h4 style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📦</span> 상품 라인 (Line Items)
               </h4>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleSimulation} style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>🚢 적재 시뮬레이션</button>
-                <button onClick={addItem} style={{ background: '#ffffff', border: '1.5px solid var(--border-default)', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: 'var(--text-secondary)' }}>＋ 상품 추가</button>
+                <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}>🚢 적재 시뮬레이션</button>
+                <button onClick={addItem} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>＋ 상품 추가</button>
               </div>
             </div>
-            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid var(--border-default)', borderRadius: '8px' }}>
-              <table style={{ width: '100%', minWidth: '1066px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
+            <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+              <table style={{ width: '100%', minWidth: '1066px', tableLayout: 'fixed', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '8px 4px', width: '336px', textAlign: 'center', borderTopLeftRadius: '8px', borderBottomLeftRadius: '8px', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>상품코드 / 스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>패킹방식/수량</th>
-                  <th style={{ padding: '8px 4px', width: '80px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', width: '110px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>매입가</th>
-                  <th style={{ padding: '8px 4px', width: '65px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>마진/올림</th>
-                  <th style={{ padding: '8px 4px', width: '75px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>단가(USD)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>총액($)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'right', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>이익($)</th>
-                  <th style={{ padding: '8px 4px', width: '90px', textAlign: 'center', fontWeight: 600, fontSize: '12px', letterSpacing: '0.04em' }}>비고</th>
-                  <th style={{ padding: '8px 4px', width: '40px', borderTopRightRadius: '8px', borderBottomRightRadius: '8px' }}></th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
+                  <th style={{ padding: '10px 4px', width: '336px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>상품코드 / 스펙 (Spec)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>패킹방식/수량</th>
+                  <th style={{ padding: '10px 4px', width: '80px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 4px', width: '110px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>매입가</th>
+                  <th style={{ padding: '10px 4px', width: '65px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>마진/올림</th>
+                  <th style={{ padding: '10px 4px', width: '75px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>단가(USD)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>총액($)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'right', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>이익($)</th>
+                  <th style={{ padding: '10px 4px', width: '90px', textAlign: 'center', fontWeight: 750, letterSpacing: '0.02em', borderBottom: '1px solid #cbd5e1' }}>비고</th>
+                  <th style={{ padding: '10px 4px', width: '40px', borderBottom: '1px solid #cbd5e1' }}></th>
                 </tr>
               </thead>
               <tbody>
