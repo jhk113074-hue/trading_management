@@ -1889,12 +1889,12 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </div>
             </div>
             {initialPI && revisions.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#eff6ff', padding: '8px 16px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>🕒 Revision 기록 불러오기:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', padding: '0 16px', borderRadius: '4px', border: '1px solid #cbd5e1', height: '46px', boxSizing: 'border-box' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>🕒 Revision 기록 불러오기:</span>
                 <select
                   value={dropdownRevId}
                   onChange={(e) => setDropdownRevId(e.target.value)}
-                  style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-default)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}
+                  style={{ padding: '0 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, color: '#1e293b', cursor: 'pointer', height: '34px', outline: 'none' }}
                 >
                   {revisions.map((rev) => {
                     const v = rev.version || 1;
@@ -1912,15 +1912,19 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   disabled={savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId}
                   style={{
                     marginLeft: '4px',
-                    background: '#e0e7ff',
-                    border: '1px solid #c7d2fe',
-                    color: '#4338ca',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
+                    background: '#3b82f6',
+                    border: 'none',
+                    color: '#fff',
+                    borderRadius: '4px',
+                    padding: '0 12px',
                     fontSize: '13px',
                     fontWeight: 700,
-                    cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer'
+                    height: '34px',
+                    cursor: (savingType !== null || !dropdownRevId || dropdownRevId === selectedRevId) ? 'not-allowed' : 'pointer',
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={e => { if (savingType === null && dropdownRevId && dropdownRevId !== selectedRevId) e.currentTarget.style.backgroundColor = '#2563eb'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#3b82f6'; }}
                   title="선택한 Revision 불러오기"
                 >
                   📥 불러오기
@@ -1932,12 +1936,13 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   style={{
                     marginLeft: '4px',
                     background: '#fef2f2',
-                    border: '1px solid #fee2e2',
+                    border: '1px solid #cbd5e1',
                     color: '#ef4444',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    padding: '0 12px',
                     fontSize: '13px',
                     fontWeight: 700,
+                    height: '34px',
                     cursor: savingType !== null ? 'not-allowed' : 'pointer'
                   }}
                   title="선택된 Revision 기록 삭제"
@@ -2535,14 +2540,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           </div>
 
           {initialPI && (
-            <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', padding: '12px 16px', borderRadius: '8px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>⚠️ Revision Reason (변경 사유) ★</div>
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '12px 16px', borderRadius: '4px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Revision Reason (변경 사유) <span style={{ color: '#ef4444' }}>*</span>
+              </div>
               <input
                 type="text"
                 value={revisionReason}
                 onChange={(e) => setRevisionReason(e.target.value)}
                 placeholder="예: 고객 단가 인하 요청 수용"
-                style={{ width: '100%', height: '32px', padding: '6px 10px', border: '1px solid #fcd34d', borderRadius: '6px', fontSize: '15.5px', color: '#78350f', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
           )}
@@ -2760,8 +2767,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 14px 14px', flexWrap: 'wrap', gap: '8px' }}>
-          {/* 왼쪽: 발주 액션 */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #cbd5e1', background: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 4px 4px', flexWrap: 'wrap', gap: '8px', height: '58px', boxSizing: 'border-box' }}>
+          {/* ① ① 왼쪽: 발주 액션 */}
           <div>
             {initialPI && (
               <button
@@ -2777,37 +2784,54 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
           {/* 오른쪽: 저장/출력 그룹 */}
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button onClick={handleCloseAttempt} style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 500, fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer' }}>취소</button>
+            <button 
+              onClick={handleCloseAttempt} 
+              style={{ padding: '0 14px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', fontWeight: 700, fontSize: '13px', color: '#475569', cursor: 'pointer', height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+            >취소</button>
 
             {/* 구분선 */}
-            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }} />
+            <div style={{ width: '1px', height: '24px', background: '#cbd5e1' }} />
 
             <button type="button" onClick={() => generatePIPdf(formData as ProformaInvoice, items)}
-              style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #fca5a5', background: '#fff', fontWeight: 600, fontSize: '12px', color: '#dc2626', cursor: 'pointer' }}>
+              style={{ padding: '0 14px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, fontSize: '13px', color: '#dc2626', cursor: 'pointer', height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
+            >
               📄 PDF
             </button>
             <button type="button" onClick={() => generatePIExcel(formData as ProformaInvoice, items)}
-              style={{ padding: '8px 14px', borderRadius: '7px', border: '1px solid #86efac', background: '#fff', fontWeight: 600, fontSize: '12px', color: '#16a34a', cursor: 'pointer' }}>
+              style={{ padding: '0 14px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, fontSize: '13px', color: '#16a34a', cursor: 'pointer', height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f0fdf4'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
+            >
               📊 Excel
             </button>
 
             {/* 구분선 */}
-            <div style={{ width: '1px', height: '24px', background: 'var(--border-color)' }} />
+            <div style={{ width: '1px', height: '24px', background: '#cbd5e1' }} />
 
             <button type="button" onClick={() => handleSave(false)} disabled={savingType !== null}
-              style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#2563eb', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1 }}>
+              style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: savingType === 'normal' ? '#93c5fd' : '#3b82f6', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'normal' ? 0.5 : 1, height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
+              onMouseEnter={e => { if (savingType === null) e.currentTarget.style.backgroundColor = '#2563eb'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#3b82f6'; }}
+            >
               {savingType === 'normal' ? '✔ 저장 중...' : '✔ 일반저장'}
             </button>
 
             {initialPI && (
               <>
                 {/* 오클릭 방지: 일반저장과 시각적 구분을 위한 여백 겸 구분선 */}
-                <div style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 2px' }} />
+                <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 2px' }} />
                 <button type="button" onClick={() => {
                   if (!window.confirm('Revision으로 저장하시겠습니까?\n(변경 사유가 기록에 남고 버전이 올라갑니다.)')) return;
                   handleSave(true);
                 }} disabled={savingType !== null}
-                  style={{ padding: '8px 18px', borderRadius: '7px', border: 'none', background: savingType === 'revision' ? '#c4b5fd' : '#7c3aed', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1 }}>
+                  style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: savingType === 'revision' ? '#94a3b8' : '#1e293b', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: savingType !== null ? 'not-allowed' : 'pointer', opacity: savingType !== null && savingType !== 'revision' ? 0.5 : 1, height: '34px', boxSizing: 'border-box', transition: 'background 0.2s' }}
+                  onMouseEnter={e => { if (savingType === null) e.currentTarget.style.backgroundColor = '#0f172a'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1e293b'; }}
+                >
                   {savingType === 'revision' ? '⚙ Revision 저장 중...' : '⚙ Revision 저장'}
                 </button>
               </>
