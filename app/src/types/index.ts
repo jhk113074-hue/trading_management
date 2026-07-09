@@ -205,6 +205,16 @@ export interface ImportRequest {
     freightCost?: number; // 예상 운임
     customsCost?: number; // 예상 관세/통관비
     otherCost?: number; // 기타 비용
+    // 엑셀 수입원가 고도화 필드
+    todayExchangeRate?: number;    // 오늘환율 (예: 1430)
+    appliedExchangeRate?: number;  // 수입기준환율 (예: 1450)
+    buyingPriceUsd?: number;       // 외화 단가 (USD)
+    buyingQty?: number;            // 수량
+    ftaTaxRate?: number;           // FTA 관세율 (%)
+    antiDumpingRate?: number;      // 반덤핑세율 (%)
+    transferFee?: number;          // 송금/통관 수수료 (원화)
+    importDeclareFee?: number;     // 통관 대행료/수수료 (원화)
+    localTransportCost?: number;   // 국내비용 + 내륙운송비 (원화)
   };
   marginRate?: number; // 마진율 (%)
   marginAmount?: number; // 마진 금액 (KRW)

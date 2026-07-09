@@ -144,6 +144,45 @@ export const INITIAL_IMPORTS: ImportRequest[] = [
 ];
 
 export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'active' }) => {
+  const calculateAddTotalCost = (req: Partial<ImportRequest>) => {
+    const cb = req.costBreakdown || {};
+    const applied = cb.appliedExchangeRate || 1450;
+    const priceUsd = cb.buyingPriceUsd || 0;
+    const qty = cb.buyingQty || 1;
+    const totalBuyingKrw = priceUsd * applied * qty;
+    
+    const ftaDuty = totalBuyingKrw * ((cb.ftaTaxRate || 0) / 100);
+    const antidumpDuty = totalBuyingKrw * ((cb.antiDumpingRate || 0) / 100);
+    
+    return totalBuyingKrw + ftaDuty + antidumpDuty + (cb.transferFee || 0) + (cb.importDeclareFee || 0) + (cb.localTransportCost || 0);
+  };
+
+  const calculateEditTotalCost = (req: Partial<ImportRequest>) => {
+    const cb = req.costBreakdown || {};
+    const applied = cb.appliedExchangeRate || 1450;
+    const priceUsd = cb.buyingPriceUsd || 0;
+    const qty = cb.buyingQty || 1;
+    const totalBuyingKrw = priceUsd * applied * qty;
+    
+    const ftaDuty = totalBuyingKrw * ((cb.ftaTaxRate || 0) / 100);
+    const antidumpDuty = totalBuyingKrw * ((cb.antiDumpingRate || 0) / 100);
+    
+    return totalBuyingKrw + ftaDuty + antidumpDuty + (cb.transferFee || 0) + (cb.importDeclareFee || 0) + (cb.localTransportCost || 0);
+  };
+
+  const recalculateAddCosts = (prev: Partial<ImportRequest>, nextB: any) => {
+    const totalCost = calculateAddTotalCost({ ...prev, costBreakdown: nextB });
+    const rate = prev.marginRate || 0;
+    const marginAmount = Math.round(totalCost * (rate / 100));
+    return { ...prev, costBreakdown: nextB, marginAmount, customerQuoteAmount: totalCost + marginAmount };
+  };
+
+  const recalculateEditCosts = (prev: Partial<ImportRequest>, nextB: any) => {
+    const totalCost = calculateEditTotalCost({ ...prev, costBreakdown: nextB });
+    const rate = prev.marginRate || 0;
+    const marginAmount = Math.round(totalCost * (rate / 100));
+    return { ...prev, costBreakdown: nextB, marginAmount, customerQuoteAmount: totalCost + marginAmount };
+  };
   const isQuoteMode = mode === 'quotes';
   const navigate = useNavigate();
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
@@ -218,7 +257,21 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     requestNote: '',
     piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }],
     supplierQuotes: [{ id: 'q1', supplierName: '', itemName: '', amount: 0, currency: 'USD', quoteDate: new Date().toISOString().slice(0, 10) }],
-    costBreakdown: { productCost: 0, freightCost: 0, customsCost: 0, otherCost: 0 },
+    costBreakdown: { 
+      productCost: 0, 
+      freightCost: 0, 
+      customsCost: 0, 
+      otherCost: 0,
+      todayExchangeRate: 1430,
+      appliedExchangeRate: 1450,
+      buyingPriceUsd: 0,
+      buyingQty: 1,
+      ftaTaxRate: 0,
+      antiDumpingRate: 0,
+      transferFee: 30000,
+      importDeclareFee: 30000,
+      localTransportCost: 500000
+    },
     marginRate: 0,
     marginAmount: 0,
     customerQuoteAmount: 0
@@ -1313,33 +1366,173 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>수입원가 산정 (KRW)</span>
-                      {([
-                        ['productCost', '제품 원가'],
-                        ['freightCost', '예상 운임'],
-                        ['customsCost', '예상 관세/통관비'],
-                        ['otherCost', '기타 비용']
-                      ] as const).map(([key, label]) => (
-                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</label>
-                          <input type="number" value={(newRequest.costBreakdown as any)?.[key] || ''} onChange={(e) => {
+                                        <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px' }}>📊 엑셀 연동 수입원가 산정 (Trade Cost Calculator)</span>
+                      
+                      {/* 환율 및 기본정보 그리드 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '10px', borderRadius: '6px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>오늘환율 (EXCHANGE RATE)</label>
+                          <input type="number" value={newRequest.costBreakdown?.todayExchangeRate ?? 1430} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setNewRequest(p => {
-                              const nextBreakdown = { ...(p.costBreakdown || {}), [key]: val };
-                              const totalCost = (nextBreakdown.productCost || 0) + (nextBreakdown.freightCost || 0) + (nextBreakdown.customsCost || 0) + (nextBreakdown.otherCost || 0);
-                              const rate = p.marginRate || 0;
-                              const marginAmount = Math.round(totalCost * (rate / 100));
-                              return { ...p, costBreakdown: nextBreakdown, marginAmount, customerQuoteAmount: totalCost + marginAmount };
+                              const nextB = { ...(p.costBreakdown || {}), todayExchangeRate: val, appliedExchangeRate: val + 20 };
+                              return recalculateAddCosts(p, nextB);
                             });
-                          }} style={{ width: '120px', padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', textAlign: 'right' }} />
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
                         </div>
-                      ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '6px', marginTop: '2px' }}>
-                        <strong style={{ fontSize: '12px' }}>수입원가 합계</strong>
-                        <strong style={{ fontSize: '12px', color: '#0f766e' }}>
-                          {(((newRequest.costBreakdown?.productCost || 0) + (newRequest.costBreakdown?.freightCost || 0) + (newRequest.costBreakdown?.customsCost || 0) + (newRequest.costBreakdown?.otherCost || 0))).toLocaleString()} 원
-                        </strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>수입기준환율 (APPLIED)</label>
+                          <input type="number" value={newRequest.costBreakdown?.appliedExchangeRate ?? 1450} onChange={e => {
+                            const val = Number(e.target.value) || 0;
+                            setNewRequest(p => {
+                              const nextB = { ...(p.costBreakdown || {}), appliedExchangeRate: val };
+                              return recalculateAddCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>FOB 단가 (USD)</label>
+                          <input type="number" value={newRequest.costBreakdown?.buyingPriceUsd ?? 0} onChange={e => {
+                            const val = Number(e.target.value) || 0;
+                            setNewRequest(p => {
+                              const nextB = { ...(p.costBreakdown || {}), buyingPriceUsd: val };
+                              return recalculateAddCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>구매 수량 (Q'TY / KG)</label>
+                          <input type="number" value={newRequest.costBreakdown?.buyingQty ?? 1} onChange={e => {
+                            const val = Number(e.target.value) || 1;
+                            setNewRequest(p => {
+                              const nextB = { ...(p.costBreakdown || {}), buyingQty: val };
+                              return recalculateAddCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                      </div>
+
+                      {/* 세부 비용 항목 상세 입력 테이블 */}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '8px' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                            <th style={{ padding: '4px', textAlign: 'left' }}>항목명 (EXPENSE ITEM)</th>
+                            <th style={{ padding: '4px', textAlign: 'center', width: '80px' }}>요율 (%)</th>
+                            <th style={{ padding: '4px', textAlign: 'right', width: '130px' }}>원화 단가 (KRW)</th>
+                            <th style={{ padding: '4px', textAlign: 'right', width: '150px' }}>원화 총액 (KRW)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>구매 단가 (Buying Price FOB)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                              {Math.round((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450) * (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>FTA 관세 (FTA CO / Tax)</td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={newRequest.costBreakdown?.ftaTaxRate ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setNewRequest(p => {
+                                  const nextB = { ...(p.costBreakdown || {}), ftaTaxRate: val };
+                                  return recalculateAddCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'center' }} />
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round(((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450)) * ((newRequest.costBreakdown?.ftaTaxRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {Math.round(((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450) * (newRequest.costBreakdown?.buyingQty || 1)) * ((newRequest.costBreakdown?.ftaTaxRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>반덤핑 관세 (Anti-Dumping Duty)</td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={newRequest.costBreakdown?.antiDumpingRate ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setNewRequest(p => {
+                                  const nextB = { ...(p.costBreakdown || {}), antiDumpingRate: val };
+                                  return recalculateAddCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'center' }} />
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round(((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450)) * ((newRequest.costBreakdown?.antiDumpingRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {Math.round(((newRequest.costBreakdown?.buyingPriceUsd || 0) * (newRequest.costBreakdown?.appliedExchangeRate || 1450) * (newRequest.costBreakdown?.buyingQty || 1)) * ((newRequest.costBreakdown?.antiDumpingRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>해외 송금/이체 수수료 (Money transfer fee)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((newRequest.costBreakdown?.transferFee || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={newRequest.costBreakdown?.transferFee ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setNewRequest(p => {
+                                  const nextB = { ...(p.costBreakdown || {}), transferFee: val };
+                                  return recalculateAddCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>수입 통관대행료/대행 수수료 (Import declare)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((newRequest.costBreakdown?.importDeclareFee || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={newRequest.costBreakdown?.importDeclareFee ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setNewRequest(p => {
+                                  const nextB = { ...(p.costBreakdown || {}), importDeclareFee: val };
+                                  return recalculateAddCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1', height: '26px' }}>
+                            <td>국내 비용 + 내륙 운송비 (Local cost / FCL)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((newRequest.costBreakdown?.localTransportCost || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={newRequest.costBreakdown?.localTransportCost ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setNewRequest(p => {
+                                  const nextB = { ...(p.costBreakdown || {}), localTransportCost: val };
+                                  return recalculateAddCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* 총 합계 요약 그리드 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '2px solid #0f766e', paddingTop: '8px' }}>
+                        <div>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>총 수입 원가 (Actual Cost): </strong>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{Math.round(calculateAddTotalCost(newRequest)).toLocaleString()} 원</span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>KG당 단위 원가: </strong>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#b45309' }}>
+                            {Math.round(calculateAddTotalCost(newRequest) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1363,6 +1556,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '6px', marginTop: '2px' }}>
                         <strong style={{ fontSize: '12px' }}>고객 제시 견적금액</strong>
                         <strong style={{ fontSize: '13px', color: '#1e3a8a' }}>{(newRequest.customerQuoteAmount || 0).toLocaleString()} 원</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>KG당 최종 판매단가</strong>
+                        <strong style={{ fontSize: '12.5px', color: '#10b981' }}>
+                          {Math.round((newRequest.customerQuoteAmount || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                        </strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: '1px solid var(--border-default)', paddingTop: '6px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
@@ -2024,34 +2223,182 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                    <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>수입원가 산정 (KRW)</span>
-                      {([
-                        ['productCost', '제품 원가'],
-                        ['freightCost', '예상 운임'],
-                        ['customsCost', '예상 관세/통관비'],
-                        ['otherCost', '기타 비용']
-                      ] as const).map(([key, label]) => (
-                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</label>
-                          <input type="number" value={(editingRequest.costBreakdown as any)?.[key] || ''} onChange={(e) => {
+                                        <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '2px solid #cbd5e1', paddingBottom: '6px' }}>📊 엑셀 연동 수입원가 산정 (Trade Cost Calculator)</span>
+                      
+                      {/* 환율 및 기본정보 그리드 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '10px', borderRadius: '6px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>오늘환율 (EXCHANGE RATE)</label>
+                          <input type="number" value={editingRequest.costBreakdown?.todayExchangeRate ?? 1430} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setEditingRequest(p => {
                               if (!p) return null;
-                              const nextBreakdown = { ...(p.costBreakdown || {}), [key]: val };
-                              const totalCost = (nextBreakdown.productCost || 0) + (nextBreakdown.freightCost || 0) + (nextBreakdown.customsCost || 0) + (nextBreakdown.otherCost || 0);
-                              const rate = p.marginRate || 0;
-                              const marginAmount = Math.round(totalCost * (rate / 100));
-                              return { ...p, costBreakdown: nextBreakdown, marginAmount, customerQuoteAmount: totalCost + marginAmount };
+                              const nextB = { ...(p.costBreakdown || {}), todayExchangeRate: val, appliedExchangeRate: val + 20 };
+                              return recalculateEditCosts(p, nextB);
                             });
-                          }} style={{ width: '120px', padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', textAlign: 'right' }} />
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
                         </div>
-                      ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '6px', marginTop: '2px' }}>
-                        <strong style={{ fontSize: '12px' }}>수입원가 합계</strong>
-                        <strong style={{ fontSize: '12px', color: '#0f766e' }}>
-                          {(((editingRequest.costBreakdown?.productCost || 0) + (editingRequest.costBreakdown?.freightCost || 0) + (editingRequest.costBreakdown?.customsCost || 0) + (editingRequest.costBreakdown?.otherCost || 0))).toLocaleString()} 원
-                        </strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>수입기준환율 (APPLIED)</label>
+                          <input type="number" value={editingRequest.costBreakdown?.appliedExchangeRate ?? 1450} onChange={e => {
+                            const val = Number(e.target.value) || 0;
+                            setEditingRequest(p => {
+                              if (!p) return null;
+                              const nextB = { ...(p.costBreakdown || {}), appliedExchangeRate: val };
+                              return recalculateEditCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>FOB 단가 (USD)</label>
+                          <input type="number" value={editingRequest.costBreakdown?.buyingPriceUsd ?? 0} onChange={e => {
+                            const val = Number(e.target.value) || 0;
+                            setEditingRequest(p => {
+                              if (!p) return null;
+                              const nextB = { ...(p.costBreakdown || {}), buyingPriceUsd: val };
+                              return recalculateEditCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>구매 수량 (Q'TY / KG)</label>
+                          <input type="number" value={editingRequest.costBreakdown?.buyingQty ?? 1} onChange={e => {
+                            const val = Number(e.target.value) || 1;
+                            setEditingRequest(p => {
+                              if (!p) return null;
+                              const nextB = { ...(p.costBreakdown || {}), buyingQty: val };
+                              return recalculateEditCosts(p, nextB);
+                            });
+                          }} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }} />
+                        </div>
+                      </div>
+
+                      {/* 세부 비용 항목 상세 입력 테이블 */}
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '8px' }}>
+                        <thead>
+                          <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                            <th style={{ padding: '4px', textAlign: 'left' }}>항목명 (EXPENSE ITEM)</th>
+                            <th style={{ padding: '4px', textAlign: 'center', width: '80px' }}>요율 (%)</th>
+                            <th style={{ padding: '4px', textAlign: 'right', width: '130px' }}>원화 단가 (KRW)</th>
+                            <th style={{ padding: '4px', textAlign: 'right', width: '150px' }}>원화 총액 (KRW)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>구매 단가 (Buying Price FOB)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                              {Math.round((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450) * (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>FTA 관세 (FTA CO / Tax)</td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={editingRequest.costBreakdown?.ftaTaxRate ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const nextB = { ...(p.costBreakdown || {}), ftaTaxRate: val };
+                                  return recalculateEditCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'center' }} />
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round(((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450)) * ((editingRequest.costBreakdown?.ftaTaxRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {Math.round(((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450) * (editingRequest.costBreakdown?.buyingQty || 1)) * ((editingRequest.costBreakdown?.ftaTaxRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>반덤핑 관세 (Anti-Dumping Duty)</td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={editingRequest.costBreakdown?.antiDumpingRate ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const nextB = { ...(p.costBreakdown || {}), antiDumpingRate: val };
+                                  return recalculateEditCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'center' }} />
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round(((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450)) * ((editingRequest.costBreakdown?.antiDumpingRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              {Math.round(((editingRequest.costBreakdown?.buyingPriceUsd || 0) * (editingRequest.costBreakdown?.appliedExchangeRate || 1450) * (editingRequest.costBreakdown?.buyingQty || 1)) * ((editingRequest.costBreakdown?.antiDumpingRate || 0) / 100)).toLocaleString()} 원
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>해외 송금/이체 수수료 (Money transfer fee)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((editingRequest.costBreakdown?.transferFee || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={editingRequest.costBreakdown?.transferFee ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const nextB = { ...(p.costBreakdown || {}), transferFee: val };
+                                  return recalculateEditCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
+                            <td>수입 통관대행료/대행 수수료 (Import declare)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((editingRequest.costBreakdown?.importDeclareFee || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={editingRequest.costBreakdown?.importDeclareFee ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const nextB = { ...(p.costBreakdown || {}), importDeclareFee: val };
+                                  return recalculateEditCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1', height: '26px' }}>
+                            <td>국내 비용 + 내륙 운송비 (Local cost / FCL)</td>
+                            <td style={{ textAlign: 'center' }}>-</td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>
+                              {Math.round((editingRequest.costBreakdown?.localTransportCost || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
+                            </td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <input type="number" value={editingRequest.costBreakdown?.localTransportCost ?? 0} onChange={e => {
+                                const val = Number(e.target.value) || 0;
+                                setEditingRequest(p => {
+                                  if (!p) return null;
+                                  const nextB = { ...(p.costBreakdown || {}), localTransportCost: val };
+                                  return recalculateEditCosts(p, nextB);
+                                });
+                              }} style={{ width: '100%', padding: '2px', border: '1px solid #cbd5e1', borderRadius: '3px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {/* 총 합계 요약 그리드 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '2px solid #0f766e', paddingTop: '8px' }}>
+                        <div>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>총 수입 원가 (Actual Cost): </strong>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{Math.round(calculateEditTotalCost(editingRequest)).toLocaleString()} 원</span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>KG당 단위 원가: </strong>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#b45309' }}>
+                            {Math.round(calculateEditTotalCost(editingRequest) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -2076,6 +2423,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '6px', marginTop: '2px' }}>
                         <strong style={{ fontSize: '12px' }}>고객 제시 견적금액</strong>
                         <strong style={{ fontSize: '13px', color: '#1e3a8a' }}>{(editingRequest.customerQuoteAmount || 0).toLocaleString()} 원</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>KG당 최종 판매단가</strong>
+                        <strong style={{ fontSize: '12.5px', color: '#10b981' }}>
+                          {Math.round((editingRequest.customerQuoteAmount || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                        </strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: '1px solid var(--border-default)', paddingTop: '6px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
