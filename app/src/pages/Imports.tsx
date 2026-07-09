@@ -326,7 +326,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
     const created: ImportRequest = {
       id: reqId,
-      status: '진행 결정 요청',
       blAwb: '-',
       poNumber: generatedPo,
       itemName: computedItemName,
@@ -344,7 +343,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       requestDate: newRequest.requestDate || new Date().toISOString().slice(0, 10),
       requestedBy: newRequest.requestedBy || '',
       requestNote: newRequest.requestNote || '',
-      customerDecision: '검토중',
+      customerDecision: isQuoteMode ? '검토중' : '승인',
+      status: isQuoteMode ? '진행 결정 요청' : '발주 진행',
 
       incoterms: newRequest.incoterms || 'FOB',
       paymentTerms: newRequest.paymentTerms || '100% T/T in advance',
@@ -518,10 +518,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </button>
           ) : (
             <button
-              onClick={() => navigate('/import-quotes')}
-              style={{ padding: '8px 16px', background: '#f1f5f9', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => setShowAddModal(true)}
+              style={{ padding: '8px 16px', background: '#ecfdf5', border: '1px solid #10b981', color: '#047857', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
             >
-              + 신규 요청은 수입 견적관리에서
+              신규 수입 확정등록
             </button>
           )}
           <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>

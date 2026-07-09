@@ -107,6 +107,16 @@ export const ImportDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (request && request.id === id) {
+      if (request.customerDecision === '승인') {
+        setActiveTab('수입내역');
+      } else {
+        setActiveTab('수입요청');
+      }
+    }
+  }, [request?.id, request?.customerDecision, id]);
+
   const handleDownloadPdf = () => {
     const element = document.getElementById('po-print-area');
     if (!element) return alert('PDF 다운로드 대상을 찾을 수 없습니다.');
@@ -288,7 +298,16 @@ export const ImportDetail: React.FC = () => {
             { key: '정산', label: '⑤ 정산/완료' },
             { key: '손익검토', label: '⑥ 손익검토' },
             { key: '로그', label: '로그' }
-          ] as const).map(tab => (
+          ] as const)
+          .filter(tab => {
+            const isApproved = request.customerDecision === '승인';
+            if (isApproved) {
+              return tab.key !== '수입요청' && tab.key !== '견적/원가';
+            } else {
+              return tab.key === '수입요청' || tab.key === '견적/원가';
+            }
+          })
+          .map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
