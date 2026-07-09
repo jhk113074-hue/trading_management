@@ -252,8 +252,8 @@ export const ImportDetail: React.FC = () => {
       
       {/* Back button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <button 
-          onClick={() => navigate('/imports')}
+        <button
+          onClick={() => navigate(-1)}
           style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14.5px' }}
         >
           &larr; 목록으로 돌아가기

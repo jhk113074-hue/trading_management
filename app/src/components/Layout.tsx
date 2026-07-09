@@ -385,6 +385,7 @@ export const Layout: React.FC = () => {
       { section: '영업관리', items: [
         { path: '/proforma-invoices', label: '≡ 견적관리', external: false },
         { path: '/orders', label: '📦 주문관리', external: false },
+        { path: '/import-quotes', label: '📥 수입 견적관리', external: false },
         { path: '/imports', label: '⚓ 수입관리', external: false }
       ] as any },
       { section: 'DB관리', items: [

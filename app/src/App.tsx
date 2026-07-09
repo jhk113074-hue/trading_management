@@ -75,7 +75,8 @@ const App: React.FC = () => {
               <Route path="approvals" element={<ApprovalSystem />} />
               <Route path="mails" element={<Mails />} />
               <Route path="meetings" element={<MeetingMinutes />} />
-              <Route path="imports" element={<Imports />} />
+              <Route path="import-quotes" element={<Imports mode="quotes" />} />
+              <Route path="imports" element={<Imports mode="active" />} />
               <Route path="imports/:id" element={<ImportDetail />} />
             </Route>
             <Route path="/container-packer" element={<ProtectedRoute><ContainerPacker /></ProtectedRoute>} />

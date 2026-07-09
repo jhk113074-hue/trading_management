@@ -143,7 +143,8 @@ const INITIAL_IMPORTS: ImportRequest[] = [
   }
 ];
 
-export const Imports: React.FC = () => {
+export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'active' }) => {
+  const isQuoteMode = mode === 'quotes';
   const navigate = useNavigate();
   const [importRequests, setImportRequests] = useState<ImportRequest[]>(INITIAL_IMPORTS);
 
@@ -466,21 +467,26 @@ export const Imports: React.FC = () => {
   };
 
   const filteredRequests = useMemo(() => {
-    if (!searchTerm.trim()) return importRequests;
-    return importRequests.filter(req => 
+    const base = isQuoteMode ? importRequests : importRequests.filter(req => req.customerDecision === '승인');
+    if (!searchTerm.trim()) return base;
+    return base.filter(req =>
       req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.id.includes(searchTerm) ||
       req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [importRequests, searchTerm]);
+  }, [importRequests, searchTerm, isQuoteMode]);
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
       
       {/* Title Header */}
       <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>수입관리</h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>수입운송 진행 및 의뢰관리 목록입니다.</p>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>{isQuoteMode ? '수입 견적관리' : '수입관리'}</h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+          {isQuoteMode
+            ? '고객사 수입요청 접수 및 해외공급사 견적/원가 산정 단계입니다. 고객이 진행을 승인하면 수입관리로 자동 이동합니다.'
+            : '고객사가 진행을 승인한 수입 발주/물류/통관/정산 건 목록입니다. 견적 검토 중인 건은 수입 견적관리에서 확인하세요.'}
+        </p>
       </div>
 
       {/* Filter panel */}
@@ -503,12 +509,21 @@ export const Imports: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={() => setShowAddModal(true)}
-            style={{ padding: '8px 16px', background: '#eff6ff', border: '1px solid #3b82f6', color: '#2563eb', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
-          >
-            신규 수입건 추가
-          </button>
+          {isQuoteMode ? (
+            <button
+              onClick={() => setShowAddModal(true)}
+              style={{ padding: '8px 16px', background: '#eff6ff', border: '1px solid #3b82f6', color: '#2563eb', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              신규 수입요청 등록
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/import-quotes')}
+              style={{ padding: '8px 16px', background: '#f1f5f9', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              + 신규 요청은 수입 견적관리에서
+            </button>
+          )}
           <button style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', borderRadius: '6px', fontSize: '13.5px', fontWeight: 600, cursor: 'pointer' }}>
             목록 받기
           </button>
@@ -533,6 +548,9 @@ export const Imports: React.FC = () => {
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '140px' }}>최종고객</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '100px' }}>담당자</th>
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '140px', textAlign: 'right' }}>수입금액</th>
+              {isQuoteMode && (
+                <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '110px', textAlign: 'center' }}>진행상태</th>
+              )}
               <th style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', width: '70px', textAlign: 'center' }}>관리</th>
             </tr>
           </thead>
@@ -612,7 +630,28 @@ export const Imports: React.FC = () => {
                     ₩{req.amount.toLocaleString()}
                   </span>
                 </td>
-                
+
+                {/* 진행상태 (견적모드 전용) */}
+                {isQuoteMode && (
+                  <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    {(() => {
+                      const decision = req.customerDecision || '검토중';
+                      const colorMap: Record<string, { bg: string; color: string }> = {
+                        '검토중': { bg: '#fef3c7', color: '#b45309' },
+                        '승인': { bg: '#dcfce7', color: '#15803d' },
+                        '보류': { bg: '#f1f5f9', color: '#64748b' },
+                        '거절': { bg: '#fee2e2', color: '#dc2626' }
+                      };
+                      const c = colorMap[decision] || colorMap['검토중'];
+                      return (
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, background: c.bg, color: c.color }}>
+                          {decision}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                )}
+
                 {/* 관리 (수정 및 삭제 버튼) */}
                 <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
