@@ -269,15 +269,15 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       freightCost: 0, 
       customsCost: 0, 
       otherCost: 0,
-      todayExchangeRate: 1430,
-      appliedExchangeRate: 1450,
+      todayExchangeRate: 0,
+      appliedExchangeRate: 0,
       buyingPriceUsd: 0,
-      buyingQty: 1,
+      buyingQty: 0,
       ftaTaxRate: 0,
       antiDumpingRate: 0,
-      transferFee: 30000,
-      importDeclareFee: 30000,
-      localTransportCost: 500000
+      transferFee: 0,
+      importDeclareFee: 0,
+      localTransportCost: 0
     },
     marginRate: 0,
     marginAmount: 0,
@@ -1444,7 +1444,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '10px', borderRadius: '6px', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>오늘환율 (EXCHANGE RATE)</label>
-                          <input type="number" value={newRequest.costBreakdown?.todayExchangeRate ?? 1430} onChange={e => {
+                          <input type="number" value={newRequest.costBreakdown?.todayExchangeRate || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setNewRequest(p => {
                               const nextB = { ...(p.costBreakdown || {}), todayExchangeRate: val, appliedExchangeRate: val + 20 };
@@ -1454,7 +1454,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>수입기준환율 (APPLIED)</label>
-                          <input type="number" value={newRequest.costBreakdown?.appliedExchangeRate ?? 1450} onChange={e => {
+                          <input type="number" value={newRequest.costBreakdown?.appliedExchangeRate || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setNewRequest(p => {
                               const nextB = { ...(p.costBreakdown || {}), appliedExchangeRate: val };
@@ -1464,7 +1464,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>FOB 단가 (USD)</label>
-                          <input type="number" value={newRequest.costBreakdown?.buyingPriceUsd ?? 0} onChange={e => {
+                          <input type="number" value={newRequest.costBreakdown?.buyingPriceUsd || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setNewRequest(p => {
                               const nextB = { ...(p.costBreakdown || {}), buyingPriceUsd: val };
@@ -1474,7 +1474,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>구매 수량 (Q'TY / KG)</label>
-                          <input type="number" value={newRequest.costBreakdown?.buyingQty ?? 1} onChange={e => {
+                          <input type="number" value={newRequest.costBreakdown?.buyingQty || ''} onChange={e => {
                             const val = Number(e.target.value) || 1;
                             setNewRequest(p => {
                               const nextB = { ...(p.costBreakdown || {}), buyingQty: val };
@@ -1508,7 +1508,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
                             <td>FTA 관세 (FTA CO / Tax)</td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={newRequest.costBreakdown?.ftaTaxRate ?? 0} onChange={e => {
+                              <input type="number" value={newRequest.costBreakdown?.ftaTaxRate || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setNewRequest(p => {
                                   const nextB = { ...(p.costBreakdown || {}), ftaTaxRate: val };
@@ -1526,7 +1526,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
                             <td>반덤핑 관세 (Anti-Dumping Duty)</td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={newRequest.costBreakdown?.antiDumpingRate ?? 0} onChange={e => {
+                              <input type="number" value={newRequest.costBreakdown?.antiDumpingRate || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setNewRequest(p => {
                                   const nextB = { ...(p.costBreakdown || {}), antiDumpingRate: val };
@@ -1548,7 +1548,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((newRequest.costBreakdown?.transferFee || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={newRequest.costBreakdown?.transferFee ?? 0} onChange={e => {
+                              <input type="number" value={newRequest.costBreakdown?.transferFee || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setNewRequest(p => {
                                   const nextB = { ...(p.costBreakdown || {}), transferFee: val };
@@ -1564,7 +1564,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((newRequest.costBreakdown?.importDeclareFee || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={newRequest.costBreakdown?.importDeclareFee ?? 0} onChange={e => {
+                              <input type="number" value={newRequest.costBreakdown?.importDeclareFee || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setNewRequest(p => {
                                   const nextB = { ...(p.costBreakdown || {}), importDeclareFee: val };
@@ -1580,7 +1580,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((newRequest.costBreakdown?.localTransportCost || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={newRequest.costBreakdown?.localTransportCost ?? 0} onChange={e => {
+                              <input type="number" value={newRequest.costBreakdown?.localTransportCost || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setNewRequest(p => {
                                   const nextB = { ...(p.costBreakdown || {}), localTransportCost: val };
@@ -2301,7 +2301,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', background: '#f1f5f9', padding: '10px', borderRadius: '6px', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>오늘환율 (EXCHANGE RATE)</label>
-                          <input type="number" value={editingRequest.costBreakdown?.todayExchangeRate ?? 1430} onChange={e => {
+                          <input type="number" value={editingRequest.costBreakdown?.todayExchangeRate || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setEditingRequest(p => {
                               if (!p) return null;
@@ -2312,7 +2312,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>수입기준환율 (APPLIED)</label>
-                          <input type="number" value={editingRequest.costBreakdown?.appliedExchangeRate ?? 1450} onChange={e => {
+                          <input type="number" value={editingRequest.costBreakdown?.appliedExchangeRate || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setEditingRequest(p => {
                               if (!p) return null;
@@ -2323,7 +2323,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>FOB 단가 (USD)</label>
-                          <input type="number" value={editingRequest.costBreakdown?.buyingPriceUsd ?? 0} onChange={e => {
+                          <input type="number" value={editingRequest.costBreakdown?.buyingPriceUsd || ''} onChange={e => {
                             const val = Number(e.target.value) || 0;
                             setEditingRequest(p => {
                               if (!p) return null;
@@ -2334,7 +2334,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <label style={{ fontSize: '11px', color: '#475569', fontWeight: 'bold' }}>구매 수량 (Q'TY / KG)</label>
-                          <input type="number" value={editingRequest.costBreakdown?.buyingQty ?? 1} onChange={e => {
+                          <input type="number" value={editingRequest.costBreakdown?.buyingQty || ''} onChange={e => {
                             const val = Number(e.target.value) || 1;
                             setEditingRequest(p => {
                               if (!p) return null;
@@ -2369,7 +2369,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
                             <td>FTA 관세 (FTA CO / Tax)</td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={editingRequest.costBreakdown?.ftaTaxRate ?? 0} onChange={e => {
+                              <input type="number" value={editingRequest.costBreakdown?.ftaTaxRate || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setEditingRequest(p => {
                                   if (!p) return null;
@@ -2388,7 +2388,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <tr style={{ borderBottom: '1px solid #e2e8f0', height: '26px' }}>
                             <td>반덤핑 관세 (Anti-Dumping Duty)</td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={editingRequest.costBreakdown?.antiDumpingRate ?? 0} onChange={e => {
+                              <input type="number" value={editingRequest.costBreakdown?.antiDumpingRate || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setEditingRequest(p => {
                                   if (!p) return null;
@@ -2411,7 +2411,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((editingRequest.costBreakdown?.transferFee || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={editingRequest.costBreakdown?.transferFee ?? 0} onChange={e => {
+                              <input type="number" value={editingRequest.costBreakdown?.transferFee || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setEditingRequest(p => {
                                   if (!p) return null;
@@ -2428,7 +2428,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((editingRequest.costBreakdown?.importDeclareFee || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={editingRequest.costBreakdown?.importDeclareFee ?? 0} onChange={e => {
+                              <input type="number" value={editingRequest.costBreakdown?.importDeclareFee || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setEditingRequest(p => {
                                   if (!p) return null;
@@ -2445,7 +2445,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                               {Math.round((editingRequest.costBreakdown?.localTransportCost || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원
                             </td>
                             <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={editingRequest.costBreakdown?.localTransportCost ?? 0} onChange={e => {
+                              <input type="number" value={editingRequest.costBreakdown?.localTransportCost || ''} onChange={e => {
                                 const val = Number(e.target.value) || 0;
                                 setEditingRequest(p => {
                                   if (!p) return null;
