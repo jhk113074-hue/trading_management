@@ -4877,8 +4877,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
       {/* Top Panel: PI Info & CI, Items Summary (Consolidated) */}
       {showPoDetails && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '16px', alignItems: 'stretch' }}>
-        
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(240px, 1fr)', gap: '16px', alignItems: 'start' }}>
+
         {/* Left: Consolidated Order Information */}
         <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>
