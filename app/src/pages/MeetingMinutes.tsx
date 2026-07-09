@@ -94,6 +94,33 @@ export const MeetingMinutes: React.FC = () => {
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
   
+  // Modaless states for Draggable Meeting Minutes Form Window
+  const [minuteWindowPosition, setMinuteWindowPosition] = useState({ x: 100, y: 50 });
+  const [isMinuteWindowMinimized, setIsMinuteWindowMinimized] = useState(false);
+
+  const handleMinuteHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') {
+      return;
+    }
+    const startX = e.clientX - minuteWindowPosition.x;
+    const startY = e.clientY - minuteWindowPosition.y;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setMinuteWindowPosition({
+        x: moveEvent.clientX - startX,
+        y: moveEvent.clientY - startY
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   // Floating Modaless preview states
   const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState('');
@@ -1223,14 +1250,30 @@ export const MeetingMinutes: React.FC = () => {
           onDragOver={e => { e.preventDefault(); setIsDraggingOver(true); }}
           onDragLeave={() => setIsDraggingOver(false)}
           onDrop={handleDrop}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          style={{ position: 'fixed', inset: 0, background: 'transparent', zIndex: 9999, pointerEvents: 'none' }}
         >
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '1000px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div 
+            style={{ 
+              background: '#fff', 
+              borderRadius: '8px', 
+              width: '100%', 
+              maxWidth: '900px', 
+              boxShadow: '0 10px 30px rgba(0,0,0,0.15)', 
+              overflow: 'hidden', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              position: 'absolute',
+              left: `${minuteWindowPosition.x}px`,
+              top: `${minuteWindowPosition.y}px`,
+              pointerEvents: 'auto',
+              border: '1px solid #cbd5e1'
+            }}
+          >
             
             {/* Drag drop overlay helper */}
             {isDraggingOver && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed var(--focus-ring)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span style={{ fontSize: '20px', fontWeight: 900, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(79, 70, 229, 0.15)', border: '4px dashed #3b82f6', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '20px', fontWeight: 900, color: '#3b82f6', background: '#fff', padding: '12px 24px', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   📥 마우스를 놓아 클라우드 저장소에 파일 업로드 (무제한 용량 지원)
                 </span>
               </div>
@@ -1240,13 +1283,16 @@ export const MeetingMinutes: React.FC = () => {
             {isUploadingFile && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(255, 255, 255, 0.85)', zIndex: 100000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
                 <div style={{ fontSize: '28px' }}>⏳</div>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: '#3b82f6', background: '#fff', padding: '12px 24px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
                   대용량 파일을 클라우드 저장소(Firebase Storage)에 안전하게 업로드하는 중입니다...
                 </span>
               </div>
             )}
 
-            <div style={{ padding: '16px 24px', background: 'var(--primary-color)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div 
+              onMouseDown={handleMinuteHeaderMouseDown}
+              style={{ padding: '14px 20px', background: '#1e293b', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'move', userSelect: 'none' }}
+            >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '15px', fontWeight: 800 }}>
                   {editId ? '📝 회의록 협업 작성 중' : '✍️ 새 회의록 협업 작성 중'}
@@ -1258,17 +1304,27 @@ export const MeetingMinutes: React.FC = () => {
                   </span>
                 )}
               </div>
-              <button type="button" onClick={handleCancelForm} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsMinuteWindowMinimized(!isMinuteWindowMinimized)} 
+                  style={{ background: 'none', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', padding: '2px 6px', display: 'flex', alignItems: 'center' }}
+                >
+                  {isMinuteWindowMinimized ? '🔲' : '➖'}
+                </button>
+                <button type="button" onClick={handleCancelForm} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              </div>
             </div>
 
-            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+            {!isMinuteWindowMinimized && (
+            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
               
               {/* AI prompt draft generator */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   🪄 AI 회의록 초안 자동 작성 (프롬프트 입력)
                 </span>
-                <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>
                   회의의 주요 안건, 참여 업체, 소요 기한을 적으시면 AI가 공식 회의록 제목 및 안건 구성안 초안을 에디터 본문에 작성해 드립니다.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -1277,12 +1333,12 @@ export const MeetingMinutes: React.FC = () => {
                     placeholder="예: 대만 선적 일정 지연 대책 회의. 박현 차장, 바이어 배석."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                    style={{ flex: 1, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', height: '34px', boxSizing: 'border-box' }}
                   />
                   <button
                     type="button"
                     onClick={handleAiDraftCreate}
-                    style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ padding: '0 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '34px', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }}
                   >
                     🪄 초안 생성
                   </button>
@@ -1291,28 +1347,28 @@ export const MeetingMinutes: React.FC = () => {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr 1.5fr', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>회의 일자 ★</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 일자 <span style={{ color: '#ef4444' }}>*</span></label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={e => handleLocalChange('date', e.target.value)}
-                    style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                   />
                 </div>
                 
                 {/* 2단: 연계 고객사 (바이어) 선택 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>연계 고객사 (바이어)</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연계 고객사 (바이어)</label>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <div style={{
                       flex: 1,
-                      padding: '10px 12px',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: '6px',
-                      fontSize: '13.5px',
+                      padding: '0 12px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
                       background: '#fff',
-                      minHeight: '41px',
+                      height: '34px',
                       boxSizing: 'border-box',
                       display: 'flex',
                       alignItems: 'center',
@@ -1322,9 +1378,9 @@ export const MeetingMinutes: React.FC = () => {
                     onClick={() => setIsFormCustomerSearchOpen(true)}
                     >
                       {customerName ? (
-                        <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{customerName}</span>
+                        <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{customerName}</span>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>🔍 고객사 선택...</span>
+                        <span style={{ color: '#94a3b8' }}>🔍 고객사 선택...</span>
                       )}
                     </div>
                     {customerName && (
@@ -1336,13 +1392,17 @@ export const MeetingMinutes: React.FC = () => {
                         }}
                         style={{
                           padding: '0 12px',
-                          border: '1px solid var(--border-default)',
-                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '4px',
                           background: '#fee2e2',
                           color: '#b91c1c',
                           fontWeight: 'bold',
                           cursor: 'pointer',
-                          fontSize: '13px'
+                          fontSize: '12px',
+                          height: '34px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          boxSizing: 'border-box'
                         }}
                         title="고객사 매핑 취소"
                       >
@@ -1354,7 +1414,7 @@ export const MeetingMinutes: React.FC = () => {
 
                 {/* 3단: 연계 프로젝트명 */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>연계 프로젝트명</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연계 프로젝트명</label>
                   <input
                     type="text"
                     placeholder="예: 삼익HDS 프로젝트"
@@ -1362,7 +1422,7 @@ export const MeetingMinutes: React.FC = () => {
                     onChange={e => handleLocalChange('projectName', e.target.value)}
                     onFocus={() => setShowProjDropdown(true)}
                     onBlur={() => setTimeout(() => setShowProjDropdown(false), 200)}
-                    style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                    style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                   />
                   
                   {/* 프로젝트 추천 드롭다운 */}
@@ -1411,9 +1471,9 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               {/* Companies and Attendees list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>👥 연계 참여업체 및 참석자 목록 ({companies.length})</span>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>👥 연계 참여업체 및 참석자 목록 ({companies.length})</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -1423,24 +1483,40 @@ export const MeetingMinutes: React.FC = () => {
                       setTempAttendees('');
                       setIsAddCompanyOpen(true);
                     }}
-                    style={{ padding: '4px 10px', background: 'var(--primary-color)', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                    style={{
+                      background: '#3b82f6',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '0 12px',
+                      height: '28px',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      boxSizing: 'border-box'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                   >
                     + 업체 추가하기
                   </button>
                 </div>
 
                 {companies.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>등록된 참여업체가 없습니다. 상단 버튼을 클릭하여 추가해 주세요.</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '12px 0' }}>등록된 참여업체가 없습니다. 상단 버튼을 클릭하여 추가해 주세요.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {companies.map((c, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '8px 12px' }}>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '8px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: c.type === 'CUSTOMER' ? '#e0f2fe' : '#fef3c7', color: c.type === 'CUSTOMER' ? '#0369a1' : '#d97706' }}>
                             {c.type === 'CUSTOMER' ? '고객사' : '공급사'}
                           </span>
-                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155' }}>{c.companyName}</span>
-                          <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>(참석자: {c.attendees})</span>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>{c.companyName}</span>
+                          <span style={{ fontSize: '12px', color: '#64748b' }}>(참석자: {c.attendees})</span>
                         </div>
                         <button
                           type="button"
@@ -1456,26 +1532,26 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>회의 제목 ★</label>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>회의 제목 <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="text"
                   required
                   placeholder="회의 핵심 안건 제목을 적어주세요"
                   value={title}
                   onChange={e => handleLocalChange('title', e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                 />
               </div>
 
               {/* Rich Editor Block */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '4px', borderTopRightRadius: '4px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
-                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
-                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
-                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '11px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '11px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       田 표 삽입
                     </button>
                   </div>
@@ -1496,16 +1572,16 @@ export const MeetingMinutes: React.FC = () => {
                   onKeyDown={handleEditorKeyDown}
                   onInput={handleEditorInput}
                   style={{
-                    minHeight: '380px',
-                    border: '1px solid var(--border-default)',
-                    borderBottomLeftRadius: '6px',
-                    borderBottomRightRadius: '6px',
+                    minHeight: '300px',
+                    border: '1px solid #cbd5e1',
+                    borderBottomLeftRadius: '4px',
+                    borderBottomRightRadius: '4px',
                     padding: '16px',
                     outline: 'none',
                     backgroundColor: '#fff',
                     overflowY: 'auto',
-                    fontSize: '13.5px',
-                    lineHeight: 1.7
+                    fontSize: '13px',
+                    lineHeight: 1.6
                   }}
                 />
 
@@ -1542,18 +1618,18 @@ export const MeetingMinutes: React.FC = () => {
               </div>
 
               {/* Attachments Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#334155' }}>📎 유첨파일 목록 (드래그&드롭 또는 Ctrl+V 캡처 가능)</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f8fafc', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>📎 유첨파일 목록 (드래그&드롭 또는 Ctrl+V 캡처 가능)</span>
                 
                 {/* Visual drag area */}
-                <div style={{ border: '2px dashed var(--border-default)', borderRadius: '8px', padding: '16px', textAlign: 'center', background: '#fff', color: 'var(--text-secondary)', fontSize: '12.5px' }}>
+                <div style={{ border: '1px dashed #cbd5e1', borderRadius: '4px', padding: '16px', textAlign: 'center', background: '#f8fafc', color: '#475569', fontSize: '12.5px' }}>
                   이 영역에 파일을 끌어다 놓거나 화면을 캡처한 상태에서 <b>Ctrl + V</b>를 눌러 즉시 첨부하세요.
                 </div>
 
                 {attachments.length > 0 && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px', marginTop: '10px' }}>
                     {attachments.map((file, fileIdx) => (
-                      <div key={fileIdx} style={{ position: 'relative', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                      <div key={fileIdx} style={{ position: 'relative', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
                         {file.type.startsWith('image/') ? (
                           <img
                             src={file.data}
@@ -1572,12 +1648,12 @@ export const MeetingMinutes: React.FC = () => {
                               setPreviewFileName(file.name);
                               setPreviewFileType(file.type);
                             }}
-                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                            style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#475569', cursor: 'pointer' }}
                           >
                             📄
                           </div>
                         )}
-                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
+                        <span style={{ fontSize: '10px', color: '#475569', textAlign: 'center', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={file.name}>
                           {file.name}
                         </span>
                         <button
@@ -1669,25 +1745,29 @@ export const MeetingMinutes: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', height: '40px' }}>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '12px 0', fontWeight: 800 }}
+                  style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
                   {isSaving ? '저장 중...' : '회의록 저장 및 종료'}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancelForm}
-                  style={{ flex: 1, padding: '12px 0', background: 'var(--border-color)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', color: '#475569', height: '100%', boxSizing: 'border-box', transition: 'background 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
                 >
                   작성 취소 (임시저장 취소)
                 </button>
               </div>
 
             </form>
+            )}
           </div>
         </div>
       )}

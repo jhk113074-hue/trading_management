@@ -62,6 +62,34 @@ export const Mails: React.FC = () => {
 
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // Modaless states for Draggable Compose Window
+  const [composeWindowPosition, setComposeWindowPosition] = useState({ x: 100, y: 100 });
+  const [isComposeWindowMinimized, setIsComposeWindowMinimized] = useState(false);
+
+  const handleComposeHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Buttons or inputs shouldn't trigger drag
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT') {
+      return;
+    }
+    const startX = e.clientX - composeWindowPosition.x;
+    const startY = e.clientY - composeWindowPosition.y;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setComposeWindowPosition({
+        x: moveEvent.clientX - startX,
+        y: moveEvent.clientY - startY
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   const fetchMailsData = async () => {
     setLoading(true);
     try {
@@ -815,41 +843,70 @@ export const Mails: React.FC = () => {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          style={{ position: 'fixed', inset: 0, background: 'transparent', zIndex: 9999, pointerEvents: 'none' }}
         >
-          <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '700px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div 
+            style={{ 
+              background: '#fff', 
+              borderRadius: '8px', 
+              width: '100%', 
+              maxWidth: '680px', 
+              boxShadow: '0 10px 30px rgba(0,0,0,0.15)', 
+              overflow: 'hidden', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              position: 'absolute',
+              left: `${composeWindowPosition.x}px`,
+              top: `${composeWindowPosition.y}px`,
+              pointerEvents: 'auto',
+              border: '1px solid #cbd5e1'
+            }}
+          >
             
             {/* Drag drop overlay helper */}
             {isDraggingFile && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(42, 162, 177, 0.15)', border: '4px dashed var(--focus-ring)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--focus-ring)', background: '#fff', padding: '12px 24px', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(42, 162, 177, 0.15)', border: '4px dashed #3b82f6', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#3b82f6', background: '#fff', padding: '12px 24px', borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   📥 파일을 여기에 놓아 첨부 (500KB 이하)
                 </span>
               </div>
             )}
 
-            <div style={{ padding: '16px 20px', background: 'var(--primary-color)', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div 
+              onMouseDown={handleComposeHeaderMouseDown}
+              style={{ padding: '14px 20px', background: '#1e293b', color: '#fff', fontWeight: 800, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'move', userSelect: 'none' }}
+            >
               <span>📣 새 쪽지 보내기</span>
-              <button onClick={() => setIsComposeModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsComposeWindowMinimized(!isComposeWindowMinimized)} 
+                  style={{ background: 'none', border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer', padding: '2px 6px', display: 'flex', alignItems: 'center' }}
+                >
+                  {isComposeWindowMinimized ? '🔲' : '➖'}
+                </button>
+                <button type="button" onClick={() => setIsComposeModalOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+              </div>
             </div>
 
-            <form onSubmit={handleSendMail} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+            {!isComposeWindowMinimized && (
+            <form onSubmit={handleSendMail} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto' }}>
               
               {/* Template triggers */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>쪽지 양식 템플릿 로드</label>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>쪽지 양식 템플릿 로드</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button
                     type="button"
                     onClick={() => applyMailTemplate('work')}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid var(--border-default)', background: '#fff', color: 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
+                    style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', color: '#475569', fontWeight: 700, cursor: 'pointer', fontSize: '12px', height: '34px', boxSizing: 'border-box' }}
                   >
                     업무 연락 양식 적용
                   </button>
                   <button
                     type="button"
                     onClick={() => applyMailTemplate('notice')}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: '6px', border: '1px solid var(--border-default)', background: '#fff', color: 'var(--text-secondary)', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px' }}
+                    style={{ flex: 1, border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', color: '#475569', fontWeight: 700, cursor: 'pointer', fontSize: '12px', height: '34px', boxSizing: 'border-box' }}
                   >
                     공지 사항 양식 적용
                   </button>
@@ -857,11 +914,11 @@ export const Mails: React.FC = () => {
               </div>
 
               {/* AI prompt draft generator */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f0fdf4', padding: '14px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '14px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   Base 🪄 AI 쪽지 초안 자동 작성 (프롬프트 입력)
                 </span>
-                <p style={{ fontSize: '11px', color: '#166534', margin: 0 }}>
+                <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>
                   보낼 사람의 정보와 업무 조치 사항, 기한을 적으시면 AI가 정식 메일 양식 및 요청 과제 표를 생성해 드립니다.
                 </p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -870,12 +927,12 @@ export const Mails: React.FC = () => {
                     placeholder="예: 수출 신고서 피드백 오늘 오후 6시까지 검토 요청."
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12.5px', outline: 'none', backgroundColor: '#fff' }}
+                    style={{ flex: 1, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', height: '34px', boxSizing: 'border-box' }}
                   />
                   <button
                     type="button"
                     onClick={handleAiDraftCreate}
-                    style={{ padding: '8px 14px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.2px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ padding: '0 14px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '34px', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }}
                   >
                     🪄 초안 생성
                   </button>
@@ -883,12 +940,12 @@ export const Mails: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>받는 사람 ★</label>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>받는 사람 <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
                   required
                   value={selectedReceiverId}
                   onChange={e => setSelectedReceiverId(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none', backgroundColor: 'white' }}
+                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: 'white', height: '34px', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}
                 >
                   <option value="">수신자를 선택해 주세요</option>
                   <option value={userProfile?.id}>📝 나에게 쓰기 (내게 메모 보내기)</option>
@@ -901,20 +958,20 @@ export const Mails: React.FC = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>제목 ★</label>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>제목 <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
                   type="text"
                   required
                   placeholder="제목을 입력하세요"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', outline: 'none' }}
+                  style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                 />
               </div>
 
               {/* Scheduled Send options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-default)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: '#f8fafc', padding: '12px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={isScheduled}
@@ -924,13 +981,13 @@ export const Mails: React.FC = () => {
                 </label>
                 {isScheduled && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>발송 예약 일시</label>
+                    <label style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>발송 예약 일시</label>
                     <input
                       type="datetime-local"
                       required={isScheduled}
                       value={scheduledAt}
                       onChange={e => setScheduledAt(e.target.value)}
-                      style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+                      style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', height: '34px', color: '#1e293b', boxSizing: 'border-box' }}
                     />
                   </div>
                 )}
@@ -938,14 +995,14 @@ export const Mails: React.FC = () => {
 
               {/* Rich Text Editor */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }}>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>내용 ★</label>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>내용 <span style={{ color: '#ef4444' }}>*</span></label>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid var(--border-default)', borderBottom: 'none', borderTopLeftRadius: '6px', borderTopRightRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#f8fafc', border: '1px solid #cbd5e1', borderBottom: 'none', borderTopLeftRadius: '4px', borderTopRightRadius: '4px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
-                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
-                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
-                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <button type="button" onClick={() => format('bold')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>가</button>
+                    <button type="button" onClick={() => format('italic')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontStyle: 'italic', fontSize: '12px' }}><i>가</i></button>
+                    <button type="button" onClick={() => format('underline')} style={{ padding: '4px 8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline', fontSize: '12px' }}><u>가</u></button>
+                    <button type="button" onClick={insertTable} style={{ padding: '4px 10px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       田 표 삽입
                     </button>
                   </div>
@@ -965,9 +1022,9 @@ export const Mails: React.FC = () => {
                   onInput={handleEditorInput}
                   style={{
                     minHeight: '200px',
-                    border: '1px solid var(--border-default)',
-                    borderBottomLeftRadius: '6px',
-                    borderBottomRightRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    borderBottomLeftRadius: '4px',
+                    borderBottomRightRadius: '4px',
                     padding: '12px',
                     outline: 'none',
                     backgroundColor: '#fff',
@@ -1011,23 +1068,23 @@ export const Mails: React.FC = () => {
 
               {/* Attachments List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>📎 첨부파일 목록</span>
+                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>📎 첨부파일 목록</span>
                 <input
                   type="file"
                   multiple
                   onChange={handleFileChange}
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: '12px', color: '#475569' }}
                 />
                 {attachments.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
                     {attachments.map((file, idx) => (
-                      <div key={idx} style={{ position: 'relative', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '4px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '80px' }}>
+                      <div key={idx} style={{ position: 'relative', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', width: '80px' }}>
                         {file.type.startsWith('image/') ? (
                           <img src={file.data} alt={file.name} style={{ width: '100%', height: '50px', objectFit: 'cover', borderRadius: '2px' }} />
                         ) : (
-                          <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: 'var(--text-secondary)' }}>📄</div>
+                          <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', color: '#475569' }}>📄</div>
                         )}
-                        <span style={{ fontSize: '8px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        <span style={{ fontSize: '8.5px', color: '#475569', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }}>
                           {file.name}
                         </span>
                         <button
@@ -1043,25 +1100,29 @@ export const Mails: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '10px', height: '40px' }}>
                 <button
                   type="submit"
                   disabled={isSending}
-                  className="btn btn-primary"
-                  style={{ flex: 1, padding: '12px 0', fontWeight: 800 }}
+                  style={{ flex: 1, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
                 >
                   {isSending ? '보내는 중...' : '보내기'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsComposeModalOpen(false)}
-                  style={{ flex: 1, padding: '12px 0', background: 'var(--border-default)', color: 'var(--text-primary)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ flex: 1, background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', color: '#475569', height: '100%', boxSizing: 'border-box', transition: 'background 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
                 >
                   취소
                 </button>
               </div>
 
             </form>
+            )}
           </div>
         </div>
       )}
