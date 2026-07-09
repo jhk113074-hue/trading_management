@@ -4,6 +4,8 @@ import type { ImportRequest } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import type { Customer } from '../types/customer';
 import { previewFile } from '../components/FilePreviewModal';
 
 import ysaccLetterImg from '../assets/ysacc_letterhead.png';
@@ -47,10 +49,46 @@ const INITIAL_IMPORTS: ImportRequest[] = [
 ];
 
 export const ImportDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showEstimatePrintModal, setShowEstimatePrintModal] = useState(false);
+
+  // 실시간 고객 DB 가져오기
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'customers'), (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+      setCustomers(list);
+    }, (error) => {
+      console.error("Failed to sync customers in ImportDetail:", error);
+    });
+    return () => unsubscribe();
+  }, []);
+
+
   const navigate = useNavigate();
   
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
+
+  // Clipboard Paste (Screen Capture) 리스너 (선언 뒤에 위치시켜 정상 빌드)
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const renameFile = new File([file], `Captured_${Date.now()}.png`, { type: 'image/png' });
+            await handleFileUpload('customerPi', renameFile);
+            alert('클립보드 스크린샷 이미지가 성공적으로 자동 첨부되었습니다!');
+          }
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [importRequests, id]);
 
   useEffect(() => {
     const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
@@ -356,13 +394,34 @@ export const ImportDetail: React.FC = () => {
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>최종 고객사</label>
-                  <input
-                    type="text"
-                    value={request.finalCustomer || ''}
-                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, finalCustomer: e.target.value } : r))}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                  />
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>수입주체 구분</label>
+                  <select
+                    value={request.importCompany || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
+                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                  >
+                    <option value="YSACC">YSACC</option>
+                    <option value="">영성ACC</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>최종 고객사 (고객DB 연계)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      readOnly
+                      value={request.finalCustomer || ''}
+                      placeholder="우측 [검색] 버튼으로 고객사 지정"
+                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerModal(true)}
+                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
                 </div>
               </div>
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -370,10 +429,46 @@ export const ImportDetail: React.FC = () => {
                 <textarea
                   value={request.requestNote || ''}
                   onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestNote: e.target.value } : r))}
-                  rows={7}
+                  rows={4}
                   placeholder="고객사로부터 접수한 수입요청 내용을 입력하세요."
-                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', marginBottom: '8px' }}
                 />
+                
+                {/* 📂 Drag and Drop Area */}
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                      await handleFileUpload('customerPi', files[0]);
+                      alert(`${files[0].name} 파일이 드래그 앤 드롭으로 업로드되었습니다!`);
+                    }
+                  }}
+                  style={{
+                    border: '2px dashed #3b82f6',
+                    borderRadius: '6px',
+                    padding: '12px',
+                    textAlign: 'center',
+                    background: '#eff6ff',
+                    cursor: 'pointer',
+                    color: '#1d4ed8',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  📂 여기에 파일을 드래그하여 놓거나
+                  <br />
+                  <span style={{ fontSize: '11px', color: '#2563eb', textDecoration: 'underline' }}>
+                    클립보드 스크린샷 이미지(Ctrl+V)를 바로 붙여넣으세요.
+                  </span>
+                  {request.customerPiFile && (
+                    <div style={{ marginTop: '6px', fontSize: '11.5px', color: '#10b981', fontWeight: 'bold' }}>
+                      ✓ 현재 파일: {request.customerPiFile.name} (등록됨)
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             {/* 해외공급사 견적 비교 & 원가/마진 산정 통합 세션 */}
@@ -520,6 +615,31 @@ export const ImportDetail: React.FC = () => {
                     <option value="승인">승인 (Approved - 실무 진행)</option>
                     <option value="반려">반려 (Rejected)</option>
                   </select>
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '10px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEstimatePrintModal(true)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      background: '#0f766e',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📄 YSACC/영성ACC 공식 견적서 발행 (인쇄/PDF)
+                  </button>
                 </div>
               </div>
             </div>
@@ -1944,6 +2064,227 @@ export const ImportDetail: React.FC = () => {
           // No manual refresh needed since Firestore onSnapshot handles it
         }}
       />
+      
+      {/* 🔍 바이어(최종고객) 검색 모달 */}
+      {showCustomerModal && (
+        <CustomerSearchModal
+          customers={customers}
+          onClose={() => setShowCustomerModal(false)}
+          onSelect={(cust) => {
+            const updated = importRequests.map(r => r.id === id ? { ...r, finalCustomer: cust.name } : r);
+            saveToStorage(updated);
+            setShowCustomerModal(false);
+          }}
+        />
+      )}
+
+      {/* 📄 견적서 출력 미리보기 모달 */}
+      {showEstimatePrintModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            width: '850px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+          }}>
+            {/* 헤더 */}
+            <div className="no-print" style={{
+              padding: '14px 20px',
+              borderBottom: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#f8fafc'
+            }}>
+              <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e3a8a' }}>📄 YSACC / 영성ACC 공식 견적서 (인쇄 미리보기)</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => window.print()}
+                  style={{ padding: '6px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  🖨️ 인쇄 / PDF 저장
+                </button>
+                <button
+                  onClick={() => setShowEstimatePrintModal(false)}
+                  style={{ padding: '6px 12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+
+            {/* 인쇄 본문 */}
+            <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <img
+                  src={request.importCompany === 'YSACC' || request.importCompany === 'YS' ? ysaccLetterImg : ysAccLetterImg}
+                  alt="Letterhead"
+                  style={{ width: '100%', maxHeight: '75px', objectFit: 'contain' }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, borderBottom: '2px solid #000', paddingBottom: '6px', display: 'inline-block' }}>
+                  QUOTATION (견적서)
+                </h1>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div>
+                  <table style={{ borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: 'bold', width: '90px' }}>To (수신) :</td>
+                        <td style={{ color: '#1e3a8a', fontWeight: 'bold' }}>{request.finalCustomer || '(고객사 미지정)'} 귀하</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 'bold' }}>Date (일자) :</td>
+                        <td>{new Date().toLocaleDateString('ko-KR')}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 'bold' }}>Ref No. :</td>
+                        <td>QT-{id}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <table style={{ borderCollapse: 'collapse', fontSize: '12.5px', marginLeft: 'auto' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: 'bold', textAlign: 'left', width: '80px' }}>공급처 :</td>
+                        <td style={{ textAlign: 'left' }}>{request.importCompany === 'YSACC' || request.importCompany === 'YS' ? 'YSACC' : '영성ACC (YS ACC)'}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 'bold', textAlign: 'left' }}>대표이사 :</td>
+                        <td style={{ textAlign: 'left' }}>김 주 한</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 'bold', textAlign: 'left' }}>담당자 :</td>
+                        <td style={{ textAlign: 'left' }}>{request.manager || '김주한'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '6px', marginBottom: '24px', textAlign: 'center' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>총 견적 금액 : </span>
+                <strong style={{ fontSize: '18px', color: '#1e3a8a' }}>₩ {(request.customerQuoteAmount || 0).toLocaleString()}</strong> (VAT 별도)
+              </div>
+
+              <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', margin: '0 0 10px 0' }}>
+                ■ DESCRIPTION OF PRODUCTS & DETAILS
+              </h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '24px' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', height: '26px' }}>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '40px' }}>No</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Description of Commodity</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '80px' }}>HS Code</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '60px' }}>Qty</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '50px' }}>Unit</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '80px' }}>UnitPrice</th>
+                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '100px' }}>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {request.piItems && request.piItems.length > 0 ? request.piItems.map((item, idx) => (
+                    <tr key={idx} style={{ height: '26px' }}>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{item.name || request.itemName}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.hsCode || '-'}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{Number(item.qty).toLocaleString() || '1'}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>₩ {Number(item.unitPrice).toLocaleString()}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
+                        ₩ {((Number(item.qty) || 1) * (Number(item.unitPrice) || 0)).toLocaleString()}
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr style={{ height: '26px' }}>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{request.itemName}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>EA</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>₩ {(request.customerQuoteAmount || 0).toLocaleString()}</td>
+                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
+                        ₩ {(request.customerQuoteAmount || 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', margin: '0 0 10px 0' }}>
+                ■ TERMS & CONDITIONS (거래조건)
+              </h3>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold', width: '130px' }}>· INCOTERMS :</td>
+                    <td>{request.incoterms || 'FOB'}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold' }}>· PAYMENT TERMS :</td>
+                    <td>{request.paymentTerms || '100% T/T in advance'}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold' }}>· PORT OF LOADING :</td>
+                    <td>{request.pol || 'SHANGHAI PORT, CHINA'}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold' }}>· PORT OF DISCHARGE :</td>
+                    <td>{request.pod || 'INCHEON PORT, KOREA'}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold' }}>· REMARKS (특기사항) :</td>
+                    <td style={{ whiteSpace: 'pre-wrap' }}>{request.requestNote || '별도 특기사항 없음'}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', position: 'relative' }}>
+                <div style={{ textAlign: 'center', width: '200px' }}>
+                  <p style={{ margin: '0 0 40px 0', fontSize: '11.5px' }}>공급처 대표자 서명 (인) :</p>
+                  <strong style={{ fontSize: '13.5px' }}>대표이사 김 주 한</strong>
+                  <img
+                    src={ysaccStampImg}
+                    alt="Company Stamp"
+                    style={{
+                      position: 'absolute',
+                      right: '25px',
+                      bottom: '-10px',
+                      width: '60px',
+                      height: '60px',
+                      opacity: 0.9,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
