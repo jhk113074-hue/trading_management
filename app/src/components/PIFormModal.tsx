@@ -1180,29 +1180,40 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
     const value = (formData as any)[field] || '';
     const [isNewMode, setIsNewMode] = useState(false);
     const [newVal, setNewVal] = useState('');
-    const selectStyle: React.CSSProperties = required
-      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' }
-      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', height: '32px', boxSizing: 'border-box', background: '#fff', width: '100%', outline: 'none', cursor: 'pointer' };
+    const selectStyle: React.CSSProperties = {
+      padding: '4px 8px',
+      border: '1px solid #cbd5e1',
+      borderRadius: '4px',
+      fontSize: '13.5px',
+      color: '#1e293b',
+      height: '34px',
+      boxSizing: 'border-box',
+      background: '#fff',
+      width: '100%',
+      outline: 'none',
+      cursor: 'pointer',
+      fontWeight: required ? 600 : 500
+    };
 
     if (isNewMode) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 700, color: required ? 'var(--text-secondary)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
-            {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
+          <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+            {label?.replace(' ★', '').replace('★', '')} {required && <span style={{ color: '#ef4444' }}>*</span>}
           </label>
-          <div style={{ display: 'flex', gap: '3px', height: '32px' }}>
+          <div style={{ display: 'flex', gap: '3px', height: '34px' }}>
             <input
               type="text"
               value={newVal}
               onChange={e => setNewVal(e.target.value)}
               placeholder="직접 입력..."
-              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '3px', fontSize: '15px', height: '32px', boxSizing: 'border-box', outline: 'none' }}
+              style={{ flex: 1, padding: '4px 8px', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '13.5px', height: '34px', boxSizing: 'border-box', outline: 'none' }}
               autoFocus
             />
             <button type="button" onClick={() => { if (newVal.trim()) handleAddNewTradeTerm(field, newVal.trim()); setIsNewMode(false); }}
-              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
+              style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✓</button>
             <button type="button" onClick={() => setIsNewMode(false)}
-              style={{ background: 'var(--border-color)', color: 'var(--text-secondary)', border: 'none', padding: '0 8px', borderRadius: '3px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              style={{ background: '#e2e8f0', color: '#475569', border: 'none', padding: '0 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
           </div>
         </div>
       );
@@ -1210,8 +1221,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 700, color: required ? 'var(--text-secondary)' : 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
-          {label?.replace(' ★', '')} {required && <span style={{ color: '#ef4444' }}>★</span>}
+        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+          {label?.replace(' ★', '').replace('★', '')} {required && <span style={{ color: '#ef4444' }}>*</span>}
         </label>
         <select value={value} onChange={e => { if (e.target.value === '__NEW__') setIsNewMode(true); else setFormData(prev => ({...prev, [field]: e.target.value})); }} style={selectStyle}>
           <option value="">{placeholder || '-- 선택 --'}</option>
@@ -2014,8 +2025,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
               {/* Customer search input */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>★</span></label>
-                <div style={{ position: 'relative', height: '32px', display: 'flex', alignItems: 'center' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Customer <span style={{ color: '#ef4444' }}>*</span></label>
+                <div style={{ position: 'relative', height: '34px', display: 'flex', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={formData.customerName || ''}
@@ -2023,14 +2034,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                     readOnly
                     onClick={() => setIsCustomerSearchOpen(true)}
                     style={{
-                      width: '100%', height: '32px', padding: '1px 32px 1px 8px',
-                      border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a',
+                      width: '100%', height: '34px', padding: '1px 32px 1px 8px',
+                      border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', fontWeight: 600, color: '#1e293b',
                       outline: 'none', cursor: 'pointer', background: '#fff', boxSizing: 'border-box'
                     }}
                   />
                   {formData.customerId && (
                     <button type="button" onClick={() => setFormData(prev => ({...prev, customerId:'', customerName:'', customerAddress:'', contactPerson:'', email:''}))}
-                      style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
+                      style={{ position: 'absolute', right: '22px', background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: '1px', display: 'flex', alignItems: 'center' }}
                       title="비우기">✕</button>
                   )}
                   <button type="button" onClick={() => setIsCustomerSearchOpen(true)}
@@ -2941,20 +2952,16 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 };
 
 const CompactInput = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step }: any) => {
-  // A급(필수★): 15.5px bold #0f172a 테두리 강조
-  // C급(읽기전용/자동): 13.5px var(--text-muted) 배경 흐리게
-  const isRequired = label?.includes('★');
+  const isRequired = label?.includes('★') || label?.includes('*');
   const isReadOnly = disabled;
   const inputStyle: React.CSSProperties = isReadOnly
-    ? { padding: '4px 8px', border: '1px solid #f1f5f9', borderRadius: '3px', fontSize: '13.5px', color: 'var(--text-muted)', background: '#f8fafc', height: '32px', boxSizing: 'border-box', width: '100%', fontVariantNumeric: 'tabular-nums' }
-    : isRequired
-      ? { padding: '4px 8px', border: '1.5px solid var(--text-muted)', borderRadius: '3px', fontSize: '15.5px', fontWeight: 600, color: '#0f172a', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none', fontVariantNumeric: 'tabular-nums' }
-      : { padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '3px', fontSize: '15px', color: '#334155', background: '#fff', height: '32px', boxSizing: 'border-box', width: '100%', outline: 'none', fontVariantNumeric: 'tabular-nums' };
+    ? { padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '13.5px', color: '#64748b', background: '#f1f5f9', height: '34px', boxSizing: 'border-box', width: '100%', fontVariantNumeric: 'tabular-nums' }
+    : { padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', width: '100%', outline: 'none', fontVariantNumeric: 'tabular-nums', fontWeight: isRequired ? 600 : 500 };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-      <label style={{ fontSize: '13px', fontWeight: 700, color: isReadOnly ? 'var(--text-muted)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
-        {label?.replace(' ★', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>★</span>}
-        {isReadOnly && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> (자동)</span>}
+      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.04em', textTransform: 'uppercase' }} title={label}>
+        {label?.replace(' ★', '').replace('★', '').replace(' *', '').replace('*', '')} {isRequired && !isReadOnly && <span style={{ color: '#ef4444' }}>*</span>}
+        {isReadOnly && <span style={{ color: '#94a3b8', fontWeight: 400 }}> (자동)</span>}
       </label>
       <input type={type} value={value ?? ''} onChange={e => onChange?.(e.target.value)} disabled={disabled} placeholder={placeholder} step={step} style={inputStyle} />
     </div>
@@ -2962,7 +2969,7 @@ const CompactInput = ({ label, value, onChange, type = 'text', disabled = false,
 };
 
 
-const gridInputStyle = { width: '100%', height: '32px', padding: '4px 8px', border: '1px solid #d1d9e0', borderRadius: '4px', fontSize: '15px', color: '#334155', outline: 'none', boxSizing: 'border-box' as const, fontVariantNumeric: 'tabular-nums' as const };
+const gridInputStyle = { width: '100%', height: '34px', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', color: '#1e293b', outline: 'none', boxSizing: 'border-box' as const, fontVariantNumeric: 'tabular-nums' as const };
 
 const formatNumberWithCommas = (value: number | string | undefined, maxDecimals?: number, minDecimals?: number) => {
   if (value === undefined || value === null || value === '') return '';
