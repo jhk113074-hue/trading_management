@@ -155,22 +155,26 @@ export const Suppliers: React.FC = () => {
 
   return (
     <div className="page-container" style={{ padding: '24px 30px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>공급업체 관리 (Suppliers)</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>원소재 제조사 및 국내외 공급처 마스터 정보와 핵심 스펙 관리</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: 0 }}>공급업체 관리 (Suppliers)</h1>
+          <p style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>원소재 제조사 및 국내외 공급처 마스터 정보와 핵심 스펙 관리</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', height: '34px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -183,7 +187,9 @@ export const Suppliers: React.FC = () => {
           />
           <button 
             onClick={() => { setEditingSupId(null); setIsModalOpen(true); }}
-            style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
           >
             ➕ 신규 공급업체 등록
           </button>
@@ -191,32 +197,32 @@ export const Suppliers: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', backgroundColor: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
         <input 
           type="text" 
           placeholder="공급업체명, 코드, 사업자번호, 담당자 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px', flex: '1', maxWidth: '400px' }}
+          style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', maxWidth: '400px', fontSize: '13px', outline: 'none', height: '34px', boxSizing: 'border-box' }}
         />
       </div>
 
-      <div style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+      <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
         총 {filteredAndSorted.length}건
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid var(--border-color)' }}>
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
             <tr>
-              <th onClick={() => handleSort('supplierCode')} style={thStyle(0, { padding: '12px', cursor: 'pointer' })}>공급업체코드 {getSortIcon('supplierCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px', cursor: 'pointer' })}>공급업체명 (대표자) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('bizNumber')} style={thStyle(2, { padding: '12px', cursor: 'pointer' })}>사업자등록번호 {getSortIcon('bizNumber')}<span {...resizerProps(2)} /></th>
-              <th style={thStyle(3, { padding: '12px' })}>대표전화번호<span {...resizerProps(3)} /></th>
-              <th style={thStyle(4, { padding: '12px' })}>구매담당자 (연락처)<span {...resizerProps(4)} /></th>
-              <th style={thStyle(5, { padding: '12px' })}>본사 주소<span {...resizerProps(5)} /></th>
-              <th style={thStyle(6, { padding: '12px', textAlign: 'right' })}>작업<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('supplierCode')} style={thStyle(0, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체코드 {getSortIcon('supplierCode')}<span {...resizerProps(0)} /></th>
+              <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>공급업체명 (대표자) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('bizNumber')} style={thStyle(2, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>사업자등록번호 {getSortIcon('bizNumber')}<span {...resizerProps(2)} /></th>
+              <th style={thStyle(3, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>대표전화번호<span {...resizerProps(3)} /></th>
+              <th style={thStyle(4, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>구매담당자 (연락처)<span {...resizerProps(4)} /></th>
+              <th style={thStyle(5, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>본사 주소<span {...resizerProps(5)} /></th>
+              <th style={thStyle(6, { padding: '12px 10px', textAlign: 'right', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>작업<span {...resizerProps(6)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -229,11 +235,11 @@ export const Suppliers: React.FC = () => {
                 <tr 
                   key={s.id} 
                   onClick={() => { setEditingSupId(s.id); setIsModalOpen(true); }}
-                  style={{ borderBottom: '1px solid var(--border-color)', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                  style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s', height: '56px' }}
                   onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <td style={{ padding: '12px' }}>
+                  <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <strong style={{ color: '#0891b2' }}>{s.supplierCode || '-'}</strong>
                       {s.category === '포워딩사' && (
@@ -241,29 +247,33 @@ export const Suppliers: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ fontWeight: 600, color: '#111827' }}>{s.name || '-'}</div>
-                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>대표: {s.representative || '-'}</div>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{s.name || '-'}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>대표: {s.representative || '-'}</div>
                   </td>
-                  <td style={{ padding: '12px' }}>{s.bizNumber || '-'}</td>
-                  <td style={{ padding: '12px' }}>{s.phone || '-'}</td>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ fontSize: '12px' }}>{s.managerName || '-'}</div>
-                    <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1.5px' }}>{s.managerPhone || '-'}</div>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>{s.bizNumber || '-'}</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>{s.phone || '-'}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ fontSize: '12px', color: '#475569' }}>{s.managerName || '-'}</div>
+                    <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1.5px' }}>{s.managerPhone || '-'}</div>
                   </td>
-                  <td style={{ padding: '12px' }}>
-                    <div style={{ maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11.5px', color: '#6b7280' }}>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '11.5px', color: '#64748b' }}>
                       {s.address || '-'}
                     </div>
                   </td>
-                  <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     <button 
                       onClick={(e) => { e.stopPropagation(); setEditingSupId(s.id); setIsModalOpen(true); }}
-                      style={{ background: 'rgba(37,99,235,0.05)', color: '#2563eb', border: '1px solid #2563eb', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px' }}
+                      style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                     >✏ 수정</button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleDelete(s.id, s.name); }}
-                      style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                      style={{ background: '#fecaca', color: '#991b1b', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fca5a5'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fecaca'}
                     >✕ 삭제</button>
                   </td>
                 </tr>

@@ -198,22 +198,26 @@ export const Customers: React.FC = () => {
 
   return (
     <div className="page-container" style={{ padding: '24px 30px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>고객사 관리 (Customers)</h1>
-          <p style={{ color: '#6b7280', fontSize: '14px', marginTop: '4px' }}>해외 거래처 정보 조회, 등록 및 36개 세부 무역 스펙 관리 도구</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: 0 }}>고객사 관리 (Customers)</h1>
+          <p style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>해외 거래처 정보 조회, 등록 및 36개 세부 무역 스펙 관리 도구</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', height: '34px' }}>
           <button 
             onClick={exportExcel}
-            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
           >
             ⬇ Excel 다운로드
           </button>
           <button 
             onClick={() => document.getElementById('excel_upload_input')?.click()}
             disabled={isUploading}
-            style={{ backgroundColor: '#fff', border: '1px solid var(--border-default)', color: 'var(--text-secondary)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
           >
             {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
           </button>
@@ -226,7 +230,9 @@ export const Customers: React.FC = () => {
           />
           <button 
             onClick={() => { setEditingCustId(null); setIsModalOpen(true); }}
-            style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
           >
             ➕ 신규 고객사 등록
           </button>
@@ -234,21 +240,21 @@ export const Customers: React.FC = () => {
       </header>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', backgroundColor: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
         <input 
           type="text" 
           placeholder="고객명, 코드, 국가 검색..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px', flex: '1', minWidth: '200px' }}
+          style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', flex: '1', minWidth: '200px', fontSize: '13px', outline: 'none', height: '34px', boxSizing: 'border-box' }}
         />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px' }}>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', boxSizing: 'border-box', color: '#1e293b', cursor: 'pointer' }}>
           <option value="">전체 상태</option>
           <option value="Active">Active</option>
           <option value="Inactive">Inactive</option>
           <option value="Blocked">Blocked</option>
         </select>
-        <select value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)} style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '4px' }}>
+        <select value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)} style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', boxSizing: 'border-box', color: '#1e293b', cursor: 'pointer' }}>
           <option value="">전체 등급</option>
           <option value="S">S 등급</option>
           <option value="A">A 등급</option>
@@ -257,24 +263,24 @@ export const Customers: React.FC = () => {
         </select>
       </div>
 
-      <div style={{ marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+      <div style={{ marginBottom: '12px', fontSize: '13px', color: '#64748b', fontWeight: 700 }}>
         총 {filteredAndSorted.length}건
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+      <div style={{ overflowX: 'auto', backgroundColor: 'white', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
         <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
-          <thead style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid var(--border-color)' }}>
+          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
             <tr>
-              <th onClick={() => handleSort('customerCode')} style={thStyle(0, { padding: '12px', cursor: 'pointer' })}>고객코드 {getSortIcon('customerCode')}<span {...resizerProps(0)} /></th>
-              <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px', cursor: 'pointer' })}>고객명(영문/현지어) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
-              <th onClick={() => handleSort('countryName')} style={thStyle(2, { padding: '12px', cursor: 'pointer' })}>국가 / 도시 {getSortIcon('countryName')}<span {...resizerProps(2)} /></th>
-              <th style={thStyle(3, { padding: '12px' })}>대표자<span {...resizerProps(3)} /></th>
-              <th style={thStyle(4, { padding: '12px' })}>주 담당자 / 연락망<span {...resizerProps(4)} /></th>
-              <th style={thStyle(5, { padding: '12px' })}>결제 조건<span {...resizerProps(5)} /></th>
-              <th onClick={() => handleSort('tradeGrade')} style={thStyle(6, { padding: '12px', cursor: 'pointer', textAlign: 'center' })}>등급 {getSortIcon('tradeGrade')}<span {...resizerProps(6)} /></th>
-              <th onClick={() => handleSort('tradeStatus')} style={thStyle(7, { padding: '12px', cursor: 'pointer', textAlign: 'center' })}>거래 상태 {getSortIcon('tradeStatus')}<span {...resizerProps(7)} /></th>
-              <th style={thStyle(8, { padding: '12px', textAlign: 'right' })}>작업<span {...resizerProps(8)} /></th>
+              <th onClick={() => handleSort('customerCode')} style={thStyle(0, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>고객코드 {getSortIcon('customerCode')}<span {...resizerProps(0)} /></th>
+              <th onClick={() => handleSort('name')} style={thStyle(1, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>고객명(영문/현지어) {getSortIcon('name')}<span {...resizerProps(1)} /></th>
+              <th onClick={() => handleSort('countryName')} style={thStyle(2, { padding: '12px 10px', cursor: 'pointer', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>국가 / 도시 {getSortIcon('countryName')}<span {...resizerProps(2)} /></th>
+              <th style={thStyle(3, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>대표자<span {...resizerProps(3)} /></th>
+              <th style={thStyle(4, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>주 담당자 / 연락망<span {...resizerProps(4)} /></th>
+              <th style={thStyle(5, { padding: '12px 10px', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>결제 조건<span {...resizerProps(5)} /></th>
+              <th onClick={() => handleSort('tradeGrade')} style={thStyle(6, { padding: '12px 10px', cursor: 'pointer', textAlign: 'center', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>등급 {getSortIcon('tradeGrade')}<span {...resizerProps(6)} /></th>
+              <th onClick={() => handleSort('tradeStatus')} style={thStyle(7, { padding: '12px 10px', cursor: 'pointer', textAlign: 'center', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>거래 상태 {getSortIcon('tradeStatus')}<span {...resizerProps(7)} /></th>
+              <th style={thStyle(8, { padding: '12px 10px', textAlign: 'right', fontWeight: 750, color: '#475569', fontSize: '11px', letterSpacing: '0.02em', textTransform: 'uppercase' })}>작업<span {...resizerProps(8)} /></th>
             </tr>
           </thead>
           <tbody>
@@ -291,39 +297,43 @@ export const Customers: React.FC = () => {
                   <tr 
                     key={c.id} 
                     onClick={() => { setEditingCustId(c.id); setIsModalOpen(true); }}
-                    style={{ borderBottom: '1px solid var(--border-color)', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s' }}
+                    style={{ borderBottom: '1px solid #cbd5e1', fontSize: '13px', cursor: 'pointer', transition: 'background-color 0.1s', height: '56px' }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td style={{ padding: '12px' }}><strong style={{ color: '#0891b2' }}>{c.customerCode || '-'}</strong></td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ fontWeight: 600, color: '#111827' }}>{c.name || '-'}</div>
-                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{c.nameKo || '-'}</div>
+                    <td style={{ padding: '10px 12px' }}><strong style={{ color: '#0891b2' }}>{c.customerCode || '-'}</strong></td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{c.name || '-'}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{c.nameKo || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ fontSize: '12px' }}>{c.countryName || '-'}</div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>{c.city || '-'}</div>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>{c.countryName || '-'}</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1px' }}>{c.city || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px' }}>{c.representative || '-'}</td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ fontSize: '12px' }}>{c.contactPerson || '-'}</div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '1px' }}>{c.contactEmail || c.email || c.contactPhone || '-'}</div>
+                    <td style={{ padding: '10px 12px', color: '#475569' }}>{c.representative || '-'}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>{c.contactPerson || '-'}</div>
+                      <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1px' }}>{c.contactEmail || c.email || c.contactPhone || '-'}</div>
                     </td>
-                    <td style={{ padding: '12px', fontSize: '12px' }}>{c.paymentTerms || '-'}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', fontWeight: 700, color: '#d97706' }}>{c.tradeGrade || 'A'}</td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', padding: '3px 9px', borderRadius: '5px', fontWeight: 600, color: statusColor, backgroundColor: statusBg }}>
+                    <td style={{ padding: '10px 12px', fontSize: '12.5px', color: '#475569' }}>{c.paymentTerms || '-'}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: '#d97706' }}>{c.tradeGrade || 'A'}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                      <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', fontWeight: 600, color: statusColor, backgroundColor: statusBg }}>
                         {c.tradeStatus || 'Active'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setEditingCustId(c.id); setIsModalOpen(true); }}
-                        style={{ background: 'rgba(37,99,235,0.05)', color: '#2563eb', border: '1px solid #2563eb', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px' }}
+                        style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, marginRight: '4px', transition: 'background 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                       >✏ 수정</button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }}
-                        style={{ background: '#fee2e2', color: '#991b1b', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600 }}
+                        style={{ background: '#fecaca', color: '#991b1b', border: '1px solid #fca5a5', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 600, transition: 'background 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fca5a5'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fecaca'}
                       >✕ 삭제</button>
                     </td>
                   </tr>
