@@ -4897,7 +4897,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             
             {/* 줄 1: 발행사 (발주서 기준) / 담당영업사원 / 확정 CI 번호 / PO 접수일 (CI 작성일) / 고객사 PO 번호 / 연결된견적서(PI) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.7fr 1.2fr 1fr 1fr 1fr', gap: '10px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발행사 (발주서 기준)</span>
                 {isEditing ? (
