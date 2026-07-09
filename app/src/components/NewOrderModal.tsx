@@ -533,40 +533,40 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           {/* Header */}
           <div 
             onMouseDown={handleMouseDown}
-            style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '12px 12px 0 0', cursor: 'move', userSelect: 'none' }}>
+            style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', borderRadius: '12px 12px 0 0', cursor: 'move', userSelect: 'none' }}>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>신규 PO(발주서) 등록</div>
-              <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '1px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
+              <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>신규 PO(발주서) 등록</div>
+              <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>고객사로부터 수신한 PO 정보를 등록하고 발주를 진행합니다.</div>
             </div>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '20px', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#475569'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>✕</button>
           </div>
 
         {/* Body */}
-        <div style={{ padding: '12px 16px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           
           {/* Form Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>확정 CI 번호 ★</label>
-              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} placeholder="예: YS(SU)-26-04" style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>확정 CI 번호 <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="text" value={formData.poId} onChange={e => handleFormDataChange('poId', e.target.value)} placeholder="예: YS(SU)-26-04" style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>발행사 ★</label>
-              <select value={formData.issuingCompany} onChange={e => handleFormDataChange('issuingCompany', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>발행사 <span style={{ color: '#ef4444' }}>*</span></label>
+              <select value={formData.issuingCompany} onChange={e => handleFormDataChange('issuingCompany', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}>
                 <option value="YSACC">YSACC</option>
                 <option value="YS">영성ACC</option>
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 PO 번호</label>
-              <input type="text" value={formData.custPo} onChange={e => handleFormDataChange('custPo', e.target.value)} placeholder="예: PO-12345" style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 PO 번호</label>
+              <input type="text" value={formData.custPo} onChange={e => handleFormDataChange('custPo', e.target.value)} placeholder="예: PO-12345" style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
             {/* 연결할 견적서 (PI) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>연결할 견적서(PI)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>연결할 견적서(PI)</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input 
                   type="text" 
@@ -579,13 +579,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   onClick={() => setIsPISearchOpen(true)}
                   style={{
                     width: '100%',
-                    padding: '5px 42px 5px 8px',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: '6px',
-                    fontSize: '12px',
+                    padding: '6px 42px 6px 10px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    height: '34px',
                     outline: 'none',
                     cursor: 'pointer',
                     background: '#fff',
+                    color: '#1e293b',
                     boxSizing: 'border-box'
                   }} 
                 />
@@ -595,12 +597,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     onClick={() => handleFormDataChange('quotationId', '')}
                     style={{
                       position: 'absolute',
-                      right: '24px',
+                      right: '28px',
                       background: 'transparent',
                       border: 'none',
-                      color: 'var(--text-muted)',
+                      color: '#94a3b8',
                       cursor: 'pointer',
-                      fontSize: '11px',
+                      fontSize: '12px',
                       padding: '2px',
                       zIndex: 5,
                       display: 'flex',
@@ -617,12 +619,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   onClick={() => setIsPISearchOpen(true)}
                   style={{
                     position: 'absolute',
-                    right: '6px',
+                    right: '8px',
                     background: 'transparent',
                     border: 'none',
                     color: '#3b82f6',
                     cursor: 'pointer',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     zIndex: 5,
                     display: 'flex',
                     alignItems: 'center',
@@ -636,8 +638,8 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             </div>
 
             {/* 고객사 선택 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 선택 ★</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 선택 <span style={{ color: '#ef4444' }}>*</span></label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input 
                   type="text" 
@@ -647,13 +649,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   onClick={() => setIsCustomerSearchOpen(true)}
                   style={{
                     width: '100%',
-                    padding: '5px 42px 5px 8px',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: '6px',
-                    fontSize: '12px',
+                    padding: '6px 42px 6px 10px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    height: '34px',
                     outline: 'none',
                     cursor: 'pointer',
                     background: '#fff',
+                    color: '#1e293b',
                     boxSizing: 'border-box'
                   }} 
                 />
@@ -663,12 +667,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     onClick={() => handleFormDataChange('customerId', '')}
                     style={{
                       position: 'absolute',
-                      right: '24px',
+                      right: '28px',
                       background: 'transparent',
                       border: 'none',
-                      color: 'var(--text-muted)',
+                      color: '#94a3b8',
                       cursor: 'pointer',
-                      fontSize: '11px',
+                      fontSize: '12px',
                       padding: '2px',
                       zIndex: 5,
                       display: 'flex',
@@ -685,12 +689,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   onClick={() => setIsCustomerSearchOpen(true)}
                   style={{
                     position: 'absolute',
-                    right: '6px',
+                    right: '8px',
                     background: 'transparent',
                     border: 'none',
                     color: '#3b82f6',
                     cursor: 'pointer',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     zIndex: 5,
                     display: 'flex',
                     alignItems: 'center',
@@ -703,9 +707,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>인코텀즈 ★</label>
-              <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>인코텀즈 <span style={{ color: '#ef4444' }}>*</span></label>
+              <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}>
                 <option value="FOB">FOB</option>
                 <option value="CIF HCM">CIF HCM</option>
                 <option value="EXW">EXW</option>
@@ -715,128 +719,132 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </select>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>결제 조건 (Payment Terms)</label>
-              <input type="text" value={formData.paymentTerms} onChange={e => handleFormDataChange('paymentTerms', e.target.value)} placeholder="예: 30 days after BL" style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결제 조건 (Payment Terms)</label>
+              <input type="text" value={formData.paymentTerms} onChange={e => handleFormDataChange('paymentTerms', e.target.value)} placeholder="예: 30 days after BL" style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PO 접수일 ★</label>
-              <input type="date" value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PO 접수일 <span style={{ color: '#ef4444' }}>*</span></label>
+              <input type="date" value={formData.poDate} onChange={e => handleFormDataChange('poDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>요청 납기일</label>
-              <input type="date" value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>요청 납기일</label>
+              <input type="date" value={formData.requestedDelivery} onChange={e => handleFormDataChange('requestedDelivery', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>비고 (Remarks)</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: 'span 2' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>비고 (Remarks)</label>
               <textarea 
                 value={formData.remark} 
                 onChange={e => handleFormDataChange('remark', e.target.value)} 
                 placeholder="특이사항 입력" 
-                style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', height: '48px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }} 
+                style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '48px', resize: 'vertical', fontFamily: 'inherit', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} 
               />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>담당 영업 사원</label>
-              <input type="text" value={formData.manager} onChange={e => handleFormDataChange('manager', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>담당 영업 사원</label>
+              <input type="text" value={formData.manager} onChange={e => handleFormDataChange('manager', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>상태</label>
-              <input type="text" value={formData.status} disabled style={{ padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', background: '#f3f4f6' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>상태</label>
+              <input type="text" value={formData.status} disabled style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
             </div>
           </div>
 
           {/* PI-derived shipping/shipping info — always visible, editable */}
           <div style={{ 
-            background: formData.quotationId ? '#f0f9ff' : '#f8fafc', 
-            border: formData.quotationId ? '1px solid #bae6fd' : '1px solid var(--border-color)', 
+            background: '#f8fafc', 
+            border: '1px solid #e2e8f0', 
             borderRadius: '8px', 
-            padding: '10px 14px' 
+            padding: '12px 16px' 
           }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: formData.quotationId ? '#0369a1' : 'var(--text-secondary)', marginBottom: '8px' }}>
-              {formData.quotationId ? '📋 PI에서 가져온 정보 (자동입력)' : '📋 견적서(PI) 및 선적 기본 정보 (수동 입력 가능)'}
+            <div style={{ fontSize: '12.5px', fontWeight: 750, color: '#334155', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span>📋</span>
+              <span>{formData.quotationId ? '견적서(PI) 연결 정보 및 선적 기본 정보 (자동 입력)' : '견적서(PI) 및 선적 기본 정보 (수동 입력 가능)'}</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>출발항 (Port of Loading)</label>
-                <input type="text" value={formData.departurePort} onChange={e => handleFormDataChange('departurePort', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>출발항 (Port of Loading)</label>
+                <input type="text" value={formData.departurePort} onChange={e => handleFormDataChange('departurePort', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>도착항 (Destination Port)</label>
-                <input type="text" value={formData.destinationPort} onChange={e => handleFormDataChange('destinationPort', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>도착항 (Destination Port)</label>
+                <input type="text" value={formData.destinationPort} onChange={e => handleFormDataChange('destinationPort', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>운송방법 (Shipping)</label>
-                <input type="text" value={formData.shippingMethod} onChange={e => handleFormDataChange('shippingMethod', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>운송방법 (Shipping)</label>
+                <input type="text" value={formData.shippingMethod} onChange={e => handleFormDataChange('shippingMethod', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>포장 사양 (Packing Spec.)</label>
-                <input type="text" value={formData.packagingSpec} onChange={e => handleFormDataChange('packagingSpec', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>포장 사양 (Packing Spec.)</label>
+                <input type="text" value={formData.packagingSpec} onChange={e => handleFormDataChange('packagingSpec', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>납기 조건 (Delivery Term)</label>
-                <input type="text" value={formData.deliveryTerm} onChange={e => handleFormDataChange('deliveryTerm', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>납기 조건 (Delivery Term)</label>
+                <input type="text" value={formData.deliveryTerm} onChange={e => handleFormDataChange('deliveryTerm', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>원산지 (Origin)</label>
-                <input type="text" value={formData.origin} onChange={e => handleFormDataChange('origin', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>원산지 (Origin)</label>
+                <input type="text" value={formData.origin} onChange={e => handleFormDataChange('origin', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 담당자 (Contact)</label>
-                <input type="text" value={formData.contactPerson} onChange={e => handleFormDataChange('contactPerson', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PI 담당자 (Contact)</label>
+                <input type="text" value={formData.contactPerson} onChange={e => handleFormDataChange('contactPerson', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>Your Ref (고객 PO Ref)</label>
-                <input type="text" value={formData.yourRef} onChange={e => handleFormDataChange('yourRef', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>Your Ref (고객 PO Ref)</label>
+                <input type="text" value={formData.yourRef} onChange={e => handleFormDataChange('yourRef', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 발행일</label>
-                <input type="date" value={formData.piDate} onChange={e => handleFormDataChange('piDate', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PI 발행일</label>
+                <input type="date" value={formData.piDate} onChange={e => handleFormDataChange('piDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>PI 유효기한</label>
-                <input type="date" value={formData.validUntilDate} onChange={e => handleFormDataChange('validUntilDate', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>PI 유효기한</label>
+                <input type="date" value={formData.validUntilDate} onChange={e => handleFormDataChange('validUntilDate', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', gridColumn: 'span 2' }}>
-                <label style={{ fontSize: '10px', fontWeight: 600, color: '#6b7280' }}>고객사 주소 (Customer Address)</label>
-                <input type="text" value={formData.customerAddress} onChange={e => handleFormDataChange('customerAddress', e.target.value)} style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', background: '#fff' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객사 주소 (Customer Address)</label>
+                <input type="text" value={formData.customerAddress} onChange={e => handleFormDataChange('customerAddress', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }} />
               </div>
             </div>
           </div>
 
           {/* Items Section */}
-          <div style={{ marginTop: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 발주 품목 목록</span>
-              <button type="button" onClick={addItemRow} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #2563eb', background: '#fff', color: '#2563eb', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>➕ 품목 행 추가</button>
+          <div style={{ marginTop: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 750, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>📦</span>
+                <span>발주 품목 목록</span>
+              </span>
+              <button type="button" onClick={addItemRow} style={{ padding: '5px 12px', borderRadius: '4px', border: '1px solid #3b82f6', background: '#fff', color: '#3b82f6', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; }} onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}>+ 품목 행 추가</button>
             </div>
             
-            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '11px' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '12px' }}>
               <thead>
-                <tr style={{ background: '#1e3a5f', color: '#ffffff' }}>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '35px', borderTopLeftRadius: '6px', borderBottomLeftRadius: '6px' }}>No</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '220px' }}>상품코드</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '150px' }}>스펙 (Spec)</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'left', width: '130px' }}>공급사</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '100px' }}>수량 / 단위</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>매출 통화 / 단가</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '120px' }}>매입 통화 / 단가</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'right', width: '100px' }}>금액</th>
-                  <th style={{ padding: '8px 4px', textAlign: 'center', width: '45px', borderTopRightRadius: '6px', borderBottomRightRadius: '6px' }}>삭제</th>
+                <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '40px', fontWeight: 700, borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px' }}>No</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'left', width: '220px', fontWeight: 700 }}>상품코드</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'left', width: '150px', fontWeight: 700 }}>스펙 (Spec)</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'left', width: '130px', fontWeight: 700 }}>공급사</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '110px', fontWeight: 700 }}>수량 / 단위</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '130px', fontWeight: 700 }}>매출 통화 / 단가</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '130px', fontWeight: 700 }}>매입 통화 / 단가</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'right', width: '110px', fontWeight: 700 }}>금액</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'center', width: '50px', fontWeight: 700, borderTopRightRadius: '4px', borderBottomRightRadius: '4px' }}>삭제</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '6px 4px', textAlign: 'center', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>{idx + 1}</td>
+                  <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '8px 6px', textAlign: 'center', color: '#64748b', verticalAlign: 'middle', fontWeight: 500 }}>{idx + 1}</td>
                     
                     {/* 상품코드 */}
-                    <td style={{ padding: '4px 4px' }}>
+                    <td style={{ padding: '6px 6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -846,7 +854,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                               value={item.name || ''}
                               onChange={e => handleItemChange(idx, 'name', e.target.value)}
                               placeholder="상품코드 검색/입력"
-                              style={{ width: '100%', padding: '0 40px 0 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                              style={{ width: '100%', padding: '0 40px 0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             />
                             {item.name && (
                               <button
@@ -854,12 +862,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                                 onClick={() => handleItemChange(idx, 'name', '')}
                                 style={{
                                   position: 'absolute',
-                                  right: '20px',
+                                  right: '22px',
                                   background: 'transparent',
                                   border: 'none',
-                                  color: 'var(--text-muted)',
+                                  color: '#94a3b8',
                                   cursor: 'pointer',
-                                  fontSize: '10px',
+                                  fontSize: '11px',
                                   padding: '2px',
                                   zIndex: 5,
                                   display: 'flex',
@@ -879,19 +887,19 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                               }}
                               style={{
                                 position: 'absolute',
-                                right: '4px',
+                                right: '6px',
                                 background: 'transparent',
                                 border: 'none',
                                 color: '#3b82f6',
                                 cursor: 'pointer',
-                                fontSize: '11px',
+                                fontSize: '13px',
                                 padding: '2px',
                                 zIndex: 5,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                               }}
-                              title="상품 검색 (Subwindow)"
+                              title="상품 검색"
                             >
                               🔍
                             </button>
@@ -924,18 +932,18 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                                 title="선택된 상품 수정"
                                 style={{
                                   background: p ? '#fef08a' : '#f1f5f9',
-                                  border: p ? '1px solid var(--border-default)' : '1px solid var(--border-color)',
-                                  color: p ? '#a16207' : 'var(--text-muted)',
+                                  border: p ? '1px solid #cbd5e1' : '1px solid #cbd5e1',
+                                  color: p ? '#a16207' : '#94a3b8',
                                   borderRadius: '4px',
                                   padding: '2px 4px',
                                   cursor: p ? 'pointer' : 'not-allowed',
                                   fontSize: '11px',
-                                  fontWeight: 600,
+                                  fontWeight: 700,
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
-                                  height: '26px',
-                                  width: '26px',
+                                  height: '28px',
+                                  width: '28px',
                                   boxSizing: 'border-box'
                                 }}
                               >
@@ -948,32 +956,32 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     </td>
 
                     {/* 스펙 (Spec) */}
-                    <td style={{ padding: '4px 4px' }}>
+                    <td style={{ padding: '6px 6px' }}>
                       <textarea
                         value={item.grade || ''}
                         onChange={e => handleItemChange(idx, 'grade', e.target.value)}
                         placeholder="스펙 (Spec)"
                         rows={1}
-                        style={{ width: '100%', padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', minHeight: '26px', outline: 'none', resize: 'both', minWidth: '80px', fontFamily: 'inherit', overflow: 'auto' }}
+                        style={{ width: '100%', padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', minHeight: '28px', outline: 'none', resize: 'both', minWidth: '80px', fontFamily: 'inherit', overflow: 'auto' }}
                       />
                     </td>
 
                     {/* 공급사 */}
-                    <td style={{ padding: '4px 4px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '6px 6px', verticalAlign: 'middle' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <input
-                          type="text"
-                          value={item.supplier || ''}
-                          onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
-                          placeholder="공급사명"
-                          style={{ flex: 1, padding: '0 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                           type="text"
+                           value={item.supplier || ''}
+                           onChange={e => handleItemChange(idx, 'supplier', e.target.value)}
+                           placeholder="공급사명"
+                           style={{ flex: 1, padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                         />
                         {(() => {
                           const rawCode = getRawProductCode(item.name);
                           const p = products.find(prod => prod.productCode === rawCode || prod.id === rawCode);
                           if (p && p.supplierName) {
                             return (
-                              <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
+                              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '80px' }} title={p.supplierName}>
                                 {p.supplierName.replace(/\(주\)/g, '').replace(/주식회사/g, '').trim()}
                               </span>
                             );
@@ -984,32 +992,32 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                     </td>
 
                     {/* 수량 / 단위 */}
-                    <td style={{ padding: '4px 4px' }}>
+                    <td style={{ padding: '6px 6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                         <input
                           type="number"
                           value={item.qty || ''}
                           onChange={e => handleItemChange(idx, 'qty', e.target.value)}
                           placeholder="수량"
-                          style={{ width: '65px', padding: '0 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                          style={{ width: '65px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                         />
                         <input
                           type="text"
                           value={item.unit || ''}
                           onChange={e => handleItemChange(idx, 'unit', e.target.value)}
                           placeholder="단위"
-                          style={{ width: '55px', padding: '0 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none', textAlign: 'center' }}
+                          style={{ width: '55px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none', textAlign: 'center' }}
                         />
                       </div>
                     </td>
 
                     {/* 매출 통화 / 단가 */}
-                    <td style={{ padding: '4px 4px' }}>
+                    <td style={{ padding: '6px 6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                         <select
                           value={item.currency || 'USD'}
                           onChange={e => handleItemChange(idx, 'currency', e.target.value)}
-                          style={{ width: '70px', padding: '0 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                          style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="USD">USD</option>
                           <option value="KRW">KRW</option>
@@ -1020,18 +1028,18 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           value={item.unitPrice || ''}
                           onChange={e => handleItemChange(idx, 'unitPrice', e.target.value)}
                           placeholder="매출 단가"
-                          style={{ width: '75px', padding: '0 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                          style={{ width: '75px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                         />
                       </div>
                     </td>
 
                     {/* 매입 통화 / 단가 */}
-                    <td style={{ padding: '4px 4px' }}>
+                    <td style={{ padding: '6px 6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                         <select
                           value={item.purchaseUnitCurrency || 'USD'}
                           onChange={e => handleItemChange(idx, 'purchaseUnitCurrency', e.target.value)}
-                          style={{ width: '70px', padding: '0 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                          style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none', cursor: 'pointer' }}
                         >
                           <option value="USD">USD</option>
                           <option value="KRW">KRW</option>
@@ -1042,18 +1050,18 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                           value={item.purchaseUnitPrice || ''}
                           onChange={e => handleItemChange(idx, 'purchaseUnitPrice', e.target.value)}
                           placeholder="매입 단가"
-                          style={{ width: '75px', padding: '0 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', textAlign: 'right', boxSizing: 'border-box', height: '26px', outline: 'none' }}
+                          style={{ width: '75px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                         />
                       </div>
                     </td>
 
                     {/* 금액 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600, color: 'var(--text-primary)', verticalAlign: 'middle', fontSize: '11.5px' }}>
+                    <td style={{ padding: '8px 6px', textAlign: 'right', fontWeight: 700, color: '#1e293b', verticalAlign: 'middle', fontSize: '12.5px' }}>
                       {item.currency === 'KRW' ? '₩' : '$'}{(item.amount || 0).toLocaleString('en-US', item.currency === 'KRW' ? {} : { minimumFractionDigits: 2 })}
                     </td>
 
                     {/* 삭제 */}
-                    <td style={{ padding: '6px 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '8px 6px', textAlign: 'center', verticalAlign: 'middle' }}>
                       <button
                         type="button"
                         onClick={() => removeItemRow(idx)}
@@ -1061,10 +1069,13 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: items.length === 1 ? 'var(--border-default)' : '#ef4444',
-                          fontSize: '14px',
-                          cursor: items.length === 1 ? 'not-allowed' : 'pointer'
+                          color: items.length === 1 ? '#cbd5e1' : '#ef4444',
+                          fontSize: '15px',
+                          cursor: items.length === 1 ? 'not-allowed' : 'pointer',
+                          transition: 'color 0.2s'
                         }}
+                        onMouseEnter={e => { if (items.length > 1) e.currentTarget.style.color = '#b91c1c'; }}
+                        onMouseLeave={e => { if (items.length > 1) e.currentTarget.style.color = '#ef4444'; }}
                       >
                         ✕
                       </button>
@@ -1076,9 +1087,12 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           </div>
  
           {/* Forwarder/Transport Section */}
-          <div style={{ marginTop: '4px', padding: '14px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 700, color: '#7c3aed' }}>🚢 포워딩/운송사 & 운송비</label>
+          <div style={{ marginTop: '8px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 750, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>🚢</span>
+                <span>포워딩/운송사 & 운송비</span>
+              </span>
               <button
                 type="button"
                 onClick={() => {
@@ -1088,27 +1102,29 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   }
                   setForwarders(prev => [...prev, { name: '', amountUsd: 0, budgetAmountUsd: 0 }]);
                 }}
-                style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 700, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                style={{ padding: '5px 12px', fontSize: '11.5px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', transition: 'background 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}
               >
                 + 운송사 추가
               </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>포워딩사/운송사명</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>해상운임 (USD $)</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '10px', marginBottom: '6px' }}>
+              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>포워딩사/운송사명</span>
+              <span style={{ fontSize: '11px', color: '#475569', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>해상운임 (USD $)</span>
               <span></span>
             </div>
             {forwarders.length === 0 ? (
-              <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>운송사를 추가하세요</div>
+              <div style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12.5px', border: '1px dashed #cbd5e1', borderRadius: '6px', background: '#ffffff' }}>운송사를 추가해 주세요.</div>
             ) : (
               forwarders.map((fw, idx) => (
-                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 200px 32px', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
                   <input
                     type="text"
                     value={fw.name || ''}
                     onChange={e => setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, name: e.target.value } : f))}
                     placeholder="포워딩사명 입력"
-                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }}
                   />
                   <input
                     type="text"
@@ -1120,12 +1136,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: num, budgetAmountUsd: num } : f));
                     }}
                     placeholder="0.00"
-                    style={{ padding: '8px', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', textAlign: 'right' }}
+                    style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box', textAlign: 'right' }}
                   />
                   <button
                     type="button"
                     onClick={() => setForwarders(prev => prev.filter((_, i) => i !== idx))}
-                    style={{ padding: '8px', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    style={{ height: '34px', width: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#fecaca'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#fee2e2'; }}
                   >✕</button>
                 </div>
               ))
@@ -1133,14 +1151,14 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           </div>
 
           {/* Real-time Total sum */}
-          <div style={{ alignSelf: 'flex-end', marginTop: '10px', fontSize: '16px', fontWeight: 800, color: '#0f172a', display: 'flex', gap: '20px' }}>
+          <div style={{ alignSelf: 'flex-end', marginTop: '12px', fontSize: '15px', fontWeight: 800, color: '#1e293b', display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span>총 발주 금액 (Grand Total):</span>
             {(() => {
               const usdTotal = items.filter(it => it.currency !== 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0)
                 + forwarders.reduce((sum, fw) => sum + (fw.amountUsd || 0), 0);
               const krwTotal = items.filter(it => it.currency === 'KRW').reduce((sum, it) => sum + (it.amount || 0), 0);
               return (
-                <span style={{ color: '#dc2626' }}>
+                <span style={{ color: '#dc2626', fontSize: '17px', fontWeight: 900 }}>
                   {usdTotal > 0 && `$${usdTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD`}
                   {usdTotal > 0 && krwTotal > 0 && ' / '}
                   {krwTotal > 0 && `₩${krwTotal.toLocaleString('en-US')} KRW`}
@@ -1153,9 +1171,9 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
       </div>
 
       {/* Footer */}
-        <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 12px 12px' }}>
-          <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontSize: '12px' }}>취소</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '12px' }}>
+        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border-default)', background: '#ffffff', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderRadius: '0 0 12px 12px' }}>
+          <button onClick={onClose} style={{ padding: '6px 14px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#fff', fontWeight: 700, color: '#475569', cursor: 'pointer', fontSize: '12.5px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; }} onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}>취소</button>
+          <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 16px', borderRadius: '4px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '12.5px', transition: 'background 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }} onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }} onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}>
             {isSaving ? '등록 중...' : '✔ 등록 완료'}
           </button>
         </div>
