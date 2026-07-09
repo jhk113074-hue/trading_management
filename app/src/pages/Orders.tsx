@@ -500,9 +500,9 @@ export const Orders: React.FC = () => {
 
   // ── 공통 필터 바 ──────────────────────────────────────────────────────────
   const FilterBar = () => (
-    <div style={{ display: 'flex', gap: '8px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 16px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ display: 'flex', gap: '8px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px 16px', alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       {/* 뷰 전환 탭 */}
-      <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-color)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '0', background: '#f1f5f9', borderRadius: '4px', padding: '2px', border: '1px solid #cbd5e1', flexShrink: 0 }}>
         {([
           { mode: 'list',   label: '📋 목록 보기' },
           { mode: 'kanban', label: '🗂 칸반 보기' },
@@ -514,7 +514,7 @@ export const Orders: React.FC = () => {
             style={{
               padding: '6px 14px', border: 'none', borderRadius: '4px',
               background: viewMode === mode ? '#fff' : 'transparent',
-              color: viewMode === mode ? 'var(--text-primary)' : 'var(--text-secondary)',
+              color: viewMode === mode ? '#1e293b' : '#64748b',
               fontWeight: viewMode === mode ? 700 : 500,
               fontSize: '12.5px', cursor: 'pointer', transition: 'all 0.15s',
               boxShadow: viewMode === mode ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
@@ -532,7 +532,7 @@ export const Orders: React.FC = () => {
       </div>
 
       {/* 구분선 */}
-      <div style={{ width: '1px', height: '24px', background: 'var(--border-default)', margin: '0 8px', flexShrink: 0 }} />
+      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 8px', flexShrink: 0 }} />
 
       {[
         { label: '발주사', value: customerFilter, set: setCustomerFilter, opts: [['All', '전체 바이어'], ...customers.map(c => [c, c])] },
@@ -547,7 +547,7 @@ export const Orders: React.FC = () => {
           </select>
         </div>
       ))}
-      <div style={{ width: '1px', height: '24px', background: 'var(--border-default)', margin: '0 4px', flexShrink: 0 }} />
+      <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
         <label style={{ fontSize: '11px', fontWeight: 750, color: '#2563eb', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기간</label>
         <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #2563eb', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 700, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
@@ -878,7 +878,7 @@ export const Orders: React.FC = () => {
           <>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '13.5px', tableLayout: 'fixed' }}>
-                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid var(--border-color)' }}>
+                <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
                   <tr>
                     {['날짜','주문번호','수주사','발주사','발주액','ETD','ETA','단계','다음단계'].map((h, hIdx) => (
                       <th 
@@ -886,22 +886,23 @@ export const Orders: React.FC = () => {
                         onClick={() => handleSort(h)}
                         style={thStyle(hIdx, { 
                           padding: h === '단계' ? '8px 16px 10px 16px' : '12px 16px', 
-                          fontWeight: 700, 
-                          color: sortKey === h ? '#2563eb' : 'var(--text-secondary)', 
-                          fontSize: '14.5px', 
-                          letterSpacing: '0.05em', 
+                          fontWeight: 750, 
+                          color: sortKey === h ? '#2563eb' : '#475569', 
+                          fontSize: '11px', 
+                          letterSpacing: '0.02em', 
                           textAlign: 'center', 
                           whiteSpace: 'nowrap',
                           cursor: 'pointer',
                           userSelect: 'none',
                           background: sortKey === h ? '#eff6ff' : 'transparent',
-                          transition: 'background-color 0.2s'
+                          transition: 'background-color 0.2s',
+                          textTransform: 'uppercase'
                         })}
                       >
                         {h === '단계' ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '14.5px', fontWeight: 700 }}>단계{renderSortIcon(h)}</span>
-                            <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                            <span style={{ fontSize: '11px', fontWeight: 750, color: sortKey === h ? '#2563eb' : '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>단계{renderSortIcon(h)}</span>
+                            <div style={{ display: 'flex', gap: '2px', width: '100%', fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>
                               {['수주정보', '소싱/발주', '물류/선적', '서류관리', '정산/결제'].map(s => (
                                 <span key={s} style={{ flex: 1, textAlign: 'center' }}>{s}</span>
                               ))}
@@ -921,14 +922,14 @@ export const Orders: React.FC = () => {
                   const pi = quotations.find(q => q.id === order.quotationId);
                   const amount = order.totalAmount || pi?.totalUsd || 0;
                   const { pct } = getOverallProgress(order);
-                  const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : 'var(--text-secondary)';
+                  const lvlColor = order.nextAction.level === 'RED' ? '#ef4444' : order.nextAction.level === 'ORANGE' ? '#f59e0b' : '#64748b';
                   const lvlBg = order.nextAction.level === 'RED' ? '#fef2f2' : order.nextAction.level === 'ORANGE' ? '#fffbeb' : '#f8fafc';
-                  const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : 'var(--border-color)';
+                  const lvlBdr = order.nextAction.level === 'RED' ? '#fecaca' : order.nextAction.level === 'ORANGE' ? '#fef3c7' : '#cbd5e1';
                   
                   const isYS = order.issuingCompany === 'YS';
                   const issuerBadge = isYS
-                    ? <span style={{ fontSize: '12px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '4px 12px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>영성ACC</span>
-                    : <span style={{ fontSize: '12px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '4px 12px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>YSACC</span>;
+                    ? <span style={{ fontSize: '11px', fontWeight: 800, background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '4px', border: '1px solid #a7f3d0' }}>영성ACC</span>
+                    : <span style={{ fontSize: '11px', fontWeight: 800, background: '#eff6ff', color: '#1d4ed8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #bfdbfe' }}>YSACC</span>;
 
                   const displayStage = getFirstIncompleteStage(order);
                   const isAllFinished = displayStage === '완료';
@@ -949,19 +950,19 @@ export const Orders: React.FC = () => {
                     <tr
                       key={order.id}
                       onClick={() => navigate(`/orders/${order.id}?step=수주정보`)}
-                      style={{ borderBottom: '1px solid var(--border-color)', height: '60px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                      style={{ borderBottom: '1px solid #cbd5e1', height: '56px', cursor: 'pointer', transition: 'background-color 0.2s' }}
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
-                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13.5px' })}>{order.ciNumber || order.id}</td>
+                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
+                      <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
-                      <td style={getTdStyle(3, { color: 'var(--text-primary)', fontWeight: 600, fontSize: '13.5px' })} title={order.customer}>{order.customer}</td>
-                      <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14.5px' })}>
+                      <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
+                      <td style={getTdStyle(4, { fontWeight: 700, color: '#0f766e', textAlign: 'right', fontSize: '14px' })}>
                         ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td style={getTdStyle(5, { color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
-                      <td style={getTdStyle(6, { color: 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
+                      <td style={getTdStyle(5, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
+                      <td style={getTdStyle(6, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.eta || '-'}</td>
                       {/* 단계 */}
                       <td style={getTdStyle(7)}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
@@ -970,10 +971,10 @@ export const Orders: React.FC = () => {
                                 background: isAllFinished ? '#ecfdf5' : '#eff6ff', 
                                 color: isAllFinished ? '#10b981' : '#2563eb', 
                                 border: isAllFinished ? '1px solid #a7f3d0' : '1px solid #bfdbfe', 
-                                fontSize: '12px', 
+                                fontSize: '11px', 
                                 fontWeight: 700, 
-                                padding: '3px 10px', 
-                                borderRadius: '20px', 
+                                padding: '3px 8px', 
+                                borderRadius: '4px', 
                                 whiteSpace: 'nowrap' 
                               }}>
                                {displayStage}
@@ -1067,15 +1068,15 @@ export const Orders: React.FC = () => {
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>주문 관리 대시보드</h1>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>주문 관리 대시보드</h1>
           <select 
             value={issuingCompanyFilter} 
             onChange={e => setIssuingCompanyFilter(e.target.value)} 
             style={{ 
-              padding: '6px 12px', border: '1.5px solid var(--border-default)', borderRadius: '6px', 
-              fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', 
+              padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', 
+              fontSize: '13px', fontWeight: 700, color: '#475569', 
               outline: 'none', background: '#fff', cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              height: '34px', boxSizing: 'border-box'
             }}
           >
             <option value="All">🏢 전체 ISSUER</option>
@@ -1085,7 +1086,9 @@ export const Orders: React.FC = () => {
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 700, fontSize: '12px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)', display: 'flex', alignItems: 'center', gap: '4px' }}
+          style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '0 14px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '4px', height: '34px', boxSizing: 'border-box' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+          onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
         >
           ➕ 신규 PO 등록
         </button>
@@ -1093,27 +1096,27 @@ export const Orders: React.FC = () => {
 
       {/* 스탯 카드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '10px' }}>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>진행 중 오더</span>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f172a' }}>{stats.activeCount} 건</div>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>진행 중 오더</span>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{stats.activeCount} 건</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>진행 수주금액</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>진행 수주금액</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.totalYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.totalYsUsd).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#0f766e' }}>${stats.totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)' }}>매출액 (ETD 기준)</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>매출액 (ETD 기준)</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: '#d97706' }}>${stats.salesTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#d97706' }}>${stats.salesTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
-        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : 'var(--text-secondary)' }}>오늘 처리 필요 (긴급)</span>
-          <div style={{ fontSize: '22px', fontWeight: 900, color: stats.urgentCount > 0 ? '#dc2626' : '#0f172a' }}>{stats.urgentCount} 건</div>
+        <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : '#475569' }}>오늘 처리 필요 (긴급)</span>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: stats.urgentCount > 0 ? '#dc2626' : '#1e293b' }}>{stats.urgentCount} 건</div>
         </div>
       </div>
 
