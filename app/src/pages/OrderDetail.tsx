@@ -7417,26 +7417,26 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               </div>
                             </div>
 
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15.5px', background: '#fff' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', background: '#fff', border: '1px solid var(--border-color)' }}>
                               <thead>
-                                <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)' }}>
-                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '10%', whiteSpace: 'nowrap' }}>포장형태</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
-                                  <th style={{ padding: '4px 6px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
-                                  <th style={{ padding: '6px', textAlign: 'center', width: '140px', whiteSpace: 'nowrap' }}>동작</th>
+                                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid var(--border-default)' }}>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '6%', whiteSpace: 'nowrap' }}>PKG NO.</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '22%', whiteSpace: 'nowrap' }}>Description of Goods (품명 및 사양)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>수량</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '10%', whiteSpace: 'nowrap' }}>포장형태</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '14%', whiteSpace: 'nowrap' }}>규격 (WxLxH)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'left', width: '12%', whiteSpace: 'nowrap' }}>Manufacturer (제조사)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>NET WT (Kg)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '8%', whiteSpace: 'nowrap' }}>GROSS WT (Kg)</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'right', width: '6%', whiteSpace: 'nowrap' }}>CBM</th>
+                                  <th style={{ padding: '6px 8px', textAlign: 'center', width: '140px', whiteSpace: 'nowrap' }}>동작</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {(c.items || []).map((it: any, itIdx: number) => (
                                   <tr key={itIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '2px 4px' }}>
-                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'center', height: '28px', boxSizing: 'border-box' }} value={it.pkgNo || ''} onChange={e => {
+                                    <td style={{ padding: '4px' }}>
+                                      <input type="text" placeholder="예: 1-5" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'center', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.pkgNo || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].pkgNo = val;
@@ -7444,14 +7444,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
+                                    <td style={{ padding: '4px' }}>
                                       <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
                                         <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
                                           <textarea
                                             disabled={!isEditing}
                                             placeholder="[상품코드] 상품명 또는 사양 직접 입력"
                                             rows={2}
-                                            style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto' }}
+                                            style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', minHeight: '44px', resize: 'both', fontFamily: 'inherit', outline: 'none', overflow: 'auto', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
                                             value={(it.description || '').replace(/^P#\d+\.\s*/i, '')}
                                             onChange={e => {
                                               const val = e.target.value;
@@ -7512,12 +7512,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         })()}
                                       </div>
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
+                                    <td style={{ padding: '4px' }}>
                                       <input
                                         type="number"
                                         placeholder="수량"
                                         disabled={!isEditing}
-                                        style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                         value={it.qty || ''}
                                         onChange={e => {
                                           const val = e.target.value;
@@ -7527,7 +7527,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         }}
                                       />
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
+                                    <td style={{ padding: '4px' }}>
                                       {(() => {
                                         const match = (it.description || '').match(/^\[(.*?)\]\s*(.*)$/);
                                         const itemCode = match ? match[1] : '-';
@@ -7538,7 +7538,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         return (
                                           <select
                                               disabled={!isEditing}
-                                              style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '98%', outline: 'none', height: '28px', boxSizing: 'border-box' }}
+                                              style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '98%', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
                                               value={it.packageType || ''}
                                               onChange={e => {
                                                 const val = e.target.value;
@@ -7593,7 +7593,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="W"
                                               disabled={!isEditing}
                                               value={width}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
                                               onChange={e => {
                                                 const w = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7607,7 +7607,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="L"
                                               disabled={!isEditing}
                                               value={length}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
                                               onChange={e => {
                                                 const l = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7621,7 +7621,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               placeholder="H"
                                               disabled={!isEditing}
                                               value={height}
-                                              style={{ width: '52px', padding: '2px 3px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'center', outline: 'none', height: '28px', boxSizing: 'border-box' }}
+                                              style={{ width: '52px', padding: '4px 3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'center', outline: 'none', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
                                               onChange={e => {
                                                 const h = e.target.value;
                                                 const nextContainers = [...basicForm.packingList.containers];
@@ -7633,24 +7633,24 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         );
                                       })()}
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
-                                      <input type="text" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '98%', height: '28px', boxSizing: 'border-box' }} value={it.supplier || ''} onChange={e => {
+                                    <td style={{ padding: '4px' }}>
+                                      <input type="text" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '98%', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.supplier || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].supplier = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }} value={it.netWeight || ''} onChange={e => {
+                                    <td style={{ padding: '4px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.netWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].netWeight = val;
                                         setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: nextContainers } }));
                                       }} />
                                     </td>
-                                    <td style={{ padding: '2px 4px' }}>
-                                      <input type="number" disabled={!isEditing} style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }} value={it.grossWeight || ''} onChange={e => {
+                                    <td style={{ padding: '4px' }}>
+                                      <input type="number" disabled={!isEditing} style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }} value={it.grossWeight || ''} onChange={e => {
                                         const val = e.target.value;
                                         const nextContainers = [...basicForm.packingList.containers];
                                         nextContainers[cIdx].items[itIdx].grossWeight = val;
@@ -7704,7 +7704,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             } catch {}
                                           }
                                         }}
-                                        style={{ padding: '2px 4px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : 'var(--border-default)'}`, borderRadius: '4px', fontSize: '15.5px', width: '90%', textAlign: 'right', height: '28px', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: `1px solid ${String(it.cbm||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '13px', width: '95%', textAlign: 'right', height: '32px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none' }}
                                       />
                                     </td>
                                     <td style={{ padding: '4px', textAlign: 'center' }}>
@@ -9256,18 +9256,18 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {/* 수출신고번호, 수출면장 기준환율 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>수출신고번호</span>
-                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), width: '100%' }} placeholder="예: 010-22-19-1234567" />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호</span>
+                    <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '160px' }}>
-                    <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>수출면장 기준환율</span>
-                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), width: '100%' }} placeholder="예: 1352.50" />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출면장 기준환율</span>
+                    <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1352.50" />
                   </div>
 
                   {/* B/L 번호 목록 다중 입력 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>B/L 번호 목록</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록</span>
                       {isEditing && (
                         <button
                           type="button"
@@ -9278,7 +9278,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               blNumbers: [...currentBls, '']
                             }));
                           }}
-                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '2px 8px', fontWeight: 700, cursor: 'pointer' }}
+                          style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', padding: '4px 10px', fontWeight: 700, cursor: 'pointer', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           + 추가
                         </button>
@@ -9309,7 +9309,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 }));
                               }}
                               placeholder={`B/L 번호 #${idx + 1}`}
-                              style={{ ...inputStyle(isEditing), flex: 1, padding: '4px 8px' }}
+                              style={{ ...inputStyle(isEditing), flex: 1, padding: '6px 10px', height: '34px', fontSize: '13.5px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }}
                             />
                             {isEditing && (
                               <button
@@ -9322,7 +9322,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     blNumber: nextBls.filter(Boolean).join(', ')
                                   }));
                                 }}
-                                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '4px 8px', cursor: 'pointer', fontWeight: 600 }}
+                                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', padding: '0 12px', cursor: 'pointer', fontWeight: 600, height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
                               >
                                 삭제
                               </button>
@@ -9475,64 +9475,64 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       {/* CI/PL Header Info Form */}
                       <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>📋 선적 서류 기본 정보</div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>📋 선적 서류 기본 정보</div>
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Invoice / PL 번호</span>
-                            <input type="text" value={basicForm.ciNumber || ''} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invoice / PL 번호</span>
+                            <input type="text" value={basicForm.ciNumber || ''} onChange={e => setBasicForm(p => ({ ...p, ciNumber: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>작성일자 (Invoice Date)</span>
-                            <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={inputStyle(true)} />
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적항 (Port of Loading)</span>
-                            <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(p => ({ ...p, portOfLoading: e.target.value }))} style={inputStyle(true)} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>도착항 (Port of Discharge)</span>
-                            <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(p => ({ ...p, portOfDischarge: e.target.value }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>작성일자 (Invoice Date)</span>
+                            <input type="date" value={basicForm.poDate} onChange={e => setBasicForm(p => ({ ...p, poDate: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>선박명 (Vessel Name)</span>
-                            <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>선적항 (Port of Loading)</span>
+                            <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(p => ({ ...p, portOfLoading: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>출항예정일 (ETD)</span>
-                            <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>도착항 (Port of Discharge)</span>
+                            <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(p => ({ ...p, portOfDischarge: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>인코텀즈 (Delivery Terms)</span>
-                            <input type="text" value={basicForm.incoterms} onChange={e => setBasicForm(p => ({ ...p, incoterms: e.target.value as any }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>선박명 (Vessel Name)</span>
+                            <input type="text" value={basicForm.vesselBooking} onChange={e => setBasicForm(p => ({ ...p, vesselBooking: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>결제조건 (Payment Terms)</span>
-                            <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(p => ({ ...p, paymentTerms: e.target.value }))} style={inputStyle(true)} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>출항예정일 (ETD)</span>
+                            <input type="date" value={basicForm.etd} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>인코텀즈 (Delivery Terms)</span>
+                            <input type="text" value={basicForm.incoterms} onChange={e => setBasicForm(p => ({ ...p, incoterms: e.target.value as any }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>결제조건 (Payment Terms)</span>
+                            <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(p => ({ ...p, paymentTerms: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                           </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>L/C 번호 / 개설은행 (Bank Info)</span>
-                          <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={inputStyle(true)} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>L/C 번호 / 개설은행 (Bank Info)</span>
+                          <input type="text" placeholder="L/C No 및 개설은행 정보" value={basicForm.lcNo} onChange={e => setBasicForm(p => ({ ...p, lcNo: e.target.value }))} style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} />
                         </div>
                       </div>
 
                       {/* Buyer & Shipper Address Box */}
                       <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#0f766e', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>🏢 거래 당사자 주소 정보</div>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '4px' }}>🏢 거래 당사자 주소 정보</div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Shipper (송신인/제조사)</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shipper (송신인/제조사)</span>
                           <textarea 
                             value={basicForm.packingList?.shipper || getShipperText(basicForm.issuingCompany)} 
                             onChange={e => {
@@ -9546,12 +9546,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               }));
                             }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', color: 'var(--text-primary)', fontFamily: 'monospace', resize: 'none' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'none', outline: 'none' }} 
                           />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Applicant (바이어 주소)</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Applicant (바이어 주소)</span>
                           <textarea 
                             value={basicForm.packingList?.applicant || (basicForm.customerAddress ? `${basicForm.customer}\n${basicForm.customerAddress}` : basicForm.customer)} 
                             onChange={e => {
@@ -9565,12 +9565,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               }));
                             }}
                             rows={3} 
-                            style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', color: 'var(--text-primary)', fontFamily: 'monospace', resize: 'none' }} 
+                            style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', fontFamily: 'monospace', resize: 'none', outline: 'none' }} 
                           />
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Notify Party (통지처)</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notify Party (통지처)</span>
                           <input 
                             type="text" 
                             placeholder="Same as Applicant" 
@@ -9586,7 +9586,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 }
                               }));
                             }}
-                            style={inputStyle(true)} 
+                            style={{ ...inputStyle(true), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1' }} 
                           />
                         </div>
                       </div>
@@ -9624,7 +9624,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       setOrderItems(prev => prev.map((it, i) => i === idx ? { ...it, hsCode: nextCode } : it));
                                     }} 
                                     placeholder="HS Code 입력"
-                                    style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', width: '100%', fontSize: '14.5px', fontWeight: 600, color: '#334155' }} 
+                                    style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', fontSize: '13px', fontWeight: 500, color: '#1e293b', height: '32px', boxSizing: 'border-box', outline: 'none' }} 
                                   />
                                 </td>
                                 <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>{item.qty} {item.unit}</td>
@@ -9747,7 +9747,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '15.5px', fontWeight: 700 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid var(--border-color)', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                   <span style={{ paddingLeft: '4px' }}>구분</span>
                                   <span>발행일자</span>
                                   <span>승인번호</span>
@@ -9779,7 +9779,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: 'var(--text-secondary)' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: 'var(--text-secondary)', height: '32px' }}
                                       >
                                         <option value="세금계산서">세금계산서</option>
                                         <option value="카드">카드</option>
@@ -9800,7 +9800,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       
                                       {/* 승인번호 */}
@@ -9820,7 +9820,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
 
                                       {/* 공급가액 */}
@@ -9846,7 +9846,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right', height: '32px' }}
                                       />
 
                                       {/* 부가세 */}
@@ -9866,11 +9866,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', textAlign: 'right', height: '32px' }}
                                       />
 
                                       {/* 합계금액 */}
-                                      <div style={{ background: '#f1f5f9', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right', boxSizing: 'border-box', height: '31px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                      <div style={{ background: '#f8fafc', padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right', boxSizing: 'border-box', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                         ₩{total.toLocaleString()}
                                       </div>
 
@@ -9891,7 +9891,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             }
                                           }));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
 
                                       {/* 삭제 버튼 */}
@@ -9908,7 +9908,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               }
                                             }));
                                           }}
-                                          style={{ padding: '6px 8px', border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '14.5px' }}
+                                          style={{ padding: '4px 8px', border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', fontSize: '14px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                           title="삭제"
                                         >
                                           🗑️
@@ -9927,10 +9927,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   const totalInvoicesGrand = totalInvoicesSupply + totalInvoicesVat;
                                   return (
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.3fr 1.5fr auto', gap: '8px', alignItems: 'center', marginTop: '4px', paddingTop: '8px', borderTop: '2px double var(--border-default)', color: '#1e3a8a', fontWeight: 'bold' }}>
-                                      <span style={{ fontSize: '15.5px', paddingLeft: '4px', gridColumn: 'span 3' }}>등록 세금계산서/카드 합계</span>
-                                      <span style={{ fontSize: '15.5px', color: '#0f172a' }}>₩{totalInvoicesSupply.toLocaleString()}</span>
-                                      <span style={{ fontSize: '15.5px', color: '#0f172a' }}>₩{totalInvoicesVat.toLocaleString()}</span>
-                                      <span style={{ fontSize: '14.5px', textAlign: 'right', paddingRight: '12px' }}>₩{totalInvoicesGrand.toLocaleString()}</span>
+                                      <span style={{ fontSize: '13px', paddingLeft: '4px', gridColumn: 'span 3' }}>등록 세금계산서/카드 합계</span>
+                                      <span style={{ fontSize: '13px', color: '#0f172a' }}>₩{totalInvoicesSupply.toLocaleString()}</span>
+                                      <span style={{ fontSize: '13px', color: '#0f172a' }}>₩{totalInvoicesVat.toLocaleString()}</span>
+                                      <span style={{ fontSize: '13px', textAlign: 'right', paddingRight: '12px', color: '#1e3a8a' }}>₩{totalInvoicesGrand.toLocaleString()}</span>
                                       <span></span>
                                       <span style={{ width: '28px' }}></span>
                                     </div>
@@ -10106,7 +10106,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 return (
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', background: '#fff', borderRadius: '6px', marginBottom: '8px', border: '1px solid #e9d5ff' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                      <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>국내운송비(KRW)</span>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>국내운송비(KRW)</span>
                                       <input
                                         type="text"
                                         disabled={!isEditing}
@@ -10116,11 +10116,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           const val = e.target.value.replace(/[^0-9]/g, '');
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, amountKrw: val === '' ? 0 : parseInt(val, 10) } : f));
                                         }}
-                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '14.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '34px', outline: 'none' }}
                                       />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                      <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>국내부가세(KRW)</span>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>국내부가세(KRW)</span>
                                       <input
                                         type="text"
                                         disabled={!isEditing}
@@ -10130,11 +10130,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           const val = e.target.value.replace(/[^0-9]/g, '');
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, amountVatKrw: val === '' ? 0 : parseInt(val, 10) } : f));
                                         }}
-                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '14.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '34px', outline: 'none' }}
                                       />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                      <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>해상운임(USD)</span>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>해상운임(USD)</span>
                                       <input
                                         type="text"
                                         disabled={!isEditing}
@@ -10147,12 +10147,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           const numVal = cleanVal === '' ? 0 : parseFloat(cleanVal);
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, freightAmount: numVal, freightCurrency: 'USD' } : f));
                                         }}
-                                        style={{ padding: '6px 8px', border: '1px solid #ddd6fe', borderRadius: '4px', fontSize: '14.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '30px', outline: 'none' }}
+                                        style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', textAlign: 'right', background: isEditing ? '#fff' : '#f8fafc', height: '34px', outline: 'none' }}
                                       />
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                      <span style={{ fontSize: '15.5px', color: '#ef4444', fontWeight: 600, textAlign: 'right', marginRight: '4px' }}>최종(USD)</span>
-                                      <div style={{ padding: '6px 8px', fontSize: '14.5px', fontWeight: 700, color: '#ef4444', textAlign: 'right', background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '4px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', boxSizing: 'border-box' }}>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right', marginRight: '4px' }}>최종(USD)</span>
+                                      <div style={{ padding: '6px 10px', fontSize: '13.5px', fontWeight: 700, color: '#ef4444', textAlign: 'right', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', boxSizing: 'border-box' }}>
                                         ${finalUsd > 0 ? finalUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                                       </div>
                                     </div>
@@ -10161,7 +10161,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               })()}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {/* 테이블 헤더 (1줄 레이아웃용) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '15.5px', fontWeight: 700 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', padding: '4px 0', borderBottom: '1px solid var(--border-color)', color: '#475569', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                   <span style={{ paddingLeft: '4px' }}>구분</span>
                                   <span>발행일자</span>
                                   <span>승인번호</span>
@@ -10188,7 +10188,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].type = e.target.value as '세금계산서' | '카드';
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: 'var(--text-secondary)' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', fontWeight: 600, color: 'var(--text-secondary)', height: '32px' }}
                                       >
                                         <option value="세금계산서">세금계산서</option>
                                         <option value="카드">카드</option>
@@ -10202,7 +10202,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].date = e.target.value;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       {/* 승인번호 */}
                                       <input
@@ -10214,7 +10214,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].invoiceNo = e.target.value;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       {/* 공급가액 */}
                                       <input
@@ -10231,7 +10231,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].amount = val + autoVat + currentAgentAmt;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       {/* 부가세액 */}
                                       <input
@@ -10247,7 +10247,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].amount = currentSupply + val + currentAgentAmt;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       {/* 대납비용 */}
                                       <input
@@ -10263,10 +10263,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           newList[invIdx].amount = currentSupply + currentVat + val;
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: newList } : f));
                                         }}
-                                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box' }}
+                                        style={{ padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', textAlign: 'right', width: '100%', boxSizing: 'border-box', height: '32px' }}
                                       />
                                       {/* 합계금액 (Readonly) */}
-                                      <div style={{ padding: '6px 10px', fontSize: '13.5px', color: '#0f172a', textAlign: 'right', fontWeight: 'bold', paddingRight: '12px' }}>
+                                      <div style={{ background: '#f8fafc', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'right', boxSizing: 'border-box', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '12px' }}>
                                         ₩{displayTotal.toLocaleString()}
                                       </div>
                                       
@@ -10279,7 +10279,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             const updated = filtered.length > 0 ? filtered : [{ date: '', invoiceNo: '', amount: 0, supplyValue: 0, vat: 0, agentAmount: 0 }];
                                             setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, taxInvoices: updated } : f));
                                           }}
-                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '15.5px', fontWeight: 700, padding: 0 }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, padding: 0 }}
                                         >✕</button>
                                       ) : (
                                         <span style={{ width: '28px' }} />
@@ -10296,13 +10296,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   const totalSum = taxInvoices.reduce((sum, inv) => sum + (inv.amount || ((inv.supplyValue !== undefined ? inv.supplyValue : (inv.amount || 0)) + (inv.vat !== undefined ? inv.vat : 0) + (inv.agentAmount !== undefined ? inv.agentAmount : 0))), 0);
 
                                   return (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center', background: '#f5f3ff', borderTop: '2px solid #c084fc', borderBottom: '2.5px double #c084fc', padding: '6px 0', fontSize: '13.5px', fontWeight: 800 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2.2fr 1.2fr 1.1fr 1.1fr 1.3fr auto', gap: '8px', alignItems: 'center', background: '#f5f3ff', borderTop: '2px solid #c084fc', borderBottom: '2.5px double #c084fc', padding: '6px 0', fontSize: '13px', fontWeight: 800 }}>
                                       <span style={{ paddingLeft: '10px', color: '#6b21a8' }}>합계 (Total)</span>
                                       <span></span>
                                       <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalSupply.toLocaleString()}</span>
                                       <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalVat.toLocaleString()}</span>
                                       <span style={{ textAlign: 'right', paddingRight: '10px', color: '#0f172a' }}>₩{totalAgent.toLocaleString()}</span>
-                                      <span style={{ textAlign: 'right', paddingRight: '12px', color: '#7c3aed', fontSize: '14.5px' }}>₩{totalSum.toLocaleString()}</span>
+                                      <span style={{ textAlign: 'right', paddingRight: '12px', color: '#7c3aed', fontSize: '13px' }}>₩{totalSum.toLocaleString()}</span>
                                       <span style={{ width: '28px' }} />
                                     </div>
                                   );
@@ -10344,7 +10344,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             bankCharges: [...current, { item: '', amount: 0 }]
                           }));
                         }}
-                        style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '6px 12px', fontSize: '14.5px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                        style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: 'pointer', height: '34px', display: 'inline-flex', alignItems: 'center' }}
                       >
                         ＋ 수수료 항목 추가
                       </button>
@@ -10352,20 +10352,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {(!basicForm.bankCharges || basicForm.bankCharges.length === 0) ? (
-                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '15.5px', border: '1px dashed var(--border-default)', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--border-default)', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
                           등록된 수수료 내역이 없습니다. '수수료 항목 추가' 버튼을 눌러 등록해주세요.
                         </div>
                       ) : (
                         <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead>
-                              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)' }}>
-                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', width: '50px' }}>번호</th>
-                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', width: '130px' }}>발생일자</th>
-                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)' }}>수수료 항목</th>
-                                <th style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)', width: '180px' }}>금액 (KRW ₩)</th>
-                                <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700, color: 'var(--text-secondary)', width: '250px' }}>영수증 첨부</th>
-                                <th style={{ padding: '10px', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)', width: '80px' }}>작업</th>
+                              <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', fontSize: '11px', color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                <th style={{ padding: '8px 10px', textAlign: 'left', width: '50px' }}>번호</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'left', width: '130px' }}>발생일자</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'left' }}>수수료 항목</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'right', width: '180px' }}>금액 (KRW ₩)</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'left', width: '250px' }}>영수증 첨부</th>
+                                <th style={{ padding: '8px 10px', textAlign: 'center', width: '80px' }}>작업</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -10378,18 +10378,18 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                                 return (
                                   <tr key={index} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    <td style={{ padding: '10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{index + 1}</td>
-                                    <td style={{ padding: '10px' }}>
+                                    <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{index + 1}</td>
+                                    <td style={{ padding: '8px 10px' }}>
                                       <input
                                         type="date"
                                         value={bc.date || ''}
                                         onChange={e => handleFieldChange('date', e.target.value)}
                                         onBlur={() => handleSaveBasic(false)}
                                         onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
-                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box' }}
+                                        style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box', height: '32px' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '10px' }}>
+                                    <td style={{ padding: '8px 10px' }}>
                                       <input
                                         type="text"
                                         list="bank-charges-items"
@@ -10398,19 +10398,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         onChange={e => handleFieldChange('item', e.target.value)}
                                         onBlur={() => handleSaveBasic(false)}
                                         onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
-                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box' }}
+                                        style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box', height: '32px' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '10px' }}>
+                                    <td style={{ padding: '8px 10px' }}>
                                       <FormattedNumberInput
                                         value={bc.amount || 0}
                                         onChange={val => handleFieldChange('amount', val)}
                                         onBlur={() => handleSaveBasic(false)}
                                         onKeyDown={e => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
-                                        style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', textAlign: 'right', fontWeight: 600, boxSizing: 'border-box' }}
+                                        style={{ width: '100%', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', textAlign: 'right', fontWeight: 600, boxSizing: 'border-box', height: '32px' }}
                                       />
                                     </td>
-                                    <td style={{ padding: '10px' }}>
+                                    <td style={{ padding: '8px 10px' }}>
                                       <div 
                                         style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
                                         onPaste={async (e) => {
@@ -10444,11 +10444,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           />
                                           <label
                                             htmlFor={`bank-charge-receipt-upload-${index}`}
-                                            style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 6px', fontSize: '13.5px', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                                            style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '13px', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', height: '32px', display: 'inline-flex', alignItems: 'center', boxSizing: 'border-box' }}
                                           >
                                             파일 선택
                                           </label>
-                                          <span style={{ fontSize: '9px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>클릭 후 Ctrl+V 붙여넣기 지원</span>
+                                          <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>클릭 후 Ctrl+V 붙여넣기 지원</span>
                                         </div>
 
                                         {bc.receiptFiles && bc.receiptFiles.length > 0 && (
@@ -10457,7 +10457,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               <div key={fIdx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', border: '1px solid var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>
                                                 <span 
                                                   onClick={() => previewFile(file.url, file.name)} 
-                                                  style={{ fontSize: '13.5px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                                  style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                                   title={file.name}
                                                 >
                                                   {file.name}
@@ -10465,7 +10465,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                 <button
                                                   type="button"
                                                   onClick={() => handleDeleteBankChargeReceipt(index, fIdx)}
-                                                  style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '15.5px', cursor: 'pointer', padding: '0 2px' }}
+                                                  style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '14px', cursor: 'pointer', padding: '0 2px' }}
                                                 >
                                                   ✕
                                                 </button>
@@ -10478,14 +10478,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         )}
                                       </div>
                                     </td>
-                                    <td style={{ padding: '10px', textAlign: 'center' }}>
+                                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                                       <button
                                         type="button"
                                         onClick={() => {
                                           const list = (basicForm.bankCharges || []).filter((_, i) => i !== index);
                                           setBasicForm(p => ({ ...p, bankCharges: list }));
                                         }}
-                                        style={{ background: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '15.5px', color: '#fff', cursor: 'pointer' }}
+                                        style={{ background: 'transparent', border: '1px solid #ef4444', borderRadius: '4px', padding: '0 8px', fontSize: '13px', color: '#ef4444', cursor: 'pointer', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                       >
                                         삭제
                                       </button>
@@ -10493,9 +10493,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   </tr>
                                 );
                               })}
-                              <tr style={{ background: '#eff6ff', fontWeight: 800, borderTop: '2px solid #2563eb' }}>
-                                <td colSpan={3} style={{ padding: '12px', color: '#1e3a8a', textAlign: 'left' }}>🧮 지급수수료 총액 합계</td>
-                                <td style={{ padding: '12px', color: '#2563eb', textAlign: 'right', fontSize: '14.5px' }}>
+                              <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '2px solid #cbd5e1' }}>
+                                <td colSpan={3} style={{ padding: '8px 10px', color: '#475569', textAlign: 'left' }}>🧮 지급수수료 총액 합계</td>
+                                <td style={{ padding: '8px 10px', color: '#2563eb', textAlign: 'right', fontSize: '13px' }}>
                                   ₩{basicForm.bankCharges.reduce((sum, bc) => sum + (bc.amount || 0), 0).toLocaleString()} KRW
                                 </td>
                                 <td colSpan={2}></td>
@@ -10630,19 +10630,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                               {installments.map((inst, i) => (
-                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '410px' }}>
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '410px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{i + 1}차</span>
+                                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>{i + 1}차</span>
                                     <input
                                       type="date"
                                       value={inst.date}
                                       onChange={e => handleInstallmentChange(i, 'date', e.target.value)}
-                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid var(--border-color)', fontSize: '15.5px', width: '135px', outline: 'none' }}
+                                      style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid var(--border-color)', fontSize: '13px', width: '135px', outline: 'none' }}
                                     />
                                     <select
                                       value={inst.currency || (isKrw ? 'KRW' : 'USD')}
                                       onChange={e => handleInstallmentChange(i, 'currency', e.target.value)}
-                                      style={{ padding: '1px 2px', border: 'none', fontSize: '15.5px', outline: 'none', background: 'transparent' }}
+                                      style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent' }}
                                     >
                                       <option value="KRW">₩</option>
                                       <option value="USD">$</option>
@@ -10650,7 +10650,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     <select
                                       value={inst.method || '송금'}
                                       onChange={e => handleInstallmentChange(i, 'method', e.target.value)}
-                                      style={{ padding: '1px 2px', border: 'none', fontSize: '14.5px', outline: 'none', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600 }}
+                                      style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600 }}
                                     >
                                       <option value="송금">송금</option>
                                       <option value="카드">카드</option>
@@ -10659,7 +10659,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       placeholder="지급액"
                                       value={inst.amount || 0}
                                       onChange={val => handleInstallmentChange(i, 'amount', val)}
-                                      style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '110px', textAlign: 'right', outline: 'none' }}
+                                      style={{ padding: '1px 4px', border: 'none', fontSize: '13px', width: '110px', textAlign: 'right', outline: 'none' }}
                                     />
                                     {installments.length > 1 && (
                                       <button
@@ -10681,7 +10681,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             };
                                           });
                                         }}
-                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '15.5px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '0 4px', marginLeft: '2px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                       >✕</button>
                                     )}
                                   </div>
@@ -10727,19 +10727,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                           <div key={fileIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid var(--border-color)' }}>
                                             <span 
                                               onClick={() => previewFile(file.url, file.name)}
-                                              style={{ fontSize: '9px', color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}
+                                              style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}
                                               title="클릭하여 미리보기"
                                             >
                                               {file.name}
                                             </span>
                                             <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                                              <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ fontSize: '8px', textDecoration: 'none', color: '#3b82f6', background: '#eff6ff', padding: '0 3px', borderRadius: '2px' }}>
+                                              <a href={file.url} download={file.name} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', textDecoration: 'none', color: '#3b82f6', background: '#eff6ff', padding: '1px 4px', borderRadius: '2px' }}>
                                                 ⬇
                                               </a>
                                               <button 
                                                 type="button" 
                                                 onClick={() => handleDeleteReceipt(supplier, i, fileIdx)} 
-                                                style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '2px', cursor: 'pointer', fontSize: '8px', padding: '0 3px' }}
+                                                style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '2px', cursor: 'pointer', fontSize: '11px', padding: '1px 4px' }}
                                               >
                                                 ✕
                                               </button>
@@ -10749,7 +10749,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       </div>
                                     )}
                                     {uploadingReceipt?.supplier === supplier && uploadingReceipt?.index === i && (
-                                      <span style={{ fontSize: '8.5px', color: '#3b82f6' }}>⏳ 업로드 중...</span>
+                                      <span style={{ fontSize: '11px', color: '#3b82f6' }}>⏳ 업로드 중...</span>
                                     )}
                                   </div>
                                 </div>
@@ -10763,7 +10763,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     supplierPaymentInstallments: { ...prev.supplierPaymentInstallments, [supplier]: newList }
                                   }));
                                 }}
-                                style={{ background: '#f1f5f9', border: '1px dashed var(--text-muted)', borderRadius: '4px', padding: '3px 10px', fontSize: '13.5px', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer' }}
+                                style={{ background: '#f1f5f9', border: '1px dashed #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', height: '32px', display: 'inline-flex', alignItems: 'center' }}
                               >
                                 ＋ 내역 추가
                               </button>
@@ -10846,19 +10846,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                               <div style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', paddingLeft: '165px' }}>
                                 {installments.map((inst, instIdx) => (
-                                  <div key={instIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid var(--border-default)', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '410px' }}>
+                                  <div key={instIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 8px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', width: '410px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <span style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{instIdx + 1}차</span>
+                                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>{instIdx + 1}차</span>
                                       <input
                                         type="date"
-                                        value={inst.date || ''}
+                                      value={inst.date || ''}
                                         onChange={e => handleFwInstallmentChange(instIdx, 'date', e.target.value)}
-                                        style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid var(--border-color)', fontSize: '15.5px', width: '135px', outline: 'none' }}
+                                        style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid var(--border-color)', fontSize: '13px', width: '135px', outline: 'none' }}
                                       />
                                       <select
                                         value={inst.currency || fw.freightCurrency || 'KRW'}
                                         onChange={e => handleFwInstallmentChange(instIdx, 'currency', e.target.value)}
-                                        style={{ padding: '1px 2px', border: 'none', fontSize: '15.5px', outline: 'none', background: 'transparent' }}
+                                        style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent' }}
                                       >
                                         <option value="KRW">₩</option>
                                         <option value="USD">$</option>
@@ -10866,7 +10866,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       <select
                                         value={inst.method || '송금'}
                                         onChange={e => handleFwInstallmentChange(instIdx, 'method', e.target.value)}
-                                        style={{ padding: '1px 2px', border: 'none', fontSize: '14.5px', outline: 'none', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600 }}
+                                        style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600 }}
                                       >
                                         <option value="송금">송금</option>
                                         <option value="카드">카드</option>
@@ -10875,7 +10875,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         placeholder="지급액"
                                         value={inst.amount || 0}
                                         onChange={val => handleFwInstallmentChange(instIdx, 'amount', val)}
-                                        style={{ padding: '1px 4px', border: 'none', fontSize: '15.5px', width: '110px', textAlign: 'right', outline: 'none' }}
+                                        style={{ padding: '1px 4px', border: 'none', fontSize: '13px', width: '110px', textAlign: 'right', outline: 'none' }}
                                       />
                                       {installments.length > 1 && (
                                         <button
@@ -10888,7 +10888,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               return f;
                                             }));
                                           }}
-                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '15.5px', fontWeight: 700, padding: '0 4px', marginLeft: '2px' }}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', fontWeight: 700, padding: '0 4px', marginLeft: '2px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                         >✕</button>
                                       )}
                                     </div>
@@ -10914,8 +10914,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       }}
                                     >
                                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                                        <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>📋 포커스 후 Ctrl+V로 캡처 첨부</span>
-                                        <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', padding: '1px 4px', borderRadius: '3px', border: '1px solid var(--border-default)', fontSize: '8.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                        <span style={{ fontSize: '11px', color: '#64748b' }}>📋 포커스 후 Ctrl+V로 캡처 첨부</span>
+                                        <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '2px', background: '#f1f5f9', padding: '2px 6px', borderRadius: '3px', border: '1px solid #cbd5e1', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                                           <span>📎 첨부</span>
                                           <input 
                                             type="file" 
@@ -11157,7 +11157,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     {activeSettlementTab === '수금관리' && (
                       <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🪙 대금 수금 관리 (분할 영수)</span>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a' }}>🪙 대금 수금 관리 (분할 영수)</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -11167,7 +11167,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               paymentCollectedInstallments: [...current, { date: '', amount: 0, fee: 0, total: 0, currency: 'USD' }]
                             }));
                           }}
-                          style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '15.5px', fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                          style={{ background: '#2563eb', border: 'none', borderRadius: '4px', padding: '0 12px', fontSize: '13px', fontWeight: 700, color: '#fff', cursor: 'pointer', height: '34px', display: 'inline-flex', alignItems: 'center' }}
                         >
                           ＋ 수금 내역 추가
                         </button>
@@ -11175,7 +11175,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {(!basicForm.paymentCollectedInstallments || basicForm.paymentCollectedInstallments.length === 0) ? (
-                          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13.5px', border: '1px dashed var(--border-default)', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
+                          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--border-default)', borderRadius: '6px', backgroundColor: '#f8fafc' }}>
                             등록된 수금 내역이 없습니다. '수금 내역 추가' 버튼을 눌러 등록해주세요.
                           </div>
                         ) : (
@@ -11184,8 +11184,6 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               const list = [...(basicForm.paymentCollectedInstallments || [])];
                               const updated = { ...list[index], [field]: val };
                               
-                              // Automatically compute total = amount + fee if appropriate, or keep total as input.
-                              // Let's do: total = amount + fee as standard, but user can edit it or we calculate it.
                               if (field === 'amount' || field === 'fee') {
                                 const amt = field === 'amount' ? val : (updated.amount || 0);
                                 const fee = field === 'fee' ? val : (updated.fee || 0);
@@ -11197,26 +11195,26 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                             };
 
                             return (
-                              <div key={index} style={{ border: '1px solid var(--border-default)', borderRadius: '8px', padding: '12px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>{index + 1}차 수금</span>
+                              <div key={index} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '12px', background: '#fff', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>{index + 1}차 수금</span>
                                   
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>대금영수일자</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>대금영수일자</span>
                                     <input
                                       type="date"
                                       value={inst.date || ''}
                                       onChange={e => handleCollectFieldChange('date', e.target.value)}
-                                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '130px' }}
+                                      style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', width: '130px', height: '34px', boxSizing: 'border-box' }}
                                     />
                                   </div>
 
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>통화</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>통화</span>
                                     <select
                                       value={inst.currency || 'USD'}
                                       onChange={e => handleCollectFieldChange('currency', e.target.value)}
-                                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px' }}
+                                      style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', boxSizing: 'border-box' }}
                                     >
                                       <option value="USD">USD ($)</option>
                                       <option value="KRW">KRW (₩)</option>
@@ -11226,29 +11224,29 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   </div>
 
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>입금액</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>입금액</span>
                                     <FormattedNumberInput
                                       value={inst.amount || 0}
                                       onChange={val => handleCollectFieldChange('amount', val)}
-                                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '120px', textAlign: 'right' }}
+                                      style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', width: '120px', textAlign: 'right', height: '34px', boxSizing: 'border-box' }}
                                     />
                                   </div>
 
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>은행수수료</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>은행수수료</span>
                                     <FormattedNumberInput
                                       value={inst.fee || 0}
                                       onChange={val => handleCollectFieldChange('fee', val)}
-                                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '100px', textAlign: 'right' }}
+                                      style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', width: '100px', textAlign: 'right', height: '34px', boxSizing: 'border-box' }}
                                     />
                                   </div>
 
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>총액 (입금액 + 수수료)</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>총액 (입금액 + 수수료)</span>
                                     <FormattedNumberInput
                                       value={inst.total || 0}
                                       onChange={val => handleCollectFieldChange('total', val)}
-                                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13.5px', width: '120px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f1f5f9' }}
+                                      style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', width: '120px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#f1f5f9', height: '34px', boxSizing: 'border-box' }}
                                       disabled
                                     />
                                   </div>
@@ -11261,7 +11259,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         setBasicForm(p => ({ ...p, paymentCollectedInstallments: list }));
                                       }
                                     }}
-                                    style={{ background: '#ef4444', border: 'none', borderRadius: '4px', padding: '6px 10px', fontSize: '15.5px', color: '#fff', cursor: 'pointer', alignSelf: 'flex-end' }}
+                                    style={{ background: '#ef4444', border: 'none', borderRadius: '4px', padding: '0 12px', fontSize: '13px', color: '#fff', cursor: 'pointer', height: '34px', display: 'inline-flex', alignItems: 'center' }}
                                   >
                                     삭제
                                   </button>
@@ -11291,9 +11289,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   }}
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                                    <span style={{ fontSize: '15.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>📄 외국환거래영수증 (화면 캡처 첨부)</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>📄 외국환거래영수증 (화면 캡처 첨부)</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <span style={{ fontSize: '15.5px', color: 'var(--text-secondary)' }}>이 영역 클릭 후 <strong>Ctrl + V</strong> 로 화면 캡처 이미지 붙여넣기</span>
+                                      <span style={{ fontSize: '12px', color: '#64748b' }}>이 영역 클릭 후 <strong>Ctrl + V</strong> 로 화면 캡처 이미지 붙여넣기</span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -11308,7 +11306,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       />
                                       <label
                                         htmlFor={`collect-receipt-upload-${index}`}
-                                        style={{ background: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', padding: '2px 8px', fontSize: '15.5px', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600 }}
+                                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 10px', fontSize: '13px', color: '#475569', cursor: 'pointer', fontWeight: 600, height: '32px', display: 'inline-flex', alignItems: 'center' }}
                                       >
                                         파일 선택
                                       </label>
@@ -11321,14 +11319,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         <div key={fIdx} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', border: '1px solid var(--border-color)', padding: '3px 8px', borderRadius: '4px' }}>
                                           <span 
                                             onClick={() => previewFile(file.url, file.name)} 
-                                            style={{ fontSize: '14.5px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                            style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'underline', cursor: 'pointer', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                                           >
                                             {file.name}
                                           </span>
                                           <button
                                             type="button"
                                             onClick={() => handleDeleteCollectReceipt(index, fIdx)}
-                                            style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '13.5px', cursor: 'pointer', padding: '0 2px' }}
+                                            style={{ border: 'none', background: 'transparent', color: '#ef4444', fontSize: '12px', cursor: 'pointer', padding: '0 2px' }}
                                           >
                                             ✕
                                           </button>
@@ -11337,7 +11335,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     </div>
                                   )}
                                   {uploadingCollectReceipt === index && (
-                                    <span style={{ fontSize: '15.5px', color: '#2563eb', fontWeight: 600 }}>⏳ 외국환거래영수증 업로드 중...</span>
+                                    <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 600 }}>⏳ 외국환거래영수증 업로드 중...</span>
                                   )}
                                 </div>
                               </div>
