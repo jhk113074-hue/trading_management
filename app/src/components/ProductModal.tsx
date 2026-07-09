@@ -1187,36 +1187,36 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                     .filter((p: any) => p.price > 0)
                     .sort((a: any, b: any) => (b.validFrom || '').localeCompare(a.validFrom || ''))[0];
                   return (
-                    <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '9.5px', fontWeight: 700, color: '#16a34a', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>현재 구매가 (원가) — 최신 단가</div>
+                        <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>현재 구매가 (원가) — 최신 단가</div>
                         {latestPrice ? (
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                            <span style={{ fontSize: '20px', fontWeight: 700, color: '#15803d' }}>
+                            <span style={{ fontSize: '20px', fontWeight: 850, color: '#3b82f6' }}>
                               {(latestPrice.currency || 'KRW')} {Number(latestPrice.price || 0).toLocaleString('ko-KR')}
                             </span>
-                            <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 600 }}>/ {formData.unit || 'KG'}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>적용일: {latestPrice.validFrom || '-'}</span>
+                            <span style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>/ {formData.unit || 'KG'}</span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '8px' }}>적용일: {latestPrice.validFrom || '-'}</span>
                             {latestPrice.supplierName && (
-                              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>· {latestPrice.supplierName}</span>
+                              <span style={{ fontSize: '11px', color: '#475569' }}>· {latestPrice.supplierName}</span>
                             )}
                           </div>
                         ) : (
-                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>등록된 단가 없음 — 아래에서 단가를 추가하세요</div>
+                          <div style={{ fontSize: '13px', color: '#94a3b8' }}>등록된 단가 없음 — 아래에서 단가를 추가하세요</div>
                         )}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#16a34a', background: '#dcfce7', padding: '6px 12px', borderRadius: '20px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '6px 12px', borderRadius: '20px', fontWeight: 700, whiteSpace: 'nowrap', border: '1px solid #cbd5e1' }}>
                         총 {(formData.purchasePrices || []).length}건 이력
                       </div>
                     </div>
                   );
                 })()}
 
-                <div style={{ border: '1px solid #e9d5ff', borderRadius: '10px', padding: '16px', background: '#faf5ff' }}>
+                <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '16px', background: '#f8fafc' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                     <div>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#7e22ce', margin: 0 }}>📋 유통사별 납품 단가 관리</h4>
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>거래처별 계약 단가 이력 히스토리</span>
+                      <h4 style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', margin: 0 }}>📋 유통사별 납품 단가 관리</h4>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>거래처별 계약 단가 이력 히스토리</span>
                     </div>
                     <button
                       type="button"
@@ -1238,16 +1238,18 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           purchasePrices: [newHist, ...(prev.purchasePrices || [])]
                         }));
                       }}
-                      style={{ padding: '6px 12px', fontSize: '12px', background: '#7e22ce', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                      style={{ padding: '0 12px', fontSize: '12.5px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, transition: 'background 0.2s', height: '34px' }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
                     >
                       ➕ 단가 추가
                     </button>
                   </div>
 
-                  <div style={{ border: '1px solid #e9d5ff', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ background: '#f5f3ff', borderBottom: '1px solid #e9d5ff', color: '#6b21a8', fontWeight: 700 }}>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569', fontWeight: 750 }}>
                           <th style={{ padding: '8px', width: '130px' }}>적용 시작일</th>
                           <th style={{ padding: '8px' }}>공급 유통사</th>
                           <th style={{ padding: '8px', width: '90px' }}>통화</th>
@@ -1259,11 +1261,11 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                       <tbody>
                         {(!formData.purchasePrices || formData.purchasePrices.length === 0) ? (
                           <tr>
-                            <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
+                            <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
                           </tr>
                         ) : (
                           formData.purchasePrices.map((hist, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                            <tr key={idx} style={{ borderBottom: '1px solid #cbd5e1' }}>
                               <td style={{ padding: '6px 8px' }}>
                                 <input
                                   type="date"
@@ -1276,7 +1278,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       return { ...prev, purchasePrices: next };
                                     });
                                   }}
-                                  style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
+                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                                 />
                               </td>
                               <td style={{ padding: '6px 8px' }}>
@@ -1295,7 +1297,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       return { ...prev, purchasePrices: next };
                                     });
                                   }}
-                                  style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
+                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                                 >
                                   <option value="">-- 공급사 선택 --</option>
                                   {formData.suppliers?.map(s => (
@@ -1314,7 +1316,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       return { ...prev, purchasePrices: next };
                                     });
                                   }}
-                                  style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
+                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                                 >
                                   <option value="USD">USD</option>
                                   <option value="KRW">KRW</option>
@@ -1334,7 +1336,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       return { ...prev, purchasePrices: next };
                                     });
                                   }}
-                                  style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', width: '100%', textAlign: 'right', boxSizing: 'border-box' }}
+                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', textAlign: 'right', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                                 />
                               </td>
                               <td style={{ padding: '6px 8px' }}>
@@ -1350,7 +1352,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       return { ...prev, purchasePrices: next };
                                     });
                                   }}
-                                  style={{ padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px', width: '100%', boxSizing: 'border-box' }}
+                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
                                 />
                               </td>
                               <td style={{ padding: '6px 8px', textAlign: 'center' }}>
@@ -1362,7 +1364,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       purchasePrices: (prev.purchasePrices || []).filter((_, i) => i !== idx)
                                     }));
                                   }}
-                                  style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '11px' }}
+                                  style={{ background: '#fef2f2', border: '1px solid #cbd5e1', color: '#ef4444', borderRadius: '4px', padding: '0 10px', cursor: 'pointer', fontSize: '12.5px', height: '34px', boxSizing: 'border-box' }}
                                 >
                                   삭제
                                 </button>
