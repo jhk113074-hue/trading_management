@@ -50,13 +50,13 @@ export const ImportDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const [importRequests, setImportRequests] = useState<ImportRequest[]>(INITIAL_IMPORTS);
+  const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
   useEffect(() => {
     const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
     const unsubscribe = onSnapshot(importsRef, (snap) => {
       if (snap.empty) {
-        setImportRequests(INITIAL_IMPORTS);
+        setImportRequests([]);
       } else {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ImportRequest));
         setImportRequests(list);

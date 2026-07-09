@@ -28,7 +28,7 @@ const computePoNumber = (importCompany: string, sellerName: string, id: string):
 import { ProductSearchModal } from '../components/ProductSearchModal';
 import type { Product } from '../types/product';
 
-const INITIAL_IMPORTS: ImportRequest[] = [
+export const INITIAL_IMPORTS: ImportRequest[] = [
   {
     id: '189348',
     status: '진행 결정 요청',
@@ -146,13 +146,13 @@ const INITIAL_IMPORTS: ImportRequest[] = [
 export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'active' }) => {
   const isQuoteMode = mode === 'quotes';
   const navigate = useNavigate();
-  const [importRequests, setImportRequests] = useState<ImportRequest[]>(INITIAL_IMPORTS);
+  const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
   useEffect(() => {
     const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
     const unsubscribe = onSnapshot(importsRef, (snap) => {
       if (snap.empty) {
-        setImportRequests(INITIAL_IMPORTS);
+        setImportRequests([]);
       } else {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as ImportRequest));
         setImportRequests(list);
