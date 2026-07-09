@@ -1508,6 +1508,14 @@ export const OrderDetail: React.FC = () => {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() } as Order;
+        if (data.transportationFiles && data.transportationFiles.length > 0) {
+          const merged = [...(data.containerWorkFiles || []), ...data.transportationFiles];
+          const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', data.id);
+          updateDoc(orderRef, {
+            containerWorkFiles: merged,
+            transportationFiles: []
+          }).catch(err => console.error("Auto-migration of transportation files failed:", err));
+        }
         skipNextDirtyCheck.current = true;
         setOrder(data);
         if ((data as any).po_issued_documents) {
@@ -2963,11 +2971,12 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
   const renderFileField = (
     label: string,
     fieldName: 'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | 'attachments',
-    inputDocId: string
+    inputDocId: string,
+    gridSpan?: string
   ) => {
     const fileList = order?.[fieldName] || [];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc', minHeight: '142px', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc', minHeight: '142px', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
           <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155' }}>{label}</span>
         </div>
@@ -4994,21 +5003,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               </div>
             </div>
 
-            {/* 줄 2: 고객정보 / 주소 / 도착지(목적국가) / 출발항 / 도착항 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1fr 1fr 1fr', gap: '12px' }}>
+            {/* 줄 2: 고객정보 / 출발항 / 도착항 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객정보</span>
                 <input type="text" value={basicForm.customer} onChange={e => setBasicForm(prev => ({ ...prev, customer: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="고객사명" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>주소 (Customer Address)</span>
-                <input type="text" value={basicForm.customerAddress} onChange={e => setBasicForm(prev => ({ ...prev, customerAddress: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="주소 입력" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>도착지 (목적국가)</span>
-                <input type="text" value={basicForm.destinationCountry} onChange={e => setBasicForm(prev => ({ ...prev, destinationCountry: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="목적국가" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -9384,8 +9383,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
                       {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
                       {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
-                      {renderFileField('컨테이너 작업 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
-                      {renderFileField('운송 사진 유첨', 'transportationFiles', 'transportation-file-input')}
+                      {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input', 'span 2')}
                     </div>
                   </div>
                 </div>
