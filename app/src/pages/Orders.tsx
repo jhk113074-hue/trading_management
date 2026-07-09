@@ -142,7 +142,7 @@ export const Orders: React.FC = () => {
   const [customerFilter, setCustomerFilter] = useState('All');
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All');
-  const [dateFilterType, setDateFilterType] = useState<string>('All');
+  const [dateFilterType, setDateFilterType] = useState<string>('Last3Months');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
@@ -383,6 +383,11 @@ export const Orders: React.FC = () => {
         const y = d.getFullYear(), m = d.getMonth() + 1;
         const formattedDateStr = d.toISOString().slice(0, 10);
 
+        if (dateFilterType === 'Last3Months') {
+          const ninetyDaysAgo = new Date();
+          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+          return d >= ninetyDaysAgo && d <= new Date();
+        }
         if (dateFilterType === 'Monthly') return y === selectedYear && m === selectedMonth;
         if (dateFilterType === 'Quarterly') return y === selectedYear && Math.floor((m-1)/3)+1 === selectedQuarter;
         if (dateFilterType === 'HalfYearly') return y === selectedYear && (m <= 6 ? 1 : 2) === selectedHalf;
@@ -439,9 +444,17 @@ export const Orders: React.FC = () => {
       });
     } else {
       result.sort((a, b) => {
-        const etdA = a.etd || "";
-        const etdB = b.etd || "";
-        if (etdA !== etdB) return etdB.localeCompare(etdA); // 최신 ETD 우선
+        const getTimestamp = (o: Order) => {
+          if (o.poDate) return new Date(o.poDate).getTime();
+          if (o.createdAt) {
+            if (typeof (o.createdAt as any).toDate === 'function') return (o.createdAt as any).toDate().getTime();
+            return new Date(o.createdAt as any).getTime();
+          }
+          return 0;
+        };
+        const timeA = getTimestamp(a);
+        const timeB = getTimestamp(b);
+        if (timeA !== timeB) return timeB - timeA; // 최신 날짜 우선 내림차순 정렬
         return b.id.localeCompare(a.id);
       });
     }
@@ -538,6 +551,7 @@ export const Orders: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flexShrink: 0 }}>
         <label style={{ fontSize: '9px', fontWeight: 700, color: '#2563eb', letterSpacing: '0.05em' }}>조회 기간</label>
         <select value={dateFilterType} onChange={e => setDateFilterType(e.target.value)} style={{ padding: '5px 8px', border: '1.5px solid #2563eb', borderRadius: '6px', fontSize: '12.5px', backgroundColor: '#fff', color: '#2563eb', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
+          <option value="Last3Months">최근 3개월</option>
           <option value="All">전체 기간</option>
           <option value="Monthly">월별</option>
           <option value="Quarterly">분기별</option>
