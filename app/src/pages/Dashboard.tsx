@@ -1147,42 +1147,42 @@ export const Dashboard: React.FC = () => {
     {
       id: 'TODO',
       title: '업무대기 BASKET',
-      headerBg: '#eff6ff',
-      headerText: '#1e40af',
-      headerBorder: 'rgba(30, 64, 175, 0.2)',
-      countBg: '#1e40af',
+      headerBg: '#f8fafc',
+      headerText: '#1e293b',
+      headerBorder: '#cbd5e1',
+      countBg: '#3b82f6',
       countText: '#ffffff',
-      columnBg: '#f0f7ff'
+      columnBg: '#f8fafc'
     },
     {
       id: 'IN_PROGRESS',
       title: '업무중 BASKET',
-      headerBg: '#f0fdf4',
-      headerText: '#166534',
-      headerBorder: 'rgba(22, 101, 52, 0.2)',
-      countBg: '#166534',
+      headerBg: '#f8fafc',
+      headerText: '#1e293b',
+      headerBorder: '#cbd5e1',
+      countBg: '#10b981',
       countText: '#ffffff',
-      columnBg: '#f4fcf7'
+      columnBg: '#f8fafc'
     },
     {
       id: 'DONE',
       title: '완료 BASKET',
-      headerBg: '#f1f5f9',
-      headerText: '#334155',
-      headerBorder: 'rgba(51, 65, 85, 0.2)',
-      countBg: '#334155',
+      headerBg: '#f8fafc',
+      headerText: '#1e293b',
+      headerBorder: '#cbd5e1',
+      countBg: '#64748b',
       countText: '#ffffff',
       columnBg: '#f8fafc'
     },
     {
       id: 'HOLDING',
       title: '보류 BASKET',
-      headerBg: '#fffbeb',
-      headerText: '#b45309',
-      headerBorder: 'rgba(180, 83, 9, 0.2)',
-      countBg: '#b45309',
+      headerBg: '#f8fafc',
+      headerText: '#1e293b',
+      headerBorder: '#cbd5e1',
+      countBg: '#f59e0b',
       countText: '#ffffff',
-      columnBg: '#fffdf4'
+      columnBg: '#f8fafc'
     }
   ];
 
@@ -2279,51 +2279,63 @@ export const Dashboard: React.FC = () => {
         {/* Date Mode Taps & Date Navigator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* ── 조회 모드 탭 ── */}
-          <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', height: '34px', boxSizing: 'border-box' }}>
             <button
               onClick={() => setDateMode('daily')}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
-                background: dateMode === 'daily' ? '#3b82f6' : '#fff',
-                color: dateMode === 'daily' ? '#fff' : 'var(--text-secondary)',
+                background: dateMode === 'daily' ? '#3b82f6' : '#f1f5f9',
+                color: dateMode === 'daily' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
-                transition: 'all 0.15s'
+                fontSize: '13px',
+                transition: 'all 0.15s',
+                height: '100%',
+                boxSizing: 'border-box'
               }}
+              onMouseEnter={e => { if (dateMode !== 'daily') e.currentTarget.style.backgroundColor = '#e2e8f0'; }}
+              onMouseLeave={e => { if (dateMode !== 'daily') e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
             >
               일간
             </button>
             <button
               onClick={() => setDateMode('weekly')}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
-                background: dateMode === 'weekly' ? '#3b82f6' : '#fff',
-                color: dateMode === 'weekly' ? '#fff' : 'var(--text-secondary)',
+                background: dateMode === 'weekly' ? '#3b82f6' : '#f1f5f9',
+                color: dateMode === 'weekly' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '13px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid var(--border-default)'
+                borderLeft: '1px solid #cbd5e1',
+                height: '100%',
+                boxSizing: 'border-box'
               }}
+              onMouseEnter={e => { if (dateMode !== 'weekly') e.currentTarget.style.backgroundColor = '#e2e8f0'; }}
+              onMouseLeave={e => { if (dateMode !== 'weekly') e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
             >
               주간
             </button>
             <button
               onClick={() => setDateMode('range')}
               style={{
-                padding: '6px 12px',
+                padding: '0 16px',
                 border: 'none',
-                background: dateMode === 'range' ? '#3b82f6' : '#fff',
-                color: dateMode === 'range' ? '#fff' : 'var(--text-secondary)',
+                background: dateMode === 'range' ? '#3b82f6' : '#f1f5f9',
+                color: dateMode === 'range' ? '#fff' : '#475569',
                 cursor: 'pointer',
                 fontWeight: 700,
-                fontSize: '12px',
+                fontSize: '13px',
                 transition: 'all 0.15s',
-                borderLeft: '1px solid var(--border-default)'
+                borderLeft: '1px solid #cbd5e1',
+                height: '100%',
+                boxSizing: 'border-box'
               }}
+              onMouseEnter={e => { if (dateMode !== 'range') e.currentTarget.style.backgroundColor = '#e2e8f0'; }}
+              onMouseLeave={e => { if (dateMode !== 'range') e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
             >
               기간 검색
             </button>
@@ -2331,37 +2343,43 @@ export const Dashboard: React.FC = () => {
 
           {/* ── 상세 날짜 선택 영역 ── */}
           {dateMode === 'daily' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-              <button onClick={handlePrevDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderRight: '1px solid var(--border-color)' }}>‹</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', height: '34px', boxSizing: 'border-box' }}>
+              <button onClick={handlePrevDay} style={{ padding: '0 12px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderRight: '1px solid #cbd5e1', height: '100%' }}>‹</button>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={e => setSelectedDate(e.target.value)}
                 style={{
-                  padding: '4px 10px',
+                  padding: '0 10px',
                   border: 'none',
                   outline: 'none',
                   fontSize: '13px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  color: '#1e293b',
                   cursor: 'pointer',
-                  background: '#fff'
+                  background: '#fff',
+                  height: '100%',
+                  boxSizing: 'border-box'
                 }}
               />
-              <button onClick={handleNextDay} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151', borderLeft: '1px solid var(--border-color)' }}>›</button>
+              <button onClick={handleNextDay} style={{ padding: '0 12px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', borderLeft: '1px solid #cbd5e1', height: '100%' }}>›</button>
               {selectedDate !== new Date().toISOString().split('T')[0] && (
                 <button
                   onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
                   style={{
-                    padding: '6px 12px',
+                    padding: '0 12px',
                     border: 'none',
-                    borderLeft: '1px solid var(--border-color)',
-                    background: '#f0fdf4',
+                    borderLeft: '1px solid #cbd5e1',
+                    background: '#f1f5f9',
                     cursor: 'pointer',
-                    fontSize: '11px',
+                    fontSize: '13px',
                     fontWeight: 700,
-                    color: '#16a34a'
+                    color: '#475569',
+                    height: '100%',
+                    transition: 'background 0.2s'
                   }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                 >
                   오늘
                 </button>
@@ -2370,14 +2388,18 @@ export const Dashboard: React.FC = () => {
           )}
 
           {dateMode === 'weekly' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', background: '#fff' }}>
-              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>‹</button>
-              <div style={{ padding: '6px 14px', background: weekOffset === 0 ? '#eff6ff' : '#f8fafc', color: weekOffset === 0 ? '#2563eb' : '#374151', fontWeight: 700, fontSize: '13px', borderLeft: '1px solid var(--border-default)', borderRight: '1px solid var(--border-default)', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden', background: '#fff', height: '34px', boxSizing: 'border-box' }}>
+              <button onClick={() => setWeekOffset(w => w - 1)} style={{ padding: '0 12px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', height: '100%' }}>‹</button>
+              <div style={{ padding: '0 14px', background: '#fff', color: '#1e293b', fontWeight: 600, fontSize: '13px', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', height: '100%' }}>
                 📅 {formatWeekLabel(weekOffset)}
               </div>
-              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '6px 12px', border: 'none', background: '#f8fafc', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#374151' }}>›</button>
+              <button onClick={() => setWeekOffset(w => w + 1)} style={{ padding: '0 12px', border: 'none', background: '#f1f5f9', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', height: '100%' }}>›</button>
               {weekOffset !== 0 && (
-                <button onClick={() => setWeekOffset(0)} style={{ padding: '6px 10px', border: 'none', borderLeft: '1px solid var(--border-default)', background: '#fff7ed', cursor: 'pointer', fontSize: '11px', fontWeight: 700, color: '#ea580c' }}>이번주</button>
+                <button onClick={() => setWeekOffset(0)} 
+                  style={{ padding: '0 12px', border: 'none', borderLeft: '1px solid #cbd5e1', background: '#f1f5f9', cursor: 'pointer', fontSize: '13px', fontWeight: 700, color: '#475569', height: '100%', transition: 'background 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                >이번주</button>
               )}
             </div>
           )}
@@ -2649,9 +2671,9 @@ export const Dashboard: React.FC = () => {
                   setDragOverBasketId(null);
                 }}
                 style={{
-                  background: dragOverBasketId === basket.id ? 'var(--primary-light, #eff6ff)' : basket.columnBg,
-                  border: `2px solid ${basket.countBg}40`,
-                  borderRadius: '12px',
+                  background: dragOverBasketId === basket.id ? '#eff6ff' : basket.columnBg,
+                  border: `1px solid #cbd5e1`,
+                  borderRadius: '4px',
                   padding: '8px',
                   height: '100%',
                   display: 'flex',
@@ -2667,24 +2689,24 @@ export const Dashboard: React.FC = () => {
                   alignItems: 'center',
                   marginBottom: '8px',
                   padding: '8px 10px',
-                  borderRadius: '6px',
+                  borderRadius: '4px',
                   background: basket.headerBg,
                   border: `1px solid ${basket.headerBorder}`
                 }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: basket.headerText }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: basket.headerText }}>
                     {basket.title}
                   </div>
                   <div style={{
                     background: basket.countBg,
                     color: basket.countText,
-                    borderRadius: '50%',
+                    borderRadius: '4px',
                     width: '20px',
                     height: '20px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.7rem',
-                    fontWeight: 800
+                    fontSize: '11px',
+                    fontWeight: 750
                   }}>
                     {filteredTasks.filter(t => {
                       const s = t.status?.toUpperCase();
