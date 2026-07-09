@@ -282,34 +282,34 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
       pointerEvents: 'auto',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: 'var(--radius-lg)', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)', border: '2px solid var(--border-default)', overflow: 'hidden' }}>
+      <div style={{ background: '#fff', borderRadius: '4px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
 
         {/* Header */}
         <div
           onMouseDown={handleMouseDown}
-          style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', cursor: 'move', userSelect: 'none' }}>
+          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', cursor: 'move', userSelect: 'none' }}>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>🌐</span>
               {initialCustomer ? '고객사 정보 수정 (Edit Customer Master)' : '신규 고객사 등록 (Register Customer Master)'}
             </div>
           </div>
-          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: 'flex', background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', padding: '0 16px' }}>
+        <div style={{ display: 'flex', background: '#f1f5f9', borderBottom: '1px solid #cbd5e1', padding: '0 16px' }}>
           <button
             type="button"
             onClick={() => setActiveTab('info')}
             style={{
-              padding: '10px 16px',
+              padding: '12px 18px',
               border: 'none',
               background: activeTab === 'info' ? '#ffffff' : 'transparent',
-              borderBottom: activeTab === 'info' ? '3px solid var(--primary-color)' : '3px solid transparent',
-              color: activeTab === 'info' ? 'var(--primary-color)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'info' ? '3px solid #3b82f6' : '3px solid transparent',
+              color: activeTab === 'info' ? '#3b82f6' : '#475569',
               fontWeight: 700,
-              fontSize: '12.5px',
+              fontSize: '13px',
               cursor: 'pointer',
               outline: 'none',
               transition: 'all 0.15s'
@@ -321,13 +321,13 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
             type="button"
             onClick={() => setActiveTab('crm')}
             style={{
-              padding: '10px 16px',
+              padding: '12px 18px',
               border: 'none',
               background: activeTab === 'crm' ? '#ffffff' : 'transparent',
-              borderBottom: activeTab === 'crm' ? '3px solid var(--primary-color)' : '3px solid transparent',
-              color: activeTab === 'crm' ? 'var(--primary-color)' : 'var(--text-secondary)',
+              borderBottom: activeTab === 'crm' ? '3px solid #3b82f6' : '3px solid transparent',
+              color: activeTab === 'crm' ? '#3b82f6' : '#475569',
               fontWeight: 700,
-              fontSize: '12.5px',
+              fontSize: '13px',
               cursor: 'pointer',
               outline: 'none',
               transition: 'all 0.15s'
@@ -607,8 +607,19 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
 
         {/* Footer */}
         <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button onClick={handleClose} style={{ padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border-default)', background: '#fff', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '11.5px' }}>취소</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '6px 14px', borderRadius: '5px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '11.5px', boxShadow: '0 2px 4px rgba(37,99,235,0.15)' }}>
+          <button 
+            onClick={handleClose} 
+            style={{ padding: '0 18px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', fontWeight: 700, color: '#475569', cursor: 'pointer', fontSize: '13px', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+          >취소</button>
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '13px', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
+          >
             {isSaving ? '저장 중...' : '✔ 고객 정보 저장'}
           </button>
         </div>
@@ -618,13 +629,13 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
   );
 };
 
-const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = 'var(--text-secondary)' }: any) => {
+const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor = '#475569' }: any) => {
   const isRequired = label?.includes('★');
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      <label style={{ fontSize: '8.5px', fontWeight: 700, color: labelColor, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <label style={{ fontSize: '11px', fontWeight: 750, color: labelColor, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
         {label?.replace(' ★', '')}
-        {isRequired && <span style={{ color: 'var(--primary-color)', marginLeft: '2px' }}>★</span>}
+        {isRequired && <span style={{ color: '#ef4444', marginLeft: '2px' }}>*</span>}
       </label>
       <input
         type={type}
@@ -636,38 +647,42 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
         style={{
           boxSizing: 'border-box',
           width: '100%',
-          padding: '5px 8px',
-          border: disabled ? '1px solid #f1f5f9' : (isRequired ? '1.5px solid var(--border-strong)' : '1px solid var(--border-default)'),
-          borderRadius: 'var(--radius-xs)',
-          fontSize: '11.5px',
+          padding: '0 10px',
+          border: '1px solid #cbd5e1',
+          borderRadius: '4px',
+          fontSize: '13px',
+          fontWeight: 600,
           background: disabled ? '#f8fafc' : '#fff',
-          color: disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+          color: disabled ? '#94a3b8' : '#1e293b',
           outline: 'none',
+          height: '34px',
           transition: 'all 0.1s'
         }}
-        onFocus={e => { if(!disabled) { e.target.style.borderColor = 'var(--focus-ring)'; e.target.style.boxShadow = 'var(--shadow-focus)'; } }}
-        onBlur={e => { e.target.style.borderColor = isRequired ? 'var(--border-strong)' : 'var(--border-default)'; e.target.style.boxShadow = 'none'; }}
+        onFocus={e => { if(!disabled) { e.target.style.borderColor = '#3b82f6'; } }}
+        onBlur={e => { e.target.style.borderColor = '#cbd5e1'; }}
       />
     </div>
   );
 };
 
 const Select = ({ label, value, onChange, options }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-    <label style={{ fontSize: '8.5px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
     <select
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       style={{
         boxSizing: 'border-box',
         width: '100%',
-        padding: '5px 8px',
-        border: '1px solid var(--border-default)',
-        borderRadius: 'var(--radius-xs)',
-        fontSize: '11.5px',
+        padding: '0 10px',
+        border: '1px solid #cbd5e1',
+        borderRadius: '4px',
+        fontSize: '13px',
+        fontWeight: 600,
         background: '#fff',
-        color: 'var(--text-primary)',
-        outline: 'none'
+        color: '#1e293b',
+        outline: 'none',
+        height: '34px'
       }}
     >
       {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}

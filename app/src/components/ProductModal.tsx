@@ -652,26 +652,26 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
       pointerEvents: 'auto',
       userSelect: isDragging ? 'none' : 'auto'
     }}>
-      <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '2px solid var(--border-default)' }}>
+      <div style={{ background: '#fff', borderRadius: '4px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '1px solid #cbd5e1' }}>
         
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
-          style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '14px 14px 0 0', cursor: 'move', userSelect: 'none' }}>
+          style={{ padding: '16px 24px', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa', borderRadius: '4px 4px 0 0', cursor: 'move', userSelect: 'none' }}>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#111827' }}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b' }}>
               {initialProduct ? (isCopy ? 'Copy & Add Product Master' : 'Edit Product Master') : 'Add New Product Master'}
             </div>
-            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
               {initialProduct ? (isCopy ? `기존 상품 정보를 복사하여 신규 상품을 등록합니다.` : `상품 마스터 상세 규격 수정 (${formData.nameKo})`) : '글로벌 상품 정보 및 무역원가 스펙 연동'}
             </div>
           </div>
-          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '22px', cursor: 'pointer' }}>✕</button>
+          <button onClick={handleClose} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer' }}>✕</button>
         </div>
 
         {/* Body */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', border: '1px solid var(--border-color)', padding: '4px', borderRadius: '8px', marginBottom: '22px' }}>
+          <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '4px', borderRadius: '4px', marginBottom: '22px', height: '42px', boxSizing: 'border-box' }}>
             {[
                 { id: 1, label: '📋 1. 상품 스펙 및 패킹/기술자료' },
                 { id: 2, label: '💰 2. 공급 유통사 및 단가 이력' },
@@ -680,9 +680,12 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  flex: 1, padding: '9px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', cursor: 'pointer', border: 'none',
-                  background: activeTab === tab.id ? '#2563eb' : 'transparent',
-                  color: activeTab === tab.id ? '#fff' : '#6b7280'
+                  flex: 1, padding: '0 9px', fontSize: '12.5px', fontWeight: 700, borderRadius: '4px', cursor: 'pointer', border: 'none',
+                  background: activeTab === tab.id ? '#3b82f6' : 'transparent',
+                  color: activeTab === tab.id ? '#fff' : '#475569',
+                  transition: 'background 0.2s, color 0.2s',
+                  height: '100%',
+                  boxSizing: 'border-box'
                 }}
               >
                 {tab.label}
@@ -1672,9 +1675,20 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderRadius: '0 0 14px 14px' }}>
-          <button onClick={handleClose} style={{ padding: '9px 18px', borderRadius: '7px', border: '1px solid var(--border-color)', background: '#fff', fontWeight: 600, color: '#6b7280', cursor: 'pointer' }}>취소</button>
-          <button onClick={handleSave} disabled={isSaving} style={{ padding: '9px 18px', borderRadius: '7px', border: 'none', background: '#2563eb', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
+        <div style={{ padding: '12px 24px', borderTop: '1px solid #cbd5e1', background: '#fafafa', display: 'flex', justifyContent: 'flex-end', gap: '8px', borderRadius: '0 0 4px 4px', height: '58px', boxSizing: 'border-box' }}>
+          <button 
+            onClick={handleClose} 
+            style={{ padding: '0 18px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f1f5f9', color: '#475569', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+          >취소</button>
+          <button 
+            onClick={handleSave} 
+            disabled={isSaving} 
+            style={{ padding: '0 18px', borderRadius: '4px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s', height: '34px', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
+          >
             {isSaving ? '저장 중...' : '✔ 저장'}
           </button>
         </div>
@@ -1685,21 +1699,13 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
 
 const Input = ({ label, value, onChange, type = 'text', disabled = false, placeholder = '', step, labelColor }: any) => {
   const isRequired = label?.includes('★');
-  const borderStyle = isRequired
-    ? '1.5px solid var(--text-muted)'
-    : '1px solid var(--border-color)';
-  const fontStyle = isRequired
-    ? { fontSize: '13px', fontWeight: 600, color: '#0f172a' }
-    : disabled
-      ? { fontSize: '11.5px', color: 'var(--text-muted)' }
-      : { fontSize: '12.5px', color: '#334155' };
-  const computedLabelColor = labelColor || (isRequired ? 'var(--text-secondary)' : disabled ? '#b0bcc8' : 'var(--text-secondary)');
+  const computedLabelColor = labelColor || '#475569';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
-      <label style={{ fontSize: '9.5px', fontWeight: 700, color: computedLabelColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+      <label style={{ fontSize: '11px', fontWeight: 750, color: computedLabelColor, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
         {label?.replace(' ★', '')}
-        {isRequired && <span style={{ color: '#ef4444', marginLeft: '2px' }}>★</span>}
-        {disabled && <span style={{ color: '#b0bcc8', fontWeight: 400, textTransform: 'none', marginLeft: '4px' }}>(자동)</span>}
+        {isRequired && <span style={{ color: '#ef4444', marginLeft: '2px' }}>*</span>}
+        {disabled && <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', marginLeft: '4px' }}>(자동)</span>}
       </label>
       <input
         type={type}
@@ -1710,16 +1716,19 @@ const Input = ({ label, value, onChange, type = 'text', disabled = false, placeh
         step={step}
         style={{
           width: '100%', boxSizing: 'border-box', minWidth: 0,
-          padding: '7px 10px',
-          border: disabled ? '1px solid #f1f5f9' : borderStyle,
-          borderRadius: '6px',
-          ...fontStyle,
+          padding: '0 10px',
+          border: '1px solid #cbd5e1',
+          borderRadius: '4px',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: disabled ? '#94a3b8' : '#1e293b',
           background: disabled ? '#f8fafc' : '#fff',
           outline: 'none',
+          height: '34px',
           transition: 'border-color 0.15s, box-shadow 0.15s'
         }}
-        onFocus={e => { if (!disabled) { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.1)'; } }}
-        onBlur={e => { e.target.style.borderColor = isRequired ? 'var(--text-muted)' : 'var(--border-color)'; e.target.style.boxShadow = 'none'; }}
+        onFocus={e => { if (!disabled) { e.target.style.borderColor = '#3b82f6'; } }}
+        onBlur={e => { e.target.style.borderColor = '#cbd5e1'; }}
       />
     </div>
   );
