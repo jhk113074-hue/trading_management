@@ -187,6 +187,13 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const navigate = useNavigate();
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
+  // 📅 날짜/기간 필터링 상태 추가 (수입견적: 월별 default, 수입관리: 날짜 default)
+  const [dateFilterType, setDateFilterType] = useState<string>(isQuoteMode ? 'Monthly' : 'Range');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [rangeStart, setRangeStart] = useState<string>('2026-06-09');
+  const [rangeEnd, setRangeEnd] = useState<string>('2026-07-09');
+
   useEffect(() => {
     const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
     const unsubscribe = onSnapshot(importsRef, (snap) => {
@@ -525,14 +532,32 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   };
 
   const filteredRequests = useMemo(() => {
-    const base = isQuoteMode ? importRequests : importRequests.filter(req => req.customerDecision === '승인');
+    let base = isQuoteMode ? importRequests : importRequests.filter(req => req.customerDecision === '승인');
+
+    // 📅 날짜/기간 실필터 적용
+    base = base.filter(req => {
+      if (!req.requestDate) return false;
+      const d = new Date(req.requestDate);
+      if (isNaN(d.getTime())) return false;
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+
+      if (dateFilterType === 'Monthly') {
+        return y === selectedYear && m === selectedMonth;
+      } else if (dateFilterType === 'Range') {
+        if (rangeStart && req.requestDate < rangeStart) return false;
+        if (rangeEnd && req.requestDate > rangeEnd) return false;
+      }
+      return true;
+    });
+
     if (!searchTerm.trim()) return base;
     return base.filter(req =>
       req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.id.includes(searchTerm) ||
       req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [importRequests, searchTerm, isQuoteMode]);
+  }, [importRequests, searchTerm, isQuoteMode, dateFilterType, selectedYear, selectedMonth, rangeStart, rangeEnd]);
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
@@ -549,12 +574,58 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
       {/* Filter panel */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1 }}>
-          <select style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', background: '#fff', outline: 'none' }}>
-            <option>기간선택</option>
-            <option>최근 1주일</option>
-            <option>최근 1개월</option>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+          
+          {/* 조회 기간 대분류 */}
+          <select 
+            value={dateFilterType}
+            onChange={(e) => setDateFilterType(e.target.value)}
+            style={{ padding: '8px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13.5px', background: '#fff', outline: 'none' }}
+          >
+            <option value="All">전체 기간</option>
+            <option value="Monthly">월별 조회</option>
+            <option value="Range">날짜 지정</option>
           </select>
+
+          {/* 월별 서브 옵션 */}
+          {dateFilterType === 'Monthly' && (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
+              >
+                {[2024, 2025, 2026, 2027, 2028].map(y => <option key={y} value={y}>{y}년</option>)}
+              </select>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', background: '#fff' }}
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => <option key={m} value={m}>{m}월</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* 날짜 범위 서브 옵션 */}
+          {dateFilterType === 'Range' && (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <input
+                type="date"
+                value={rangeStart}
+                onChange={(e) => setRangeStart(e.target.value)}
+                style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>~</span>
+              <input
+                type="date"
+                value={rangeEnd}
+                onChange={(e) => setRangeEnd(e.target.value)}
+                style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '13px', outline: 'none' }}
+              />
+            </div>
+          )}
+
           <div style={{ display: 'flex', border: '1px solid var(--border-default)', borderRadius: '6px', background: '#fff', overflow: 'hidden', maxWidth: '320px', width: '100%' }}>
             <input 
               type="text" 

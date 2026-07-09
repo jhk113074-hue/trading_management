@@ -15,7 +15,7 @@ export const ProformaInvoices: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [dateFilterType, setDateFilterType] = useState<string>('All');
+  const [dateFilterType, setDateFilterType] = useState<string>('Monthly');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
