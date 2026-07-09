@@ -54,6 +54,10 @@ export const ApprovalSystem: React.FC = () => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Modaless Window states
+  const [draftWindowPosition, setDraftWindowPosition] = useState({ x: 120, y: 50 });
+  const [isDraftWindowMinimized, setIsDraftWindowMinimized] = useState(false);
+
   // View Document Modal
   const [selectedDoc, setSelectedDoc] = useState<ApprovalDoc | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -75,6 +79,30 @@ export const ApprovalSystem: React.FC = () => {
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Drag move handler for modaless window
+  const handleHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 폼 요소나 버튼, 닫기 버튼 등을 클릭한 경우에는 드래그하지 않음
+    if ((e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'SELECT') return;
+    e.preventDefault();
+    const startX = e.clientX - draftWindowPosition.x;
+    const startY = e.clientY - draftWindowPosition.y;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      setDraftWindowPosition({
+        x: moveEvent.clientX - startX,
+        y: moveEvent.clientY - startY
+      });
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
 
   const fetchApprovalData = async () => {
     setLoading(true);
@@ -818,16 +846,59 @@ export const ApprovalSystem: React.FC = () => {
         </div>
       </div>
 
-      {/* New Draft Creation Modal */}
+      {/* New Draft Creation Modal (Modaless Sub Window) */}
       {showDraftModal && (
-        <div onPaste={handlePaste} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '8px', width: '100%', maxWidth: '680px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', background: '#ffffff', color: '#1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1' }}>
-              <span style={{ fontSize: '16px', fontWeight: 800 }}>📝 새 결재 문서 기안 상신</span>
-              <button onClick={() => setShowDraftModal(false)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>✕</button>
+        <div onPaste={handlePaste} style={{ position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none', display: 'block' }}>
+          <div style={{ 
+            position: 'absolute', 
+            left: `${draftWindowPosition.x}px`, 
+            top: `${draftWindowPosition.y}px`, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            width: '680px', 
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)', 
+            overflow: 'hidden', 
+            display: 'flex', 
+            flexDirection: 'column',
+            pointerEvents: 'auto',
+            border: '1px solid #cbd5e1'
+          }}>
+            <div 
+              onMouseDown={handleHeaderMouseDown}
+              style={{ 
+                padding: '12px 20px', 
+                background: '#ffffff', 
+                color: '#1e293b', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                borderBottom: '1px solid #cbd5e1',
+                cursor: 'move',
+                userSelect: 'none'
+              }}
+            >
+              <span style={{ fontSize: '15px', fontWeight: 800 }}>📝 새 결재 문서 기안 상신 (드래그하여 이동 가능)</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button 
+                  type="button"
+                  onClick={() => setIsDraftWindowMinimized(!isDraftWindowMinimized)} 
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', fontWeight: 'bold' }}
+                  title={isDraftWindowMinimized ? "창 펼치기" : "창 최소화"}
+                >
+                  {isDraftWindowMinimized ? '🗖' : '➖'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setShowDraftModal(false)} 
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
             
-            <form onSubmit={handleCreateDraft} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '80vh', overflowY: 'auto' }}>
+            {!isDraftWindowMinimized && (
+              <form onSubmit={handleCreateDraft} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '70vh', overflowY: 'auto' }}>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결재 양식 및 템플릿 로드</label>
@@ -1153,6 +1224,7 @@ export const ApprovalSystem: React.FC = () => {
               </div>
 
             </form>
+            )}
           </div>
         </div>
       )}
