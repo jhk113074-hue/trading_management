@@ -559,9 +559,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   };
 
   const filteredRequests = useMemo(() => {
-    let base = isQuoteMode 
-      ? importRequests.filter(req => req.customerDecision !== '승인') 
-      : importRequests.filter(req => req.customerDecision === '승인');
+    let base = isQuoteMode ? importRequests : importRequests.filter(req => req.customerDecision === '승인');
 
     // 📅 날짜/기간 실필터 적용
     base = base.filter(req => {
