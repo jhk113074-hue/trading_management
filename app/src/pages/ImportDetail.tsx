@@ -923,6 +923,41 @@ export const ImportDetail: React.FC = () => {
                     <option value="반려">반려 (Rejected)</option>
                   </select>
                 </div>
+                {request.customerDecision !== '승인' && (
+                  <div style={{ marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("수입 확정 처리하고 수입관리로 등록하시겠습니까?")) {
+                          const updated = importRequests.map(r => r.id === id ? { ...r, customerDecision: '승인' as any, status: '발주 진행' } : r);
+                          saveToStorage(updated);
+                          navigate(`/imports/${id}?mode=active`, { replace: true });
+                          alert("수입 확정 처리되어 수입관리로 정상 등록되었습니다.");
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '34px',
+                        background: '#3b82f6',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '12.5px',
+                        fontWeight: 750,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                    >
+                      ⚓ 수입확정 (수입관리 등록)
+                    </button>
+                  </div>
+                )}
                 <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '10px', marginTop: '10px' }}>
                   <button
                     type="button"
