@@ -340,10 +340,16 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     const serial = reqId.slice(-2) || '01';
     const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
 
-
+    const currentYearStr = new Date().getFullYear().toString();
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const currentDay = new Date().getDate().toString().padStart(2, '0');
+    const dateStr = `${currentYearStr.slice(-2)}${currentMonth}${currentDay}`;
+    const randomSerial = String(Math.floor(100 + Math.random() * 900));
+    const generatedQuoteNo = `QT-${dateStr}-${randomSerial}`;
 
     const created: ImportRequest = {
       id: reqId,
+      quoteNumber: generatedQuoteNo,
       blAwb: '-',
       poNumber: generatedPo,
       itemName: computedItemName,
@@ -649,13 +655,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '40px' }}>
               {isQuoteMode ? (
                 <>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>견적번호</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'center' }}>견적주체(YSACC/영성ACC)</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px' }}>견적일</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>견적번호</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px', textAlign: 'center' }}>견적주체(YSACC/영성ACC)</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '200px' }}>품명</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'right' }}>견적가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>수입처</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>최종고객</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '110px', textAlign: 'center' }}>진행상태</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '130px', textAlign: 'right' }}>견적가</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>최종고객</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px', textAlign: 'center' }}>진행상태</th>
                 </>
               ) : (
                 <>
@@ -691,9 +698,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               >
                 {isQuoteMode ? (
                   <>
+                    {/* 견적일 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                      {req.requestDate || req.createdAt || '-'}
+                    </td>
+
                     {/* 견적번호 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
-                      {req.id}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                      {req.quoteNumber || `QT-${req.id}`}
                     </td>
 
                     {/* 견적주체(YSACC/영성ACC) */}

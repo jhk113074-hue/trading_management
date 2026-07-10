@@ -362,7 +362,14 @@ export const ImportDetail: React.FC = () => {
         
         {/* Top Info Bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '16px' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>id: {request.id}</h2>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+            관리번호: <span style={{ color: '#2563eb' }}>{request.id}</span>
+            {request.quoteNumber && (
+              <span style={{ marginLeft: '12px', fontSize: '16px', color: '#475569' }}>
+                (견적번호: <strong style={{ color: '#0f172a' }}>{request.quoteNumber}</strong>)
+              </span>
+            )}
+          </h2>
           <span style={{ padding: '2px 10px', borderRadius: '12px', fontSize: '11.5px', fontWeight: 700, color: '#d97706', background: '#fef3c7' }}>
             {request.status}
           </span>
