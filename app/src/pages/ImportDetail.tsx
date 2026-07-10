@@ -554,93 +554,99 @@ export const ImportDetail: React.FC = () => {
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
               📥 ① 수입요청 접수 정보
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
+              {/* 상단 기본정보 Grid (3열 구성) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>요청 접수일</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>요청 접수일</label>
                   <input
                     type="date"
                     value={request.requestDate || ''}
                     onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestDate: e.target.value } : r))}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 담당자</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>고객사 담당자</label>
                   <input
                     type="text"
                     value={request.requestedBy || ''}
                     onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestedBy: e.target.value } : r))}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                     placeholder="예: 홍길동 과장"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>수입주체 구분</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입주체 구분</label>
                   <select
                     value={request.importCompany || ''}
                     onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>
                     <option value="">영성ACC</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>최종 고객사 (고객DB 연계)</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>최종 고객사 (고객DB 연계)</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <input
                       type="text"
                       readOnly
                       value={request.finalCustomer || ''}
                       placeholder="우측 [검색] 버튼으로 고객사 지정"
-                      style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+                      style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowCustomerModal(true)}
-                      style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                      style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
                     >
                       🔍 검색
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>수입처 (공급업체)</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입처 (공급업체)</label>
                   <input
                     type="text"
                     value={request.importerName || ''}
                     onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importerName: e.target.value } : r))}
                     placeholder="공급업체 명 직접 입력"
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                   />
                 </div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>요청 상세 내용</label>
-                <textarea
-                  value={request.requestNote || ''}
-                  onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestNote: e.target.value } : r))}
-                  rows={4}
-                  placeholder="고객사로부터 접수한 수입요청 내용을 입력하세요."
-                  style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', marginBottom: '8px' }}
-                />
-                
-                {/* 📂 Drag and Drop / Paste / Preview Area */}
-                {request.customerPiFile ? (
-                  <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(request.customerPiFile?.url || '', request.customerPiFile?.name || '')}>
-                      📄 {request.customerPiFile?.name || ''} (미리보기)
-                    </span>
-                    <button onClick={() => handleFileDelete('customerPi')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                  </div>
-                ) : (
-                  <UploadZone
-                    label="수입요청 관련 파일 업로드"
-                    isUploading={uploading === 'customerPi'}
-                    onFileSelect={(file) => handleFileUpload('customerPi', file)}
+
+              {/* 하단 상세내용 & 파일업로드 Grid (2열 구성) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>요청 상세 내용</label>
+                  <textarea
+                    value={request.requestNote || ''}
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestNote: e.target.value } : r))}
+                    rows={4}
+                    placeholder="고객사로부터 접수한 수입요청 내용을 입력하세요."
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', height: '90px' }}
                   />
-                )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입요청 원본 파일</label>
+                  {request.customerPiFile ? (
+                    <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '4px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '90px', boxSizing: 'border-box' }}>
+                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(request.customerPiFile?.url || '', request.customerPiFile?.name || '')}>
+                        📄 {request.customerPiFile?.name || ''} (미리보기)
+                      </span>
+                      <button onClick={() => handleFileDelete('customerPi')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                    </div>
+                  ) : (
+                    <UploadZone
+                      label="수입요청 관련 파일 업로드"
+                      isUploading={uploading === 'customerPi'}
+                      onFileSelect={(file) => handleFileUpload('customerPi', file)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
