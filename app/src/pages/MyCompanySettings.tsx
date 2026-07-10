@@ -19,6 +19,8 @@ export interface MyCompany {
   bankKrwName?: string;
   bankForeignUrl?: string;
   bankForeignName?: string;
+  bankKrwInfo?: string;
+  bankForeignInfo?: string;
 }
 
 const renderFileThumbnail = (url: string, name: string) => {
@@ -313,7 +315,9 @@ export const MyCompanySettings: React.FC = () => {
         bankKrwUrl: editForm.bankKrwUrl || '',
         bankKrwName: editForm.bankKrwName || '',
         bankForeignUrl: editForm.bankForeignUrl || '',
-        bankForeignName: editForm.bankForeignName || ''
+        bankForeignName: editForm.bankForeignName || '',
+        bankKrwInfo: editForm.bankKrwInfo || '',
+        bankForeignInfo: editForm.bankForeignInfo || ''
       });
       alert("저장되었습니다.");
       setEditingId(null);
@@ -495,6 +499,14 @@ export const MyCompanySettings: React.FC = () => {
                             </label>
                           </div>
                         )}
+                        <input
+                          type="text"
+                          placeholder="은행명, 계좌번호, 예금주"
+                          name="bankKrwInfo"
+                          value={editForm.bankKrwInfo || ''}
+                          onChange={handleChange}
+                          style={{ width: '180px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '12px', color: '#1e293b', boxSizing: 'border-box', outline: 'none', marginTop: '4px' }}
+                        />
                       </div>
 
                       {/* 통장사본 (외화) */}
@@ -518,6 +530,14 @@ export const MyCompanySettings: React.FC = () => {
                             </label>
                           </div>
                         )}
+                        <input
+                          type="text"
+                          placeholder="은행명, 계좌번호, 예금주"
+                          name="bankForeignInfo"
+                          value={editForm.bankForeignInfo || ''}
+                          onChange={handleChange}
+                          style={{ width: '180px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '12px', color: '#1e293b', boxSizing: 'border-box', outline: 'none', marginTop: '4px' }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -589,6 +609,11 @@ export const MyCompanySettings: React.FC = () => {
                             등록 안됨
                           </div>
                         )}
+                        {comp.bankKrwInfo && (
+                          <div style={{ width: '180px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px', fontSize: '12px', color: '#1e293b', fontWeight: 700, boxSizing: 'border-box', wordBreak: 'break-all', textAlign: 'center' }}>
+                            {comp.bankKrwInfo}
+                          </div>
+                        )}
                       </div>
 
                       {/* 통장사본 (외화) */}
@@ -603,6 +628,11 @@ export const MyCompanySettings: React.FC = () => {
                         ) : (
                           <div style={{ width: '180px', height: '130px', border: '1px dashed #cbd5e1', borderRadius: '4px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#94a3b8' }}>
                             등록 안됨
+                          </div>
+                        )}
+                        {comp.bankForeignInfo && (
+                          <div style={{ width: '180px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '6px 8px', fontSize: '12px', color: '#1e293b', fontWeight: 700, boxSizing: 'border-box', wordBreak: 'break-all', textAlign: 'center' }}>
+                            {comp.bankForeignInfo}
                           </div>
                         )}
                       </div>
