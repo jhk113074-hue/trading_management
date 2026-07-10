@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo  YSACC TMS Auto Builder, Deployer & Git Sync
+echo  YSACC TMS Auto Builder, Deployer ^& Git Sync
 echo ===================================================
 
 echo [1/3] Building frontend app...
@@ -19,7 +19,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-echo [3/3] Git Committing & Pushing to GitHub...
+echo [3/3] Git Committing ^& Pushing to GitHub...
 git add .
 git commit -m "auto: build, deploy and sync to github"
 git push origin main
@@ -28,5 +28,5 @@ if %errorlevel% neq 0 (
 )
 
 echo ===================================================
-echo  Auto Deploy & Git Sync Completed Successfully!
+echo  Auto Deploy ^& Git Sync Completed Successfully!
 echo ===================================================
