@@ -71,6 +71,10 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
   const filteredProducts = useMemo(() => {
     const uniqueList: Product[] = [];
     const seen = new Set<string>();
+    console.log("=== DEBUG ProductSearchModal ===");
+    console.log("Input products count:", products.length);
+    console.log("Input list:", products.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })));
+
     products.forEach(p => {
       const code = (p.productCode || p.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
       if (code && !seen.has(code)) {
@@ -80,6 +84,9 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
         uniqueList.push(p);
       }
     });
+
+    console.log("Unique list count:", uniqueList.length);
+    console.log("Unique list:", uniqueList.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })));
 
     return uniqueList.filter(p => {
       const matchSearch = 
