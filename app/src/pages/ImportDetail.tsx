@@ -7,6 +7,8 @@ import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import type { Customer } from '../types/customer';
 import { previewFile } from '../components/FilePreviewModal';
+import { ProductSearchModal } from '../components/ProductSearchModal';
+import type { Product } from '../types/product';
 
 import ysaccLetterImg from '../assets/ysacc_letterhead.png';
 import ysAccLetterImg from '../assets/ys_acc_letterhead.png';
@@ -96,6 +98,20 @@ export const ImportDetail: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showEstimatePrintModal, setShowEstimatePrintModal] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showProductSearch, setShowProductSearch] = useState(false);
+  const [productSearchTargetIdx, setProductSearchTargetIdx] = useState<number | null>(null);
+
+  // 실시간 상품 DB 가져오기 (매핑 순서 교정 적용)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'products'), (snapshot) => {
+      const list = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Product));
+      setProducts(list);
+    }, (error) => {
+      console.error("Failed to sync products in ImportDetail:", error);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // 실시간 고객 DB 가져오기
   useEffect(() => {
@@ -573,11 +589,30 @@ export const ImportDetail: React.FC = () => {
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
                         <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                         <td style={{ padding: '4px' }}>
-                          <input type="text" value={item.name} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], name: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none' }} placeholder="품명 입력" />
+                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            <input 
+                              type="text" 
+                              value={item.name} 
+                              onChange={(e) => {
+                                const next = [...(request.piItems || [])];
+                                next[idx] = { ...next[idx], name: e.target.value };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
+                              }} 
+                              style={{ flex: 1, padding: '3px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} 
+                              placeholder="품명 입력" 
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductSearchTargetIdx(idx);
+                                setShowProductSearch(true);
+                              }}
+                              style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                              title="상품 DB에서 가져오기"
+                            >
+                              🔍
+                            </button>
+                          </div>
                         </td>
                         <td style={{ padding: '4px' }}>
                           <input type="text" value={item.hsCode || ''} onChange={(e) => {
@@ -2573,6 +2608,32 @@ export const ImportDetail: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {showProductSearch && productSearchTargetIdx !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => {
+            setShowProductSearch(false);
+            setProductSearchTargetIdx(null);
+          }}
+          onSelect={(prod) => {
+            const next = [...(request.piItems || [])];
+            const idx = productSearchTargetIdx;
+            if (idx !== null && next[idx]) {
+              next[idx] = {
+                ...next[idx],
+                name: prod.nameEn || prod.nameKo || '',
+                hsCode: prod.hsCode || '',
+                unitPrice: String(prod.purchasePrice || ''),
+                unit: prod.unit || 'EA',
+                weight: String(prod.weight || '')
+              };
+              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
+            }
+            setShowProductSearch(false);
+            setProductSearchTargetIdx(null);
+          }}
+        />
       )}
     </div>
   );
