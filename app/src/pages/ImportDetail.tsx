@@ -626,41 +626,21 @@ export const ImportDetail: React.FC = () => {
                   style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit', marginBottom: '8px' }}
                 />
                 
-                {/* 📂 Drag and Drop Area */}
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    const files = e.dataTransfer.files;
-                    if (files && files.length > 0) {
-                      await handleFileUpload('customerPi', files[0]);
-                      alert(`${files[0].name} 파일이 드래그 앤 드롭으로 업로드되었습니다!`);
-                    }
-                  }}
-                  style={{
-                    border: '2px dashed #3b82f6',
-                    borderRadius: '6px',
-                    padding: '12px',
-                    textAlign: 'center',
-                    background: '#eff6ff',
-                    cursor: 'pointer',
-                    color: '#1d4ed8',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  📂 여기에 파일을 드래그하여 놓거나
-                  <br />
-                  <span style={{ fontSize: '11px', color: '#2563eb', textDecoration: 'underline' }}>
-                    클립보드 스크린샷 이미지(Ctrl+V)를 바로 붙여넣으세요.
-                  </span>
-                  {request.customerPiFile && (
-                    <div style={{ marginTop: '6px', fontSize: '11.5px', color: '#10b981', fontWeight: 'bold' }}>
-                      ✓ 현재 파일: {request.customerPiFile.name} (등록됨)
-                    </div>
-                  )}
-                </div>
+                {/* 📂 Drag and Drop / Paste / Preview Area */}
+                {request.customerPiFile ? (
+                  <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(request.customerPiFile?.url || '', request.customerPiFile?.name || '')}>
+                      📄 {request.customerPiFile?.name || ''} (미리보기)
+                    </span>
+                    <button onClick={() => handleFileDelete('customerPi')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                  </div>
+                ) : (
+                  <UploadZone
+                    label="수입요청 관련 파일 업로드"
+                    isUploading={uploading === 'customerPi'}
+                    onFileSelect={(file) => handleFileUpload('customerPi', file)}
+                  />
+                )}
               </div>
             </div>
 
