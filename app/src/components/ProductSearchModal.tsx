@@ -71,9 +71,9 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
   const filteredProducts = useMemo(() => {
     const uniqueList: Product[] = [];
     const seen = new Set<string>();
-    console.log("=== DEBUG ProductSearchModal ===");
-    console.log("Input products count:", products.length);
-    console.log("Input list:", products.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })));
+    const boppItems = products.filter(p => (p.nameKo || p.nameEn || p.productCode || '').toLowerCase().includes('bopp'));
+    console.log("=== BOPP ITEMS DEBUG ===");
+    console.log(boppItems);
 
     products.forEach(p => {
       const code = (p.productCode || p.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
