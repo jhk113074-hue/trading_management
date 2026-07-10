@@ -2874,7 +2874,7 @@ customsDuty,
                 <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
                   <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <img
-                      src={(!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? ysaccLetterImg : ysAccLetterImg}
+                      src={(!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? '/letterhead_ysacc.png' : '/letterhead_ys.png'}
                       alt="Letterhead"
                       style={{ width: '100%', maxHeight: '75px', objectFit: 'contain' }}
                     />
