@@ -1151,9 +1151,9 @@ customsDuty,
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</td>
                             <td style={{ textAlign: 'center', color: '#1e3a8a', fontWeight: 'bold' }}>O</td>
                           </tr>
-                          {/* 24. 단위당 최종 판매단가 */}
+                          {/* 20. 단위당 최종 판매단가 */}
                           <tr style={{ background: '#f0fdf4', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>24</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>20</td>
                             <td style={{ fontWeight: 800, color: '#10b981' }}>단위당 최종 판매단가 (Final Selling Price)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 고객 제시 견적금액 ÷ 수량</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#10b981' }}>
@@ -2833,6 +2833,7 @@ customsDuty,
             {(() => {
               const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
               const quoteAmountUsd = Math.round(((request.customerQuoteAmount || 0) / appliedRate) * 100) / 100;
+              const totalBuyingPriceUsd = request.piItems?.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0) || request.costBreakdown?.buyingPriceUsd || 1;
               const displayTotalQuote = printCurrency === 'KRW'
                 ? `₩ ${(request.customerQuoteAmount || 0).toLocaleString()}`
                 : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2917,12 +2918,20 @@ customsDuty,
                       {request.piItems && request.piItems.length > 0 ? request.piItems.map((item, idx) => {
                         const uPrice = Number(item.unitPrice) || 0;
                         const qty = Number(item.qty) || 1;
+
+                        // Calculate final selling unit price and total amount based on distributed customer quote amount
+                        const itemTotalSellingKrw = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * (request.customerQuoteAmount || 0) : 0;
+                        const sellingPriceKrw = Math.round(itemTotalSellingKrw / qty);
+
+                        const itemTotalSellingUsd = totalBuyingPriceUsd > 0 ? ((uPrice * qty) / totalBuyingPriceUsd) * quoteAmountUsd : 0;
+                        const sellingPriceUsd = itemTotalSellingUsd / qty;
+
                         const displayUnitPrice = printCurrency === 'KRW'
-                          ? `₩ ${Math.round(uPrice * appliedRate).toLocaleString()}`
-                          : `$ ${uPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          ? `₩ ${sellingPriceKrw.toLocaleString()}`
+                          : `$ ${sellingPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         const displayTotalAmount = printCurrency === 'KRW'
-                          ? `₩ ${Math.round(qty * uPrice * appliedRate).toLocaleString()}`
-                          : `$ ${(qty * uPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          ? `₩ ${Math.round(itemTotalSellingKrw).toLocaleString()}`
+                          : `$ ${itemTotalSellingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
                         return (
                           <tr key={idx} style={{ height: '26px' }}>
