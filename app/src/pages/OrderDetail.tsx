@@ -1002,6 +1002,8 @@ export const OrderDetail: React.FC = () => {
     deliveryPlace: ''
   });
 
+  const [editingFreight, setEditingFreight] = useState<{ idx: number; value: string } | null>(null);
+
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
   // Firebase 데이터 조건 충족 시 해당 항목 자동 체크
   // manualOverride에 등록된 항목은 건드리지 않음
@@ -10175,12 +10177,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       <input
                                         type="text"
                                         disabled={!isEditing}
-                                        placeholder="0"
-                                        value={fw.freightAmount !== undefined && fw.freightAmount !== null && String(fw.freightAmount) !== '' && !Number.isNaN(Number(fw.freightAmount)) ? Number(fw.freightAmount).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+                                        placeholder="0.00"
+                                        value={editingFreight && editingFreight.idx === idx ? editingFreight.value : (fw.freightAmount !== undefined && fw.freightAmount !== null && String(fw.freightAmount) !== '' && !Number.isNaN(Number(fw.freightAmount)) ? Number(fw.freightAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
+                                        onFocus={() => setEditingFreight({ idx, value: String(fw.freightAmount || '') })}
+                                        onBlur={() => setEditingFreight(null)}
                                         onChange={e => {
                                           const val = e.target.value.replace(/[^0-9.]/g, '');
                                           const parts = val.split('.');
                                           const cleanVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+                                          setEditingFreight({ idx, value: cleanVal });
                                           const numVal = cleanVal === '' ? 0 : parseFloat(cleanVal);
                                           setForwardersList(prev => prev.map((f, i) => i === idx ? { ...f, freightAmount: numVal, freightCurrency: 'USD' } : f));
                                         }}
