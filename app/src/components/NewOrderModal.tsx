@@ -74,6 +74,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   ]);
 
   const [forwarders, setForwarders] = useState<ForwarderEntry[]>([]);
+  const [editingFwAmount, setEditingFwAmount] = useState<{ idx: number; value: string } | null>(null);
 
   // Load Customers, Quotations & Products
   useEffect(() => {
@@ -1131,10 +1132,15 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                   <input
                     type="text"
                     inputMode="decimal"
-                    value={(fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                    value={editingFwAmount && editingFwAmount.idx === idx ? editingFwAmount.value : ((fw.amountUsd ?? 0) === 0 ? '' : (fw.amountUsd ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+                    onFocus={() => setEditingFwAmount({ idx, value: String(fw.amountUsd || '') })}
+                    onBlur={() => setEditingFwAmount(null)}
                     onChange={e => {
-                      const raw = e.target.value.replace(/,/g, '');
-                      const num = parseFloat(raw) || 0;
+                      const val = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = val.split('.');
+                      const cleanVal = parts[0] + (parts.length > 1 ? '.' + parts.slice(1).join('') : '');
+                      setEditingFwAmount({ idx, value: cleanVal });
+                      const num = parseFloat(cleanVal) || 0;
                       setForwarders(prev => prev.map((f, i) => i === idx ? { ...f, amountUsd: num, budgetAmountUsd: num } : f));
                     }}
                     placeholder="0.00"

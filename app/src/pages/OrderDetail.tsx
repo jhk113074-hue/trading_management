@@ -904,6 +904,7 @@ export const OrderDetail: React.FC = () => {
   }, []);
 
   const [editingPurchasePrice, setEditingPurchasePrice] = useState<{ [itemIdx: number]: string }>({});
+  const [editingOriginalPurchasePrice, setEditingOriginalPurchasePrice] = useState<{ [itemIdx: number]: string }>({});
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'suppliers'), (snapshot) => {
@@ -5934,16 +5935,32 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                 </select>
                                                 <input
                                                   type="text"
-                                                  value={(() => {
-                                                    const val = it.originalPurchasePrice || 0;
-                                                    return origCurrency === 'KRW'
-                                                      ? Math.round(val).toLocaleString('ko-KR')
-                                                      : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-                                                  })()}
+                                                  value={
+                                                    editingOriginalPurchasePrice[itemIndexInMain] !== undefined
+                                                      ? editingOriginalPurchasePrice[itemIndexInMain]
+                                                      : (() => {
+                                                          const val = it.originalPurchasePrice || 0;
+                                                          return origCurrency === 'KRW'
+                                                            ? Math.round(val).toLocaleString('ko-KR')
+                                                            : val.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                                                        })()
+                                                  }
                                                   onChange={(e) => {
-                                                    const raw = e.target.value.replace(/,/g, '');
-                                                    const val = parseFloat(raw) || 0;
+                                                    const rawText = e.target.value;
+                                                    setEditingOriginalPurchasePrice(prev => ({
+                                                      ...prev,
+                                                      [itemIndexInMain]: rawText
+                                                    }));
+                                                    const rawNum = rawText.replace(/,/g, '');
+                                                    const val = parseFloat(rawNum) || 0;
                                                     handleSourcingItemChange(itemIndexInMain, 'originalPurchasePrice', val);
+                                                  }}
+                                                  onBlur={() => {
+                                                    setEditingOriginalPurchasePrice(prev => {
+                                                      const copy = { ...prev };
+                                                      delete copy[itemIndexInMain];
+                                                      return copy;
+                                                    });
                                                   }}
                                                   style={{ width: '70px', padding: '3px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', textAlign: 'right' }}
                                                 />
