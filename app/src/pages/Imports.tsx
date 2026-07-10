@@ -727,12 +727,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               <tr 
                 key={req.id}
                 onClick={() => {
-                  if (isQuoteMode) {
-                    setEditingRequest(JSON.parse(JSON.stringify(req)));
-                    setShowEditModal(true);
-                  } else {
-                    navigate(`/imports/${req.id}`);
-                  }
+                  navigate(`/imports/${req.id}`);
                 }}
                 style={{ borderBottom: '1px solid #cbd5e1', cursor: 'pointer', height: '64px', transition: 'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}

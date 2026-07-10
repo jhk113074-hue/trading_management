@@ -363,7 +363,7 @@ export const ImportDetail: React.FC = () => {
           .filter(tab => {
             const isApproved = request.customerDecision === '승인';
             if (isApproved) {
-              return tab.key !== '수입요청';
+              return true; // Keep all tabs including '수입요청'
             } else {
               return tab.key === '수입요청';
             }
