@@ -142,7 +142,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         // Auto-cleanup duplicate documents in Firestore using authenticated client context
         const seenCodes = new Map();
         list.forEach(async (docObj) => {
-          const code = (docObj.productCode || docObj.id || '').trim().toLowerCase();
+          const code = (docObj.productCode || docObj.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
           if (!code) return;
           if (seenCodes.has(code)) {
             const duplicateDocId = docObj.id;

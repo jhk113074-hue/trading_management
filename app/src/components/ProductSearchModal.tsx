@@ -72,7 +72,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
     const uniqueList: Product[] = [];
     const seen = new Set<string>();
     products.forEach(p => {
-      const code = (p.productCode || p.id || '').trim().toLowerCase();
+      const code = (p.productCode || p.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
       if (code && !seen.has(code)) {
         seen.add(code);
         uniqueList.push(p);
