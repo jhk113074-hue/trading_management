@@ -2847,12 +2847,16 @@ customsDuty,
               const handlingFee = cb.handlingFee || 0;
               const otherFee = cb.otherFee || 0;
 
-              const totalImportCost = cifKrw + customsDuty + clearanceFee + portFee + domesticTransportFee + handlingFee + otherFee || 1;
+               const simpleTotalCost = (cb.productCost || 0) + (cb.freightCost || 0) + (cb.customsCost || 0) + (cb.otherCost || 0);
+              const totalImportCost = simpleTotalCost > 0 
+                ? simpleTotalCost 
+                : (cifKrw + customsDuty + clearanceFee + portFee + domesticTransportFee + handlingFee + otherFee) || 1;
+
               const quoteAmount = request.customerQuoteAmount || 0;
               const marginRatio = quoteAmount / totalImportCost;
 
-              const totalFreightCostKrw = freightKrw + domesticTransportFee;
-              const totalProductCostKrw = totalImportCost - totalFreightCostKrw;
+              const totalFreightCostKrw = cb.freightCost || (freightKrw + domesticTransportFee) || 0;
+              const totalProductCostKrw = cb.productCost || (totalImportCost - totalFreightCostKrw);
 
               const sellingProductCostKrw = totalProductCostKrw * marginRatio;
               const sellingFreightCostKrw = totalFreightCostKrw * marginRatio;
