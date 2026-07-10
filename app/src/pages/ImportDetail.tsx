@@ -292,12 +292,12 @@ export const ImportDetail: React.FC = () => {
 
   const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
-  const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
+  const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입요청');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
-      company: (request as any).commonShippingMark?.company || (request.importCompany === 'YS' || request.importCompany === 'YSACC' ? 'YSACC' : 'YS ACC'),
+      company: (request as any).commonShippingMark?.company || (!request.importCompany || request.importCompany === 'YS' || request.importCompany === 'YSACC' ? 'YSACC' : 'YS ACC'),
       port: (request as any).commonShippingMark?.port || request.pod || 'INCHEON',
       country: (request as any).commonShippingMark?.country || 'KOREA',
       origin: (request as any).commonShippingMark?.origin || request.origin || 'MADE IN CHINA'
@@ -579,12 +579,12 @@ export const ImportDetail: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입주체 구분</label>
                   <select
-                    value={request.importCompany || ''}
+                    value={request.importCompany || 'YSACC'}
                     onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
                     style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                   >
                     <option value="YSACC">YSACC</option>
-                    <option value="">영성ACC</option>
+                    <option value="영성ACC">영성ACC</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -2870,7 +2870,7 @@ customsDuty,
                 <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
                   <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <img
-                      src={request.importCompany === 'YSACC' || request.importCompany === 'YS' ? ysaccLetterImg : ysAccLetterImg}
+                      src={(!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? ysaccLetterImg : ysAccLetterImg}
                       alt="Letterhead"
                       style={{ width: '100%', maxHeight: '75px', objectFit: 'contain' }}
                     />
@@ -2907,7 +2907,7 @@ customsDuty,
                         <tbody>
                           <tr>
                             <td style={{ fontWeight: 'bold', textAlign: 'left', width: '80px' }}>공급처 :</td>
-                            <td style={{ textAlign: 'left' }}>{request.importCompany === 'YSACC' || request.importCompany === 'YS' ? 'YSACC' : '영성ACC (YS ACC)'}</td>
+                            <td style={{ textAlign: 'left' }}>{(!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC (YS ACC)'}</td>
                           </tr>
                           <tr>
                             <td style={{ fontWeight: 'bold', textAlign: 'left' }}>대표이사 :</td>
