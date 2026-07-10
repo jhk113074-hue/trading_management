@@ -87,7 +87,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
         setQuotations(quoteSnap.docs.map(d => ({ id: d.id, ...d.data() } as ProformaInvoice)));
 
         const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
-        setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+        setProducts(prodSnap.docs.map(d => ({ ...d.data(), id: d.id } as Product)));
       } catch (err) {
         console.error("Failed to load initial selection data:", err);
       }
@@ -1209,7 +1209,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
             // Refresh products list
             const refreshProducts = async () => {
               const prodSnap = await getDocs(collection(doc(db, 'companies', COMPANY_ID), 'products'));
-              setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
+              setProducts(prodSnap.docs.map(d => ({ ...d.data(), id: d.id } as Product)));
             };
             refreshProducts();
           }}

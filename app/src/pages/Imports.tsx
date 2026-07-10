@@ -136,7 +136,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     const unsubscribeProducts = onSnapshot(
       collection(db, 'companies', 'YSACC', 'products'),
       (snap) => {
-        const list = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+        const list = snap.docs.map(d => ({ ...d.data() as any, id: d.id }));
         setProducts(list);
 
         // Auto-cleanup duplicate documents in Firestore using authenticated client context
