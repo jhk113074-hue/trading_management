@@ -138,6 +138,24 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       (snap) => {
         const list = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
         setProducts(list);
+
+        // Auto-cleanup duplicate documents in Firestore using authenticated client context
+        const seenCodes = new Map();
+        list.forEach(async (docObj) => {
+          const code = (docObj.productCode || docObj.id || '').trim().toLowerCase();
+          if (!code) return;
+          if (seenCodes.has(code)) {
+            const duplicateDocId = docObj.id;
+            console.warn(`[Auto Cleanup] Found duplicate product: code=${code}, docId=${duplicateDocId}. Deleting...`);
+            try {
+              await deleteDoc(doc(db, 'companies', 'YSACC', 'products', duplicateDocId));
+            } catch (err) {
+              console.error("[Auto Cleanup] Failed to delete duplicate:", err);
+            }
+          } else {
+            seenCodes.set(code, docObj.id);
+          }
+        });
       },
       (err) => {
         console.error("Failed to sync products inside Imports:", err);
