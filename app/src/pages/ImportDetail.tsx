@@ -724,9 +724,9 @@ export const ImportDetail: React.FC = () => {
                     <span style={{ fontSize: '13.5px', fontWeight: 'bold' }}>{Math.round(calculateDetailTotalCost(request)).toLocaleString()} 원</span>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <strong style={{ fontSize: '12.5px', color: '#0f766e' }}>KG당 단위 원가: </strong>
+                    <strong style={{ fontSize: '12.5px', color: '#0f766e' }}>{(request.piItems?.[0]?.unit || 'UNIT')}당 단위 원가: </strong>
                     <span style={{ fontSize: '13.5px', fontWeight: 'bold', color: '#b45309' }}>
-                      {Math.round(calculateDetailTotalCost(request) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                      {Math.round(calculateDetailTotalCost(request) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
                     </span>
                   </div>
                 </div>
@@ -752,9 +752,9 @@ export const ImportDetail: React.FC = () => {
                   <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <strong style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>KG당 최종 판매단가</strong>
+                  <strong style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{(request.piItems?.[0]?.unit || 'UNIT')}당 최종 판매단가</strong>
                   <strong style={{ fontSize: '13px', color: '#10b981' }}>
-                    {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                    {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-default)', paddingTop: '8px' }}>

@@ -1593,9 +1593,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{Math.round(calculateAddTotalCost(newRequest)).toLocaleString()} 원</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>KG당 단위 원가: </strong>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>{(newRequest.piItems?.[0]?.unit || 'UNIT')}당 단위 원가: </strong>
                           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#b45309' }}>
-                            {Math.round(calculateAddTotalCost(newRequest) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                            {Math.round(calculateAddTotalCost(newRequest) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(newRequest.piItems?.[0]?.unit || 'UNIT')}
                           </span>
                         </div>
                       </div>
@@ -1608,7 +1608,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         <input type="number" value={newRequest.marginRate ?? ''} onChange={(e) => {
                           const rate = Number(e.target.value) || 0;
                           setNewRequest(p => {
-                            const totalCost = (p.costBreakdown?.productCost || 0) + (p.costBreakdown?.freightCost || 0) + (p.costBreakdown?.customsCost || 0) + (p.costBreakdown?.otherCost || 0);
+                            const totalCost = calculateAddTotalCost(p);
                             const marginAmount = Math.round(totalCost * (rate / 100));
                             return { ...p, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount };
                           });
@@ -1623,9 +1623,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         <strong style={{ fontSize: '13px', color: '#1e3a8a' }}>{(newRequest.customerQuoteAmount || 0).toLocaleString()} 원</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>KG당 최종 판매단가</strong>
+                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{(newRequest.piItems?.[0]?.unit || 'UNIT')}당 최종 판매단가</strong>
                         <strong style={{ fontSize: '12.5px', color: '#10b981' }}>
-                          {Math.round((newRequest.customerQuoteAmount || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                          {Math.round((newRequest.customerQuoteAmount || 0) / (newRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(newRequest.piItems?.[0]?.unit || 'UNIT')}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: '1px solid var(--border-default)', paddingTop: '6px' }}>
@@ -2479,9 +2479,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{Math.round(calculateEditTotalCost(editingRequest)).toLocaleString()} 원</span>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>KG당 단위 원가: </strong>
+                          <strong style={{ fontSize: '12px', color: '#0f766e' }}>{(editingRequest.piItems?.[0]?.unit || 'UNIT')}당 단위 원가: </strong>
                           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#b45309' }}>
-                            {Math.round(calculateEditTotalCost(editingRequest) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                            {Math.round(calculateEditTotalCost(editingRequest) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(editingRequest.piItems?.[0]?.unit || 'UNIT')}
                           </span>
                         </div>
                       </div>
@@ -2495,7 +2495,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           const rate = Number(e.target.value) || 0;
                           setEditingRequest(p => {
                             if (!p) return null;
-                            const totalCost = (p.costBreakdown?.productCost || 0) + (p.costBreakdown?.freightCost || 0) + (p.costBreakdown?.customsCost || 0) + (p.costBreakdown?.otherCost || 0);
+                            const totalCost = calculateEditTotalCost(p);
                             const marginAmount = Math.round(totalCost * (rate / 100));
                             return { ...p, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount };
                           });
@@ -2510,9 +2510,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         <strong style={{ fontSize: '13px', color: '#1e3a8a' }}>{(editingRequest.customerQuoteAmount || 0).toLocaleString()} 원</strong>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>KG당 최종 판매단가</strong>
+                        <strong style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{(editingRequest.piItems?.[0]?.unit || 'UNIT')}당 최종 판매단가</strong>
                         <strong style={{ fontSize: '12.5px', color: '#10b981' }}>
-                          {Math.round((editingRequest.customerQuoteAmount || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / KG
+                          {Math.round((editingRequest.customerQuoteAmount || 0) / (editingRequest.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(editingRequest.piItems?.[0]?.unit || 'UNIT')}
                         </strong>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', borderTop: '1px solid var(--border-default)', paddingTop: '6px' }}>
