@@ -2231,15 +2231,13 @@ export const Dashboard: React.FC = () => {
 
             <div style={{ padding: '16px 20px', background: '#f8fafc', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
               <div>
-                {(selectedEventForView.creatorId === currentUser?.uid || userProfile?.role === 'admin') && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteEvent}
-                    style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
-                  >
-                    일정 삭제
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleDeleteEvent}
+                  style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  일정 삭제
+                </button>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -2249,15 +2247,13 @@ export const Dashboard: React.FC = () => {
                 >
                   닫기
                 </button>
-                {(selectedEventForView.creatorId === currentUser?.uid || userProfile?.role === 'admin') && (
-                  <button
-                    type="button"
-                    onClick={handleSaveEvent}
-                    style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
-                  >
-                    수정 완료
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleSaveEvent}
+                  style={{ padding: '8px 16px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 700 }}
+                >
+                  수정 완료
+                </button>
               </div>
             </div>
           </div>
