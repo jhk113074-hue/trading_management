@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { ImportRequest } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -91,6 +91,8 @@ export const ImportDetail: React.FC = () => {
 
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
   
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
@@ -141,6 +143,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
+  const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입요청');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
@@ -171,13 +174,13 @@ export const ImportDetail: React.FC = () => {
 
   useEffect(() => {
     if (request && request.id === id) {
-      if (request.customerDecision === '승인') {
-        setActiveTab('수입내역');
-      } else {
+      if (viewMode === 'quote') {
         setActiveTab('수입요청');
+      } else {
+        setActiveTab('수입내역');
       }
     }
-  }, [request?.id, request?.customerDecision, id]);
+  }, [request?.id, request?.customerDecision, id, viewMode]);
 
   const handleDownloadPdf = () => {
     const element = document.getElementById('po-print-area');
@@ -361,11 +364,10 @@ export const ImportDetail: React.FC = () => {
             { key: '로그', label: '로그' }
           ] as const)
           .filter(tab => {
-            const isApproved = request.customerDecision === '승인';
-            if (isApproved) {
-              return true; // Keep all tabs including '수입요청'
-            } else {
+            if (viewMode === 'quote') {
               return tab.key === '수입요청';
+            } else {
+              return true; // Keep all tabs including '수입요청' in active mode
             }
           })
           .map(tab => (

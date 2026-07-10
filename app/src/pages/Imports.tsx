@@ -727,7 +727,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               <tr 
                 key={req.id}
                 onClick={() => {
-                  navigate(`/imports/${req.id}`);
+                  if (isQuoteMode) {
+                    navigate(`/imports/${req.id}?mode=quote`);
+                  } else {
+                    navigate(`/imports/${req.id}?mode=active`);
+                  }
                 }}
                 style={{ borderBottom: '1px solid #cbd5e1', cursor: 'pointer', height: '64px', transition: 'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}
