@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
 import { db, COMPANY_ID } from '../firebase';
-import { collection, doc, getDocs, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import type { Customer } from '../types/customer';
@@ -117,30 +117,37 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     return () => unsub();
   }, []);
   const [products, setProducts] = useState<Product[]>([]);
-  
-  const loadSuppliers = async () => {
-    try {
-      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'suppliers'));
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setSuppliers(list);
-    } catch (err) {
-      console.error("Failed to load suppliers inside Imports:", err);
-    }
-  };
-
-  const loadProducts = async () => {
-    try {
-      const snap = await getDocs(collection(db, 'companies', 'YSACC', 'products'));
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
-      setProducts(list);
-    } catch (err) {
-      console.error("Failed to load products inside Imports:", err);
-    }
-  };
+  const loadSuppliers = async () => {};
 
   useEffect(() => {
-    loadSuppliers();
-    loadProducts();
+    // Real-time suppliers sync
+    const unsubscribeSuppliers = onSnapshot(
+      collection(db, 'companies', 'YSACC', 'suppliers'),
+      (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setSuppliers(list);
+      },
+      (err) => {
+        console.error("Failed to sync suppliers inside Imports:", err);
+      }
+    );
+
+    // Real-time products sync
+    const unsubscribeProducts = onSnapshot(
+      collection(db, 'companies', 'YSACC', 'products'),
+      (snap) => {
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() as any }));
+        setProducts(list);
+      },
+      (err) => {
+        console.error("Failed to sync products inside Imports:", err);
+      }
+    );
+
+    return () => {
+      unsubscribeSuppliers();
+      unsubscribeProducts();
+    };
   }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
