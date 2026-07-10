@@ -2972,8 +2972,8 @@ customsDuty,
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                 <tbody>
                   <tr>
-                    <td style={{ padding: '3px 0', fontWeight: 'bold', width: '130px' }}>· INCOTERMS :</td>
-                    <td>{request.incoterms || 'FOB'}</td>
+                    <td style={{ padding: '3px 0', fontWeight: 'bold', width: '150px' }}>· DELIVERY TERMS :</td>
+                    <td>공장도착도 (Delivered to Factory)</td>
                   </tr>
                   <tr>
                     <td style={{ padding: '3px 0', fontWeight: 'bold' }}>· PAYMENT TERMS :</td>
