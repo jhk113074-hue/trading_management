@@ -998,7 +998,8 @@ export const OrderDetail: React.FC = () => {
     shipmentType: 'FCL' as 'LCL' | 'FCL' | '',
     fclSpecs: [] as Array<{ type: '20GP' | '40GP' | '40HQ' | '20RF' | '20OT' | '40OT' | '20FR' | '40FR' | '20DG' | '40DG'; qty: number; containerNo?: string; sealNo?: string; }>,
     blNumbers: [] as string[],
-    blNumber: ''
+    blNumber: '',
+    deliveryPlace: ''
   });
 
   // ── 자동감지 → 체크리스트 자동 완료 (방향 B) ──────────────────────────
@@ -1553,6 +1554,7 @@ export const OrderDetail: React.FC = () => {
           paymentTerms: data.paymentTerms || '',
           poDate: data.poDate || '',
           requestedDelivery: data.requestedDelivery || '',
+          deliveryPlace: data.deliveryPlace || '',
           remark: data.remark || '',
           manager: data.manager || '',
           externalLinksStr: data.externalLinks ? data.externalLinks.join('\n') : '',
@@ -3198,8 +3200,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
-    const reqDateText = poDetails.requestDate || '추후 안내 예정';
-    const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
+    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
+    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
 
 
 
@@ -3574,8 +3576,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
-    const reqDateText = poDetails.requestDate || '추후 안내 예정';
-    const delPlaceText = poDetails.deliveryPlace || '추후 통보예정';
+    const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
+    const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
 
 
 
@@ -5527,6 +5529,47 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               {(activeSourcingTab === '소싱발주' || (activeSourcingTab !== 'COA_성적서')) && (
 
                 <>
+                  {/* 공통 입고 요청일 및 납품처 설정 카드 */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e40af', whiteSpace: 'nowrap' }}>공통 입고 요청일 (납기일):</span>
+                      <div style={{ width: '160px' }}>
+                        <DateInput
+                          value={basicForm.requestedDelivery || ''}
+                          disabled={!isEditing}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setBasicForm(prev => ({
+                              ...prev,
+                              requestedDelivery: val
+                            }));
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '300px' }}>
+                      <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e40af', whiteSpace: 'nowrap' }}>공통 납품처:</span>
+                      <input
+                        type="text"
+                        placeholder="예: YSACC 인천창고"
+                        value={basicForm.deliveryPlace || ''}
+                        disabled={!isEditing}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setBasicForm(prev => ({
+                            ...prev,
+                            deliveryPlace: val
+                          }));
+                        }}
+                        style={{ flex: 1, padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ width: '100%', fontSize: '13px', color: '#1e40af', fontWeight: 600, marginTop: '-5px' }}>
+                      * 여기서 지정한 일자와 납품처가 모든 공급업체별 발주서(PO) 및 도착보고서에 공통으로 자동 반영됩니다.
+                    </div>
+                  </div>
+
                   {/* 업체별 발주 집계 현황 카드 */}
                   {allOrderSuppliers.length > 0 && (
                     <div style={{ background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', marginBottom: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
@@ -6089,12 +6132,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 </tbody>
                               </table>
                               
-                              {/* 생산완료일, 입고요청일, 납품처를 가로 한 줄 레이아웃으로 통합 */}
+                              {/* 생산완료일만 표시 (납품처는 상단 공통 필드로 이관) */}
                               <div style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#f8fafc', padding: '10px 16px', borderTop: '1px solid var(--border-default)', marginTop: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <span style={{ fontWeight: 600, fontSize: '15.5px', color: '#4b5563', whiteSpace: 'nowrap' }}>생산완료일:</span>
-                                  <input 
-                                    type="date"
+                                  <DateInput 
                                     value={basicForm.supplierProductionDates[supplierName] || ''}
                                     disabled={!isEditing}
                                     onChange={e => {
@@ -6115,53 +6157,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         };
                                       });
                                     }}
-                                    style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', width: '120px' }}
-                                  />
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                                  <span style={{ fontWeight: 600, fontSize: '15.5px', color: '#4b5563', whiteSpace: 'nowrap' }}>입고요청일:</span>
-                                  <input 
-                                    type="text" 
-                                    placeholder="예: 2026-07-15"
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.requestDate ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const current = prev.supplierPoDetails?.[supplierName] || {};
-                                        return {
-                                          ...prev,
-                                          supplierPoDetails: {
-                                            ...prev.supplierPoDetails,
-                                            [supplierName]: { ...current, requestDate: val }
-                                          }
-                                        };
-                                      });
-                                    }}
-                                    style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', background: '#fff', outline: 'none' }}
-                                  />
-                                </div>
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 2 }}>
-                                  <span style={{ fontWeight: 600, fontSize: '15.5px', color: '#4b5563', whiteSpace: 'nowrap' }}>납품처:</span>
-                                  <input 
-                                    type="text" 
-                                    placeholder="예: YSACC 인천창고"
-                                    value={basicForm.supplierPoDetails?.[supplierName]?.deliveryPlace ?? ''}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setBasicForm(prev => {
-                                        const current = prev.supplierPoDetails?.[supplierName] || {};
-                                        return {
-                                          ...prev,
-                                          supplierPoDetails: {
-                                            ...prev.supplierPoDetails,
-                                            [supplierName]: { ...current, deliveryPlace: val }
-                                          }
-                                        };
-                                      });
-                                    }}
-                                    style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', background: '#fff', outline: 'none' }}
+                                    style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', width: '150px' }}
                                   />
                                 </div>
                               </div>
@@ -8573,9 +8569,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                            finalCfsAddress = 'CMK LOGISTICS / 김경태 주임 / T.055-543-7200\n경남 창원시 진해구 신항8로 13';
                         }
 
+                        const defaultRemarks = `ORIGIN : MADE IN KOREA\n입고일: ${basicForm.requestedDelivery || '연도-월-일'} 오전 10시까지`;
                         const rep = {
                           bookingNo: basicForm.vesselBooking || '',
-                          remarks: 'ORIGIN : MADE IN KOREA\n입고일: 연도-월-일 오전 10시까지',
+                          remarks: repData.remarks && !repData.remarks.includes('연도-월-일') ? repData.remarks : defaultRemarks,
                           notifyParty: 'SAME AS ABOVE',
                           ...repData,
                           portOfLoading: basicForm.portOfLoading || repData.portOfLoading || 'BUSAN PORT, SOUTH KOREA',

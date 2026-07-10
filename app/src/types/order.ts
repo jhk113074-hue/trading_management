@@ -137,6 +137,7 @@ export interface Order {
   shippingDocsSentDate?: string; // 발송일자
   shippingDocsTrackingNo?: string; // Tracking 번호
   supplierPayments?: Record<string, { status: string; date: string; }>; // 업체별 대금결재 상태
+  deliveryPlace?: string; // 공통 납품처
   
   supplierTaxInvoice?: Record<string, 'Y' | 'N' | ''>; // 공급사별 세금계산서 발행여부
   supplierPurchaseCertificate?: Record<string, 'Y' | 'N' | ''>; // 공급사별 구매확인서 발행여부
