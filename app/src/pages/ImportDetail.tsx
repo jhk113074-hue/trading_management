@@ -658,6 +658,29 @@ export const ImportDetail: React.FC = () => {
                     )) : (
                       <tr><td colSpan={12} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 수입 제품이 없습니다.</td></tr>
                     )}
+                    {request.piItems && request.piItems.length > 0 && (
+                      <tr style={{ background: '#f1f5f9', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
+                        <td colSpan={3} style={{ padding: '6px 12px', textAlign: 'center', color: '#1e293b' }}>TOTAL</td>
+                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </td>
+                        <td colSpan={2}></td>
+                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
+                          {request.piItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td></td>
+                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.cbm) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 3 })}
+                        </td>
+                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.netWeight) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ padding: '6px 12px', textAlign: 'right', color: '#1e293b' }}>
+                          {request.piItems.reduce((sum, it) => sum + (Number(it.grossWeight) || 0), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </td>
+                        <td></td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
