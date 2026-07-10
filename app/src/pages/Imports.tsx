@@ -647,18 +647,29 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '40px' }}>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>주문번호</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>PO번호</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>품명</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>운송내용</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'center' }}>수입주체</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>경로</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px' }}>최종고객</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>담당자</th>
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'right' }}>수입금액</th>
-              {isQuoteMode && (
-                <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '110px', textAlign: 'center' }}>진행상태</th>
+              {isQuoteMode ? (
+                <>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>견적번호</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'center' }}>견적주체(YSACC/영성ACC)</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '200px' }}>품명</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'right' }}>견적가</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>수입처</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>최종고객</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '110px', textAlign: 'center' }}>진행상태</th>
+                </>
+              ) : (
+                <>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>주문번호</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>PO번호</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>품명</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>운송내용</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'center' }}>수입주체</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>경로</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px' }}>최종고객</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>담당자</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'right' }}>수입금액</th>
+                </>
               )}
               <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '70px', textAlign: 'center' }}>관리</th>
             </tr>
@@ -678,93 +689,131 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
-                {/* 주문번호 */}
-                <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
-                  {req.id}
-                </td>
+                {isQuoteMode ? (
+                  <>
+                    {/* 견적번호 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
+                      {req.id}
+                    </td>
 
-                {/* PO번호 */}
-                <td style={{ padding: '10px 16px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
-                    {req.poNumber && req.poNumber !== '-' ? req.poNumber : '-'}
-                  </span>
-                </td>
-                
-                {/* 수입처 */}
-                <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                  {req.importerName || req.shipperName || '-'}
-                </td>
+                    {/* 견적주체(YSACC/영성ACC) */}
+                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                      <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#15803d' : '#0369a1', background: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#dcfce7' : '#e0f2fe' }}>
+                        {(req.importCompany === 'YSACC' || req.importCompany === 'YS') ? 'YSACC' : '영성ACC'}
+                      </span>
+                    </td>
 
-                {/* 품명 */}
-                <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
-                  {req.itemName}
-                </td>
+                    {/* 품명 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                      {req.itemName}
+                    </td>
 
-                {/* 운송내용 */}
-                <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>{req.transportType}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>{req.volume}</span>
-                  </div>
-                </td>
+                    {/* 견적가 */}
+                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
+                        ₩{(req.customerQuoteAmount || 0).toLocaleString()}
+                      </span>
+                    </td>
 
-                {/* 수입주체 */}
-                <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                  {req.importCompany ? (
-                    <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: req.importCompany === 'YS' ? '#0369a1' : '#15803d', background: req.importCompany === 'YS' ? '#e0f2fe' : '#dcfce7' }}>
-                      {req.importCompany}
-                    </span>
-                  ) : '-'}
-                </td>
+                    {/* 수입처 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                      {req.importerName || '-'}
+                    </td>
 
-                {/* 경로 */}
-                <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', gap: '2px', flexDirection: 'column', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      📍 {req.routeFrom} ➔
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
-                      ⚓ {req.routeTo}
-                    </span>
-                  </div>
-                </td>
+                    {/* 최종고객 */}
+                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
+                      {req.finalCustomer || '-'}
+                    </td>
 
-                {/* 최종고객 */}
-                <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
-                  {req.finalCustomer || '-'}
-                </td>
+                    {/* 진행상태 */}
+                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                      {(() => {
+                        const decision = req.customerDecision || '검토중';
+                        const colorMap: Record<string, { bg: string; color: string }> = {
+                          '검토중': { bg: '#fef3c7', color: '#b45309' },
+                          '승인': { bg: '#dcfce7', color: '#15803d' },
+                          '보류': { bg: '#f1f5f9', color: '#64748b' },
+                          '거절': { bg: '#fee2e2', color: '#dc2626' }
+                        };
+                        const c = colorMap[decision] || colorMap['검토중'];
+                        return (
+                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, background: c.bg, color: c.color }}>
+                            {decision}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    {/* 주문번호 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
+                      {req.id}
+                    </td>
 
-                {/* 담당자 */}
-                <td style={{ padding: '10px 16px', fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>
-                  {req.manager}
-                </td>
+                    {/* PO번호 */}
+                    <td style={{ padding: '10px 16px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
+                        {req.poNumber && req.poNumber !== '-' ? req.poNumber : '-'}
+                      </span>
+                    </td>
+                    
+                    {/* 수입처 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                      {req.importerName || req.shipperName || '-'}
+                    </td>
 
-                {/* 수입금액 */}
-                <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
-                    ₩{req.amount.toLocaleString()}
-                  </span>
-                </td>
+                    {/* 품명 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                      {req.itemName}
+                    </td>
 
-                {/* 진행상태 (견적모드 전용) */}
-                {isQuoteMode && (
-                  <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                    {(() => {
-                      const decision = req.customerDecision || '검토중';
-                      const colorMap: Record<string, { bg: string; color: string }> = {
-                        '검토중': { bg: '#fef3c7', color: '#b45309' },
-                        '승인': { bg: '#dcfce7', color: '#15803d' },
-                        '보류': { bg: '#f1f5f9', color: '#64748b' },
-                        '거절': { bg: '#fee2e2', color: '#dc2626' }
-                      };
-                      const c = colorMap[decision] || colorMap['검토중'];
-                      return (
-                        <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, background: c.bg, color: c.color }}>
-                          {decision}
+                    {/* 운송내용 */}
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>{req.transportType}</span>
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>{req.volume}</span>
+                      </div>
+                    </td>
+
+                    {/* 수입주체 */}
+                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                      {req.importCompany ? (
+                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: req.importCompany === 'YS' ? '#0369a1' : '#15803d', background: req.importCompany === 'YS' ? '#e0f2fe' : '#dcfce7' }}>
+                          {req.importCompany}
                         </span>
-                      );
-                    })()}
-                  </td>
+                      ) : '-'}
+                    </td>
+
+                    {/* 경로 */}
+                    <td style={{ padding: '10px 16px' }}>
+                      <div style={{ display: 'flex', gap: '2px', flexDirection: 'column', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          📍 {req.routeFrom} ➔
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
+                          ⚓ {req.routeTo}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* 최종고객 */}
+                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
+                      {req.finalCustomer || '-'}
+                    </td>
+
+                    {/* 담당자 */}
+                    <td style={{ padding: '10px 16px', fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>
+                      {req.manager}
+                    </td>
+
+                    {/* 수입금액 */}
+                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
+                        ₩{req.amount.toLocaleString()}
+                      </span>
+                    </td>
+                  </>
                 )}
 
                 {/* 관리 (수정 및 삭제 버튼) */}
