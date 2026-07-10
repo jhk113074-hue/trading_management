@@ -131,6 +131,7 @@ export const ImportDetail: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showEstimatePrintModal, setShowEstimatePrintModal] = useState(false);
+  const [printCurrency, setPrintCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [products, setProducts] = useState<Product[]>([]);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [productSearchTargetIdx, setProductSearchTargetIdx] = useState<number | null>(null);
@@ -2675,126 +2676,172 @@ customsDuty,
               background: '#f8fafc'
             }}>
               <span style={{ fontWeight: 800, fontSize: '15px', color: '#1e3a8a' }}>📄 YSACC / 영성ACC 공식 견적서 (인쇄 미리보기)</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => window.print()}
-                  style={{ padding: '6px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  🖨️ 인쇄 / PDF 저장
-                </button>
-                <button
-                  onClick={() => setShowEstimatePrintModal(false)}
-                  style={{ padding: '6px 12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  닫기
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>견적 화폐 (CURRENCY):</span>
+                  <select
+                    value={printCurrency}
+                    onChange={(e) => setPrintCurrency(e.target.value as 'KRW' | 'USD')}
+                    style={{
+                      height: '28px',
+                      padding: '0 8px',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      outline: 'none',
+                      background: '#fff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="KRW">원화 (KRW)</option>
+                    <option value="USD">달러 (USD)</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => window.print()}
+                    style={{ padding: '6px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    🖨️ 인쇄 / PDF 저장
+                  </button>
+                  <button
+                    onClick={() => setShowEstimatePrintModal(false)}
+                    style={{ padding: '6px 12px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    닫기
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* 인쇄 본문 */}
-            <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
-              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <img
-                  src={request.importCompany === 'YSACC' || request.importCompany === 'YS' ? ysaccLetterImg : ysAccLetterImg}
-                  alt="Letterhead"
-                  style={{ width: '100%', maxHeight: '75px', objectFit: 'contain' }}
-                />
-              </div>
+            {(() => {
+              const appliedRate = request.costBreakdown?.appliedExchangeRate || 1450;
+              const quoteAmountUsd = Math.round(((request.customerQuoteAmount || 0) / appliedRate) * 100) / 100;
+              const displayTotalQuote = printCurrency === 'KRW'
+                ? `₩ ${(request.customerQuoteAmount || 0).toLocaleString()}`
+                : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, borderBottom: '2px solid #000', paddingBottom: '6px', display: 'inline-block' }}>
-                  QUOTATION (견적서)
-                </h1>
-              </div>
+              return (
+                <div id="estimate-print-area" style={{ padding: '30px 40px', overflowY: 'auto', flex: 1, fontSize: '13px', lineHeight: 1.6 }}>
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <img
+                      src={request.importCompany === 'YSACC' || request.importCompany === 'YS' ? ysaccLetterImg : ysAccLetterImg}
+                      alt="Letterhead"
+                      style={{ width: '100%', maxHeight: '75px', objectFit: 'contain' }}
+                    />
+                  </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <div>
-                  <table style={{ borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                    <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, borderBottom: '2px solid #000', paddingBottom: '6px', display: 'inline-block' }}>
+                      QUOTATION (견적서)
+                    </h1>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                    <div>
+                      <table style={{ borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ fontWeight: 'bold', width: '90px' }}>To (수신) :</td>
+                            <td style={{ color: '#1e3a8a', fontWeight: 'bold' }}>{request.finalCustomer || '(고객사 미지정)'} 귀하</td>
+                          </tr>
+                          <tr>
+                            <td style={{ fontWeight: 'bold' }}>Date (일자) :</td>
+                            <td>{new Date().toLocaleDateString('ko-KR')}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ fontWeight: 'bold' }}>Ref No. :</td>
+                            <td>QT-{id}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <table style={{ borderCollapse: 'collapse', fontSize: '12.5px', marginLeft: 'auto' }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ fontWeight: 'bold', textAlign: 'left', width: '80px' }}>공급처 :</td>
+                            <td style={{ textAlign: 'left' }}>{request.importCompany === 'YSACC' || request.importCompany === 'YS' ? 'YSACC' : '영성ACC (YS ACC)'}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ fontWeight: 'bold', textAlign: 'left' }}>대표이사 :</td>
+                            <td style={{ textAlign: 'left' }}>김 주 한</td>
+                          </tr>
+                          <tr>
+                            <td style={{ fontWeight: 'bold', textAlign: 'left' }}>담당자 :</td>
+                            <td style={{ textAlign: 'left' }}>{request.manager || '김주한'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '6px', marginBottom: '24px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600 }}>총 견적 금액 : </span>
+                    <strong style={{ fontSize: '18px', color: '#1e3a8a' }}>{displayTotalQuote}</strong> (VAT 별도)
+                  </div>
+
+                  <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', margin: '0 0 10px 0' }}>
+                    ■ DESCRIPTION OF PRODUCTS & DETAILS
+                  </h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '24px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', height: '26px' }}>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '40px' }}>No</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Description of Commodity</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '80px' }}>HS Code</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '60px' }}>Qty</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '50px' }}>Unit</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '90px' }}>UnitPrice</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '110px' }}>Total Amount</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 'bold', width: '90px' }}>To (수신) :</td>
-                        <td style={{ color: '#1e3a8a', fontWeight: 'bold' }}>{request.finalCustomer || '(고객사 미지정)'} 귀하</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 'bold' }}>Date (일자) :</td>
-                        <td>{new Date().toLocaleDateString('ko-KR')}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 'bold' }}>Ref No. :</td>
-                        <td>QT-{id}</td>
-                      </tr>
+                      {request.piItems && request.piItems.length > 0 ? request.piItems.map((item, idx) => {
+                        const uPrice = Number(item.unitPrice) || 0;
+                        const qty = Number(item.qty) || 1;
+                        const displayUnitPrice = printCurrency === 'KRW'
+                          ? `₩ ${Math.round(uPrice * appliedRate).toLocaleString()}`
+                          : `$ ${uPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        const displayTotalAmount = printCurrency === 'KRW'
+                          ? `₩ ${Math.round(qty * uPrice * appliedRate).toLocaleString()}`
+                          : `$ ${(qty * uPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                        return (
+                          <tr key={idx} style={{ height: '26px' }}>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{item.name || request.itemName}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.hsCode || '-'}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{qty.toLocaleString() || '1'}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{displayUnitPrice}</td>
+                            <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>{displayTotalAmount}</td>
+                          </tr>
+                        );
+                      }) : (
+                        <tr style={{ height: '26px' }}>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{request.itemName}</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>EA</td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>
+                            {printCurrency === 'KRW'
+                              ? `₩ ${(request.customerQuoteAmount || 0).toLocaleString()}`
+                              : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </td>
+                          <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
+                            {printCurrency === 'KRW'
+                              ? `₩ ${(request.customerQuoteAmount || 0).toLocaleString()}`
+                              : `$ ${quoteAmountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <table style={{ borderCollapse: 'collapse', fontSize: '12.5px', marginLeft: 'auto' }}>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 'bold', textAlign: 'left', width: '80px' }}>공급처 :</td>
-                        <td style={{ textAlign: 'left' }}>{request.importCompany === 'YSACC' || request.importCompany === 'YS' ? 'YSACC' : '영성ACC (YS ACC)'}</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 'bold', textAlign: 'left' }}>대표이사 :</td>
-                        <td style={{ textAlign: 'left' }}>김 주 한</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 'bold', textAlign: 'left' }}>담당자 :</td>
-                        <td style={{ textAlign: 'left' }}>{request.manager || '김주한'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '14px', borderRadius: '6px', marginBottom: '24px', textAlign: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>총 견적 금액 : </span>
-                <strong style={{ fontSize: '18px', color: '#1e3a8a' }}>₩ {(request.customerQuoteAmount || 0).toLocaleString()}</strong> (VAT 별도)
-              </div>
-
-              <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', margin: '0 0 10px 0' }}>
-                ■ DESCRIPTION OF PRODUCTS & DETAILS
-              </h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', marginBottom: '24px' }}>
-                <thead>
-                  <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', height: '26px' }}>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '40px' }}>No</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'left' }}>Description of Commodity</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '80px' }}>HS Code</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '60px' }}>Qty</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center', width: '50px' }}>Unit</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '80px' }}>UnitPrice</th>
-                    <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', width: '100px' }}>Total Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {request.piItems && request.piItems.length > 0 ? request.piItems.map((item, idx) => (
-                    <tr key={idx} style={{ height: '26px' }}>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{idx + 1}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{item.name || request.itemName}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.hsCode || '-'}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>{Number(item.qty).toLocaleString() || '1'}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>{item.unit || 'EA'}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>₩ {Number(item.unitPrice).toLocaleString()}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                        ₩ {((Number(item.qty) || 1) * (Number(item.unitPrice) || 0)).toLocaleString()}
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr style={{ height: '26px' }}>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>1</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1' }}>{request.itemName}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>-</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>1</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>EA</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>₩ {(request.customerQuoteAmount || 0).toLocaleString()}</td>
-                      <td style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right', fontWeight: 'bold' }}>
-                        ₩ {(request.customerQuoteAmount || 0).toLocaleString()}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
 
               <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e3a8a', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px', margin: '0 0 10px 0' }}>
                 ■ TERMS & CONDITIONS (거래조건)
@@ -2844,6 +2891,7 @@ customsDuty,
                 </div>
               </div>
             </div>
+            ); })()}
           </div>
         </div>
       )}
