@@ -814,8 +814,7 @@ export const ImportDetail: React.FC = () => {
                     vatKrw,
                     totalImportCost,
                     totalCashRequired,
-                    unitCost,
-                    kgCost
+                    unitCost
                   } = calculateTotalCostHelper(cb, request.piItems || []);
 
                   return (
@@ -1058,13 +1057,49 @@ export const ImportDetail: React.FC = () => {
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#b45309' }}>{unitCost.toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}</td>
                             <td style={{ textAlign: 'center', color: '#b45309', fontWeight: 'bold' }}>O</td>
                           </tr>
-                          {/* 21. KG당 수입원가 */}
-                          <tr style={{ background: '#f0fdf4', height: '36px', fontSize: '13px' }}>
+                          {/* 21. 마진율 (%) */}
+                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '36px', fontSize: '13px' }}>
                             <td style={{ textAlign: 'center', fontWeight: 'bold' }}>21</td>
-                            <td style={{ fontWeight: 800, color: '#15803d' }}>KG당 수입원가 (Cost per KG)</td>
-                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 ÷ 총중량(KG)</td>
-                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#15803d' }}>{kgCost.toLocaleString()} 원 / KG</td>
-                            <td style={{ textAlign: 'center', color: '#15803d', fontWeight: 'bold' }}>O</td>
+                            <td style={{ fontWeight: 600, color: '#334155' }}>마진율 (Margin Rate)</td>
+                            <td style={{ padding: '2px 4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <input type="number" value={request.marginRate ?? ''} onChange={e => {
+                                  const rate = Number(e.target.value) || 0;
+                                  const totalCost = calculateDetailTotalCost(request);
+                                  const marginAmount = Math.round(totalCost * (rate / 100));
+                                  saveToStorage(importRequests.map(r => r.id === id ? { ...r, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
+                                }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', fontWeight: 600, color: '#1e293b', padding: '0 4px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>%</span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
+                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
+                          </tr>
+                          {/* 22. 마진 금액 */}
+                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '36px', fontSize: '13px' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>22</td>
+                            <td style={{ fontWeight: 600, color: '#334155' }}>마진 금액 (Margin Amount)</td>
+                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 × 마진율</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</td>
+                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
+                          </tr>
+                          {/* 23. 고객 제시 견적금액 */}
+                          <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#fef3c7', height: '36px', fontSize: '13px' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>23</td>
+                            <td style={{ fontWeight: 800, color: '#1e3a8a' }}>고객 제시 견적금액 (Customer Quote)</td>
+                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 + 마진 금액</td>
+                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</td>
+                            <td style={{ textAlign: 'center', color: '#1e3a8a', fontWeight: 'bold' }}>O</td>
+                          </tr>
+                          {/* 24. 단위당 최종 판매단가 */}
+                          <tr style={{ background: '#f0fdf4', height: '36px', fontSize: '13px' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>24</td>
+                            <td style={{ fontWeight: 800, color: '#10b981' }}>단위당 최종 판매단가 (Final Selling Price)</td>
+                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 고객 제시 견적금액 ÷ 수량</td>
+                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#10b981' }}>
+                              {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
+                            </td>
+                            <td style={{ textAlign: 'center', color: '#10b981', fontWeight: 'bold' }}>O</td>
                           </tr>
                         </tbody>
                       </table>
@@ -1073,31 +1108,8 @@ export const ImportDetail: React.FC = () => {
                 })()}
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>마진 및 고객 견적</span>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>마진율 (%)</label>
-                  <input type="number" value={request.marginRate ?? ''} onChange={(e) => {
-                    const rate = Number(e.target.value) || 0;
-                    const totalCost = calculateDetailTotalCost(request);
-                    const marginAmount = Math.round(totalCost * (rate / 100));
-                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
-                  }} style={{ width: '130px', padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12.5px', outline: 'none', textAlign: 'right' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>마진 금액 (₩)</label>
-                  <strong style={{ fontSize: '12.5px', color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-default)', paddingTop: '8px', marginTop: '4px', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: '12.5px' }}>고객 제시 견적금액</strong>
-                  <strong style={{ fontSize: '13.5px', color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <strong style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{(request.piItems?.[0]?.unit || 'UNIT')}당 최종 판매단가</strong>
-                  <strong style={{ fontSize: '13px', color: '#10b981' }}>
-                    {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
-                  </strong>
-                </div>
+              <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>⚓ 수입 확정 및 견적서 출력</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-default)', paddingTop: '8px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
                   <select
