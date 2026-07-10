@@ -206,7 +206,15 @@ export interface ImportRequest {
     freightCost?: number; // 예상 운임
     customsCost?: number; // 예상 관세/통관비
     otherCost?: number; // 기타 비용
-    // 엑셀 수입원가 고도화 필드
+    incoterms?: string;
+    freightUsd?: number;
+    insuranceUsd?: number;
+    originInlandUsd?: number;
+    clearanceFee?: number;
+    portFee?: number;
+    domesticTransportFee?: number;
+    handlingFee?: number;
+    otherFee?: number;
     todayExchangeRate?: number;    // 오늘환율 (예: 1430)
     appliedExchangeRate?: number;  // 수입기준환율 (예: 1450)
     buyingPriceUsd?: number;       // 외화 단가 (USD)
