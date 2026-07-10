@@ -77,7 +77,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
   // 📅 날짜/기간 필터링 상태 추가 (수입견적: 월별 default, 수입관리: 날짜 default)
-  const [dateFilterType, setDateFilterType] = useState<string>(isQuoteMode ? 'Monthly' : 'Range');
+  const [dateFilterType, setDateFilterType] = useState<string>('All');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [rangeStart, setRangeStart] = useState<string>(() => {
