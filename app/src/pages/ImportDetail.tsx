@@ -1855,14 +1855,17 @@ export const ImportDetail: React.FC = () => {
           const plannedMargin = request.marginAmount || 0;
           const plannedRevenue = request.customerQuoteAmount || request.amount || 0;
 
-          // 실적 계산 (해외 제품 매입가를 제외하고 2. 운임 + 3. 관세만 합산)
+          // 실적 계산 (수입세금계산서 공급가액 + 운임 공급가액 + 관세액, 부가세 제외)
+          // 1) 실제 제품 매입가: 수입세금계산서 공급가액 (부가세 제외)
+          const actualPurchaseCost = request.taxAmount || 0;
+
           // 2) 실제 물류비: 운임 공급가액 (부가세 제외)
           const actualLogisticsCost = request.freightAmount || 0;
 
-          // 3) 실제 관세: 납부 관세액 (수입세금계산서의 공급가액 및 부가세액은 제외)
+          // 3) 실제 관세: 납부 관세액 (부가세 제외)
           const actualCustomsCost = request.customsTaxAmount || 0;
 
-          const actualTotalCost = actualLogisticsCost + actualCustomsCost;
+          const actualTotalCost = actualPurchaseCost + actualLogisticsCost + actualCustomsCost;
 
           const actualRevenue = request.paymentCollectedAmount || plannedRevenue;
           const realizedMargin = actualRevenue - actualTotalCost;
