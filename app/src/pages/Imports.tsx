@@ -429,7 +429,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       </div>
     );
   };
-  const [isCostTableExpanded, setIsCostTableExpanded] = useState(false);
+  const [isCostTableExpanded, setIsCostTableExpanded] = useState(true);
   const isQuoteMode = mode === 'quotes';
   const navigate = useNavigate();
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);

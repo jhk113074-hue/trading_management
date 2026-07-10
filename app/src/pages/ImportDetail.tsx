@@ -225,6 +225,7 @@ export const ImportDetail: React.FC = () => {
   });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
   const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
+  const [isCostTableExpanded, setIsCostTableExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [forwarders, setForwarders] = useState<any[]>([]);
 
@@ -757,8 +758,29 @@ export const ImportDetail: React.FC = () => {
 
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>📊 간편 수입원가 계산표 (Trade Cost Calculator)</span>
+              <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📊 간편 수입원가 계산표 (Trade Cost Calculator)</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCostTableExpanded(!isCostTableExpanded)}
+                    style={{
+                      padding: '4px 10px',
+                      background: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 650,
+                      color: '#475569',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {isCostTableExpanded ? '상세 접기 ▴' : '상세 펼치기 ▾'}
+                  </button>
+                </div>
                 
                 {/* 1 ~ 4번 항목: 상단 기본정보 입력란 */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '4px', border: '1px solid #e2e8f0', marginBottom: '6px' }}>
@@ -810,7 +832,7 @@ export const ImportDetail: React.FC = () => {
                     insuranceKrw,
                     originInlandKrw,
                     cifKrw,
-                    customsDuty,
+customsDuty,
                     vatKrw,
                     totalImportCost,
                     totalCashRequired,
@@ -830,236 +852,208 @@ export const ImportDetail: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {/* 1. 품명 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>1</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>품명 (Item Name)</td>
-                            <td style={{ color: '#1e293b', fontWeight: 600 }}>{request.itemName || (request.piItems?.[0]?.name) || '-'}</td>
-                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                          </tr>
-                          {/* 2. 수량 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>2</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>수량 (Quantity)</td>
-                            <td style={{ color: '#1e293b', fontWeight: 600 }}>{(cb.buyingQty || 1).toLocaleString()} {(request.piItems?.[0]?.unit || 'KG')}</td>
-                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                          </tr>
-                          {/* 3. 인코텀즈 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>3</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>인코텀즈 (Incoterms)</td>
-                            <td style={{ color: '#3b82f6', fontWeight: 700 }}>{cb.incoterms || 'FOB'}</td>
-                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                          </tr>
-                          {/* 4. 적용환율 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>4</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>적용환율 (Exchange Rate)</td>
-                            <td style={{ color: '#1e293b', fontWeight: 600 }}>1 USD = {(cb.appliedExchangeRate || 1450).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                          </tr>
-                          {/* 5. 물품금액 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>5</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>물품금액 (FOB Amount)</td>
-                            <td style={{ color: '#64748b' }}>Invoice USD: ${request.costBreakdown?.buyingPriceUsd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{goodsAmountKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 6. 국제운임 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>6</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>국제운임 (Ocean/Air Freight)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
-                                <input type="number" value={cb.freightUsd || ''} onChange={e => {
-                                  const val = Number(e.target.value) || 0;
-                                  const nextB = { ...cb, freightUsd: val };
-                                  saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                                }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
-                              </div>
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{freightKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 7. 보험료 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>7</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>보험료 (Cargo Insurance)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
-                                <input type="number" value={cb.insuranceUsd || ''} onChange={e => {
-                                  const val = Number(e.target.value) || 0;
-                                  const nextB = { ...cb, insuranceUsd: val };
-                                  saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                                }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
-                              </div>
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{insuranceKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 8. 수출국 내륙운송·수출비 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>8</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>수출국 내륙운송·수출비</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
-                                <input type="number" value={cb.originInlandUsd || ''} onChange={e => {
-                                  const val = Number(e.target.value) || 0;
-                                  const nextB = { ...cb, originInlandUsd: val };
-                                  saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                                }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
-                              </div>
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{originInlandKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 9. CIF 과세가격 */}
-                          <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#f8fafc', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>9</td>
-                            <td style={{ fontWeight: 800, color: '#0f172a' }}>CIF 과세가격 (Customs Value)</td>
-                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: (5+6+7+8) × 환율</td>
-                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{cifKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 10. 관세율 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>10</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>관세율 (Customs Duty Rate)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <input type="number" value={cb.ftaTaxRate || ''} onChange={e => {
-                                  const val = Number(e.target.value) || 0;
-                                  const nextB = { ...cb, ftaTaxRate: val };
-                                  saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                                }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                                <span style={{ fontSize: '11.5px', color: '#64748b' }}>%</span>
-                              </div>
-                            </td>
-                            <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                            <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-                          </tr>
-                          {/* 11. 관세 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>11</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>관세 (Customs Duty)</td>
-                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 9 × 10</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{customsDuty.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 12. 수입 부가세 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>12</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>수입 부가세 (Import VAT)</td>
-                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: (9 + 11) × 10%</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#475569' }}>{vatKrw.toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#f59e0b', fontSize: '11px', fontWeight: 'bold' }}>조건부 (제외)</td>
-                          </tr>
-                          {/* 13. 통관비 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>13</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>통관비 (Customs Brokerage)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={cb.clearanceFee || ''} onChange={e => {
-                                const val = Number(e.target.value) || 0;
-                                const nextB = { ...cb, clearanceFee: val };
-                                saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                              }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.clearanceFee || 0).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 14. 항만·공항 비용 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>14</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>항만·공항 비용 (Port Charges)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={cb.portFee || ''} onChange={e => {
-                                const val = Number(e.target.value) || 0;
-                                const nextB = { ...cb, portFee: val };
-                                saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                              }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.portFee || 0).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 15. 국내 운송비 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>15</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>국내 운송비 (Domestic Transport)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={cb.domesticTransportFee || ''} onChange={e => {
-                                const val = Number(e.target.value) || 0;
-                                const nextB = { ...cb, domesticTransportFee: val };
-                                saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                              }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.domesticTransportFee || 0).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 16. 하역·장비비 */}
-                          <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>16</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>하역·장비비 (Handling Fee)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={cb.handlingFee || ''} onChange={e => {
-                                const val = Number(e.target.value) || 0;
-                                const nextB = { ...cb, handlingFee: val };
-                                saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                              }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.handlingFee || 0).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
-                          {/* 17. 기타 비용 */}
-                          <tr style={{ borderBottom: '1px solid #cbd5e1', height: '34px', fontSize: '12.5px' }}>
-                            <td style={{ textAlign: 'center', color: '#64748b' }}>17</td>
-                            <td style={{ fontWeight: 600, color: '#334155' }}>기타 비용 (Other Expenses)</td>
-                            <td style={{ padding: '2px 4px' }}>
-                              <input type="number" value={cb.otherFee || ''} onChange={e => {
-                                const val = Number(e.target.value) || 0;
-                                const nextB = { ...cb, otherFee: val };
-                                saveToStorage(recalculateDetailCosts(importRequests, nextB));
-                              }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.otherFee || 0).toLocaleString()} 원</td>
-                            <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
-                          </tr>
+                          {isCostTableExpanded && (
+                            <>
+                              {/* 1. 물품금액 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>1</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>물품금액 (FOB Amount)</td>
+                                <td style={{ color: '#64748b' }}>Invoice USD: ${request.costBreakdown?.buyingPriceUsd?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{goodsAmountKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 2. 국제운임 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>2</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>국제운임 (Ocean/Air Freight)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
+                                    <input type="number" value={cb.freightUsd || ''} onChange={e => {
+                                      const val = Number(e.target.value) || 0;
+                                      const nextB = { ...cb, freightUsd: val };
+                                      saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                    }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{freightKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 3. 보험료 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>3</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>보험료 (Cargo Insurance)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
+                                    <input type="number" value={cb.insuranceUsd || ''} onChange={e => {
+                                      const val = Number(e.target.value) || 0;
+                                      const nextB = { ...cb, insuranceUsd: val };
+                                      saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                    }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{insuranceKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 4. 수출국 내륙운송·수출비 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>4</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>수출국 내륙운송·수출비</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: '11px', color: '#64748b' }}>$</span>
+                                    <input type="number" value={cb.originInlandUsd || ''} onChange={e => {
+                                      const val = Number(e.target.value) || 0;
+                                      const nextB = { ...cb, originInlandUsd: val };
+                                      saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                    }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{originInlandKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 5. CIF 과세가격 */}
+                              <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#f8fafc', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', fontWeight: 'bold' }}>5</td>
+                                <td style={{ fontWeight: 800, color: '#0f172a' }}>CIF 과세가격 (Customs Value)</td>
+                                <td style={{ color: '#475569', fontSize: '11px' }}>자동: (1+2+3+4) × 환율</td>
+                                <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{cifKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 6. 관세율 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>6</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>관세율 (Customs Duty Rate)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <input type="number" value={cb.ftaTaxRate || ''} onChange={e => {
+                                      const val = Number(e.target.value) || 0;
+                                      const nextB = { ...cb, ftaTaxRate: val };
+                                      saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                    }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                                    <span style={{ fontSize: '11.5px', color: '#64748b' }}>%</span>
+                                  </div>
+                                </td>
+                                <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
+                                <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
+                              </tr>
+                              {/* 7. 관세 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>7</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>관세 (Customs Duty)</td>
+                                <td style={{ color: '#475569', fontSize: '11px' }}>자동: 5 × 6</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{customsDuty.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 8. 수입 부가세 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>8</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>수입 부가세 (Import VAT)</td>
+                                <td style={{ color: '#475569', fontSize: '11px' }}>자동: (5 + 7) × 10%</td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#475569' }}>{vatKrw.toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#f59e0b', fontSize: '11px', fontWeight: 'bold' }}>조건부 (제외)</td>
+                              </tr>
+                              {/* 9. 통관비 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>9</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>통관비 (Customs Brokerage)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <input type="number" value={cb.clearanceFee || ''} onChange={e => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextB = { ...cb, clearanceFee: val };
+                                    saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                  }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.clearanceFee || 0).toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 10. 항만·공항 비용 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>10</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>항만·공항 비용 (Port Charges)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <input type="number" value={cb.portFee || ''} onChange={e => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextB = { ...cb, portFee: val };
+                                    saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                  }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.portFee || 0).toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 11. 국내 운송비 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>11</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>국내 운송비 (Domestic Transport)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <input type="number" value={cb.domesticTransportFee || ''} onChange={e => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextB = { ...cb, domesticTransportFee: val };
+                                    saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                  }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.domesticTransportFee || 0).toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 12. 하역·장비비 */}
+                              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>12</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>하역·장비비 (Handling Fee)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <input type="number" value={cb.handlingFee || ''} onChange={e => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextB = { ...cb, handlingFee: val };
+                                    saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                  }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.handlingFee || 0).toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                              {/* 13. 기타 비용 */}
+                              <tr style={{ borderBottom: '1px solid #cbd5e1', height: '34px', fontSize: '12.5px' }}>
+                                <td style={{ textAlign: 'center', color: '#64748b' }}>13</td>
+                                <td style={{ fontWeight: 600, color: '#334155' }}>기타 비용 (Other Expenses)</td>
+                                <td style={{ padding: '2px 4px' }}>
+                                  <input type="number" value={cb.otherFee || ''} onChange={e => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextB = { ...cb, otherFee: val };
+                                    saveToStorage(recalculateDetailCosts(importRequests, nextB));
+                                  }} style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                                </td>
+                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(cb.otherFee || 0).toLocaleString()} 원</td>
+                                <td style={{ textAlign: 'center', color: '#22c55e', fontWeight: 'bold' }}>O</td>
+                              </tr>
+                            </>
+                          )}
 
-                          {/* 18. 총 수입원가 */}
+                          {/* 14. 총 수입원가 */}
                           <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#eff6ff', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>18</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>14</td>
                             <td style={{ fontWeight: 800, color: '#1e3a8a' }}>총 수입원가 (Total Import Cost)</td>
-                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 9 + 11 + 13 + 14 + 15 + 16 + 17</td>
+                            <td style={{ color: '#475569', fontSize: '11px' }}>자동: 5 + 7 + 9 + 10 + 11 + 12 + 13</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{totalImportCost.toLocaleString()} 원</td>
                             <td style={{ textAlign: 'center', color: '#1e3a8a', fontWeight: 'bold' }}>O</td>
                           </tr>
-                          {/* 19. 총 현금소요액 */}
+                          {/* 15. 총 현금소요액 */}
                           <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>19</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>15</td>
                             <td style={{ fontWeight: 800, color: '#475569' }}>총 현금소요액 (Total Cash)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 + 수입 부가세</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#475569' }}>{totalCashRequired.toLocaleString()} 원</td>
                             <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                           </tr>
-                          {/* 20. 단위당 수입원가 */}
+                          {/* 16. 단위당 수입원가 */}
                           <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>20</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>16</td>
                             <td style={{ fontWeight: 800, color: '#b45309' }}>단위당 수입원가 (Cost per Unit)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 ÷ 수량</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#b45309' }}>{unitCost.toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}</td>
                             <td style={{ textAlign: 'center', color: '#b45309', fontWeight: 'bold' }}>O</td>
                           </tr>
-                          {/* 21. 마진율 (%) */}
+                          {/* 17. 마진율 (%) */}
                           <tr style={{ borderBottom: '1px solid #f1f5f9', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>21</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>17</td>
                             <td style={{ fontWeight: 600, color: '#334155' }}>마진율 (Margin Rate)</td>
                             <td style={{ padding: '2px 4px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1075,17 +1069,17 @@ export const ImportDetail: React.FC = () => {
                             <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
                             <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                           </tr>
-                          {/* 22. 마진 금액 */}
+                          {/* 18. 마진 금액 */}
                           <tr style={{ borderBottom: '1px solid #f1f5f9', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>22</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>18</td>
                             <td style={{ fontWeight: 600, color: '#334155' }}>마진 금액 (Margin Amount)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 × 마진율</td>
                             <td style={{ textAlign: 'right', fontWeight: 600, color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</td>
                             <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
                           </tr>
-                          {/* 23. 고객 제시 견적금액 */}
+                          {/* 19. 고객 제시 견적금액 */}
                           <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#fef3c7', height: '36px', fontSize: '13px' }}>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>23</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>19</td>
                             <td style={{ fontWeight: 800, color: '#1e3a8a' }}>고객 제시 견적금액 (Customer Quote)</td>
                             <td style={{ color: '#475569', fontSize: '11px' }}>자동: 총 수입원가 + 마진 금액</td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{(request.customerQuoteAmount || 0).toLocaleString()} 원</td>
