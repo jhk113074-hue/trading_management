@@ -72,8 +72,8 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
     const uniqueList: Product[] = [];
     const seen = new Set<string>();
     const boppItems = products.filter(p => (p.nameKo || p.nameEn || p.productCode || '').toLowerCase().includes('bopp'));
-    console.log("=== BOPP ITEMS DEBUG ===");
-    console.log(boppItems);
+    console.log("=== BOPP ITEMS JSON ===");
+    console.log(JSON.stringify(boppItems, null, 2));
 
     products.forEach(p => {
       const code = (p.productCode || p.id || '').replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, "").toLowerCase();
@@ -88,7 +88,7 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
     console.log("Unique list count:", uniqueList.length);
     console.log("Unique list:", uniqueList.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })));
 
-    return uniqueList.filter(p => {
+    const result = uniqueList.filter(p => {
       const matchSearch = 
         (p.productCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.nameKo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,6 +102,11 @@ export const ProductSearchModal: React.FC<Props> = ({ onClose, onSelect, product
 
       return matchSearch && matchCategory && matchSupplier;
     });
+
+    console.log("=== FILTERED PRODUCTS JSON ===");
+    console.log(JSON.stringify(result.map(p => ({ id: p.id, productCode: p.productCode, nameKo: p.nameKo })), null, 2));
+
+    return result;
   }, [products, searchTerm, selectedCategory, selectedSupplier]);
 
   return (
