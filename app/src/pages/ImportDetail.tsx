@@ -1847,14 +1847,22 @@ export const ImportDetail: React.FC = () => {
         )}
 
         {activeTab === '손익검토' && (() => {
-          const plannedCost = (request.costBreakdown?.productCost || 0) + (request.costBreakdown?.freightCost || 0) + (request.costBreakdown?.customsCost || 0) + (request.costBreakdown?.otherCost || 0);
-          const plannedMargin = request.marginAmount || 0;
-          const plannedRevenue = request.customerQuoteAmount || 0;
+          // 계획 (견적단계) 계산: 실제 제품 매입가를 제외하고 2. 예상 운임 + 3. 예상 관세/통관비만 합산
+          const plannedFreight = request.costBreakdown?.freightCost || 0;
+          const plannedCustoms = request.costBreakdown?.customsCost || 0;
 
-          const actualPurchaseCost = request.amount || 0;
-          const actualLogisticsCost = (request.freightAmount || 0) + (request.freightVat || 0);
-          const actualCustomsCost = (request.taxAmount || 0) + (request.taxVat || 0) + (request.customsTaxAmount || 0);
-          const actualTotalCost = actualPurchaseCost + actualLogisticsCost + actualCustomsCost;
+          const plannedCost = plannedFreight + plannedCustoms;
+          const plannedMargin = request.marginAmount || 0;
+          const plannedRevenue = request.customerQuoteAmount || request.amount || 0;
+
+          // 실적 계산 (해외 제품 매입가를 제외하고 2. 운임 + 3. 관세만 합산)
+          // 2) 실제 물류비: 운임 공급가액 (부가세 제외)
+          const actualLogisticsCost = request.freightAmount || 0;
+
+          // 3) 실제 관세: 납부 관세액 (수입세금계산서의 공급가액 및 부가세액은 제외)
+          const actualCustomsCost = request.customsTaxAmount || 0;
+
+          const actualTotalCost = actualLogisticsCost + actualCustomsCost;
 
           const actualRevenue = request.paymentCollectedAmount || plannedRevenue;
           const realizedMargin = actualRevenue - actualTotalCost;

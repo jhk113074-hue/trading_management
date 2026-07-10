@@ -193,8 +193,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [dateFilterType, setDateFilterType] = useState<string>(isQuoteMode ? 'Monthly' : 'Range');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-  const [rangeStart, setRangeStart] = useState<string>('2026-06-09');
-  const [rangeEnd, setRangeEnd] = useState<string>('2026-07-09');
+  const [rangeStart, setRangeStart] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [rangeEnd, setRangeEnd] = useState<string>(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
 
   useEffect(() => {
     const importsRef = collection(doc(db, 'companies', COMPANY_ID), 'imports');
@@ -415,7 +421,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       routeFrom: newRequest.pol || newRequest.routeFrom || '중국 상해항',
       routeTo: newRequest.pod || '한국 내륙',
       manager: newRequest.manager || '김주한',
-      amount: Number(newRequest.amount || 0),
+      amount: (() => {
+        const totalUsd = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
+        return (newRequest.amount === 500000 && totalUsd > 0)
+          ? Math.round(totalUsd * 1450)
+          : Number(newRequest.amount || 0);
+      })(),
       createdAt: '26. 07. 08.',
       importCompany: newRequest.importCompany || 'YSACC',
       importerName: newRequest.importerName || '',

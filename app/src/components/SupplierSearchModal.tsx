@@ -233,30 +233,53 @@ export const SupplierSearchModal: React.FC<Props> = ({ onClose, onSelect, suppli
                             setEditingSupplier(s);
                             setShowSupplierModal(true);
                           }}
+                          title="수정"
                           style={{
-                            background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0 10px',
-                            borderRadius: '4px', fontSize: '12.5px', fontWeight: 700,
-                            color: '#475569', cursor: 'pointer', height: '30px', boxSizing: 'border-box',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '32px',
+                            height: '32px',
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            color: '#475569',
+                            cursor: 'pointer',
+                            boxSizing: 'border-box',
                             transition: 'background 0.2s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                         >
-                          ✏️ 수정
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
                         </button>
                         <button
                           type="button"
                           onClick={() => onSelect(s)}
+                          title="선택"
                           style={{
-                            background: '#3b82f6', border: 'none', padding: '0 12px',
-                            borderRadius: '4px', fontSize: '12.5px', fontWeight: 700,
-                            color: '#fff', cursor: 'pointer', height: '30px', boxSizing: 'border-box',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '32px',
+                            height: '32px',
+                            background: '#3b82f6',
+                            border: 'none',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            boxSizing: 'border-box',
                             transition: 'background 0.2s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
                         >
-                          선택
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                         </button>
                       </div>
                     </td>
