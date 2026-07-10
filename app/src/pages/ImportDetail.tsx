@@ -768,6 +768,11 @@ export const ImportDetail: React.FC = () => {
                       const nextStatus = val === '승인' ? '발주 진행' : '진행 결정 요청';
                       const updated = importRequests.map(r => r.id === id ? { ...r, customerDecision: val, status: nextStatus } : r);
                       saveToStorage(updated);
+                      if (val === '승인') {
+                        navigate(`/imports/${id}?mode=active`, { replace: true });
+                      } else {
+                        navigate(`/imports/${id}?mode=quote`, { replace: true });
+                      }
                     }}
                     style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: '#fff' }}
                   >
@@ -945,7 +950,13 @@ export const ImportDetail: React.FC = () => {
                   <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정</label>
                   <select value={request.customerDecision || '검토중'} onChange={(e) => {
                     const val = e.target.value as any;
-                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, customerDecision: val, customerDecisionDate: new Date().toISOString().slice(0, 10) } : r));
+                    const nextStatus = val === '승인' ? '발주 진행' : '진행 결정 요청';
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, customerDecision: val, status: nextStatus, customerDecisionDate: new Date().toISOString().slice(0, 10) } : r));
+                    if (val === '승인') {
+                      navigate(`/imports/${id}?mode=active`, { replace: true });
+                    } else {
+                      navigate(`/imports/${id}?mode=quote`, { replace: true });
+                    }
                   }} style={{ padding: '7px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}>
                     <option value="검토중">검토중</option>
                     <option value="승인">승인 (진행 결정)</option>
