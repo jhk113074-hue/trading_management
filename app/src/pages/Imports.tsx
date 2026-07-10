@@ -304,6 +304,48 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     customerQuoteAmount: 0
   });
 
+  const resetNewRequestForm = () => {
+    setNewRequest({
+      itemName: '',
+      transportType: 'By Sea',
+      routeFrom: '',
+      routeTo: '',
+      manager: '김주한',
+      amount: 500000,
+      importCompany: 'YSACC',
+      importerName: '',
+      finalCustomer: '',
+      incoterms: 'FOB',
+      paymentTerms: '100% T/T in advance',
+      pol: '',
+      pod: '',
+      origin: 'CHINA',
+      requestDate: new Date().toISOString().slice(0, 10),
+      requestedBy: '',
+      requestNote: '',
+      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }],
+      supplierQuotes: [{ id: 'q1', supplierName: '', itemName: '', amount: 0, currency: 'USD', quoteDate: new Date().toISOString().slice(0, 10) }],
+      costBreakdown: { 
+        productCost: 0, 
+        freightCost: 0, 
+        customsCost: 0, 
+        otherCost: 0,
+        todayExchangeRate: 0,
+        appliedExchangeRate: 0,
+        buyingPriceUsd: 0,
+        buyingQty: 0,
+        ftaTaxRate: 0,
+        antiDumpingRate: 0,
+        transferFee: 0,
+        importDeclareFee: 0,
+        localTransportCost: 0
+      },
+      marginRate: 0,
+      marginAmount: 0,
+      customerQuoteAmount: 0
+    });
+  };
+
   const saveToStorage = (data: ImportRequest[]) => {
     const prevIds = new Set(importRequests.map(r => r.id));
     const nextIds = new Set(data.map(r => r.id));
@@ -411,6 +453,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     const serial = reqId.slice(-2) || '01';
     const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
 
+
+
     const created: ImportRequest = {
       id: reqId,
       blAwb: '-',
@@ -444,6 +488,25 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       pol: newRequest.pol || '',
       pod: newRequest.pod || '',
       piItems: itemsList,
+      supplierQuotes: newRequest.supplierQuotes || [],
+      costBreakdown: newRequest.costBreakdown || {
+        productCost: 0,
+        freightCost: 0,
+        customsCost: 0,
+        otherCost: 0,
+        todayExchangeRate: 0,
+        appliedExchangeRate: 0,
+        buyingPriceUsd: 0,
+        buyingQty: 0,
+        ftaTaxRate: 0,
+        antiDumpingRate: 0,
+        transferFee: 0,
+        importDeclareFee: 0,
+        localTransportCost: 0
+      },
+      marginRate: newRequest.marginRate || 0,
+      marginAmount: newRequest.marginAmount || 0,
+      customerQuoteAmount: newRequest.customerQuoteAmount || 0,
       
       // Default 상세
       portOfLoading: newRequest.pol || newRequest.routeFrom,
@@ -464,22 +527,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     const nextList = [created, ...importRequests];
     saveToStorage(nextList);
     setShowAddModal(false);
-    setNewRequest({
-      itemName: '',
-      transportType: 'By Sea',
-      routeFrom: '',
-      routeTo: '',
-      manager: '김주한',
-      amount: 500000,
-      importCompany: 'YSACC',
-      importerName: '',
-      finalCustomer: '',
-      incoterms: 'FOB',
-      paymentTerms: '100% T/T in advance',
-      pol: '',
-      pod: '',
-      piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }]
-    });
+    resetNewRequestForm();
   };
 
   // 수입 수정 모달 상태
@@ -673,7 +721,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         <div style={{ display: 'flex', gap: '8px', height: '34px' }}>
           {isQuoteMode ? (
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => { resetNewRequestForm(); setShowAddModal(true); }}
               style={{ padding: '0 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s', height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }}
               onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
               onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
@@ -682,7 +730,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </button>
           ) : (
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => { resetNewRequestForm(); setShowAddModal(true); }}
               style={{ padding: '0 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s', height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }}
               onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
               onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
