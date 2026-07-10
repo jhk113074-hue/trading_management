@@ -12,41 +12,60 @@ import ysaccLetterImg from '../assets/ysacc_letterhead.png';
 import ysAccLetterImg from '../assets/ys_acc_letterhead.png';
 import ysaccStampImg from '../assets/ysacc_stamp.png';
 
-const INITIAL_IMPORTS: ImportRequest[] = [
-  {
-    id: '189348',
-    status: '진행 결정 요청',
-    blAwb: '-',
-    poNumber: '-',
-    itemName: 'Fiberglass tissue',
-    transportType: 'FCA | 해상LCL',
-    volume: '0.8 R.TON',
-    routeFrom: '중국 위해항',
-    routeTo: '한국 내륙',
-    manager: '김주한',
-    amount: 489316,
-    createdAt: '2026. 07. 03.',
-    portOfLoading: 'Weihai port (CNWEI)',
-    portOfDischarge: 'Incheon port (KRINC)',
-    vesselName: 'TS NANSHA 26002S',
-    etd: '2026-07-06',
-    eta: '2026-07-08',
-    shipperName: 'Shanghai Warehouse (CNWIP)',
-    shipperPhone: '+86-138-0000-0000',
-    shipperEmail: 'shipper@shanghai.com',
-    packingQty: 4,
-    packingUnit: 'BOXES',
-    dimensions: '125*40*40(CM)',
-    weight: '18.5KG',
-    dangerousCargo: '미포함',
-    msdsStatus: '미포함',
-    lssIncluded: '포함',
-    localTransportType: '독차',
-    customsAgent: '이음관세사무소',
-    cargoInsurance: '미신청',
-    ftaOriginCert: '미신청'
-  }
-];
+const DEFAULT_REQUEST = (id: string): ImportRequest => ({
+  id: id || '',
+  status: '진행 결정 요청',
+  blAwb: '-',
+  poNumber: '-',
+  itemName: '',
+  transportType: 'By Sea',
+  volume: '',
+  routeFrom: '',
+  routeTo: '',
+  manager: '김주한',
+  amount: 0,
+  createdAt: new Date().toLocaleDateString(),
+  importCompany: 'YSACC',
+  importerName: '',
+  finalCustomer: '',
+  origin: 'CHINA',
+  requestDate: new Date().toISOString().slice(0, 10),
+  requestedBy: '',
+  requestNote: '',
+  piItems: [{ name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }],
+  supplierQuotes: [],
+  costBreakdown: {
+    productCost: 0,
+    freightCost: 0,
+    customsCost: 0,
+    otherCost: 0,
+    todayExchangeRate: 0,
+    appliedExchangeRate: 0,
+    buyingPriceUsd: 0,
+    buyingQty: 0,
+    ftaTaxRate: 0,
+    antiDumpingRate: 0,
+    transferFee: 0,
+    importDeclareFee: 0,
+    localTransportCost: 0
+  },
+  marginRate: 0,
+  marginAmount: 0,
+  customerQuoteAmount: 0,
+  portOfLoading: '',
+  portOfDischarge: '인천항',
+  packingQty: 1,
+  packingUnit: 'PALLET',
+  dimensions: '',
+  weight: '',
+  dangerousCargo: '미포함',
+  msdsStatus: '미포함',
+  lssIncluded: '포함',
+  localTransportType: '독차',
+  customsAgent: '이음관세사무소',
+  cargoInsurance: '미신청',
+  ftaOriginCert: '미신청'
+} as ImportRequest);
 
 export const ImportDetail: React.FC = () => {
   const calculateDetailTotalCost = (req: any) => {
@@ -142,7 +161,7 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const request = importRequests.find(r => r.id === id) || INITIAL_IMPORTS[0];
+  const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입요청');
