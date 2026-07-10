@@ -190,39 +190,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               </tr>
             </thead>
             <tbody>
-              {/* 1. 품명 */}
-              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                <td style={{ textAlign: 'center', color: '#64748b' }}>1</td>
-                <td style={{ fontWeight: 600, color: '#334155' }}>품명 (Item Name)</td>
-                <td style={{ color: '#1e293b', fontWeight: 600 }}>{req.itemName || (req.piItems?.[0]?.name) || '-'}</td>
-                <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-              </tr>
-              {/* 2. 수량 */}
-              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                <td style={{ textAlign: 'center', color: '#64748b' }}>2</td>
-                <td style={{ fontWeight: 600, color: '#334155' }}>수량 (Quantity)</td>
-                <td style={{ color: '#1e293b', fontWeight: 600 }}>{(cb.buyingQty || 1).toLocaleString()} {(req.piItems?.[0]?.unit || 'KG')}</td>
-                <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-              </tr>
-              {/* 3. 인코텀즈 */}
-              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                <td style={{ textAlign: 'center', color: '#64748b' }}>3</td>
-                <td style={{ fontWeight: 600, color: '#334155' }}>인코텀즈 (Incoterms)</td>
-                <td style={{ color: '#3b82f6', fontWeight: 700 }}>{cb.incoterms || 'FOB'}</td>
-                <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-              </tr>
-              {/* 4. 적용환율 */}
-              <tr style={{ borderBottom: '1px solid #f1f5f9', height: '34px', fontSize: '12.5px' }}>
-                <td style={{ textAlign: 'center', color: '#64748b' }}>4</td>
-                <td style={{ fontWeight: 600, color: '#334155' }}>적용환율 (Exchange Rate)</td>
-                <td style={{ color: '#1e293b', fontWeight: 600 }}>1 USD = {(cb.appliedExchangeRate || 1450).toLocaleString()} 원</td>
-                <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
-                <td style={{ textAlign: 'center', color: '#94a3b8' }}>-</td>
-              </tr>
-              
+
               {isCostTableExpanded && (
                 <>
                   {/* 5. 물품금액 */}
