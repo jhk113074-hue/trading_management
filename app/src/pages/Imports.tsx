@@ -423,8 +423,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       manager: newRequest.manager || '김주한',
       amount: (() => {
         const totalUsd = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
+        const appliedExchange = newRequest.costBreakdown?.appliedExchangeRate || 1450;
         return (newRequest.amount === 500000 && totalUsd > 0)
-          ? Math.round(totalUsd * 1450)
+          ? Math.round(totalUsd * appliedExchange)
           : Number(newRequest.amount || 0);
       })(),
       createdAt: '26. 07. 08.',
@@ -528,6 +529,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         const serial = req.id.slice(-2) || '01';
         const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
 
+        const totalUsd = itemsList.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
+        const appliedExchange = editingRequest.costBreakdown?.appliedExchangeRate || req.costBreakdown?.appliedExchangeRate || 1450;
+        
         return {
           ...req,
           ...editingRequest,
@@ -536,7 +540,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           volume: `${totalCbm.toFixed(2)} CBM`,
           routeFrom: editingRequest.pol || editingRequest.routeFrom || req.routeFrom,
           routeTo: editingRequest.pod || editingRequest.routeTo || req.routeTo,
-          amount: Number(editingRequest.amount || 0),
+          amount: totalUsd > 0 ? Math.round(totalUsd * appliedExchange) : Number(editingRequest.amount || req.amount || 0),
           packingQty: totalQty || 1,
           weight: `${totalGrossWeight}KG (Net: ${totalNetWeight}KG)`,
           dimensions: itemsList[0]?.palletSize || req.dimensions
