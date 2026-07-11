@@ -593,7 +593,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
   const currentTabBaseRequests = useMemo(() => {
     return isQuoteMode 
-      ? importRequests.filter(req => req.customerDecision !== '승인')
+      ? importRequests
       : importRequests.filter(req => req.customerDecision === '승인');
   }, [importRequests, isQuoteMode]);
 
