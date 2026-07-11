@@ -527,33 +527,33 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'requestDate', direction: 'desc' });
   const [colWidths, setColWidths] = useState<Record<string, number>>({
-    quote_requestDate: 120,
-    quote_quoteNumber: 150,
-    quote_importCompany: 160,
-    quote_itemName: 200,
-    quote_finalSellingPrice: 120,
-    quote_customerQuoteAmount: 130,
-    quote_finalCustomer: 150,
-    quote_importerName: 150,
-    quote_buyingPrice: 120,
-    quote_appliedExchangeRate: 100,
-    quote_customerDecision: 100,
+    quote_requestDate: 80,
+    quote_quoteNumber: 100,
+    quote_importCompany: 75,
+    quote_itemName: 120,
+    quote_finalSellingPrice: 90,
+    quote_customerQuoteAmount: 100,
+    quote_finalCustomer: 90,
+    quote_importerName: 100,
+    quote_buyingPrice: 90,
+    quote_appliedExchangeRate: 70,
+    quote_customerDecision: 75,
 
-    active_requestDate: 110,
-    active_id: 100,
-    active_poNumber: 180,
-    active_importerName: 150,
-    active_itemName: 180,
-    active_transportType: 160,
-    active_importCompany: 140,
-    active_routeFrom: 160,
-    active_etd: 110,
-    active_eta: 110,
-    active_finalCustomer: 140,
-    active_managerName: 100,
-    active_customerQuoteAmount: 140,
-    active_totalBuyingCost: 140,
-    quote_totalBuyingCost: 130,
+    active_requestDate: 80,
+    active_id: 70,
+    active_poNumber: 120,
+    active_importerName: 100,
+    active_itemName: 120,
+    active_transportType: 90,
+    active_importCompany: 75,
+    active_routeFrom: 100,
+    active_etd: 75,
+    active_eta: 75,
+    active_finalCustomer: 90,
+    active_managerName: 60,
+    active_customerQuoteAmount: 100,
+    active_totalBuyingCost: 100,
+    quote_totalBuyingCost: 100,
   });
 
   const handleResizeStart = (colKey: string, e: React.MouseEvent) => {
@@ -1151,11 +1151,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     return (
       <th 
         style={{ 
-          padding: '12px 16px', 
-          fontSize: '11.5px', 
+          padding: '8px 8px', 
+          fontSize: '10.5px', 
           fontWeight: 750, 
           color: '#475569', 
-          letterSpacing: '0.02em', 
+          letterSpacing: '0.01em', 
           textTransform: 'uppercase', 
           width: `${width}px`,
           minWidth: `${width}px`,
@@ -1198,7 +1198,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const getTdStyle = (colKey: string, textAlign: 'left' | 'center' | 'right' = 'left'): React.CSSProperties => {
     const width = colWidths[colKey] || 100;
     return {
-      padding: '10px 16px',
+      padding: '6px 8px',
       width: `${width}px`,
       minWidth: `${width}px`,
       maxWidth: `${width}px`,
@@ -1207,7 +1207,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       whiteSpace: 'nowrap',
       textAlign,
       boxSizing: 'border-box',
-      verticalAlign: 'middle'
+      verticalAlign: 'middle',
+      fontSize: '11.5px',
+      fontWeight: 600
     };
   };
 
@@ -1440,7 +1442,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     navigate(`/imports/${req.id}?mode=active`);
                   }
                 }}
-                style={{ borderBottom: '1px solid #cbd5e1', cursor: 'pointer', height: '64px', transition: 'background 0.2s' }}
+                style={{ borderBottom: '1px solid #cbd5e1', cursor: 'pointer', height: '42px', transition: 'background 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f8fafc')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
               >
