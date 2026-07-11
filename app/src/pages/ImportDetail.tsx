@@ -1296,9 +1296,35 @@ customsDuty,
 
         {activeTab === '견적서작성' && (
           <div>
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
-              ✍️ ③ YSACC/영성ACC 견적서작성 및 발행
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>
+                ✍️ ③ YSACC/영성ACC 견적서작성 및 발행
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowEstimatePrintModal(true)}
+                title="견적서 인쇄 / PDF 출력"
+                style={{
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '4px',
+                  height: '34px',
+                  padding: '0 12px',
+                  fontSize: '12.5px',
+                  fontWeight: 750,
+                  color: '#475569',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+              >
+                🖨️ 견적서 출력
+              </button>
+            </div>
 
             {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
             <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
