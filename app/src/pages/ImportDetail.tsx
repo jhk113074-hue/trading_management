@@ -1031,7 +1031,7 @@ export const ImportDetail: React.FC = () => {
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사명</th>
-                      {hasMultipleItems && <th style={{ padding: '6px 10px', width: '150px' }}>품목</th>}
+                      {hasMultipleItems && <th style={{ padding: '6px 10px', width: '220px' }}>품목</th>}
                       <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
                       <th style={{ padding: '6px 10px', width: '90px' }}>통화</th>
                       <th style={{ padding: '6px 10px', width: '140px' }}>견적일</th>
@@ -1068,13 +1068,14 @@ export const ImportDetail: React.FC = () => {
                                       onClick={() => toggleQuoteItem(q.id, i)}
                                       title={it.name || `품목${i + 1}`}
                                       style={{
-                                        width: '22px', height: '22px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                                        padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                                        whiteSpace: 'nowrap',
                                         border: coveredIdx.includes(i) ? '1px solid #2563eb' : '1px solid #cbd5e1',
                                         background: coveredIdx.includes(i) ? '#2563eb' : '#fff',
-                                        color: coveredIdx.includes(i) ? '#fff' : '#94a3b8'
+                                        color: coveredIdx.includes(i) ? '#fff' : '#64748b'
                                       }}
                                     >
-                                      {i + 1}
+                                      {it.name || `품목${i + 1}`}
                                     </button>
                                   ))}
                                 </div>
