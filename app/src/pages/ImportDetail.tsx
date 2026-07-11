@@ -3122,45 +3122,51 @@ customsDuty,
               🚢 운송사 및 통관 관세사 선정 관리
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              {/* Left Card: Forwarder (2줄 구성) */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
                   Forwarder (지정 운송사)
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>운송사 이름</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Row 1: 운송사 이름, 선적정보 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>운송사 이름</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input 
+                          type="text"
+                          readOnly
+                          placeholder="포워더 검색"
+                          value={request.forwarderName || ''}
+                          style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#f1f5f9', height: '30px' }}
+                        />
+                        <button 
+                          onClick={() => setShowForwarderModal(true)}
+                          style={{ padding: '0 8px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', height: '30px' }}
+                        >
+                          🔍
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적정보(VESSEL정보)</label>
                       <input 
                         type="text"
-                        readOnly
-                        placeholder="지정 운송사(포워더)를 검색해주세요."
-                        value={request.forwarderName || ''}
-                        style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#f1f5f9', height: '30px' }}
+                        placeholder="예: HYUNDAI TOKYO V.024E"
+                        value={request.vesselName || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, vesselName: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
                       />
-                      <button 
-                        onClick={() => setShowForwarderModal(true)}
-                        style={{ padding: '0 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', height: '30px' }}
-                      >
-                        🔍 검색
-                      </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적정보(VESSEL정보)</label>
-                    <input 
-                      type="text"
-                      placeholder="예: HYUNDAI TOKYO V.024E"
-                      value={request.vesselName || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, vesselName: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+
+                  {/* Row 2: ETD, ETA */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETD</label>
                       <input 
@@ -3191,11 +3197,12 @@ customsDuty,
                 </div>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Right Card: Customs Agent (2줄 구성) */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
                   Customs Agent (통관 관세사)
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>관세사사무소 이름</label>
                     <select
