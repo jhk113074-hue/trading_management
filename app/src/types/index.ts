@@ -208,6 +208,8 @@ export interface ImportRequest {
     date: string;
     amountUsd: number;
     amountKrw: number;
+    currency?: 'USD' | 'RMB' | 'EUR' | 'KRW';
+    amount?: number;
     fxMemoFiles?: Array<{ name: string; url: string; path?: string }>;
     remittanceSlipFiles?: Array<{ name: string; url: string; path?: string }>;
     remarks?: string;
