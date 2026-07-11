@@ -77,6 +77,7 @@ interface UploadZoneProps {
 
 const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploading }) => {
   const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -98,14 +99,22 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf("image") !== -1) {
+      if (items[i].type.indexOf("image") !== -1 || items[i].kind === "file") {
         const blob = items[i].getAsFile();
         if (blob) {
-          const file = new File([blob], `screenshot_${Date.now()}.png`, { type: "image/png" });
+          const originalName = blob.name || `file_${Date.now()}`;
+          const ext = originalName.split('.').pop() || 'png';
+          const file = new File([blob], originalName.includes('.') ? originalName : `${originalName}.${ext}`, { type: blob.type });
           onFileSelect(file);
           break;
         }
       }
+    }
+  };
+
+  const handleClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -115,6 +124,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onPaste={handlePaste}
+      onClick={handleClick}
       tabIndex={0}
       style={{
         position: 'relative',
@@ -137,12 +147,13 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
     >
       <span style={{ fontSize: '14px' }}>{isUploading ? '⏳' : '📤'}</span>
       <span style={{ fontWeight: 600 }}>{isUploading ? '업로드 중...' : label}</span>
-      <span style={{ fontSize: '10px', color: '#94a3b8' }}>(클릭/드래그 또는 선택 후 Ctrl+V 스크린샷 붙여넣기)</span>
+      <span style={{ fontSize: '10px', color: '#94a3b8' }}>(클릭/드래그 또는 선택 후 Ctrl+V 스크린샷/파일 붙여넣기)</span>
       <input
         type="file"
+        ref={fileInputRef}
         disabled={isUploading}
         onChange={e => e.target.files?.[0] && onFileSelect(e.target.files[0])}
-        style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+        style={{ display: 'none' }}
       />
     </div>
   );
