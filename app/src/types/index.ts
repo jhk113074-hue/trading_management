@@ -150,9 +150,10 @@ export interface ImportRequest {
   finalCustomer?: string; // 최종고객
   origin?: string; // 원산지 (Origin)
   
-  // PI / 운송비 견적서 유첨 파일 데이터
-  customerPiFile?: { name: string; url: string; path?: string } | null;
-  freightInvoiceFile?: { name: string; url: string; path?: string } | null;
+   // PI / 운송비 견적서/ 수입처 PI 유첨 파일 데이터
+  customerPiFile?: { name: string; url: string; path?: string }[] | { name: string; url: string; path?: string } | null;
+  freightInvoiceFile?: { name: string; url: string; path?: string }[] | { name: string; url: string; path?: string } | null;
+  supplierPiFile?: { name: string; url: string; path?: string }[] | { name: string; url: string; path?: string } | null;
   piItemName?: string;
   piItemQty?: string;
   piItemUnitPrice?: string;

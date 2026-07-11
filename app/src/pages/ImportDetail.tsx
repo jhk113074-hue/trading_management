@@ -513,7 +513,7 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs', file: File) => {
+  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs' | 'supplierPi', file: File) => {
     if (!file) return;
     try {
       setUploading(key);
@@ -521,8 +521,8 @@ export const ImportDetail: React.FC = () => {
       const snapshot = await uploadBytes(storageRef, file);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
-      if (key === 'customerPi' || key === 'freightInvoice') {
-        const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
+      if (key === 'customerPi' || key === 'freightInvoice' || key === 'supplierPi') {
+        const fileProp = key === 'customerPi' ? 'customerPiFile' : (key === 'freightInvoice' ? 'freightInvoiceFile' : 'supplierPiFile');
         const currentVal = (request as any)[fileProp];
         const currentFiles = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
         const nextFiles = [...currentFiles, { name: file.name, url: downloadUrl, path: snapshot.ref.fullPath }];
@@ -559,10 +559,10 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs', fileIndex: number) => {
+  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs' | 'supplierPi', fileIndex: number) => {
     if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
-      if (key === 'customerPi' || key === 'freightInvoice') {
-        const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
+      if (key === 'customerPi' || key === 'freightInvoice' || key === 'supplierPi') {
+        const fileProp = key === 'customerPi' ? 'customerPiFile' : (key === 'freightInvoice' ? 'freightInvoiceFile' : 'supplierPiFile');
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
             const currentVal = (r as any)[fileProp];
@@ -593,7 +593,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const renderMultiUploadZone = (
-    key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs',
+    key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs' | 'supplierPi',
     label: string,
     filesVal: any,
     compact?: boolean
@@ -2943,7 +2943,15 @@ customsDuty,
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            {/* 수입처 PI 유첨 영역 */}
+            <div style={{ marginTop: '16px', background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '8px' }}>
+                📁 수입처 (공급업체) 발급 PI (Proforma Invoice) 유첨
+              </div>
+              {renderMultiUploadZone('supplierPi', '수입처 PI 업로드 및 이미지 캡처(Ctrl+V) 붙여넣기', request.supplierPiFile)}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button
                 onClick={() => setShowPoModal(true)}
                 style={{ padding: '8px 16px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
