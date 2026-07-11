@@ -430,6 +430,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
   // 📅 날짜/기간 필터링 상태 추가 (수입견적: 월별 default, 수입관리: 날짜 default)
   const [dateFilterType, setDateFilterType] = useState<string>('All');
+  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [rangeStart, setRangeStart] = useState<string>(() => {
@@ -996,8 +997,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
     // 📅 날짜/기간 실필터 적용
     base = base.filter(req => {
-      if (!req.requestDate) return false;
-      const d = new Date(req.requestDate);
+      const dateStr = dateFilterTarget === 'etd' ? req.etd : req.requestDate;
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
       if (isNaN(d.getTime())) return false;
       const y = d.getFullYear();
       const m = d.getMonth() + 1;
@@ -1005,8 +1007,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       if (dateFilterType === 'Monthly') {
         return y === selectedYear && m === selectedMonth;
       } else if (dateFilterType === 'Range') {
-        if (rangeStart && req.requestDate < rangeStart) return false;
-        if (rangeEnd && req.requestDate > rangeEnd) return false;
+        if (rangeStart && dateStr < rangeStart) return false;
+        if (rangeEnd && dateStr > rangeEnd) return false;
       }
       return true;
     });
@@ -1076,6 +1078,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     currentTabBaseRequests, 
     searchTerm, 
     dateFilterType, 
+    dateFilterTarget, 
     selectedYear, 
     selectedMonth, 
     rangeStart, 
@@ -1247,6 +1250,16 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
           
+          {/* 조회 기준 */}
+          <select 
+            value={dateFilterTarget}
+            onChange={(e) => setDateFilterTarget(e.target.value as 'date' | 'etd')}
+            style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box', color: '#1e293b', cursor: 'pointer', fontWeight: 600 }}
+          >
+            <option value="date">날짜 기준</option>
+            <option value="etd">ETD 기준</option>
+          </select>
+
           {/* 조회 기간 대분류 */}
           <select 
             value={dateFilterType}
