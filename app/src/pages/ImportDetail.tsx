@@ -2376,41 +2376,120 @@ customsDuty,
             <div style={{ marginBottom: '28px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>수입 기본 정보 및 운송 개요</h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>수입주체</span>
-                    <strong style={{ color: '#0f172a' }}>{request.importCompany || 'YSACC'}</strong>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입주체</label>
+                    <select
+                      value={request.importCompany || 'YSACC'}
+                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
+                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="YSACC">YSACC</option>
+                      <option value="영성ACC">영성ACC</option>
+                    </select>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>수입처 (공급업체)</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{request.importerName || request.shipperName || '-'}</strong>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
+                    <input
+                      type="text"
+                      value={request.importerName || ''}
+                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importerName: e.target.value } : r))}
+                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                    />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>최종 고객사</span>
-                    <strong style={{ color: '#0f172a' }}>{request.finalCustomer || '-'}</strong>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        readOnly
+                        value={request.finalCustomer || ''}
+                        style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomerModal(true)}
+                        style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔍 검색
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>INCOTERMS / 결제 방식</span>
-                    <strong style={{ color: '#334155' }}>{request.incoterms || 'FOB'} / {request.paymentTerms || '100% T/T in advance'}</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>INCOTERMS</label>
+                      <input
+                        type="text"
+                        value={request.incoterms || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, incoterms: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>결제 방식</label>
+                      <input
+                        type="text"
+                        value={request.paymentTerms || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, paymentTerms: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>운송수단</span>
-                    <strong style={{ color: '#2563eb' }}>{request.transportType}</strong>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송수단</label>
+                    <select
+                      value={request.transportType || 'By Sea'}
+                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, transportType: e.target.value } : r))}
+                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="By Sea">By Sea</option>
+                      <option value="By Air">By Air</option>
+                      <option value="By Truck">By Truck</option>
+                      <option value="기타">기타</option>
+                    </select>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>출발 PORT (POL)</span>
-                    <strong style={{ color: '#334155' }}>{request.pol || request.portOfLoading || '-'}</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>출발 PORT (POL)</label>
+                      <input
+                        type="text"
+                        value={request.pol || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pol: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>도착 PORT (POD)</label>
+                      <input
+                        type="text"
+                        value={request.pod || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pod: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>도착 PORT (POD)</span>
-                    <strong style={{ color: '#334155' }}>{request.pod || request.portOfDischarge || '-'}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>총 운송 물동량 / 총중량</span>
-                    <strong style={{ color: '#0f766e' }}>{request.volume} / {request.weight}</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 운송 물동량 (Volume)</label>
+                      <input
+                        type="text"
+                        value={request.volume || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, volume: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총중량 (Weight)</label>
+                      <input
+                        type="text"
+                        value={request.weight || ''}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, weight: e.target.value } : r))}
+                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2439,18 +2518,129 @@ customsDuty,
                   <tbody>
                     {(request.piItems && request.piItems.length > 0) ? (
                       request.piItems.map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
-                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
-                          <td style={{ padding: '8px 12px', fontWeight: 600 }}>{item.name}</td>
-                          <td style={{ padding: '8px 12px' }}>{item.hsCode || '-'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700 }}>{(Number(item.qty) || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'center' }}>{item.unit || 'EA'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>${(Number(item.unitPrice) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700 }}>${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                          <td style={{ padding: '8px 12px' }}>{item.palletSize || '-'}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.cbm) || 0).toFixed(2)}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.netWeight) || 0).toLocaleString()}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>{(Number(item.grossWeight) || 0).toLocaleString()}</td>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '40px' }}>
+                          <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="text"
+                              value={item.name || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], name: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="text"
+                              value={item.hsCode || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], hsCode: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="number"
+                              value={item.qty || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], qty: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="text"
+                              value={item.unit || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], unit: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'center', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="number"
+                              value={item.unitPrice || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], unitPrice: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 700 }}>
+                            ${((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="text"
+                              value={item.palletSize || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], palletSize: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.cbm || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], cbm: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="number"
+                              value={item.netWeight || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], netWeight: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
+                          <td style={{ padding: '4px 6px' }}>
+                            <input
+                              type="number"
+                              value={item.grossWeight || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...nextItems[idx], grossWeight: val };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
+                            />
+                          </td>
                         </tr>
                       ))
                     ) : (
