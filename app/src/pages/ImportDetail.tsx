@@ -74,9 +74,10 @@ interface UploadZoneProps {
   onFileSelect: (file: File) => void;
   label: string;
   isUploading: boolean;
+  compact?: boolean;
 }
 
-const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploading }) => {
+const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploading, compact }) => {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -118,6 +119,65 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
       fileInputRef.current.click();
     }
   };
+
+  if (compact) {
+    return (
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onPaste={handlePaste}
+        onClick={handleClick}
+        tabIndex={0}
+        style={{
+          position: 'relative',
+          border: dragOver ? '2px dashed #2563eb' : '1.5px dashed #cbd5e1',
+          padding: '6px 12px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          color: dragOver ? '#2563eb' : '#64748b',
+          background: dragOver ? '#eff6ff' : '#f8fafc',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          outline: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          minHeight: '34px',
+          boxSizing: 'border-box'
+        }}
+        onMouseEnter={e => {
+          if (!dragOver) {
+            e.currentTarget.style.borderColor = '#94a3b8';
+            e.currentTarget.style.background = '#f1f5f9';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!dragOver) {
+            e.currentTarget.style.borderColor = '#cbd5e1';
+            e.currentTarget.style.background = '#f8fafc';
+          }
+        }}
+      >
+        <span style={{ fontSize: '12px' }}>📎</span>
+        <span style={{ fontWeight: 600, fontSize: '11px' }}>
+          {isUploading ? '업로드 중...' : '클릭 또는 드래그하여 파일 첨부'}
+        </span>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          disabled={isUploading}
+          onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+              onFileSelect(e.target.files[0]);
+            }
+          }}
+          style={{ display: 'none' }} 
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -535,7 +595,8 @@ export const ImportDetail: React.FC = () => {
   const renderMultiUploadZone = (
     key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs',
     label: string,
-    filesVal: any
+    filesVal: any,
+    compact?: boolean
   ) => {
     const fileList = Array.isArray(filesVal) ? filesVal : (filesVal ? [filesVal] : []);
     
@@ -566,6 +627,7 @@ export const ImportDetail: React.FC = () => {
           label={label}
           isUploading={uploading === key}
           onFileSelect={(file) => handleFileUpload(key, file)}
+          compact={compact}
         />
       </div>
     );
@@ -3008,36 +3070,36 @@ customsDuty,
 
         {activeTab === '운송사/관세사 선정' && (
           <div>
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px' }}>
               🚢 운송사 및 통관 관세사 선정 관리
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
                   Forwarder (지정 운송사)
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>운송사 이름</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>운송사 이름</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input 
                         type="text"
                         readOnly
                         placeholder="지정 운송사(포워더)를 검색해주세요."
                         value={request.forwarderName || ''}
-                        style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#f1f5f9' }}
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#f1f5f9', height: '30px' }}
                       />
                       <button 
                         onClick={() => setShowForwarderModal(true)}
-                        style={{ padding: '6px 12px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ padding: '0 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', height: '30px' }}
                       >
-                        🔍 검색/신규등록
+                        🔍 검색
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적정보(VESSEL정보)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적정보(VESSEL정보)</label>
                     <input 
                       type="text"
                       placeholder="예: HYUNDAI TOKYO V.024E"
@@ -3047,12 +3109,12 @@ customsDuty,
                         const updated = importRequests.map(r => r.id === id ? { ...r, vesselName: val } : r);
                         saveToStorage(updated);
                       }}
-                      style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
                     />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETD</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETD</label>
                       <input 
                         type="date"
                         value={request.etd || ''}
@@ -3061,11 +3123,11 @@ customsDuty,
                           const updated = importRequests.map(r => r.id === id ? { ...r, etd: val } : r);
                           saveToStorage(updated);
                         }}
-                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETA</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETA</label>
                       <input 
                         type="date"
                         value={request.eta || ''}
@@ -3074,20 +3136,20 @@ customsDuty,
                           const updated = importRequests.map(r => r.id === id ? { ...r, eta: val } : r);
                           saveToStorage(updated);
                         }}
-                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
                   Customs Agent (통관 관세사)
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>관세사사무소 이름</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>관세사사무소 이름</label>
                     <select
                       value={request.customsAgent || '이음관세사무소'}
                       onChange={(e) => {
@@ -3095,7 +3157,7 @@ customsDuty,
                         const updated = importRequests.map(r => r.id === id ? { ...r, customsAgent: val } : r);
                         saveToStorage(updated);
                       }}
-                      style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', background: '#fff', height: '30px' }}
                     >
                       <option value="이음관세사무소">이음관세사무소</option>
                       <option value="세인관세법인">세인관세법인</option>
@@ -3103,8 +3165,8 @@ customsDuty,
                       <option value="자체 지정관세사">자체 지정관세사</option>
                     </select>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>통관 의뢰 진행상태</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>통관 의뢰 진행상태</label>
                     <select
                       value={request.dangerousCargo || '미의뢰'}
                       onChange={(e) => {
@@ -3112,7 +3174,7 @@ customsDuty,
                         const updated = importRequests.map(r => r.id === id ? { ...r, dangerousCargo: val } : r);
                         saveToStorage(updated);
                       }}
-                      style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', background: '#fff' }}
+                      style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', background: '#fff', height: '30px' }}
                     >
                       <option value="미의뢰">미의뢰</option>
                       <option value="서류 검토중">서류 검토중 (Pending Doc Review)</option>
@@ -3124,42 +3186,42 @@ customsDuty,
               </div>
             </div>
 
-            <div style={{ borderBottom: '2px solid var(--border-default)', margin: '32px 0 24px 0' }} />
+            <div style={{ borderBottom: '1px solid var(--border-default)', margin: '16px 0 12px 0' }} />
 
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '12px' }}>
               📁 수입 서류 및 통관 서류 업로드 관리
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', marginBottom: '12px' }}>
               {/* 필수 첨부 (CI, PL, CO, BL, 수입면장) */}
-              <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '4px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '2px' }}>
                   필수 첨부 (*)
                 </div>
 
                 {/* 1. CI & PL */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {renderMultiUploadZone('ciPl', 'C/I & P/L 업로드', documents.ciPl)}
+                  {renderMultiUploadZone('ciPl', 'C/I & P/L 업로드', documents.ciPl, true)}
                 </div>
 
                 {/* 2. CO */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {renderMultiUploadZone('co', 'CO 업로드', documents.co)}
+                  {renderMultiUploadZone('co', 'CO 업로드', documents.co, true)}
                 </div>
 
                 {/* 3. BL */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {renderMultiUploadZone('blAwbDoc', 'BL(AWB) 업로드', documents.blAwbDoc)}
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+                  {renderMultiUploadZone('blAwbDoc', 'BL(AWB) 업로드', documents.blAwbDoc, true)}
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '1px' }}>
                     <input 
                       type="text"
                       value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
@@ -3169,66 +3231,66 @@ customsDuty,
                         saveToStorage(updated);
                       }}
                       placeholder="B/L 번호 직접 입력"
-                      style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '12px', outline: 'none' }}
+                      style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', height: '28px' }}
                     />
                   </div>
                 </div>
 
                 {/* 4. 수입신고필증 (수입면장) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {renderMultiUploadZone('customsPermit', '수입신고필증 업로드', documents.customsPermit)}
+                  {renderMultiUploadZone('customsPermit', '수입신고필증 업로드', documents.customsPermit, true)}
                 </div>
               </div>
 
               {/* 선택 첨부 및 정산서류 영역 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '2px' }}>
                     선택 첨부 (HS CODE 요건 / 운임명세표 등)
                   </div>
 
                   {/* 1. HS CODE에 따른 관세 및 수입요건 정보 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       📋 HS CODE 관세 및 수입요건 정보 {documents.hsCustomsInfo && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {renderMultiUploadZone('hsCustomsInfo', 'HS CODE 관세 및 수입요건 정보 업로드', documents.hsCustomsInfo)}
+                    {renderMultiUploadZone('hsCustomsInfo', 'HS CODE 관세 및 수입요건 정보 업로드', documents.hsCustomsInfo, true)}
                   </div>
 
                   {/* 2. 수입운임 거래명세표 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       💵 수입운임 거래명세표 {request.freightInvoiceFile && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {renderMultiUploadZone('freightInvoice', '수입운임 거래명세표 업로드', request.freightInvoiceFile)}
+                    {renderMultiUploadZone('freightInvoice', '수입운임 거래명세표 업로드', request.freightInvoiceFile, true)}
                   </div>
 
                   {/* 3. 인증/검역 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {renderMultiUploadZone('inspect', '인증/검역 서류 업로드', documents.inspect)}
+                    {renderMultiUploadZone('inspect', '인증/검역 서류 업로드', documents.inspect, true)}
                   </div>
 
                   {/* 4. 기타 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {renderMultiUploadZone('etc', '기타 파일 업로드', documents.etc)}
+                    {renderMultiUploadZone('etc', '기타 파일 업로드', documents.etc, true)}
                   </div>
                 </div>
 
                 {/* 하단: 정산 관련 세금계산서 영역 */}
-                <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>}
                   </div>
-                  {renderMultiUploadZone('taxInvoice', '수입세금계산서 업로드', documents.taxInvoice)}
+                  {renderMultiUploadZone('taxInvoice', '수입세금계산서 업로드', documents.taxInvoice, true)}
                 </div>
               </div>
             </div>
