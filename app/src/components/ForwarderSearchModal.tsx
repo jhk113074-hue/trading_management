@@ -42,6 +42,8 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
   }, [isDragging]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const filteredForwarders = useMemo(() => {
     // Filter only suppliers where category is "포워딩사"
@@ -155,7 +157,7 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                   <th style={{ padding: '8px 10px' }}>사업자번호</th>
                   <th style={{ padding: '8px 10px' }}>대표자</th>
                   <th style={{ padding: '8px 10px' }}>전화번호</th>
-                  <th style={{ padding: '8px 10px', width: '80px', textAlign: 'center' }}>선택</th>
+                  <th style={{ padding: '8px 10px', width: '230px', textAlign: 'center' }}>관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -171,19 +173,79 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.bizNumber || '-'}</td>
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.representative || '-'}</td>
                     <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{s.phone || '-'}</td>
-                    <td style={{ padding: '10px', textAlign: 'center' }}>
-                      <button
-                        onClick={() => onSelect(s)}
-                        style={{
-                          padding: '4px 10px', background: '#3b82f6', color: '#fff',
-                          border: 'none', borderRadius: '4px', cursor: 'pointer',
-                          fontSize: '11.5px', fontWeight: 700, transition: 'background-color 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
-                        onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
-                      >
-                        선택
-                      </button>
+                    <td style={{ padding: '10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => onSelect(s)}
+                          style={{
+                            padding: '4px 8px', background: '#3b82f6', color: '#fff',
+                            border: 'none', borderRadius: '4px', cursor: 'pointer',
+                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                        >
+                          선택
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingSupplier(s);
+                            setShowEditModal(true);
+                          }}
+                          style={{
+                            padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569',
+                            borderRadius: '4px', cursor: 'pointer',
+                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                        >
+                          편집
+                        </button>
+                        <button
+                          onClick={() => {
+                            const { id: _, supplierCode: __, ...copied } = s;
+                            setEditingSupplier({
+                              ...copied,
+                              name: `${s.name} (복사본)`
+                            } as any);
+                            setShowEditModal(true);
+                          }}
+                          style={{
+                            padding: '4px 8px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534',
+                            borderRadius: '4px', cursor: 'pointer',
+                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dcfce7'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f0fdf4'}
+                        >
+                          복사
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`${s.name} 업체를 삭제하시겠습니까?`)) {
+                              try {
+                                const { deleteDoc, doc } = await import('firebase/firestore');
+                                const { db, COMPANY_ID } = await import('../firebase');
+                                await deleteDoc(doc(db, 'companies', COMPANY_ID, 'suppliers', s.id));
+                              } catch (err) {
+                                console.error('Failed to delete supplier:', err);
+                                alert('삭제에 실패했습니다.');
+                              }
+                            }
+                          }}
+                          style={{
+                            padding: '4px 8px', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b',
+                            borderRadius: '4px', cursor: 'pointer',
+                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -201,6 +263,22 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
           onSave={(newForwarder) => {
             onSelect(newForwarder);
             setShowRegisterModal(false);
+          }}
+        />
+      )}
+
+      {/* 포워딩사 수정 및 복사 모달 오버레이 연결 */}
+      {showEditModal && editingSupplier && (
+        <SupplierModal 
+          initialSupplier={editingSupplier}
+          defaultCategory="포워딩사"
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingSupplier(null);
+          }} 
+          onSave={() => {
+            setShowEditModal(false);
+            setEditingSupplier(null);
           }}
         />
       )}
