@@ -521,6 +521,43 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedImporter, setSelectedImporter] = useState('All');
+  const [selectedItemName, setSelectedItemName] = useState('All');
+  const [selectedCustomer, setSelectedCustomer] = useState('All');
+
+  const currentTabBaseRequests = useMemo(() => {
+    return importRequests.filter(req => {
+      if (isQuoteMode) {
+        return req.customerDecision !== '승인';
+      } else {
+        return req.customerDecision === '승인';
+      }
+    });
+  }, [importRequests, isQuoteMode]);
+
+  const uniqueImporters = useMemo(() => {
+    const set = new Set<string>();
+    currentTabBaseRequests.forEach(r => {
+      if (r.importerName) set.add(r.importerName);
+    });
+    return Array.from(set).sort();
+  }, [currentTabBaseRequests]);
+
+  const uniqueItems = useMemo(() => {
+    const set = new Set<string>();
+    currentTabBaseRequests.forEach(r => {
+      if (r.itemName) set.add(r.itemName);
+    });
+    return Array.from(set).sort();
+  }, [currentTabBaseRequests]);
+
+  const uniqueCustomers = useMemo(() => {
+    const set = new Set<string>();
+    currentTabBaseRequests.forEach(r => {
+      if (r.finalCustomer) set.add(r.finalCustomer);
+    });
+    return Array.from(set).sort();
+  }, [currentTabBaseRequests]);
   const [showSupplierSearch, setShowSupplierSearch] = useState(false);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [productSearchTargetIdx, setProductSearchTargetIdx] = useState<number | null>(null);
@@ -891,9 +928,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   };
 
   const filteredRequests = useMemo(() => {
-    let base = isQuoteMode 
-      ? importRequests 
-      : importRequests.filter(req => req.customerDecision === '승인');
+    let base = [...currentTabBaseRequests];
 
     // 📅 날짜/기간 실필터 적용
     base = base.filter(req => {
@@ -912,6 +947,17 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       return true;
     });
 
+    // 🔍 수입처/품명/최종고객별 Select Dropdown 필터 적용
+    if (selectedImporter !== 'All') {
+      base = base.filter(req => req.importerName === selectedImporter);
+    }
+    if (selectedItemName !== 'All') {
+      base = base.filter(req => req.itemName === selectedItemName);
+    }
+    if (selectedCustomer !== 'All') {
+      base = base.filter(req => req.finalCustomer === selectedCustomer);
+    }
+
     if (!searchTerm.trim()) return base;
     return base.filter(req =>
       req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -920,7 +966,18 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       (req.shipperName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [importRequests, searchTerm, isQuoteMode, dateFilterType, selectedYear, selectedMonth, rangeStart, rangeEnd]);
+  }, [
+    currentTabBaseRequests, 
+    searchTerm, 
+    dateFilterType, 
+    selectedYear, 
+    selectedMonth, 
+    rangeStart, 
+    rangeEnd,
+    selectedImporter,
+    selectedItemName,
+    selectedCustomer
+  ]);
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
@@ -992,7 +1049,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </div>
           )}
 
-          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', overflow: 'hidden', maxWidth: '320px', width: '100%', height: '34px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', overflow: 'hidden', maxWidth: '240px', width: '100%', height: '34px', boxSizing: 'border-box' }}>
             <input 
               type="text" 
               placeholder="의뢰번호, 품명, 수입처, 출발지 검색..." 
@@ -1001,6 +1058,36 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               style={{ border: 'none', padding: '0 12px', fontSize: '13px', outline: 'none', flex: 1, height: '100%', color: '#1e293b' }}
             />
           </div>
+
+          {/* 🔍 수입처 필터 */}
+          <select
+            value={selectedImporter}
+            onChange={(e) => setSelectedImporter(e.target.value)}
+            style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', cursor: 'pointer', outline: 'none' }}
+          >
+            <option value="All">전체 수입처</option>
+            {uniqueImporters.map(imp => <option key={imp} value={imp}>{imp}</option>)}
+          </select>
+
+          {/* 🔍 품명 필터 */}
+          <select
+            value={selectedItemName}
+            onChange={(e) => setSelectedItemName(e.target.value)}
+            style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', cursor: 'pointer', outline: 'none', maxWidth: '160px' }}
+          >
+            <option value="All">전체 품명</option>
+            {uniqueItems.map(it => <option key={it} value={it}>{it}</option>)}
+          </select>
+
+          {/* 🔍 최종고객 필터 */}
+          <select
+            value={selectedCustomer}
+            onChange={(e) => setSelectedCustomer(e.target.value)}
+            style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', cursor: 'pointer', outline: 'none' }}
+          >
+            <option value="All">전체 최종고객</option>
+            {uniqueCustomers.map(cust => <option key={cust} value={cust}>{cust}</option>)}
+          </select>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', height: '34px' }}>
