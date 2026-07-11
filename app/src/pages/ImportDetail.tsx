@@ -931,6 +931,8 @@ export const ImportDetail: React.FC = () => {
 
         {activeTab === '견적수령/네고' && (() => {
           const quotes = request.supplierQuotes || [];
+          const quoteItems = request.piItems || [];
+          const hasMultipleItems = quoteItems.length > 1;
           const totalQtyForCalc = totalQty || 1;
 
           const saveQuotes = (nextQuotes: NonNullable<ImportRequest['supplierQuotes']>) => {
@@ -945,13 +947,22 @@ export const ImportDetail: React.FC = () => {
               currency: 'USD',
               quoteDate: new Date().toISOString().slice(0, 10),
               status: '검토중' as const,
-              note: ''
+              note: '',
+              itemIndices: quoteItems.map((_, i) => i) // 기본값: 전체 품목 커버 (품목 1개면 신경 쓸 필요 없음)
             };
             saveQuotes([...quotes, newQuote]);
           };
 
           const updateQuote = (qid: string, patch: Partial<NonNullable<ImportRequest['supplierQuotes']>[number]>) => {
             saveQuotes(quotes.map(q => q.id === qid ? { ...q, ...patch } : q));
+          };
+
+          const toggleQuoteItem = (qid: string, itemIdx: number) => {
+            const target = quotes.find(q => q.id === qid);
+            if (!target) return;
+            const current = target.itemIndices ?? quoteItems.map((_, i) => i);
+            const next = current.includes(itemIdx) ? current.filter(i => i !== itemIdx) : [...current, itemIdx].sort((a, b) => a - b);
+            updateQuote(qid, { itemIndices: next.length > 0 ? next : current }); // 최소 1개는 유지
           };
 
           const deleteQuote = (qid: string) => {
@@ -962,21 +973,39 @@ export const ImportDetail: React.FC = () => {
           const confirmSupplier = (qid: string) => {
             const target = quotes.find(q => q.id === qid);
             if (!target) return;
-            if (!window.confirm(`"${target.supplierName || '이 공급사'}"의 금액(${target.amount.toLocaleString()} ${target.currency || 'USD'})을 확정하고, 수입원가계산의 물품금액으로 반영하시겠습니까?`)) return;
+            const coveredIdx = (target.itemIndices && target.itemIndices.length > 0) ? target.itemIndices : quoteItems.map((_, i) => i);
+            const coveredNames = coveredIdx.map(i => quoteItems[i]?.name || `품목${i + 1}`).join(', ');
+
+            if (!window.confirm(`"${target.supplierName || '이 공급사'}"의 금액(${target.amount.toLocaleString()} ${target.currency || 'USD'})을 확정합니다.\n적용 품목: ${coveredNames}\n해당 품목들의 단가가 이 금액에 맞춰 재계산됩니다. 계속할까요?`)) return;
+
+            // 협상금액을 커버 품목들에 "원래 요청 비중"대로 배분해 품목별 단가를 재산정
+            // (품목별 마진/HS코드 등은 그대로 두고, 단가만 협상 결과에 맞게 조정)
+            const originalSubtotal = coveredIdx.reduce((sum, i) => sum + ((Number(quoteItems[i]?.qty) || 0) * (Number(quoteItems[i]?.unitPrice) || 0)), 0);
+            const nextPiItems = quoteItems.map((it, i) => {
+              if (!coveredIdx.includes(i)) return it;
+              const qty = Number(it.qty) || 0;
+              const origAmount = qty * (Number(it.unitPrice) || 0);
+              const share = originalSubtotal > 0 ? origAmount / originalSubtotal : 1 / coveredIdx.length;
+              const allocatedAmount = target.amount * share;
+              const nextUnitPrice = qty > 0 ? allocatedAmount / qty : Number(it.unitPrice) || 0;
+              return { ...it, unitPrice: (Math.round(nextUnitPrice * 10000) / 10000).toString(), amount: allocatedAmount.toFixed(2) };
+            });
 
             const nextQuotes = quotes.map(q => q.id === qid ? { ...q, status: '확정' as const } : q);
-            // 참고: USD 기준 단가로 반영합니다. 협상 통화가 USD가 아니면(CNY/KRW 등)
-            // ③ 수입원가계산 탭에서 실제 환율을 적용해 물품금액을 다시 확인해주세요.
-            const unitPriceUsd = target.amount / totalQtyForCalc;
+
+            // ③ 수입원가계산의 블렌디드 물품금액/수량도 전체 품목 기준으로 동기화 (환율 적용 등 오버헤드 계산용)
+            const totalBuyingAmount = nextPiItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
+            const totalBuyingQty = nextPiItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0) || totalQtyForCalc;
             const nextCostBreakdown = {
               ...(request.costBreakdown || {}),
-              buyingPriceUsd: Math.round(unitPriceUsd * 10000) / 10000,
-              buyingQty: totalQtyForCalc
+              buyingPriceUsd: Math.round((totalBuyingAmount / totalBuyingQty) * 10000) / 10000,
+              buyingQty: totalBuyingQty
             };
+
             saveToStorage(importRequests.map(r => r.id === id
-              ? { ...r, supplierQuotes: nextQuotes, costBreakdown: nextCostBreakdown }
+              ? { ...r, supplierQuotes: nextQuotes, piItems: nextPiItems, costBreakdown: nextCostBreakdown }
               : r));
-            alert('확정되었습니다. ③ 수입원가계산 탭의 물품금액에 자동으로 반영되었습니다.');
+            alert('확정되었습니다. 해당 품목들의 단가와 ③ 수입원가계산의 물품금액에 자동으로 반영되었습니다.');
           };
 
           const statusColor: Record<string, { bg: string; fg: string; border: string }> = {
@@ -992,7 +1021,9 @@ export const ImportDetail: React.FC = () => {
                 🤝 ② 견적수령/네고
               </h3>
               <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: '#64748b' }}>
-                공급사별로 받은 견적을 한 줄씩 입력하세요. 협상 중 가격이 바뀌면 금액 칸을 그대로 수정하시면 됩니다. 최종 합의된 공급사에서 "확정"을 누르면 다음 단계(수입원가계산)의 물품금액에 자동으로 반영됩니다.
+                공급사별로 받은 견적을 한 줄씩 입력하세요. 협상 중 가격이 바뀌면 금액 칸을 그대로 수정하시면 됩니다.
+                {hasMultipleItems && ' 품목이 여러 개일 때는 "품목" 칸에서 이 견적이 어떤 품목을 커버하는지 선택하세요(기본은 전체 품목).'}
+                {' '}최종 합의된 공급사에서 "확정"을 누르면 해당 품목들의 단가가 자동으로 반영됩니다.
               </p>
 
               <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden' }}>
@@ -1000,6 +1031,7 @@ export const ImportDetail: React.FC = () => {
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사명</th>
+                      {hasMultipleItems && <th style={{ padding: '6px 10px', width: '150px' }}>품목</th>}
                       <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
                       <th style={{ padding: '6px 10px', width: '90px' }}>통화</th>
                       <th style={{ padding: '6px 10px', width: '140px' }}>견적일</th>
@@ -1012,19 +1044,42 @@ export const ImportDetail: React.FC = () => {
                   <tbody>
                     {quotes.length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                        <td colSpan={hasMultipleItems ? 9 : 8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
                           등록된 공급사 견적이 없습니다. 아래 "＋ 공급사 견적 추가"로 시작하세요.
                         </td>
                       </tr>
                     ) : (
                       quotes.map(q => {
                         const sc = statusColor[q.status || '검토중'];
+                        const coveredIdx = q.itemIndices ?? quoteItems.map((_, i) => i);
                         return (
                           <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: q.status === '확정' ? '#f0fdf4' : undefined }}>
                             <td style={{ padding: '6px 8px' }}>
                               <input type="text" value={q.supplierName} onChange={e => updateQuote(q.id, { supplierName: e.target.value })}
                                 placeholder="공급사명" style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                             </td>
+                            {hasMultipleItems && (
+                              <td style={{ padding: '6px 8px' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                  {quoteItems.map((it, i) => (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      onClick={() => toggleQuoteItem(q.id, i)}
+                                      title={it.name || `품목${i + 1}`}
+                                      style={{
+                                        width: '22px', height: '22px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                                        border: coveredIdx.includes(i) ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                                        background: coveredIdx.includes(i) ? '#2563eb' : '#fff',
+                                        color: coveredIdx.includes(i) ? '#fff' : '#94a3b8'
+                                      }}
+                                    >
+                                      {i + 1}
+                                    </button>
+                                  ))}
+                                </div>
+                              </td>
+                            )}
                             <td style={{ padding: '6px 8px' }}>
                               <input type="number" value={q.amount} onChange={e => updateQuote(q.id, { amount: Number(e.target.value) || 0 })}
                                 style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', fontWeight: 700, boxSizing: 'border-box' }} />
@@ -1498,6 +1553,58 @@ customsDuty,
               </div>
 
             </div>
+
+            {/* 품목별 원가 배분표 — 품목이 2개 이상일 때만 표시 (단일 품목이면 위 계산표가 곧 그 품목의 원가이므로 생략) */}
+            {(request.piItems || []).length > 1 && (() => {
+              const cb = request.costBreakdown || {};
+              const items = request.piItems || [];
+              const { totalImportCost } = calculateTotalCostHelper(cb, items);
+              const totalAmountAllItems = items.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0) || 1;
+
+              return (
+                <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 품목별 원가 배분표</span>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>공통비용(운임·보험·관세·통관비 등)을 품목별 금액 비중으로 배분한 결과입니다</span>
+                  </div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '32px' }}>
+                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>품목명</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>수량</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>단가(USD)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>금액(USD)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>배분 비중</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>배분 총원가(KRW)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>품목별 단위원가(KRW)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((it, idx) => {
+                          const qty = Number(it.qty) || 0;
+                          const itemAmount = qty * (Number(it.unitPrice) || 0);
+                          const share = itemAmount / totalAmountAllItems;
+                          const allocatedCost = Math.round(totalImportCost * share);
+                          const unitCost = qty > 0 ? Math.round(allocatedCost / qty) : 0;
+                          return (
+                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '32px' }}>
+                              <td style={{ padding: '6px 8px', fontWeight: 600 }}>{it.name || `품목${idx + 1}`}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>{qty.toLocaleString()} {it.unit || ''}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>${(Number(it.unitPrice) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right' }}>${itemAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', color: '#64748b' }}>{(share * 100).toFixed(1)}%</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{allocatedCost.toLocaleString()} 원</td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800, color: '#b45309' }}>{unitCost.toLocaleString()} 원</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 다음단계로 가기 버튼 */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>

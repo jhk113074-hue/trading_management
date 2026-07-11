@@ -201,6 +201,7 @@ export interface ImportRequest {
     file?: { name: string; url: string; path?: string } | null;
     note?: string; // 협상 메모 (예: "1차 3.8→3.6 협의")
     status?: '검토중' | '네고중' | '확정' | '거절'; // 이 공급사 견적의 진행 상태
+    itemIndices?: number[]; // 이 견적이 커버하는 piItems의 인덱스 목록 (다품목일 때 품목별로 다른 공급사 사용 가능). 미지정 시 전체 품목으로 간주.
   }>;
   costBreakdown?: {
     productCost?: number; // 제품 원가 (KRW 환산)
