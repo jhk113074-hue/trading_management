@@ -3094,9 +3094,37 @@ customsDuty,
               </div>
 
               <div style={{ background: '#eff6ff', padding: '18px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a', display: 'block', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
-                  📑 4. ⑤ 고객사 정산 완료 (거래명세표 / 세금계산서 / 수금)
-                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a' }}>
+                    📑 4. ⑤ 고객사 정산 완료 (거래명세표 / 세금계산서 / 수금)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const defaultItemName = request.itemName || '';
+                      const quoteTotal = request.customerQuoteAmount || 0;
+                      const computedSupply = Math.round(quoteTotal / 1.1);
+                      const computedVat = quoteTotal - computedSupply;
+                      const qty = Number(request.costBreakdown?.buyingQty) || request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                      const unitPrice = Math.round(computedSupply / qty);
+
+                      const updated = importRequests.map(r => r.id === id ? { 
+                        ...r, 
+                        taxInvoiceItemName: defaultItemName,
+                        taxInvoiceUnitPrice: unitPrice,
+                        taxInvoiceTotalAmount: computedSupply,
+                        taxInvoiceVat: computedVat,
+                        taxInvoiceGrandTotal: quoteTotal
+                      } : r);
+                      saveToStorage(updated);
+                    }}
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', padding: '4px 8px', transition: 'background 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+                  >
+                    ⚡ 견적정보에서 계산서 자동입력
+                  </button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>거래명세표 발송일</label>
@@ -3125,6 +3153,57 @@ customsDuty,
                       const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceIssuedDate: e.target.value } : r);
                       saveToStorage(updated);
                     }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 품명</label>
+                    <input type="text" value={request.taxInvoiceItemName || ''} onChange={(e) => {
+                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceItemName: e.target.value } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} placeholder="품명 입력" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 단가 (₩)</label>
+                    <input type="number" value={request.taxInvoiceUnitPrice || ''} onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceUnitPrice: val } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="단가 입력" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 총액 (공급가액, ₩)</label>
+                    <input type="number" value={request.taxInvoiceTotalAmount || ''} onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      const computedVat = Math.round(val * 0.1);
+                      const computedGrand = val + computedVat;
+                      const updated = importRequests.map(r => r.id === id ? { 
+                        ...r, 
+                        taxInvoiceTotalAmount: val,
+                        taxInvoiceVat: computedVat,
+                        taxInvoiceGrandTotal: computedGrand
+                      } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="공급가액 입력" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 부가세 (₩)</label>
+                    <input type="number" value={request.taxInvoiceVat || ''} onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      const supply = Number(request.taxInvoiceTotalAmount) || 0;
+                      const updated = importRequests.map(r => r.id === id ? { 
+                        ...r, 
+                        taxInvoiceVat: val,
+                        taxInvoiceGrandTotal: supply + val
+                      } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="부가세 입력" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 합계 (₩)</label>
+                    <input type="number" value={request.taxInvoiceGrandTotal || ''} onChange={(e) => {
+                      const val = Number(e.target.value) || 0;
+                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceGrandTotal: val } : r);
+                      saveToStorage(updated);
+                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="합계 금액 입력" />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>대금 수령일</label>

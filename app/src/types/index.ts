@@ -239,6 +239,11 @@ export interface ImportRequest {
   dealStatementConfirmedDate?: string; // 고객 확인일
   taxInvoiceNumber?: string; // 세금계산서 승인번호
   taxInvoiceIssuedDate?: string; // 세금계산서 발행일
+  taxInvoiceItemName?: string; // 세금계산서 품명
+  taxInvoiceUnitPrice?: number; // 세금계산서 단가
+  taxInvoiceTotalAmount?: number; // 세금계산서 총액
+  taxInvoiceVat?: number; // 세금계산서 부가세
+  taxInvoiceGrandTotal?: number; // 세금계산서 합계
   paymentCollectedDate?: string; // 대금 수령일
   paymentCollectedAmount?: number; // 수령 금액
 
