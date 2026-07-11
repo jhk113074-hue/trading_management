@@ -293,7 +293,8 @@ export const ImportDetail: React.FC = () => {
   const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
-  const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
+  const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
+  const [expandedQuoteCardId, setExpandedQuoteCardId] = useState<string | null>(null);
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
@@ -559,18 +560,19 @@ export const ImportDetail: React.FC = () => {
         <div style={{ display: 'flex', gap: '24px', borderBottom: '2px solid var(--border-color)', marginBottom: '24px' }}>
           {([
             { key: '수입품 견적요청', label: '① 수입품 견적요청' },
-            { key: '수입원가계산', label: '② 수입원가계산' },
-            { key: '견적서작성', label: '③ 견적서작성' },
-            { key: '수입내역', label: '④ 발주/매입' },
-            { key: '운송사/관세사 선정', label: '⑤ 물류/통관' },
+            { key: '견적수령/네고', label: '② 견적수령/네고' },
+            { key: '수입원가계산', label: '③ 수입원가계산' },
+            { key: '견적서작성', label: '④ 견적서작성' },
+            { key: '수입내역', label: '⑤ 발주/매입' },
+            { key: '운송사/관세사 선정', label: '⑥ 물류/통관' },
             { key: '서류', label: '서류' },
-            { key: '정산', label: '⑥ 정산/완료' },
-            { key: '손익검토', label: '⑦ 손익검토' },
+            { key: '정산', label: '⑦ 정산/완료' },
+            { key: '손익검토', label: '⑧ 손익검토' },
             { key: '로그', label: '로그' }
           ] as const)
           .filter(tab => {
             if (viewMode === 'quote') {
-              return tab.key === '수입품 견적요청' || tab.key === '수입원가계산' || tab.key === '견적서작성';
+              return tab.key === '수입품 견적요청' || tab.key === '견적수령/네고' || tab.key === '수입원가계산' || tab.key === '견적서작성';
             } else {
               return true;
             }
@@ -919,19 +921,346 @@ export const ImportDetail: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('수입원가계산')}
+                onClick={() => setActiveTab('견적수령/네고')}
                 style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                다음 단계 (수입원가계산) ➡️
+                다음 단계 (견적수령/네고) ➡️
               </button>
             </div>
           </div>
         )}
 
+        {activeTab === '견적수령/네고' && (() => {
+          const quotes = request.supplierQuotes || [];
+          const totalQtyForCalc = totalQty || 1;
+
+          const saveQuotes = (nextQuotes: NonNullable<ImportRequest['supplierQuotes']>) => {
+            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
+          };
+
+          const addSupplierQuote = () => {
+            const newQuote = {
+              id: `q${Date.now()}`,
+              supplierName: '',
+              amount: 0,
+              currency: 'USD',
+              quoteDate: new Date().toISOString().slice(0, 10),
+              status: '검토중' as const,
+              rounds: []
+            };
+            saveQuotes([newQuote, ...quotes]);
+            setExpandedQuoteCardId(newQuote.id);
+          };
+
+          const updateQuote = (qid: string, patch: Partial<NonNullable<ImportRequest['supplierQuotes']>[number]>) => {
+            saveQuotes(quotes.map(q => q.id === qid ? { ...q, ...patch } : q));
+          };
+
+          const deleteQuote = (qid: string) => {
+            if (!window.confirm('이 공급사 견적을 삭제하시겠습니까?')) return;
+            saveQuotes(quotes.filter(q => q.id !== qid));
+          };
+
+          const addRound = (qid: string, by: '공급사' | '당사') => {
+            const target = quotes.find(q => q.id === qid);
+            if (!target) return;
+            const rounds = target.rounds || [];
+            const lastAmount = rounds.length > 0 ? rounds[rounds.length - 1].amount : target.amount;
+            const newRound = {
+              id: `r${Date.now()}`,
+              round: rounds.length + 1,
+              by,
+              amount: lastAmount,
+              currency: target.currency || 'USD',
+              date: new Date().toISOString().slice(0, 10),
+              memo: ''
+            };
+            const nextRounds = [...rounds, newRound];
+            updateQuote(qid, { rounds: nextRounds, amount: newRound.amount });
+          };
+
+          const updateRound = (qid: string, rid: string, patch: Partial<{ amount: number; date: string; memo: string; by: '공급사' | '당사' }>) => {
+            const target = quotes.find(q => q.id === qid);
+            if (!target) return;
+            const nextRounds = (target.rounds || []).map(r => r.id === rid ? { ...r, ...patch } : r);
+            const lastAmount = nextRounds.length > 0 ? nextRounds[nextRounds.length - 1].amount : target.amount;
+            updateQuote(qid, { rounds: nextRounds, amount: lastAmount });
+          };
+
+          const deleteRound = (qid: string, rid: string) => {
+            const target = quotes.find(q => q.id === qid);
+            if (!target) return;
+            const nextRounds = (target.rounds || []).filter(r => r.id !== rid).map((r, idx) => ({ ...r, round: idx + 1 }));
+            const lastAmount = nextRounds.length > 0 ? nextRounds[nextRounds.length - 1].amount : target.amount;
+            updateQuote(qid, { rounds: nextRounds, amount: lastAmount });
+          };
+
+          const confirmSupplier = (qid: string) => {
+            const target = quotes.find(q => q.id === qid);
+            if (!target) return;
+            if (!window.confirm(`"${target.supplierName || '이 공급사'}"의 최종 협상가(${target.amount.toLocaleString()} ${target.currency || 'USD'})를 확정하고, 수입원가계산의 물품금액으로 반영하시겠습니까?`)) return;
+
+            const nextQuotes = quotes.map(q => q.id === qid ? { ...q, status: '확정' as const } : q);
+            // 참고: 아래는 USD 기준 단가로 반영합니다. 협상 통화가 USD가 아니면(CNY/KRW 등)
+            // ③ 수입원가계산 탭에서 실제 환율을 적용해 물품금액을 다시 확인해주세요.
+            const unitPriceUsd = target.amount / totalQtyForCalc;
+            const nextCostBreakdown = {
+              ...(request.costBreakdown || {}),
+              buyingPriceUsd: Math.round(unitPriceUsd * 10000) / 10000,
+              buyingQty: totalQtyForCalc
+            };
+            saveToStorage(importRequests.map(r => r.id === id
+              ? { ...r, supplierQuotes: nextQuotes, costBreakdown: nextCostBreakdown }
+              : r));
+            alert('확정되었습니다. ③ 수입원가계산 탭의 물품금액에 자동으로 반영되었습니다.');
+          };
+
+          const statusColor: Record<string, { bg: string; fg: string; border: string }> = {
+            '검토중': { bg: '#f1f5f9', fg: '#475569', border: '#cbd5e1' },
+            '네고중': { bg: '#fef3c7', fg: '#b45309', border: '#fde68a' },
+            '확정': { bg: '#f0fdf4', fg: '#16a34a', border: '#bbf7d0' },
+            '거절': { bg: '#fef2f2', fg: '#dc2626', border: '#fecaca' }
+          };
+
+          return (
+            <div>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+                🤝 ② 견적수령/네고 (해외공급사 견적 비교 및 협상)
+              </h3>
+
+              {/* 공급사 비교 요약 테이블 */}
+              {quotes.length > 0 && (
+                <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '34px' }}>
+                        <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>최초 제시가</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>현재 협상가</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>절감액</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'right' }}>절감률</th>
+                        <th style={{ padding: '6px 10px', textAlign: 'center' }}>상태</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotes.map(q => {
+                        const firstAmount = (q.rounds && q.rounds.length > 0) ? q.rounds[0].amount : q.amount;
+                        const savedAmount = firstAmount - q.amount;
+                        const savedRate = firstAmount > 0 ? (savedAmount / firstAmount) * 100 : 0;
+                        const sc = statusColor[q.status || '검토중'];
+                        return (
+                          <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', height: '34px' }}>
+                            <td style={{ padding: '6px 10px', fontWeight: 700 }}>{q.supplierName || '(미지정)'}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right' }}>{firstAmount.toLocaleString()} {q.currency || 'USD'}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700 }}>{q.amount.toLocaleString()} {q.currency || 'USD'}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', color: savedAmount > 0 ? '#16a34a' : 'inherit' }}>{savedAmount.toLocaleString()}</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'right', color: savedAmount > 0 ? '#16a34a' : 'inherit' }}>{savedRate.toFixed(1)}%</td>
+                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: sc.bg, color: sc.fg, border: `1px solid ${sc.border}` }}>{q.status || '검토중'}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>공급사별로 견적을 등록하고, 네고 라운드를 기록하며 협상 과정을 관리하세요.</span>
+                <button
+                  type="button"
+                  onClick={addSupplierQuote}
+                  style={{ padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  ＋ 공급사 견적 추가
+                </button>
+              </div>
+
+              {quotes.length === 0 && (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>
+                  등록된 공급사 견적이 없습니다. "＋ 공급사 견적 추가"로 시작하세요.
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {quotes.map(q => {
+                  const isExpanded = expandedQuoteCardId === q.id;
+                  const sc = statusColor[q.status || '검토중'];
+                  return (
+                    <div key={q.id} style={{ border: `1px solid ${q.status === '확정' ? '#86efac' : '#cbd5e1'}`, borderRadius: '8px', background: q.status === '확정' ? '#f0fdf4' : '#fff', overflow: 'hidden' }}>
+                      {/* 카드 헤더 */}
+                      <div
+                        onClick={() => setExpandedQuoteCardId(isExpanded ? null : q.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer', flexWrap: 'wrap' }}
+                      >
+                        <input
+                          type="text"
+                          value={q.supplierName}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => updateQuote(q.id, { supplierName: e.target.value })}
+                          placeholder="공급사명 입력"
+                          style={{ flex: '1 1 200px', padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', fontWeight: 700, outline: 'none' }}
+                        />
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '10px', background: sc.bg, color: sc.fg, border: `1px solid ${sc.border}` }}>{q.status || '검토중'}</span>
+                        <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>{q.amount.toLocaleString()} {q.currency || 'USD'}</span>
+                        {q.rounds && q.rounds.length > 0 && (
+                          <span style={{ fontSize: '11px', color: '#64748b' }}>네고 {q.rounds.length}라운드</span>
+                        )}
+                        <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#2563eb', fontWeight: 700 }}>{isExpanded ? '접기 ▴' : '펼치기 ▾'}</span>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ padding: '0 16px 16px 16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {/* 기본 정보 */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginTop: '14px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>최초 제시가</label>
+                              <input type="number" value={(q.rounds && q.rounds.length > 0) ? q.rounds[0].amount : q.amount}
+                                onChange={e => {
+                                  const val = Number(e.target.value) || 0;
+                                  if (q.rounds && q.rounds.length > 0) {
+                                    const nextRounds = [...q.rounds];
+                                    nextRounds[0] = { ...nextRounds[0], amount: val };
+                                    updateQuote(q.id, { rounds: nextRounds });
+                                  } else {
+                                    updateQuote(q.id, { amount: val });
+                                  }
+                                }}
+                                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>통화</label>
+                              <select value={q.currency || 'USD'} onChange={e => updateQuote(q.id, { currency: e.target.value })}
+                                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}>
+                                <option value="USD">USD</option>
+                                <option value="CNY">CNY</option>
+                                <option value="KRW">KRW</option>
+                                <option value="EUR">EUR</option>
+                              </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>최초 견적일</label>
+                              <input type="date" value={q.quoteDate || ''} onChange={e => updateQuote(q.id, { quoteDate: e.target.value })}
+                                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>상태</label>
+                              <select value={q.status || '검토중'} onChange={e => updateQuote(q.id, { status: e.target.value as any })}
+                                style={{ padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff' }}>
+                                <option value="검토중">검토중</option>
+                                <option value="네고중">네고중</option>
+                                <option value="확정">확정</option>
+                                <option value="거절">거절</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* 견적서 첨부파일 */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>견적서 첨부파일</label>
+                            {q.file ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600, fontSize: '12.5px' }} onClick={() => previewFile(q.file!.url, q.file!.name)}>📄 {q.file.name} (미리보기)</span>
+                                <button type="button" onClick={() => updateQuote(q.id, { file: null })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>삭제</button>
+                              </div>
+                            ) : (
+                              <UploadZone
+                                label="견적서 파일 업로드 (클릭/드래그 또는 Ctrl+V)"
+                                isUploading={uploading === `quote_${q.id}`}
+                                onFileSelect={async (file) => {
+                                  try {
+                                    setUploading(`quote_${q.id}`);
+                                    const storageRef = ref(storage, `imports/${id}/supplierQuotes/${q.id}/${file.name}`);
+                                    const snap = await uploadBytes(storageRef, file);
+                                    const url = await getDownloadURL(snap.ref);
+                                    updateQuote(q.id, { file: { name: file.name, url, path: snap.ref.fullPath } });
+                                  } catch (e) {
+                                    console.error(e);
+                                    alert('견적서 업로드 실패');
+                                  } finally {
+                                    setUploading(null);
+                                  }
+                                }}
+                              />
+                            )}
+                          </div>
+
+                          {/* 네고 라운드 타임라인 */}
+                          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '12px 14px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>💬 네고 라운드</span>
+                              <div style={{ display: 'flex', gap: '6px' }}>
+                                <button type="button" onClick={() => addRound(q.id, '공급사')} style={{ padding: '4px 10px', fontSize: '11.5px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, color: '#475569' }}>
+                                  + 공급사 재제시
+                                </button>
+                                <button type="button" onClick={() => addRound(q.id, '당사')} style={{ padding: '4px 10px', fontSize: '11.5px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, color: '#475569' }}>
+                                  + 당사 카운터
+                                </button>
+                              </div>
+                            </div>
+
+                            {(!q.rounds || q.rounds.length === 0) ? (
+                              <div style={{ fontSize: '12px', color: '#94a3b8', padding: '8px 0' }}>아직 네고 라운드가 없습니다. 위 버튼으로 첫 라운드를 기록하세요.</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {q.rounds.map(r => (
+                                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '6px 10px' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#fff', background: r.by === '당사' ? '#2563eb' : '#f59e0b', borderRadius: '10px', padding: '2px 8px', flexShrink: 0 }}>
+                                      {r.round}차 · {r.by}
+                                    </span>
+                                    <input type="date" value={r.date} onChange={e => updateRound(q.id, r.id, { date: e.target.value })}
+                                      style={{ width: '130px', padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                                    <input type="number" value={r.amount} onChange={e => updateRound(q.id, r.id, { amount: Number(e.target.value) || 0 })}
+                                      style={{ width: '110px', padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12px', outline: 'none', textAlign: 'right', fontWeight: 700 }} />
+                                    <span style={{ fontSize: '11px', color: '#64748b', width: '36px' }}>{q.currency || 'USD'}</span>
+                                    <input type="text" value={r.memo || ''} onChange={e => updateRound(q.id, r.id, { memo: e.target.value })} placeholder="협상 메모"
+                                      style={{ flex: 1, padding: '4px 6px', border: '1px solid #e2e8f0', borderRadius: '4px', fontSize: '12px', outline: 'none' }} />
+                                    <button type="button" onClick={() => deleteRound(q.id, r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', flexShrink: 0 }}>✕</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 카드 하단 액션 */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <button type="button" onClick={() => deleteQuote(q.id)} style={{ padding: '6px 12px', background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>
+                              🗑️ 이 공급사 견적 삭제
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => confirmSupplier(q.id)}
+                              disabled={q.status === '확정'}
+                              style={{ padding: '8px 16px', background: q.status === '확정' ? '#94a3b8' : '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: q.status === '확정' ? 'default' : 'pointer' }}
+                            >
+                              {q.status === '확정' ? '✅ 확정됨' : '✅ 이 공급사로 확정'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('수입원가계산')}
+                  style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  다음 단계 (수입원가계산) ➡️
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {activeTab === '수입원가계산' && (
           <div>
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
-              📊 ② 수입원가계산 (Trade Cost Calculator)
+              📊 ③ 수입원가계산 (Trade Cost Calculator)
             </h3>
 
             {/* 수입품 견적요청 기본정보 요약 & 품목 확인 */}
@@ -1349,7 +1678,7 @@ customsDuty,
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>
-                ✍️ ③ YSACC/영성ACC 견적서작성 및 발행
+                ✍️ ④ YSACC/영성ACC 견적서작성 및 발행
               </h3>
               <button
                 type="button"

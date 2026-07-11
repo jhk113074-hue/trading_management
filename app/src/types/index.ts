@@ -189,17 +189,27 @@ export interface ImportRequest {
   requestedBy?: string; // 고객사 담당자
   requestNote?: string; // 요청 상세 내용
 
-  // ── 2단계: 견적/원가 산정 ──
+  // ── 2단계: 견적수령 및 네고 ──
   supplierQuotes?: Array<{
     id: string;
     supplierId?: string;
     supplierName: string;
     itemName?: string;
-    amount: number;
+    amount: number; // 최신(현재) 협상 금액 — rounds가 있으면 마지막 라운드 금액과 동일하게 유지
     currency?: string; // USD/CNY/KRW 등
-    quoteDate?: string;
+    quoteDate?: string; // 최초 견적 접수일
     file?: { name: string; url: string; path?: string } | null;
     note?: string;
+    status?: '검토중' | '네고중' | '확정' | '거절'; // 이 공급사 견적의 진행 상태
+    rounds?: Array<{
+      id: string;
+      round: number;       // 라운드 번호 (1차, 2차, ...)
+      by: '공급사' | '당사'; // 이번 제시를 누가 했는지
+      amount: number;       // 이번 라운드 제시 금액
+      currency?: string;
+      date: string;         // 제시일
+      memo?: string;        // 협상 메모
+    }>;
   }>;
   costBreakdown?: {
     productCost?: number; // 제품 원가 (KRW 환산)
