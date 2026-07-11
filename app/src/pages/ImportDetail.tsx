@@ -307,6 +307,7 @@ export const ImportDetail: React.FC = () => {
   const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
   const [isCostTableExpanded, setIsCostTableExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadingQuoteId, setUploadingQuoteId] = useState<string | null>(null);
   const [forwarders, setForwarders] = useState<any[]>([]);
 
   useEffect(() => {
@@ -367,6 +368,52 @@ export const ImportDetail: React.FC = () => {
     const docs = (request as any)?.documents;
     if (docs) setDocuments(docs);
   }, [request?.id, JSON.stringify((request as any)?.documents)]);
+
+  const handleQuoteFileUpload = async (quoteId: string, file: File) => {
+    if (!file) return;
+    try {
+      setUploadingQuoteId(quoteId);
+      const storageRef = ref(storage, `imports/${id}/supplierQuotes/${quoteId}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      const nextQuotes = (request.supplierQuotes || []).map((q: any) => {
+        if (q.id === quoteId) {
+          const currentFiles = Array.isArray(q.files) ? q.files : (q.files ? [q.files] : []);
+          return {
+            ...q,
+            files: [...currentFiles, { name: file.name, url: downloadUrl }]
+          };
+        }
+        return q;
+      });
+
+      saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
+      alert(`${file.name} 업로드가 완료되었습니다.`);
+    } catch (e) {
+      console.error(e);
+      alert('업로드 실패');
+    } finally {
+      setUploadingQuoteId(null);
+    }
+  };
+
+  const handleQuoteFileDelete = (quoteId: string, fileIndex: number) => {
+    if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
+      const nextQuotes = (request.supplierQuotes || []).map((q: any) => {
+        if (q.id === quoteId) {
+          const currentFiles = Array.isArray(q.files) ? q.files : (q.files ? [q.files] : []);
+          const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
+          return {
+            ...q,
+            files: nextFiles.length > 0 ? nextFiles : null
+          };
+        }
+        return q;
+      });
+      saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
+    }
+  };
 
   const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc', file: File) => {
     if (!file) return;
@@ -1032,10 +1079,11 @@ export const ImportDetail: React.FC = () => {
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사명</th>
                       {hasMultipleItems && <th style={{ padding: '6px 10px', width: '220px' }}>품목</th>}
-                      <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
                       <th style={{ padding: '6px 10px', width: '90px' }}>통화</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
                       <th style={{ padding: '6px 10px', width: '140px' }}>견적일</th>
                       <th style={{ padding: '6px 10px', width: '110px' }}>상태</th>
+                      <th style={{ padding: '6px 10px' }}>견적서 보관 (멀티 드래그&amp;드롭/캡처붙여넣기)</th>
                       <th style={{ padding: '6px 10px' }}>비고 (협상 메모 등)</th>
                       <th style={{ padding: '6px 10px', width: '90px', textAlign: 'center' }}>확정</th>
                       <th style={{ padding: '6px 10px', width: '50px' }}></th>
@@ -1044,7 +1092,7 @@ export const ImportDetail: React.FC = () => {
                   <tbody>
                     {quotes.length === 0 ? (
                       <tr>
-                        <td colSpan={hasMultipleItems ? 9 : 8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                        <td colSpan={hasMultipleItems ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
                           등록된 공급사 견적이 없습니다. 아래 "＋ 공급사 견적 추가"로 시작하세요.
                         </td>
                       </tr>
@@ -1052,6 +1100,37 @@ export const ImportDetail: React.FC = () => {
                       quotes.map(q => {
                         const sc = statusColor[q.status || '검토중'];
                         const coveredIdx = q.itemIndices ?? quoteItems.map((_, i) => i);
+                        
+                        const handleQuoteFileUploadLocal = async (quoteId: string, file: File) => {
+                          if (!file) return;
+                          try {
+                            setUploadingQuoteId(quoteId);
+                            const storageRef = ref(storage, `imports/${id}/supplierQuotes/${quoteId}/${file.name}`);
+                            const snapshot = await uploadBytes(storageRef, file);
+                            const downloadUrl = await getDownloadURL(snapshot.ref);
+                            const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                            updateQuote(quoteId, {
+                              files: [...currentFiles, { name: file.name, url: downloadUrl }]
+                            } as any);
+                            alert(`${file.name} 업로드가 완료되었습니다.`);
+                          } catch (e) {
+                            console.error(e);
+                            alert('업로드 실패');
+                          } finally {
+                            setUploadingQuoteId(null);
+                          }
+                        };
+
+                        const handleQuoteFileDeleteLocal = (quoteId: string, fileIndex: number) => {
+                          if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
+                            const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                            const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
+                            updateQuote(quoteId, {
+                              files: nextFiles.length > 0 ? nextFiles : null
+                            } as any);
+                          }
+                        };
+
                         return (
                           <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: q.status === '확정' ? '#f0fdf4' : undefined }}>
                             <td style={{ padding: '6px 8px' }}>
@@ -1082,10 +1161,6 @@ export const ImportDetail: React.FC = () => {
                               </td>
                             )}
                             <td style={{ padding: '6px 8px' }}>
-                              <input type="number" value={q.amount} onChange={e => updateQuote(q.id, { amount: Number(e.target.value) || 0 })}
-                                style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', fontWeight: 700, boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ padding: '6px 8px' }}>
                               <select value={q.currency || 'USD'} onChange={e => updateQuote(q.id, { currency: e.target.value })}
                                 style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
                                 <option value="USD">USD</option>
@@ -1093,6 +1168,10 @@ export const ImportDetail: React.FC = () => {
                                 <option value="KRW">KRW</option>
                                 <option value="EUR">EUR</option>
                               </select>
+                            </td>
+                            <td style={{ padding: '6px 8px' }}>
+                              <input type="number" value={q.amount} onChange={e => updateQuote(q.id, { amount: Number(e.target.value) || 0 })}
+                                style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', fontWeight: 700, boxSizing: 'border-box' }} />
                             </td>
                             <td style={{ padding: '6px 8px' }}>
                               <input type="date" value={q.quoteDate || ''} onChange={e => updateQuote(q.id, { quoteDate: e.target.value })}
@@ -1106,6 +1185,32 @@ export const ImportDetail: React.FC = () => {
                                 <option value="확정">확정</option>
                                 <option value="거절">거절</option>
                               </select>
+                            </td>
+                            <td style={{ padding: '6px 8px', minWidth: '220px' }}>
+                              {(() => {
+                                const fileList = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {fileList.length > 0 && (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                        {fileList.map((f: any, fIdx: number) => (
+                                          <div key={fIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '11.5px' }}>
+                                            <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '140px' }} onClick={() => previewFile(f.url, f.name)}>
+                                              📄 {f.name}
+                                            </span>
+                                            <button type="button" onClick={() => handleQuoteFileDeleteLocal(q.id, fIdx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', padding: '0 2px' }}>×</button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <UploadZone
+                                      label="드래그 드롭 / 화면캡처(Ctrl+V)"
+                                      isUploading={uploadingQuoteId === q.id}
+                                      onFileSelect={(file) => handleQuoteFileUploadLocal(q.id, file)}
+                                    />
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td style={{ padding: '6px 8px' }}>
                               <input type="text" value={q.note || ''} onChange={e => updateQuote(q.id, { note: e.target.value })} placeholder="예: 1차 3.8→3.6 협의"
@@ -2045,9 +2150,10 @@ customsDuty,
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '34px' }}>
                       <th style={{ padding: '8px 12px', textAlign: 'left' }}>공급사명</th>
                       <th style={{ padding: '8px 12px', textAlign: 'left' }}>품목</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'right', width: '140px' }}>견적금액</th>
                       <th style={{ padding: '8px 12px', width: '90px' }}>통화</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'right', width: '140px' }}>견적금액</th>
                       <th style={{ padding: '8px 12px', width: '130px' }}>견적일</th>
+                      <th style={{ padding: '8px 12px' }}>견적서 보관 (멀티 드래그&amp;드롭/캡처붙여넣기)</th>
                       <th style={{ padding: '8px 12px', width: '60px' }}></th>
                     </tr>
                   </thead>
@@ -2059,39 +2165,65 @@ customsDuty,
                             const next = [...(request.supplierQuotes || [])];
                             next[idx] = { ...next[idx], supplierName: e.target.value };
                             saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
-                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
+                          }} style={{ width: '100%', height: '28px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', padding: '0 8px', outline: 'none' }} />
                         </td>
                         <td style={{ padding: '4px 8px' }}>
                           <input type="text" value={q.itemName || ''} onChange={(e) => {
                             const next = [...(request.supplierQuotes || [])];
                             next[idx] = { ...next[idx], itemName: e.target.value };
                             saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
-                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
-                        </td>
-                        <td style={{ padding: '4px 8px' }}>
-                          <input type="number" value={q.amount || ''} onChange={(e) => {
-                            const next = [...(request.supplierQuotes || [])];
-                            next[idx] = { ...next[idx], amount: Number(e.target.value) || 0 };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
-                          }} style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none', textAlign: 'right' }} />
+                          }} style={{ width: '100%', height: '28px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', padding: '0 8px', outline: 'none' }} />
                         </td>
                         <td style={{ padding: '4px 8px' }}>
                           <select value={q.currency || 'USD'} onChange={(e) => {
                             const next = [...(request.supplierQuotes || [])];
                             next[idx] = { ...next[idx], currency: e.target.value };
                             saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
-                          }} style={{ width: '100%', padding: '5px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }}>
+                          }} style={{ width: '100%', height: '28px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', padding: '0 4px', outline: 'none' }}>
                             <option value="USD">USD</option>
                             <option value="CNY">CNY</option>
                             <option value="KRW">KRW</option>
                           </select>
                         </td>
                         <td style={{ padding: '4px 8px' }}>
+                          <input type="number" value={q.amount || ''} onChange={(e) => {
+                            const next = [...(request.supplierQuotes || [])];
+                            next[idx] = { ...next[idx], amount: Number(e.target.value) || 0 };
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
+                          }} style={{ width: '100%', height: '28px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', padding: '0 8px', outline: 'none', textAlign: 'right' }} />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
                           <input type="date" value={q.quoteDate || ''} onChange={(e) => {
                             const next = [...(request.supplierQuotes || [])];
                             next[idx] = { ...next[idx], quoteDate: e.target.value };
                             saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: next } : r));
-                          }} style={{ width: '100%', padding: '5px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', outline: 'none' }} />
+                          }} style={{ width: '100%', height: '28px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '12.5px', padding: '0 4px', outline: 'none' }} />
+                        </td>
+                        <td style={{ padding: '6px 8px', minWidth: '240px' }}>
+                          {(() => {
+                            const fileList = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {fileList.length > 0 && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {fileList.map((f: any, fIdx: number) => (
+                                      <div key={fIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '11.5px' }}>
+                                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '160px' }} onClick={() => previewFile(f.url, f.name)}>
+                                          📄 {f.name}
+                                        </span>
+                                        <button type="button" onClick={() => handleQuoteFileDelete(q.id, fIdx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', padding: '0 2px' }}>×</button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <UploadZone
+                                  label="드래그 드롭 / 화면캡처(Ctrl+V)"
+                                  isUploading={uploadingQuoteId === q.id}
+                                  onFileSelect={(file) => handleQuoteFileUpload(q.id, file)}
+                                />
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td style={{ padding: '4px 8px', textAlign: 'center' }}>
                           <button type="button" onClick={() => {
@@ -2101,7 +2233,7 @@ customsDuty,
                         </td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 공급사 견적이 없습니다.</td></tr>
+                      <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 공급사 견적이 없습니다.</td></tr>
                     )}
                   </tbody>
                 </table>
