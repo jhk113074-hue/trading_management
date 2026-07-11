@@ -454,6 +454,52 @@ export const ImportDetail: React.FC = () => {
     }
   }, [request?.id, request?.customerDecision, id, viewMode]);
 
+  // 🏦 기존 선택된 공급사의 송금 계좌 정보 자동 동기화 로드
+  useEffect(() => {
+    if (!request || !request.importerName || !allSuppliers || allSuppliers.length === 0) return;
+    
+    // 이미 계좌 정보 중 하나라도 들어가 있으면 자동 오버라이트하지 않고 수동 입력을 존중합니다.
+    const bankInfo = request.supplierBankInfo || {};
+    if (bankInfo.bankName || bankInfo.accountNumber || bankInfo.swiftCode || bankInfo.accountName) return;
+
+    // 이름으로 공급사 매칭
+    const matchingSupplier = allSuppliers.find(s => s.name === request.importerName);
+    if (matchingSupplier && matchingSupplier.bankUsd) {
+      const text = matchingSupplier.bankUsd.trim();
+      const swiftIndex = text.toUpperCase().indexOf('SWIFT:');
+      let rawAccountAndHolder = text;
+      let parsedSwift = '';
+      let parsedBankName = '';
+      let parsedBankAccount = '';
+      let parsedBankHolder = '';
+
+      if (swiftIndex !== -1) {
+        parsedSwift = text.substring(swiftIndex + 6).trim();
+        rawAccountAndHolder = text.substring(0, swiftIndex).trim();
+      }
+      const parts = rawAccountAndHolder.split(/\s+/);
+      if (parts.length >= 3) {
+        parsedBankName = parts[0];
+        parsedBankAccount = parts[1];
+        parsedBankHolder = parts.slice(2).join(' ').replace(/[\(\)]/g, '');
+      } else {
+        parsedBankAccount = text;
+      }
+
+      if (parsedBankName || parsedBankAccount || parsedSwift || parsedBankHolder) {
+        const nextBank = {
+          ...bankInfo,
+          bankName: parsedBankName || '',
+          swiftCode: parsedSwift || '',
+          accountNumber: parsedBankAccount || '',
+          accountName: parsedBankHolder || ''
+        };
+        // 현재 캐싱된 importRequests 리스트에 업데이트 반영
+        saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierBankInfo: nextBank } : r));
+      }
+    }
+  }, [request?.importerName, allSuppliers, request?.supplierBankInfo, importRequests, id]);
+
   const handleDownloadPdf = () => {
     const element = document.getElementById('po-print-area');
     if (!element) return alert('PDF 다운로드 대상을 찾을 수 없습니다.');
