@@ -4950,7 +4950,45 @@ customsDuty,
           suppliers={allSuppliers}
           onClose={() => setShowSupplierSearchModal(false)}
           onSelect={(sup) => {
-            const updated = importRequests.map(r => r.id === id ? { ...r, importerName: sup.name } : r);
+            let parsedBankName = '';
+            let parsedBankAccount = '';
+            let parsedBankHolder = '';
+            let parsedSwift = '';
+
+            if (sup.bankUsd) {
+              const text = sup.bankUsd.trim();
+              const swiftIndex = text.toUpperCase().indexOf('SWIFT:');
+              let rawAccountAndHolder = text;
+              if (swiftIndex !== -1) {
+                parsedSwift = text.substring(swiftIndex + 6).trim();
+                rawAccountAndHolder = text.substring(0, swiftIndex).trim();
+              }
+              const parts = rawAccountAndHolder.split(/\s+/);
+              if (parts.length >= 3) {
+                parsedBankName = parts[0];
+                parsedBankAccount = parts[1];
+                parsedBankHolder = parts.slice(2).join(' ').replace(/[\(\)]/g, '');
+              } else {
+                parsedBankAccount = text;
+              }
+            }
+
+            const updated = importRequests.map(r => {
+              if (r.id === id) {
+                return {
+                  ...r,
+                  importerName: sup.name,
+                  supplierBankInfo: {
+                    ...(r.supplierBankInfo || {}),
+                    bankName: parsedBankName || r.supplierBankInfo?.bankName || '',
+                    swiftCode: parsedSwift || r.supplierBankInfo?.swiftCode || '',
+                    accountNumber: parsedBankAccount || r.supplierBankInfo?.accountNumber || '',
+                    accountName: parsedBankHolder || r.supplierBankInfo?.accountName || ''
+                  }
+                };
+              }
+              return r;
+            });
             saveToStorage(updated);
             setShowSupplierSearchModal(false);
           }}
