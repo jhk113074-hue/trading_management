@@ -466,6 +466,19 @@ export const ImportDetail: React.FC = () => {
 
   const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
   const matchedCustomer = customers.find(c => c.name?.trim() === (request.finalCustomer || '').trim());
+  const billingRows = request.taxDocumentRows || [
+    {
+      id: 'r1',
+      type: '세금계산서',
+      issueDate: request.taxInvoiceIssuedDate || '',
+      docNumber: request.taxInvoiceNumber || '',
+      supplyAmount: request.taxInvoiceTotalAmount || 0,
+      vatAmount: request.taxInvoiceVat || 0,
+      grandTotal: request.taxInvoiceGrandTotal || 0,
+      remarks: request.taxInvoiceItemName || ''
+    }
+  ];
+  const totalBillingAmount = billingRows.reduce((sum, r) => sum + (Number(r.grandTotal) || 0), 0) || (request.customerQuoteAmount || request.amount || 0);
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
@@ -4494,7 +4507,7 @@ customsDuty,
                   <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
                       <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>
-                        💰 수금 관리 (청구총액: ₩{(request.customerQuoteAmount || request.amount || 0).toLocaleString()})
+                        💰 수금 관리 (청구총액: ₩{totalBillingAmount.toLocaleString()})
                       </span>
                       <button
                         type="button"
@@ -4540,7 +4553,7 @@ customsDuty,
                         {(() => {
                           const collectionsList = request.collections || [];
                           let cumulativeCollected = 0;
-                          const totalToReceive = request.customerQuoteAmount || request.amount || 0;
+                          const totalToReceive = totalBillingAmount;
 
                           if (collectionsList.length === 0) {
                             return (
@@ -4630,7 +4643,7 @@ customsDuty,
 
                   {/* 수금확정 및 탭이동 버튼 */}
                   <div style={{ marginTop: '4px' }}>
-                    {request.paymentCollectedAmount && request.paymentCollectedAmount >= (request.customerQuoteAmount || request.amount || 0) ? (
+                    {request.paymentCollectedAmount && request.paymentCollectedAmount >= totalBillingAmount ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -4646,7 +4659,7 @@ customsDuty,
                       </button>
                     ) : (
                       <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
-                        잔액: ₩{Math.max(0, (request.customerQuoteAmount || request.amount || 0) - (request.paymentCollectedAmount || 0)).toLocaleString()} (완료 시 손익검토 활성화)
+                        잔액: ₩{Math.max(0, totalBillingAmount - (request.paymentCollectedAmount || 0)).toLocaleString()} (완료 시 손익검토 활성화)
                       </div>
                     )}
                   </div>
