@@ -4434,6 +4434,29 @@ customsDuty,
                                     </td>
                                   </tr>
                                 ))}
+
+                                {/* 합계 행 */}
+                                {(() => {
+                                  const totalSupply = rows.reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0);
+                                  const totalVat = rows.reduce((sum, r) => sum + (Number(r.vatAmount) || 0), 0);
+                                  const totalGrand = rows.reduce((sum, r) => sum + (Number(r.grandTotal) || 0), 0);
+                                  return (
+                                    <tr style={{ background: '#f8fafc', fontWeight: 800, borderTop: '1.5px solid #cbd5e1', borderBottom: '1.5px solid #cbd5e1', height: '32px' }}>
+                                      <td colSpan={3} style={{ padding: '4px 6px', textAlign: 'center', color: '#475569', fontSize: '11px', fontWeight: 750 }}>합계</td>
+                                      <td style={{ padding: '4px', textAlign: 'right', color: '#1e293b', fontSize: '11px', fontWeight: 750 }}>
+                                        ₩{totalSupply.toLocaleString()}
+                                      </td>
+                                      <td style={{ padding: '4px', textAlign: 'right', color: '#1e293b', fontSize: '11px', fontWeight: 750 }}>
+                                        ₩{totalVat.toLocaleString()}
+                                      </td>
+                                      <td style={{ padding: '4px', textAlign: 'right', color: '#1e3a8a', fontSize: '11px', fontWeight: 800 }}>
+                                        ₩{totalGrand.toLocaleString()}
+                                      </td>
+                                      <td></td>
+                                    </tr>
+                                  );
+                                })()}
+
                                 <tr>
                                   <td colSpan={7} style={{ padding: '4px 0' }}>
                                     <button
