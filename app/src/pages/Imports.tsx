@@ -1027,8 +1027,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.id.includes(searchTerm) ||
         (req.importerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (req.shipperName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
+        (req.routeFrom || req.pol || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -1575,10 +1574,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('active_routeFrom')}>
                       <div style={{ display: 'flex', gap: '2px', flexDirection: 'column', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
                         <span>
-                          {req.routeFrom} ➔
+                          {req.routeFrom || req.pol || ''} ➔
                         </span>
                         <span style={{ color: '#64748b' }}>
-                          {req.routeTo || '-'}
+                          {req.routeTo || req.pod || '-'}
                         </span>
                       </div>
                     </td>
