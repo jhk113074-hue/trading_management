@@ -526,7 +526,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [selectedItemName, setSelectedItemName] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState('All');
 
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'requestDate', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'eta', direction: 'desc' });
   const [colWidths, setColWidths] = useState<Record<string, number>>({
     quote_requestDate: 80,
     quote_quoteNumber: 100,
@@ -1036,14 +1036,28 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     // ⇅ 정렬 (Sorting) 적용
     if (sortConfig) {
       base.sort((a, b) => {
+        const key = sortConfig.key;
+        const dir = sortConfig.direction;
+
+        if (key === 'requestDate' || key === 'eta') {
+          const etaA = a.eta || '';
+          const etaB = b.eta || '';
+
+          if (etaA !== etaB) {
+            if (!etaA) return 1;
+            if (!etaB) return -1;
+            return dir === 'asc' ? etaA.localeCompare(etaB) : etaB.localeCompare(etaA);
+          }
+
+          const dateA = a.requestDate || a.createdAt || '';
+          const dateB = b.requestDate || b.createdAt || '';
+          return dir === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+        }
+
         let aVal: any = '';
         let bVal: any = '';
 
-        const key = sortConfig.key;
-        if (key === 'requestDate') {
-          aVal = a.requestDate || a.createdAt || '';
-          bVal = b.requestDate || b.createdAt || '';
-        } else if (key === 'quoteNumber') {
+        if (key === 'quoteNumber') {
           aVal = a.quoteNumber || `QT-${a.id}`;
           bVal = b.quoteNumber || `QT-${b.id}`;
         } else if (key === 'finalSellingPrice') {
