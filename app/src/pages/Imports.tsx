@@ -1565,8 +1565,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 수입주체 */}
                     <td style={getTdStyle('active_importCompany', 'center')}>
                       {req.importCompany ? (
-                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: req.importCompany === 'YS' ? '#0369a1' : '#15803d', background: req.importCompany === 'YS' ? '#e0f2fe' : '#dcfce7' }}>
-                          {req.importCompany}
+                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#15803d' : '#0369a1', background: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#dcfce7' : '#e0f2fe' }}>
+                          {(req.importCompany === 'YSACC' || req.importCompany === 'YS') ? 'YSACC' : '영성ACC'}
                         </span>
                       ) : '-'}
                     </td>
@@ -1614,7 +1614,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
                           const totalUsd = buyingQty * buyingPriceUsd;
-                          return `${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          return `$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
                     </td>
