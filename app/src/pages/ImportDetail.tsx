@@ -2694,18 +2694,46 @@ customsDuty,
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>운송 요율(₩)</label>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>선적정보(VESSEL정보)</label>
                     <input 
                       type="text"
-                      placeholder="예: 720,000"
-                      value={request.freightInvoiceAmount || ''}
+                      placeholder="예: HYUNDAI TOKYO V.024E"
+                      value={request.vesselName || ''}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, freightInvoiceAmount: val } : r);
+                        const updated = importRequests.map(r => r.id === id ? { ...r, vesselName: val } : r);
                         saveToStorage(updated);
                       }}
                       style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
                     />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETD</label>
+                      <input 
+                        type="date"
+                        value={request.etd || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, etd: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>ETA</label>
+                      <input 
+                        type="date"
+                        value={request.eta || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, eta: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
