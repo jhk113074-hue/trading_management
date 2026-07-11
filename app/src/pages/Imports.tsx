@@ -602,6 +602,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const stats = useMemo(() => {
     let totalBuying = 0;
     let totalSales = 0;
+    let ysaccBuying = 0;
+    let ysaccSales = 0;
+    let youngsungBuying = 0;
+    let youngsungSales = 0;
     let activeCount = currentTabBaseRequests.length;
     
     currentTabBaseRequests.forEach(req => {
@@ -621,17 +625,36 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       
       const totalBuyingCost = productCost + freightCost + customsCost + otherCost;
       totalBuying += totalBuyingCost;
+
+      // Group by company
+      const isYsacc = (req.importCompany || '').toUpperCase().includes('YS');
+      if (isYsacc) {
+        ysaccBuying += totalBuyingCost;
+        ysaccSales += sales;
+      } else {
+        youngsungBuying += totalBuyingCost;
+        youngsungSales += sales;
+      }
     });
 
     const totalMargin = totalSales - totalBuying;
     const marginPercent = totalSales > 0 ? Math.round((totalMargin / totalSales) * 100) : 0;
+    
+    const ysaccMargin = ysaccSales - ysaccBuying;
+    const youngsungMargin = youngsungSales - youngsungBuying;
 
     return {
       activeCount,
       totalBuying,
       totalSales,
       totalMargin,
-      marginPercent
+      marginPercent,
+      ysaccBuying,
+      ysaccSales,
+      ysaccMargin,
+      youngsungBuying,
+      youngsungSales,
+      youngsungMargin
     };
   }, [currentTabBaseRequests]);
 
@@ -1211,17 +1234,23 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{stats.activeCount} 건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매입액 (수입원가)</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매입액 (수입원가)</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccBuying.toLocaleString()} / 영성: ₩{stats.youngsungBuying.toLocaleString()})</span>
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>₩{stats.totalBuying.toLocaleString()}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매출액 (견적/판매)</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매출액 (견적/판매)</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccSales.toLocaleString()} / 영성: ₩{stats.youngsungSales.toLocaleString()})</span>
+          </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>예상 마진총액</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(평균 마진율: {stats.marginPercent}%)</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccMargin.toLocaleString()} / 영성: ₩{stats.youngsungMargin.toLocaleString()} | {stats.marginPercent}%)</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#166534' }}>₩{stats.totalMargin.toLocaleString()}</div>
         </div>
