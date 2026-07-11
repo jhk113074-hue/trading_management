@@ -946,9 +946,9 @@ export const ImportDetail: React.FC = () => {
           ] as const)
           .filter(tab => {
             if (viewMode === 'quote') {
-              return tab.key === '수입품 견적요청' || tab.key === '견적수령/네고' || tab.key === '수입원가계산' || tab.key === '견적서작성';
+              return tab.key === '수입품 견적요청' || tab.key === '견적수령/네고' || tab.key === '수입원가계산' || tab.key === '견적서작성' || tab.key === '로그';
             } else {
-              return true;
+              return tab.key === '수입내역' || tab.key === '운송사/관세사 선정' || tab.key === '서류' || tab.key === '정산' || tab.key === '손익검토' || tab.key === '로그';
             }
           })
           .map(tab => (
