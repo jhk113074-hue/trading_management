@@ -886,7 +886,7 @@ export const ImportDetail: React.FC = () => {
       {/* Title Header */}
       <div style={{ marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          수입 견적관리
+          {viewMode === 'quote' ? '수입 견적관리' : '수입관리'}
           <span style={{ fontSize: '10px', fontWeight: 500, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>v1.4.2_clean</span>
         </h2>
         <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
