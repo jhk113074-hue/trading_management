@@ -4374,25 +4374,144 @@ customsDuty,
                   </table>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>대금 수령일</label>
-                    <input type="date" value={request.paymentCollectedDate || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentCollectedDate: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
+                {/* 4-3. 수금 내역 및 잔액 관리 */}
+                <div style={{ marginTop: '16px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>💰 수금 관리 (받아야 할 돈 총액: ₩{(request.customerQuoteAmount || request.amount || 0).toLocaleString()})</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const current = request.collections || [];
+                        const nextCollections = [
+                          ...current,
+                          {
+                            id: `col_${Date.now()}`,
+                            round: current.length + 1,
+                            date: new Date().toISOString().split('T')[0],
+                            amount: 0,
+                            remarks: ''
+                          }
+                        ];
+                        const totalCollected = nextCollections.reduce((sum, c) => sum + c.amount, 0);
+                        const updated = importRequests.map(r => r.id === id ? { 
+                          ...r, 
+                          collections: nextCollections,
+                          paymentCollectedAmount: totalCollected,
+                          paymentCollectedDate: nextCollections[nextCollections.length - 1]?.date || ''
+                        } : r);
+                        saveToStorage(updated);
+                      }}
+                      style={{ padding: '4px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      ＋ 수금 등록
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>수령 금액 (₩)</label>
-                    <input type="number" value={request.paymentCollectedAmount || ''} onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentCollectedAmount: val } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="수령 금액 입력" />
-                  </div>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '30px', background: '#f8fafc' }}>
+                        <th style={{ padding: '6px 8px', width: '80px' }}>수금 차수</th>
+                        <th style={{ padding: '6px 8px', width: '150px' }}>수금 일자</th>
+                        <th style={{ padding: '6px 8px', width: '180px', textAlign: 'right' }}>수금액 (₩)</th>
+                        <th style={{ padding: '6px 8px', width: '180px', textAlign: 'right' }}>수금 잔액 (₩)</th>
+                        <th style={{ padding: '6px 8px' }}>비고</th>
+                        <th style={{ padding: '6px 8px', width: '60px', textAlign: 'center' }}>삭제</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const collectionsList = request.collections || [];
+                        let cumulativeCollected = 0;
+                        const totalToReceive = request.customerQuoteAmount || request.amount || 0;
+
+                        if (collectionsList.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={6} style={{ textAlign: 'center', padding: '12px', color: '#64748b', fontSize: '11px' }}>
+                                등록된 수금 내역이 없습니다. 우측 상단의 수금 등록 버튼을 눌러주세요.
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        return collectionsList.map((col) => {
+                          cumulativeCollected += col.amount;
+                          const balanceAfterThisRound = Math.max(0, totalToReceive - cumulativeCollected);
+
+                          const updateCol = (fields: Partial<typeof col>) => {
+                            const nextCols = collectionsList.map(c => c.id === col.id ? { ...c, ...fields } : c);
+                            const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
+                            const updated = importRequests.map(r => r.id === id ? { 
+                              ...r, 
+                              collections: nextCols,
+                              paymentCollectedAmount: newTotal,
+                              paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
+                            } : r);
+                            saveToStorage(updated);
+                          };
+
+                          const deleteCol = () => {
+                            const nextCols = collectionsList.filter(c => c.id !== col.id).map((c, i) => ({ ...c, round: i + 1 }));
+                            const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
+                            const updated = importRequests.map(r => r.id === id ? { 
+                              ...r, 
+                              collections: nextCols,
+                              paymentCollectedAmount: newTotal,
+                              paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
+                            } : r);
+                            saveToStorage(updated);
+                          };
+
+                          return (
+                            <tr key={col.id} style={{ borderBottom: '1px solid #e2e8f0', height: '38px' }}>
+                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a' }}>{col.round}차 수금</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input
+                                  type="date"
+                                  value={col.date}
+                                  onChange={(e) => updateCol({ date: e.target.value })}
+                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px' }}
+                                />
+                              </td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input
+                                  type="number"
+                                  value={col.amount || ''}
+                                  onChange={(e) => updateCol({ amount: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontWeight: 'bold' }}
+                                  placeholder="₩ 수금액"
+                                />
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800, color: balanceAfterThisRound === 0 ? '#166534' : '#ef4444' }}>
+                                ₩{balanceAfterThisRound.toLocaleString()}
+                              </td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input
+                                  type="text"
+                                  value={col.remarks || ''}
+                                  onChange={(e) => updateCol({ remarks: e.target.value })}
+                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px' }}
+                                  placeholder="수금 메모"
+                                />
+                              </td>
+                              <td style={{ padding: '2px 4px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  onClick={deleteCol}
+                                  style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        });
+                      })()}
+                    </tbody>
+                  </table>
                 </div>
 
-                {request.paymentCollectedDate && request.paymentCollectedAmount ? (
+                {request.paymentCollectedAmount && request.paymentCollectedAmount >= (request.customerQuoteAmount || request.amount || 0) ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button
                       type="button"
@@ -4400,16 +4519,19 @@ customsDuty,
                         const updated = importRequests.map(r => r.id === id ? { ...r, status: '손익검토 대기' } : r);
                         saveToStorage(updated);
                         setActiveTab('손익검토');
-                        alert('대금 수령이 확인되었습니다. 마지막으로 ⑥ 손익검토 탭에서 최종 검토를 완료해주세요.');
+                        alert('전액 수금이 완료되었습니다. 마지막으로 ⑥ 손익검토 탭에서 최종 검토를 완료해주세요.');
                       }}
                       style={{ padding: '8px 16px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: request.status === '업무 종료' ? 'default' : 'pointer' }}
                       disabled={request.status === '업무 종료'}
                     >
-                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 대금 수령 확인 → 손익검토로 이동'}
+                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 전액 수금 완료 → 손익검토로 이동'}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>대금 수령일과 수령 금액을 입력하면 다음 단계로 진행할 수 있습니다.</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    수금 총액이 받아야 할 돈 총액(₩{((request.customerQuoteAmount || request.amount || 0)).toLocaleString()}) 이상 수금되어야 다음 단계로 진행할 수 있습니다. 
+                    (현재 총 수금액: ₩{(request.paymentCollectedAmount || 0).toLocaleString()}, 잔액: ₩{Math.max(0, (request.customerQuoteAmount || request.amount || 0) - (request.paymentCollectedAmount || 0)).toLocaleString()})
+                  </div>
                 )}
               </div>
             </div>

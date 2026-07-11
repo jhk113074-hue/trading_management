@@ -300,7 +300,14 @@ export interface ImportRequest {
   taxInvoiceVat?: number; // 세금계산서 부가세
   taxInvoiceGrandTotal?: number; // 세금계산서 합계
   paymentCollectedDate?: string; // 대금 수령일
-  paymentCollectedAmount?: number; // 수령 금액
+  paymentCollectedAmount?: number; // 수령 금액 (총액 호환성용)
+  collections?: Array<{
+    id: string;
+    round: number;
+    date: string;
+    amount: number;
+    remarks?: string;
+  }>;
 
   // ── 6단계: 손익검토 (최종) ──
   profitReviewNote?: string; // 검토 코멘트 (마진 차이 원인 등)
