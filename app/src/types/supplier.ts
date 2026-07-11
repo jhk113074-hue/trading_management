@@ -15,6 +15,16 @@ export interface Supplier {
   createdAt?: any;
   updatedAt?: any;
   contacts?: SupplierContact[];
+
+  // ── 세금계산서/거래처 정보 보강 (옵션 필드, 기존 데이터/로직 영향 없음) ──
+  // 사업자등록번호는 기존 bizNumber 필드를 그대로 사용 (중복 필드 생성 방지)
+  countryType?: '국내' | '해외'; // 국내/해외 구분
+  bizType?: string; // 업태
+  itemName?: string; // 종목
+
+  // ── 겸업(공급사이면서 고객사이기도 한 업체) 연결 ──
+  linkedCustomerId?: string; // 동일 업체의 고객사 레코드 ID
+  linkedCustomerName?: string; // 표시용 (조회 편의)
 }
 
 export interface SupplierContact {

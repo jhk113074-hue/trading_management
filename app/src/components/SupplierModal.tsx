@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Supplier, SupplierContact } from '../types/supplier';
+import type { Customer } from '../types/customer';
+import { CustomerSearchModal } from './CustomerSearchModal';
 
 interface Props {
   initialSupplier?: Supplier;
@@ -33,8 +35,23 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
   const [formData, setFormData] = useState<Partial<Supplier>>({
     supplierCode: '', name: '', bizNumber: '', representative: '',
     phone: '', purchaseEmail: '', address: '', managerName: '', managerPhone: '',
-    category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: []
+    category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: [],
+    countryType: '국내'
   });
+
+  // 겸업(고객사 연결) 검색용
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
+
+  const openCustomerSearch = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'customers'));
+      setAllCustomers(snap.docs.map(d => ({ id: d.id, ...d.data() } as Customer)));
+    } catch (err) {
+      console.error('고객사 목록 조회 오류:', err);
+    }
+    setIsCustomerSearchOpen(true);
+  };
 
   const parseBankString = (text: string) => {
     let swift = '';
@@ -279,6 +296,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
   }, [isDragging]);
 
   return (
+    <>
     <div style={{
       position: 'fixed',
       left: `${position.x}px`,
@@ -289,7 +307,7 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
       userSelect: isDragging ? 'none' : 'auto'
     }}>
       <div style={{ background: '#fff', borderRadius: '4px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 40px rgba(15,23,42,0.3)', border: '1px solid #cbd5e1', overflow: 'hidden' }}>
-        
+
         {/* Header */}
         <div 
           onMouseDown={handleMouseDown}
@@ -314,15 +332,40 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
               <Input label="공급업체코드 (필수) ★" value={formData.supplierCode} onChange={(v: any) => handleChange('supplierCode', v)} disabled={true} placeholder="자동 발번 중..." labelColor="#0891b2" />
               <Input label="공급업체명 (필수) ★" value={formData.name} onChange={(v: any) => handleChange('name', v)} placeholder="예: 국도화학 주식회사" labelColor="#0891b2" />
-              <Input label="사업자등록번호" value={formData.bizNumber} onChange={(v: any) => handleChange('bizNumber', v)} placeholder="000-00-00000" />
+              <Select label="국내/해외 구분" value={formData.countryType || '국내'} onChange={(v: any) => handleChange('countryType', v)} options={['국내', '해외']} />
+              <Input label={formData.countryType === '해외' ? '사업자등록번호' : '사업자등록번호 (국내)'} value={formData.bizNumber} onChange={(v: any) => handleChange('bizNumber', v)} placeholder="000-00-00000" />
               <Input label="대표자명" value={formData.representative} onChange={(v: any) => handleChange('representative', v)} placeholder="대표이사 성명" />
-              
+              <Input label="업태" value={formData.bizType} onChange={(v: any) => handleChange('bizType', v)} placeholder="예: 도매 및 상품중개업" />
+              <Input label="종목" value={formData.itemName} onChange={(v: any) => handleChange('itemName', v)} placeholder="예: 화학원료" />
               <Select label="업체 구분" value={formData.category || '공급사'} onChange={(v: any) => handleChange('category', v)} options={['공급사', '포워딩사']} />
               <Input label="대표전화번호" value={formData.phone} onChange={(v: any) => handleChange('phone', v)} placeholder="02-XXX-XXXX" />
-              <div style={{ gridColumn: 'span 2' }}>
+              <div style={{ gridColumn: 'span 3' }}>
                 <Input label="본사 주소 (Address)" value={formData.address} onChange={(v: any) => handleChange('address', v)} placeholder="도로명 주소 또는 본사 영문 주소" />
               </div>
             </div>
+          </div>
+
+          {/* SECTION 1-1: 겸업(고객사 연결) */}
+          <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+              <span style={{ color: '#a855f7' }}>🔗</span> 겸업 연결 (이 업체가 고객사이기도 한 경우)
+            </div>
+            {formData.linkedCustomerId ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px' }}>
+                <span style={{ background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff', padding: '4px 10px', borderRadius: '4px', fontWeight: 700 }}>
+                  연결됨: {formData.linkedCustomerName || formData.linkedCustomerId}
+                </span>
+                <button type="button" onClick={() => { handleChange('linkedCustomerId', ''); handleChange('linkedCustomerName', ''); }}
+                  style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}>
+                  연결 해제
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={openCustomerSearch}
+                style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', color: '#7c3aed', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+                🔍 고객사 목록에서 연결하기
+              </button>
+            )}
           </div>
 
           {/* SECTION 2: 통장 정보 (원화/외화 가로배치, 2열 그리드로 공간확보) */}
@@ -503,6 +546,18 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
       </div>
     </div>
+    {isCustomerSearchOpen && (
+      <CustomerSearchModal
+        customers={allCustomers}
+        onClose={() => setIsCustomerSearchOpen(false)}
+        onSelect={(c) => {
+          handleChange('linkedCustomerId', c.id);
+          handleChange('linkedCustomerName', c.name || c.nameKo || c.customerCode);
+          setIsCustomerSearchOpen(false);
+        }}
+      />
+    )}
+    </>
   );
 };
 

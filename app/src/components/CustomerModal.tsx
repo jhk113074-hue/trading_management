@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { doc, setDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Customer, CustomerContact } from '../types/customer';
+import type { Supplier } from '../types/supplier';
+import { SupplierSearchModal } from './SupplierSearchModal';
 
 interface Props {
   initialCustomer?: Customer;
@@ -29,6 +31,20 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
     bankName: '', bankAccount: '', swiftCode: '', iban: '', bankHolder: '',
     contacts: [], remarks: ''
   });
+
+  // 겸업(공급사 연결) 검색용
+  const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+
+  const openSupplierSearch = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'companies', COMPANY_ID, 'suppliers'));
+      setAllSuppliers(snap.docs.map(d => ({ id: d.id, ...d.data() } as Supplier)));
+    } catch (err) {
+      console.error('공급업체 목록 조회 오류:', err);
+    }
+    setIsSupplierSearchOpen(true);
+  };
 
   useEffect(() => {
     if (initialCustomer) {
@@ -272,6 +288,7 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
   }, [isDragging]);
 
   return (
+    <>
     <div style={{
       position: 'fixed',
       left: `${position.x}px`,
@@ -439,7 +456,36 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
                 <div style={{ gridColumn: 'span 2' }}>
                   <Input label="영문 주소 (Corporate Address)" value={formData.addressEn} onChange={(v: any) => handleChange('addressEn', v)} placeholder="Full street address, ZIP Code" />
                 </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <Input label="한글 주소 (국내 고객사 세금계산서용)" value={formData.addressKo} onChange={(v: any) => handleChange('addressKo', v)} placeholder="국내 고객사인 경우 한글 사업장주소 입력" />
+                </div>
+                <Input label="사업자등록번호" value={formData.bizRegNumber} onChange={(v: any) => handleChange('bizRegNumber', v)} placeholder="000-00-00000 (국내 고객사)" />
+                <Input label="업태" value={formData.bizType} onChange={(v: any) => handleChange('bizType', v)} placeholder="예: 도매 및 상품중개업" />
+                <Input label="종목" value={formData.itemName} onChange={(v: any) => handleChange('itemName', v)} placeholder="예: 화학원료" />
               </div>
+            </div>
+
+            {/* SECTION 1-1: 겸업(공급사 연결) */}
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '10px 12px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                <span style={{ color: '#a855f7' }}>🔗</span> 겸업 연결 (이 업체가 공급사이기도 한 경우)
+              </div>
+              {formData.linkedSupplierId ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px' }}>
+                  <span style={{ background: '#faf5ff', color: '#7e22ce', border: '1px solid #e9d5ff', padding: '4px 10px', borderRadius: '4px', fontWeight: 700 }}>
+                    연결됨: {formData.linkedSupplierName || formData.linkedSupplierId}
+                  </span>
+                  <button type="button" onClick={() => { handleChange('linkedSupplierId', ''); handleChange('linkedSupplierName', ''); }}
+                    style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444', borderRadius: '4px', padding: '4px 10px', cursor: 'pointer', fontSize: '11.5px', fontWeight: 700 }}>
+                    연결 해제
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={openSupplierSearch}
+                  style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', color: '#7c3aed', borderRadius: '4px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
+                  🔍 공급업체 목록에서 연결하기
+                </button>
+              )}
             </div>
 
             {/* SECTION 2: 무역 선적 & 세무 금융 정보 */}
@@ -626,6 +672,18 @@ export const CustomerModal: React.FC<Props> = ({ initialCustomer, onClose }) => 
 
       </div>
     </div>
+    {isSupplierSearchOpen && (
+      <SupplierSearchModal
+        suppliers={allSuppliers}
+        onClose={() => setIsSupplierSearchOpen(false)}
+        onSelect={(s) => {
+          handleChange('linkedSupplierId', s.id);
+          handleChange('linkedSupplierName', s.name || s.supplierCode);
+          setIsSupplierSearchOpen(false);
+        }}
+      />
+    )}
+    </>
   );
 };
 

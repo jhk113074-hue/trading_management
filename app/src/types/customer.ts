@@ -64,6 +64,16 @@ export interface Customer {
   createdAt?: any;
   updatedAt?: any;
   contacts?: CustomerContact[];
+
+  // ── 세금계산서/거래처 정보 보강 (옵션 필드, 기존 데이터/로직 영향 없음) ──
+  addressKo?: string; // 한글 사업장주소 (국내 고객사 세금계산서용)
+  bizRegNumber?: string; // 사업자등록번호 (taxId와 별개로 신규 추가, 명칭 통일용)
+  bizType?: string; // 업태
+  itemName?: string; // 종목
+
+  // ── 겸업(고객사이면서 공급사이기도 한 업체) 연결 ──
+  linkedSupplierId?: string; // 동일 업체의 공급사 레코드 ID
+  linkedSupplierName?: string; // 표시용 (조회 편의)
 }
 
 export interface CustomerContact {

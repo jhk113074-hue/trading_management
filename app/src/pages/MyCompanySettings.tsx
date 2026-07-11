@@ -21,6 +21,12 @@ export interface MyCompany {
   bankForeignName?: string;
   bankKrwInfo?: string;
   bankForeignInfo?: string;
+
+  // ── 세금계산서 필수 항목 보강 (옵션 필드, 기존 문서 영향 없음) ──
+  representative?: string; // 대표자 성명
+  email?: string; // 전자세금계산서 발송/수신용 이메일
+  bizType?: string; // 업태
+  itemName?: string; // 종목
 }
 
 const renderFileThumbnail = (url: string, name: string) => {
@@ -317,7 +323,11 @@ export const MyCompanySettings: React.FC = () => {
         bankForeignUrl: editForm.bankForeignUrl || '',
         bankForeignName: editForm.bankForeignName || '',
         bankKrwInfo: editForm.bankKrwInfo || '',
-        bankForeignInfo: editForm.bankForeignInfo || ''
+        bankForeignInfo: editForm.bankForeignInfo || '',
+        representative: editForm.representative || '',
+        email: editForm.email || '',
+        bizType: editForm.bizType || '',
+        itemName: editForm.itemName || ''
       });
       alert("저장되었습니다.");
       setEditingId(null);
@@ -452,6 +462,22 @@ export const MyCompanySettings: React.FC = () => {
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>담당자</label>
                     <input name="manager" value={editForm.manager || ''} onChange={handleChange} style={{ width: '100%', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '13px', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }} />
                   </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>대표자 성명</label>
+                    <input name="representative" value={editForm.representative || ''} onChange={handleChange} style={{ width: '100%', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '13px', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>이메일 (전자세금계산서용)</label>
+                    <input name="email" value={editForm.email || ''} onChange={handleChange} style={{ width: '100%', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '13px', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>업태</label>
+                    <input name="bizType" value={editForm.bizType || ''} onChange={handleChange} style={{ width: '100%', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '13px', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '6px' }}>종목</label>
+                    <input name="itemName" value={editForm.itemName || ''} onChange={handleChange} style={{ width: '100%', padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', height: '34px', fontSize: '13px', color: '#1e293b', boxSizing: 'border-box', outline: 'none' }} />
+                  </div>
                   <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #cbd5e1', paddingTop: '16px', marginTop: '8px' }}>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 관리 (파일 선택 또는 업로드)</div>
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
@@ -575,6 +601,22 @@ export const MyCompanySettings: React.FC = () => {
                   <div>
                     <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>담당자</div>
                     <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{comp.manager || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>대표자 성명</div>
+                    <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{comp.representative || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>이메일</div>
+                    <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{comp.email || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>업태</div>
+                    <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{comp.bizType || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', marginBottom: '4px' }}>종목</div>
+                    <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '13.5px' }}>{comp.itemName || '-'}</div>
                   </div>
                   <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #cbd5e1', paddingTop: '16px', marginTop: '8px' }}>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b', marginBottom: '12px' }}>첨부 파일 미리보기 (클릭 시 화면에서 바로 볼 수 있는 창 띄우기)</div>
