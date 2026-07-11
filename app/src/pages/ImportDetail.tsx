@@ -2525,6 +2525,35 @@ customsDuty,
                       </select>
                     </div>
                   </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>PO 번호</label>
+                      <input
+                        type="text"
+                        value={request.poNumber && request.poNumber !== '-' ? request.poNumber : ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, poNumber: val || '-' } : r));
+                        }}
+                        placeholder="PO 번호 직접 입력"
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>PI 번호</label>
+                      <input
+                        type="text"
+                        value={request.piNumber || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, piNumber: val } : r));
+                        }}
+                        placeholder="PI 번호 직접 입력"
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
