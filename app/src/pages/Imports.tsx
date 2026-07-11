@@ -525,6 +525,70 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [selectedItemName, setSelectedItemName] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState('All');
 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'requestDate', direction: 'desc' });
+  const [colWidths, setColWidths] = useState<Record<string, number>>({
+    quote_requestDate: 120,
+    quote_quoteNumber: 150,
+    quote_importCompany: 160,
+    quote_itemName: 200,
+    quote_finalSellingPrice: 120,
+    quote_customerQuoteAmount: 130,
+    quote_finalCustomer: 150,
+    quote_importerName: 150,
+    quote_buyingPrice: 120,
+    quote_appliedExchangeRate: 100,
+    quote_customerDecision: 100,
+
+    active_requestDate: 110,
+    active_id: 100,
+    active_poNumber: 180,
+    active_importerName: 150,
+    active_itemName: 180,
+    active_transportType: 160,
+    active_importCompany: 140,
+    active_routeFrom: 160,
+    active_finalCustomer: 140,
+    active_managerName: 100,
+    active_customerQuoteAmount: 140,
+  });
+
+  const handleResizeStart = (colKey: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = colWidths[colKey] || 100;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      setColWidths(prev => ({
+        ...prev,
+        [colKey]: Math.max(50, startWidth + deltaX),
+      }));
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'desc' };
+    });
+  };
+
+  const renderSortIndicator = (key: string) => {
+    if (!sortConfig || sortConfig.key !== key) return <span style={{ color: '#cbd5e1', marginLeft: '4px', fontSize: '10px' }}>⇅</span>;
+    return sortConfig.direction === 'asc' ? <span style={{ color: '#2563eb', marginLeft: '4px', fontSize: '10px' }}>▲</span> : <span style={{ color: '#2563eb', marginLeft: '4px', fontSize: '10px' }}>▼</span>;
+  };
+
   const currentTabBaseRequests = useMemo(() => {
     return isQuoteMode 
       ? importRequests 
@@ -954,14 +1018,57 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       base = base.filter(req => req.finalCustomer === selectedCustomer);
     }
 
-    if (!searchTerm.trim()) return base;
-    return base.filter(req =>
-      req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.id.includes(searchTerm) ||
-      (req.importerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (req.shipperName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    if (searchTerm.trim()) {
+      base = base.filter(req =>
+        req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        req.id.includes(searchTerm) ||
+        (req.importerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (req.shipperName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // ⇅ 정렬 (Sorting) 적용
+    if (sortConfig) {
+      base.sort((a, b) => {
+        let aVal: any = '';
+        let bVal: any = '';
+
+        const key = sortConfig.key;
+        if (key === 'requestDate') {
+          aVal = a.requestDate || a.createdAt || '';
+          bVal = b.requestDate || b.createdAt || '';
+        } else if (key === 'quoteNumber') {
+          aVal = a.quoteNumber || `QT-${a.id}`;
+          bVal = b.quoteNumber || `QT-${b.id}`;
+        } else if (key === 'finalSellingPrice') {
+          const aQty = Number(a.costBreakdown?.buyingQty) || a.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+          const bQty = Number(b.costBreakdown?.buyingQty) || b.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+          aVal = Math.round((a.customerQuoteAmount || 0) / aQty);
+          bVal = Math.round((b.customerQuoteAmount || 0) / bQty);
+        } else if (key === 'buyingPrice') {
+          aVal = Number(a.piItems?.[0]?.unitPrice) || 0;
+          bVal = Number(b.piItems?.[0]?.unitPrice) || 0;
+        } else if (key === 'appliedExchangeRate') {
+          aVal = Number(a.costBreakdown?.appliedExchangeRate) || 0;
+          bVal = Number(b.costBreakdown?.appliedExchangeRate) || 0;
+        } else if (['id', 'poNumber', 'importCompany', 'itemName', 'finalCustomer', 'importerName', 'customerDecision', 'transportType', 'routeFrom', 'managerName'].includes(key)) {
+          aVal = (a as any)[key] || '';
+          bVal = (b as any)[key] || '';
+        } else if (key === 'customerQuoteAmount') {
+          aVal = Number(a.customerQuoteAmount) || 0;
+          bVal = Number(b.customerQuoteAmount) || 0;
+        }
+
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        } else {
+          return sortConfig.direction === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
+        }
+      });
+    }
+
+    return base;
   }, [
     currentTabBaseRequests, 
     searchTerm, 
@@ -972,8 +1079,74 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     rangeEnd,
     selectedImporter,
     selectedItemName,
-    selectedCustomer
+    selectedCustomer,
+    sortConfig
   ]);
+
+  const renderTh = (colKey: string, label: string, sortKey?: string, textAlign: 'left' | 'center' | 'right' = 'left') => {
+    const width = colWidths[colKey] || 100;
+    return (
+      <th 
+        style={{ 
+          padding: '12px 16px', 
+          fontSize: '11.5px', 
+          fontWeight: 750, 
+          color: '#475569', 
+          letterSpacing: '0.02em', 
+          textTransform: 'uppercase', 
+          width: `${width}px`,
+          minWidth: `${width}px`,
+          maxWidth: `${width}px`,
+          position: 'relative',
+          cursor: sortKey ? 'pointer' : 'default',
+          userSelect: 'none',
+          textAlign,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          boxSizing: 'border-box'
+        }}
+        onClick={() => sortKey && handleSort(sortKey)}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', verticalAlign: 'middle' }}>
+          {label}
+          {sortKey && renderSortIndicator(sortKey)}
+        </span>
+        <div
+          onMouseDown={(e) => handleResizeStart(colKey, e)}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '6px',
+            cursor: 'col-resize',
+            zIndex: 10,
+            background: 'transparent'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#cbd5e1'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+        />
+      </th>
+    );
+  };
+
+  const getTdStyle = (colKey: string, textAlign: 'left' | 'center' | 'right' = 'left'): React.CSSProperties => {
+    const width = colWidths[colKey] || 100;
+    return {
+      padding: '10px 16px',
+      width: `${width}px`,
+      minWidth: `${width}px`,
+      maxWidth: `${width}px`,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      textAlign,
+      boxSizing: 'border-box',
+      verticalAlign: 'middle'
+    };
+  };
 
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
@@ -1125,39 +1298,39 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
       {/* Main Table Grid */}
       <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '40px' }}>
               {isQuoteMode ? (
                 <>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px' }}>견적일</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>견적번호</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px', textAlign: 'center' }}>견적주체(YSACC/영성ACC)</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '200px' }}>품명</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px', textAlign: 'right' }}>견적단가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '130px', textAlign: 'right' }}>견적가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>최종고객</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px', textAlign: 'right' }}>수입견적단가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px', textAlign: 'right' }}>기준환율</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px', textAlign: 'center' }}>진행상태</th>
+                  {renderTh('quote_requestDate', '견적일', 'requestDate')}
+                  {renderTh('quote_quoteNumber', '견적번호', 'quoteNumber')}
+                  {renderTh('quote_importCompany', '견적주체(YSACC/영성ACC)', 'importCompany', 'center')}
+                  {renderTh('quote_itemName', '품명', 'itemName')}
+                  {renderTh('quote_finalSellingPrice', '견적단가', 'finalSellingPrice', 'right')}
+                  {renderTh('quote_customerQuoteAmount', '견적가', 'customerQuoteAmount', 'right')}
+                  {renderTh('quote_finalCustomer', '최종고객', 'finalCustomer')}
+                  {renderTh('quote_importerName', '수입처', 'importerName')}
+                  {renderTh('quote_buyingPrice', '수입견적단가', 'buyingPrice', 'right')}
+                  {renderTh('quote_appliedExchangeRate', '기준환율', 'appliedExchangeRate', 'right')}
+                  {renderTh('quote_customerDecision', '진행상태', 'customerDecision', 'center')}
                 </>
               ) : (
                 <>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '110px' }}>의뢰일</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>주문번호</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>PO번호</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>품명</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>운송내용</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'center' }}>수입주체</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px' }}>경로</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px' }}>최종고객</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>담당자</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '140px', textAlign: 'right' }}>수입금액</th>
+                  {renderTh('active_requestDate', '의뢰일', 'requestDate')}
+                  {renderTh('active_id', '주문번호', 'id')}
+                  {renderTh('active_poNumber', 'PO번호', 'poNumber')}
+                  {renderTh('active_importerName', '수입처', 'importerName')}
+                  {renderTh('active_itemName', '품명', 'itemName')}
+                  {renderTh('active_transportType', '운송내용', 'transportType')}
+                  {renderTh('active_importCompany', '수입주체', 'importCompany', 'center')}
+                  {renderTh('active_routeFrom', '경로', 'routeFrom')}
+                  {renderTh('active_finalCustomer', '최종고객', 'finalCustomer')}
+                  {renderTh('active_managerName', '담당자', 'managerName')}
+                  {renderTh('active_customerQuoteAmount', '수입금액', 'customerQuoteAmount', 'right')}
                 </>
               )}
-              <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '70px', textAlign: 'center' }}>관리</th>
+              <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '90px', textAlign: 'center' }}>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -1178,65 +1351,67 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 {isQuoteMode ? (
                   <>
                     {/* 견적일 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                    <td style={getTdStyle('quote_requestDate')}>
                       {req.requestDate || req.createdAt || '-'}
                     </td>
 
                     {/* 견적번호 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                    <td style={getTdStyle('quote_quoteNumber')}>
                       {req.quoteNumber || `QT-${req.id}`}
                     </td>
 
                     {/* 견적주체(YSACC/영성ACC) */}
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                    <td style={getTdStyle('quote_importCompany', 'center')}>
                       <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#15803d' : '#0369a1', background: (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? '#dcfce7' : '#e0f2fe' }}>
                         {(req.importCompany === 'YSACC' || req.importCompany === 'YS') ? 'YSACC' : '영성ACC'}
                       </span>
                     </td>
 
                     {/* 품명 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                    <td style={getTdStyle('quote_itemName')}>
                       {req.itemName}
                     </td>
 
                     {/* 견적단가 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#2563eb', fontWeight: 700 }}>
-                      {(() => {
-                        const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                        const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
-                        return finalPrice ? `₩${finalPrice.toLocaleString()}` : '-';
-                      })()}
+                    <td style={getTdStyle('quote_finalSellingPrice', 'right')}>
+                      <span style={{ fontSize: '12.5px', color: '#2563eb', fontWeight: 700 }}>
+                        {(() => {
+                          const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                          const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
+                          return finalPrice ? `₩${finalPrice.toLocaleString()}` : '-';
+                        })()}
+                      </span>
                     </td>
 
                     {/* 견적가 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                    <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
                         ₩{(req.customerQuoteAmount || 0).toLocaleString()}
                       </span>
                     </td>
 
                     {/* 최종고객 */}
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
+                    <td style={getTdStyle('quote_finalCustomer')}>
                       {req.finalCustomer || '-'}
                     </td>
 
                     {/* 수입처 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                    <td style={getTdStyle('quote_importerName')}>
                       {req.importerName || '-'}
                     </td>
 
                     {/* 수입견적단가 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
+                    <td style={getTdStyle('quote_buyingPrice', 'right')}>
                       {req.piItems?.[0]?.unitPrice ? `$${Number(req.piItems[0].unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                     </td>
 
                     {/* 기준환율 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
+                    <td style={getTdStyle('quote_appliedExchangeRate', 'right')}>
                       {req.costBreakdown?.appliedExchangeRate ? `₩${Number(req.costBreakdown.appliedExchangeRate).toLocaleString()}` : '-'}
                     </td>
 
                     {/* 진행상태 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                    <td style={getTdStyle('quote_customerDecision', 'center')}>
                       {(() => {
                         const decision = req.customerDecision || '검토중';
                         const colorMap: Record<string, { bg: string; color: string }> = {
@@ -1257,34 +1432,34 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 ) : (
                   <>
                     {/* 의뢰일 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                    <td style={getTdStyle('active_requestDate')}>
                       {req.requestDate || req.createdAt || '-'}
                     </td>
 
                     {/* 주문번호 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
+                    <td style={getTdStyle('active_id')}>
                       {req.id}
                     </td>
 
                     {/* PO번호 */}
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={getTdStyle('active_poNumber')}>
                       <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e293b' }}>
                         {req.poNumber && req.poNumber !== '-' ? req.poNumber : '-'}
                       </span>
                     </td>
                     
                     {/* 수입처 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                    <td style={getTdStyle('active_importerName')}>
                       {req.importerName || req.shipperName || '-'}
                     </td>
 
                     {/* 품명 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                    <td style={getTdStyle('active_itemName')}>
                       {req.itemName}
                     </td>
 
                     {/* 운송내용 */}
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={getTdStyle('active_transportType')}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>{req.transportType}</span>
                         <span style={{ fontSize: '11px', color: '#64748b' }}>{req.volume}</span>
@@ -1292,7 +1467,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     </td>
 
                     {/* 수입주체 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                    <td style={getTdStyle('active_importCompany', 'center')}>
                       {req.importCompany ? (
                         <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: req.importCompany === 'YS' ? '#0369a1' : '#15803d', background: req.importCompany === 'YS' ? '#e0f2fe' : '#dcfce7' }}>
                           {req.importCompany}
@@ -1301,7 +1476,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     </td>
 
                     {/* 경로 */}
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={getTdStyle('active_routeFrom')}>
                       <div style={{ display: 'flex', gap: '2px', flexDirection: 'column', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           📍 {req.routeFrom} ➔
@@ -1313,17 +1488,17 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     </td>
 
                     {/* 최종고객 */}
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
+                    <td style={getTdStyle('active_finalCustomer')}>
                       {req.finalCustomer || '-'}
                     </td>
 
                     {/* 담당자 */}
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', fontWeight: 600, color: '#475569' }}>
+                    <td style={getTdStyle('active_managerName')}>
                       {req.manager}
                     </td>
 
                     {/* 수입금액 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                    <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
                         ₩{req.amount.toLocaleString()}
                       </span>
