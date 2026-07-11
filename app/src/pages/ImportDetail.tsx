@@ -3248,104 +3248,104 @@ customsDuty,
             </h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px', marginBottom: '12px' }}>
-              {/* 필수 첨부 (CI, PL, CO, BL, 수입면장) */}
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '2px' }}>
+              {/* 필수 첨부 (CI, PL, CO, BL, 수입면장) - 2줄 그리드 구성 */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
                   필수 첨부 (*)
                 </div>
 
-                {/* 1. CI & PL */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+                  {/* Row 1, Col 1: CI & PL */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                    </div>
+                    {renderMultiUploadZone('ciPl', 'C/I & P/L 업로드', documents.ciPl, true)}
                   </div>
-                  {renderMultiUploadZone('ciPl', 'C/I & P/L 업로드', documents.ciPl, true)}
-                </div>
 
-                {/* 2. CO */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                  {/* Row 1, Col 2: CO */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                    </div>
+                    {renderMultiUploadZone('co', 'CO 업로드', documents.co, true)}
                   </div>
-                  {renderMultiUploadZone('co', 'CO 업로드', documents.co, true)}
-                </div>
 
-                {/* 3. BL */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                  {/* Row 2, Col 1: BL */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                    </div>
+                    {renderMultiUploadZone('blAwbDoc', 'BL(AWB) 업로드', documents.blAwbDoc, true)}
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '1px' }}>
+                      <input 
+                        type="text"
+                        value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, blAwb: val || '-' } : r);
+                          saveToStorage(updated);
+                        }}
+                        placeholder="B/L 번호 직접 입력"
+                        style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', height: '28px' }}
+                      />
+                    </div>
                   </div>
-                  {renderMultiUploadZone('blAwbDoc', 'BL(AWB) 업로드', documents.blAwbDoc, true)}
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '1px' }}>
-                    <input 
-                      type="text"
-                      value={request.blAwb && request.blAwb !== '-' ? request.blAwb : ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, blAwb: val || '-' } : r);
-                        saveToStorage(updated);
-                      }}
-                      placeholder="B/L 번호 직접 입력"
-                      style={{ flex: 1, padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '11px', outline: 'none', height: '28px' }}
-                    />
-                  </div>
-                </div>
 
-                {/* 4. 수입신고필증 (수입면장) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                  {/* Row 2, Col 2: 수입신고필증 (수입면장) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
+                    </div>
+                    {renderMultiUploadZone('customsPermit', '수입신고필증 업로드', documents.customsPermit, true)}
                   </div>
-                  {renderMultiUploadZone('customsPermit', '수입신고필증 업로드', documents.customsPermit, true)}
                 </div>
               </div>
 
-              {/* 선택 첨부 및 정산서류 영역 */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '2px' }}>
-                    선택 첨부 (HS CODE 요건 / 운임명세표 등)
-                  </div>
-
-                  {/* 1. HS CODE에 따른 관세 및 수입요건 정보 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      📋 HS CODE 관세 및 수입요건 정보 {documents.hsCustomsInfo && <span style={{ color: '#16a34a' }}>✅</span>}
-                    </div>
-                    {renderMultiUploadZone('hsCustomsInfo', 'HS CODE 관세 및 수입요건 정보 업로드', documents.hsCustomsInfo, true)}
-                  </div>
-
-                  {/* 2. 수입운임 거래명세표 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      💵 수입운임 거래명세표 {request.freightInvoiceFile && <span style={{ color: '#16a34a' }}>✅</span>}
-                    </div>
-                    {renderMultiUploadZone('freightInvoice', '수입운임 거래명세표 업로드', request.freightInvoiceFile, true)}
-                  </div>
-
-                  {/* 3. 인증/검역 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>}
-                    </div>
-                    {renderMultiUploadZone('inspect', '인증/검역 서류 업로드', documents.inspect, true)}
-                  </div>
-
-                  {/* 4. 기타 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>}
-                    </div>
-                    {renderMultiUploadZone('etc', '기타 파일 업로드', documents.etc, true)}
-                  </div>
+              {/* 선택 첨부 및 세금계산서 영역 - 2줄 그리드 구성 */}
+              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
+                  선택 및 세금계산서 첨부
                 </div>
 
-                {/* 하단: 정산 관련 세금계산서 영역 */}
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Row 1: 3열 구성 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        📋 HS CODE 정보 {documents.hsCustomsInfo && <span style={{ color: '#16a34a' }}>✅</span>}
+                      </div>
+                      {renderMultiUploadZone('hsCustomsInfo', '관세 정보 업로드', documents.hsCustomsInfo, true)}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        💵 운임명세표 {request.freightInvoiceFile && <span style={{ color: '#16a34a' }}>✅</span>}
+                      </div>
+                      {renderMultiUploadZone('freightInvoice', '운임명세표 업로드', request.freightInvoiceFile, true)}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>}
+                      </div>
+                      {renderMultiUploadZone('inspect', '인증 서류 업로드', documents.inspect, true)}
+                    </div>
                   </div>
-                  {renderMultiUploadZone('taxInvoice', '수입세금계산서 업로드', documents.taxInvoice, true)}
+
+                  {/* Row 2: 2열 구성 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>}
+                      </div>
+                      {renderMultiUploadZone('etc', '기타 업로드', documents.etc, true)}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>}
+                      </div>
+                      {renderMultiUploadZone('taxInvoice', '세금계산서 업로드', documents.taxInvoice, true)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
