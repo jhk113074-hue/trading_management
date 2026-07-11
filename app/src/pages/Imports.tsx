@@ -1134,13 +1134,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>견적번호</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '160px', textAlign: 'center' }}>견적주체(YSACC/영성ACC)</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '200px' }}>품명</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px', textAlign: 'right' }}>견적단가</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '130px', textAlign: 'right' }}>견적가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '70px', textAlign: 'center' }}>UNIT</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>최종고객</th>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px', textAlign: 'right' }}>수입견적단가</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px', textAlign: 'right' }}>기준환율</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '120px', textAlign: 'right' }}>견적단가</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
-                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>최종고객</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px', textAlign: 'center' }}>진행상태</th>
                 </>
               ) : (
@@ -1200,6 +1199,15 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       {req.itemName}
                     </td>
 
+                    {/* 견적단가 */}
+                    <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#2563eb', fontWeight: 700 }}>
+                      {(() => {
+                        const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                        const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
+                        return finalPrice ? `₩${finalPrice.toLocaleString()}` : '-';
+                      })()}
+                    </td>
+
                     {/* 견적가 */}
                     <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
@@ -1207,9 +1215,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       </span>
                     </td>
 
-                    {/* UNIT */}
-                    <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
-                      {req.piItems?.[0]?.unit || '-'}
+                    {/* 최종고객 */}
+                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
+                      {req.finalCustomer || '-'}
+                    </td>
+
+                    {/* 수입처 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                      {req.importerName || '-'}
                     </td>
 
                     {/* 수입견적단가 */}
@@ -1220,25 +1233,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 기준환율 */}
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
                       {req.costBreakdown?.appliedExchangeRate ? `₩${Number(req.costBreakdown.appliedExchangeRate).toLocaleString()}` : '-'}
-                    </td>
-
-                    {/* 견적단가 */}
-                    <td style={{ padding: '10px 16px', textAlign: 'right', fontSize: '12.5px', color: '#2563eb', fontWeight: 700 }}>
-                      {(() => {
-                        const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                        const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
-                        return finalPrice ? `₩${finalPrice.toLocaleString()}` : '-';
-                      })()}
-                    </td>
-
-                    {/* 수입처 */}
-                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
-                      {req.importerName || '-'}
-                    </td>
-
-                    {/* 최종고객 */}
-                    <td style={{ padding: '10px 16px', fontSize: '12.5px', color: '#475569', fontWeight: 500 }}>
-                      {req.finalCustomer || '-'}
                     </td>
 
                     {/* 진행상태 */}
