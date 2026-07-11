@@ -552,6 +552,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     active_finalCustomer: 140,
     active_managerName: 100,
     active_customerQuoteAmount: 140,
+    active_totalBuyingCost: 140,
+    quote_totalBuyingCost: 130,
   });
 
   const handleResizeStart = (colKey: string, e: React.MouseEvent) => {
@@ -596,6 +598,42 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       ? importRequests
       : importRequests.filter(req => req.customerDecision === '승인');
   }, [importRequests, isQuoteMode]);
+
+  const stats = useMemo(() => {
+    let totalBuying = 0;
+    let totalSales = 0;
+    let activeCount = currentTabBaseRequests.length;
+    
+    currentTabBaseRequests.forEach(req => {
+      // 매출액
+      const sales = Number(req.customerQuoteAmount) || Number(req.amount) || 0;
+      totalSales += sales;
+      
+      // 매입액 (수입원가)
+      const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+      const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+      const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
+      const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
+      
+      const freightCost = Number(req.costBreakdown?.freightCost) || 0;
+      const customsCost = Number(req.costBreakdown?.customsCost) || 0;
+      const otherCost = Number(req.costBreakdown?.otherCost) || 0;
+      
+      const totalBuyingCost = productCost + freightCost + customsCost + otherCost;
+      totalBuying += totalBuyingCost;
+    });
+
+    const totalMargin = totalSales - totalBuying;
+    const marginPercent = totalSales > 0 ? Math.round((totalMargin / totalSales) * 100) : 0;
+
+    return {
+      activeCount,
+      totalBuying,
+      totalSales,
+      totalMargin,
+      marginPercent
+    };
+  }, [currentTabBaseRequests]);
 
   const uniqueImporters = useMemo(() => {
     const set = new Set<string>();
@@ -1166,6 +1204,29 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         </p>
       </div>
 
+      {/* 📊 매입액 / 매출액 대시보드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 진행 건수</span>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{stats.activeCount} 건</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매입액 (수입원가)</span>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>₩{stats.totalBuying.toLocaleString()}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매출액 (견적/판매)</span>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>예상 마진총액</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(평균 마진율: {stats.marginPercent}%)</span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#166534' }}>₩{stats.totalMargin.toLocaleString()}</div>
+        </div>
+      </div>
+
       {/* Filter panel */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
@@ -1310,7 +1371,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   {renderTh('quote_importCompany', '견적주체(YSACC/영성ACC)', 'importCompany', 'center')}
                   {renderTh('quote_itemName', '품명', 'itemName')}
                   {renderTh('quote_finalSellingPrice', '견적단가', 'finalSellingPrice', 'right')}
-                  {renderTh('quote_customerQuoteAmount', '견적가', 'customerQuoteAmount', 'right')}
+                  {renderTh('quote_totalBuyingCost', '매입액', 'totalBuyingCost', 'right')}
+                  {renderTh('quote_customerQuoteAmount', '매출액', 'customerQuoteAmount', 'right')}
                   {renderTh('quote_finalCustomer', '최종고객', 'finalCustomer')}
                   {renderTh('quote_importerName', '수입처', 'importerName')}
                   {renderTh('quote_buyingPrice', '수입견적단가', 'buyingPrice', 'right')}
@@ -1331,7 +1393,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   {renderTh('active_eta', 'ETA', 'eta')}
                   {renderTh('active_finalCustomer', '최종고객', 'finalCustomer')}
                   {renderTh('active_managerName', '담당자', 'managerName')}
-                  {renderTh('active_customerQuoteAmount', '수입금액', 'customerQuoteAmount', 'right')}
+                  {renderTh('active_totalBuyingCost', '매입액', 'totalBuyingCost', 'right')}
+                  {renderTh('active_customerQuoteAmount', '매출액', 'customerQuoteAmount', 'right')}
                 </>
               )}
               <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '90px', textAlign: 'center' }}>관리</th>
@@ -1387,9 +1450,25 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       </span>
                     </td>
 
-                    {/* 견적가 */}
+                    {/* 매입액 */}
+                    <td style={getTdStyle('quote_totalBuyingCost', 'right')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#dc2626' }}>
+                        ₩{(() => {
+                          const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+                          const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+                          const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
+                          const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
+                          const freightCost = Number(req.costBreakdown?.freightCost) || 0;
+                          const customsCost = Number(req.costBreakdown?.customsCost) || 0;
+                          const otherCost = Number(req.costBreakdown?.otherCost) || 0;
+                          return (productCost + freightCost + customsCost + otherCost).toLocaleString();
+                        })()}
+                      </span>
+                    </td>
+
+                    {/* 견적가 (매출액) */}
                     <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
-                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
                         ₩{(req.customerQuoteAmount || 0).toLocaleString()}
                       </span>
                     </td>
@@ -1515,10 +1594,26 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       {req.manager}
                     </td>
 
-                    {/* 수입금액 */}
+                    {/* 매입액 */}
+                    <td style={getTdStyle('active_totalBuyingCost', 'right')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#dc2626' }}>
+                        ₩{(() => {
+                          const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+                          const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+                          const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
+                          const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
+                          const freightCost = Number(req.costBreakdown?.freightCost) || 0;
+                          const customsCost = Number(req.costBreakdown?.customsCost) || 0;
+                          const otherCost = Number(req.costBreakdown?.otherCost) || 0;
+                          return (productCost + freightCost + customsCost + otherCost).toLocaleString();
+                        })()}
+                      </span>
+                    </td>
+
+                    {/* 매출액 */}
                     <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
-                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#1e293b' }}>
-                        ₩{req.amount.toLocaleString()}
+                      <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
+                        ₩{(req.customerQuoteAmount || req.amount || 0).toLocaleString()}
                       </span>
                     </td>
                   </>
