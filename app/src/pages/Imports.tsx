@@ -1097,44 +1097,37 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     let activeCount = filteredRequests.length;
     
     filteredRequests.forEach(req => {
-      // 매출액
+      // 매출액 (KRW)
       const sales = Number(req.customerQuoteAmount) || Number(req.amount) || 0;
       totalSales += sales;
       
-      // 매입액 (수입원가)
+      // 매입액 (USD) - 단가 * 수량 기준 외화 구매총액
       const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
       const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-      const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
-      const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
-      
-      const freightCost = Number(req.costBreakdown?.freightCost) || 0;
-      const customsCost = Number(req.costBreakdown?.customsCost) || 0;
-      const otherCost = Number(req.costBreakdown?.otherCost) || 0;
-      
-      const totalBuyingCost = productCost + freightCost + customsCost + otherCost;
-      totalBuying += totalBuyingCost;
+      const totalBuyingCostUsd = buyingQty * buyingPriceUsd;
+      totalBuying += totalBuyingCostUsd;
 
       // Group by company
       const isYsacc = (req.importCompany || '').toUpperCase().includes('YS');
       if (isYsacc) {
-        ysaccBuying += totalBuyingCost;
+        ysaccBuying += totalBuyingCostUsd;
         ysaccSales += sales;
       } else {
-        youngsungBuying += totalBuyingCost;
+        youngsungBuying += totalBuyingCostUsd;
         youngsungSales += sales;
       }
     });
 
-    const totalMargin = totalSales - totalBuying;
+    const totalMargin = totalSales - (totalBuying * 1400); // 대략적인 마진계산 (환율 1400 고정 참고용)
     const marginPercent = totalSales > 0 ? Math.round((totalMargin / totalSales) * 100) : 0;
     
-    const ysaccMargin = ysaccSales - ysaccBuying;
-    const youngsungMargin = youngsungSales - youngsungBuying;
+    const ysaccMargin = ysaccSales - (ysaccBuying * 1400);
+    const youngsungMargin = youngsungSales - (youngsungBuying * 1400);
 
     return {
       activeCount,
-      totalBuying,
-      totalSales,
+      totalBuying, // USD 기준
+      totalSales,  // KRW 기준
       totalMargin,
       marginPercent,
       ysaccBuying,
@@ -1238,9 +1231,9 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{isQuoteMode ? '총 구매(예상액)' : '총 매입액 (수입원가)'}</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccBuying.toLocaleString()} / 영성: ₩{stats.youngsungBuying.toLocaleString()})</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.ysaccBuying).toLocaleString()} / 영성: ${Math.round(stats.youngsungBuying).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>₩{stats.totalBuying.toLocaleString()}</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>${stats.totalBuying.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1474,18 +1467,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       </span>
                     </td>
 
-                    {/* 매입액 */}
+                    {/* 구매(예상액) */}
                     <td style={getTdStyle('quote_totalBuyingCost', 'right')}>
                       <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#dc2626' }}>
-                        ₩{(() => {
+                        {(() => {
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-                          const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
-                          const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
-                          const freightCost = Number(req.costBreakdown?.freightCost) || 0;
-                          const customsCost = Number(req.costBreakdown?.customsCost) || 0;
-                          const otherCost = Number(req.costBreakdown?.otherCost) || 0;
-                          return (productCost + freightCost + customsCost + otherCost).toLocaleString();
+                          const totalUsd = buyingQty * buyingPriceUsd;
+                          return `${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
                     </td>
@@ -1621,15 +1610,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 매입액 */}
                     <td style={getTdStyle('active_totalBuyingCost', 'right')}>
                       <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#dc2626' }}>
-                        ₩{(() => {
+                        {(() => {
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-                          const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
-                          const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
-                          const freightCost = Number(req.costBreakdown?.freightCost) || 0;
-                          const customsCost = Number(req.costBreakdown?.customsCost) || 0;
-                          const otherCost = Number(req.costBreakdown?.otherCost) || 0;
-                          return (productCost + freightCost + customsCost + otherCost).toLocaleString();
+                          const totalUsd = buyingQty * buyingPriceUsd;
+                          return `${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
                     </td>
