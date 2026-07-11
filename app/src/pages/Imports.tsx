@@ -599,65 +599,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       : importRequests.filter(req => req.customerDecision === '승인');
   }, [importRequests, isQuoteMode]);
 
-  const stats = useMemo(() => {
-    let totalBuying = 0;
-    let totalSales = 0;
-    let ysaccBuying = 0;
-    let ysaccSales = 0;
-    let youngsungBuying = 0;
-    let youngsungSales = 0;
-    let activeCount = currentTabBaseRequests.length;
-    
-    currentTabBaseRequests.forEach(req => {
-      // 매출액
-      const sales = Number(req.customerQuoteAmount) || Number(req.amount) || 0;
-      totalSales += sales;
-      
-      // 매입액 (수입원가)
-      const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
-      const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-      const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
-      const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
-      
-      const freightCost = Number(req.costBreakdown?.freightCost) || 0;
-      const customsCost = Number(req.costBreakdown?.customsCost) || 0;
-      const otherCost = Number(req.costBreakdown?.otherCost) || 0;
-      
-      const totalBuyingCost = productCost + freightCost + customsCost + otherCost;
-      totalBuying += totalBuyingCost;
-
-      // Group by company
-      const isYsacc = (req.importCompany || '').toUpperCase().includes('YS');
-      if (isYsacc) {
-        ysaccBuying += totalBuyingCost;
-        ysaccSales += sales;
-      } else {
-        youngsungBuying += totalBuyingCost;
-        youngsungSales += sales;
-      }
-    });
-
-    const totalMargin = totalSales - totalBuying;
-    const marginPercent = totalSales > 0 ? Math.round((totalMargin / totalSales) * 100) : 0;
-    
-    const ysaccMargin = ysaccSales - ysaccBuying;
-    const youngsungMargin = youngsungSales - youngsungBuying;
-
-    return {
-      activeCount,
-      totalBuying,
-      totalSales,
-      totalMargin,
-      marginPercent,
-      ysaccBuying,
-      ysaccSales,
-      ysaccMargin,
-      youngsungBuying,
-      youngsungSales,
-      youngsungMargin
-    };
-  }, [currentTabBaseRequests]);
-
   const uniqueImporters = useMemo(() => {
     const set = new Set<string>();
     currentTabBaseRequests.forEach(r => {
@@ -1146,6 +1087,65 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     sortConfig
   ]);
 
+  const stats = useMemo(() => {
+    let totalBuying = 0;
+    let totalSales = 0;
+    let ysaccBuying = 0;
+    let ysaccSales = 0;
+    let youngsungBuying = 0;
+    let youngsungSales = 0;
+    let activeCount = filteredRequests.length;
+    
+    filteredRequests.forEach(req => {
+      // 매출액
+      const sales = Number(req.customerQuoteAmount) || Number(req.amount) || 0;
+      totalSales += sales;
+      
+      // 매입액 (수입원가)
+      const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+      const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+      const appliedExchangeRate = Number(req.costBreakdown?.appliedExchangeRate) || Number(req.costBreakdown?.todayExchangeRate) || 1400;
+      const productCost = Number(req.costBreakdown?.productCost) || (buyingQty * buyingPriceUsd * appliedExchangeRate);
+      
+      const freightCost = Number(req.costBreakdown?.freightCost) || 0;
+      const customsCost = Number(req.costBreakdown?.customsCost) || 0;
+      const otherCost = Number(req.costBreakdown?.otherCost) || 0;
+      
+      const totalBuyingCost = productCost + freightCost + customsCost + otherCost;
+      totalBuying += totalBuyingCost;
+
+      // Group by company
+      const isYsacc = (req.importCompany || '').toUpperCase().includes('YS');
+      if (isYsacc) {
+        ysaccBuying += totalBuyingCost;
+        ysaccSales += sales;
+      } else {
+        youngsungBuying += totalBuyingCost;
+        youngsungSales += sales;
+      }
+    });
+
+    const totalMargin = totalSales - totalBuying;
+    const marginPercent = totalSales > 0 ? Math.round((totalMargin / totalSales) * 100) : 0;
+    
+    const ysaccMargin = ysaccSales - ysaccBuying;
+    const youngsungMargin = youngsungSales - youngsungBuying;
+
+    return {
+      activeCount,
+      totalBuying,
+      totalSales,
+      totalMargin,
+      marginPercent,
+      ysaccBuying,
+      ysaccSales,
+      ysaccMargin,
+      youngsungBuying,
+      youngsungSales,
+      youngsungMargin
+    };
+  }, [filteredRequests]);
+
   const renderTh = (colKey: string, label: string, sortKey?: string, textAlign: 'left' | 'center' | 'right' = 'left') => {
     const width = colWidths[colKey] || 100;
     return (
@@ -1230,7 +1230,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       </div>
 
       {/* 📊 매입액 / 매출액 대시보드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 진행 건수</span>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e293b' }}>{stats.activeCount} 건</div>
@@ -1248,13 +1248,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccSales.toLocaleString()} / 영성: ₩{stats.youngsungSales.toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</div>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>예상 마진총액</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccMargin.toLocaleString()} / 영성: ₩{stats.youngsungMargin.toLocaleString()} | {stats.marginPercent}%)</span>
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#166534' }}>₩{stats.totalMargin.toLocaleString()}</div>
         </div>
       </div>
 
