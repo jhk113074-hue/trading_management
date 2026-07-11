@@ -1865,8 +1865,6 @@ customsDuty,
               </div>
             </div>
 
-            {renderSupplierQuotesSection()}
-
             {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
             <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
