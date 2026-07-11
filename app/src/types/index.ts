@@ -193,6 +193,25 @@ export interface ImportRequest {
   freightAmount?: number;
   freightVat?: number;
   customsTaxAmount?: number;
+  
+  supplierBankInfo?: {
+    bankName?: string;
+    swiftCode?: string;
+    accountNumber?: string;
+    accountName?: string;
+    beneficiaryAddress?: string;
+    bankAddress?: string;
+  };
+  payments?: Array<{
+    id: string;
+    round: number;
+    date: string;
+    amountUsd: number;
+    amountKrw: number;
+    fxMemoFiles?: Array<{ name: string; url: string; path?: string }>;
+    remittanceSlipFiles?: Array<{ name: string; url: string; path?: string }>;
+    remarks?: string;
+  }>;
 
   // 문서함 (Firestore 이관: key별 {name,url})
   documents?: { [key: string]: { name: string; url: string; path?: string } };
