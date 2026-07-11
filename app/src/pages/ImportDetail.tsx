@@ -5,6 +5,7 @@ import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import type { Customer } from '../types/customer';
 import { previewFile } from '../components/FilePreviewModal';
 import { ProductSearchModal } from '../components/ProductSearchModal';
@@ -340,17 +341,19 @@ export const ImportDetail: React.FC = () => {
   });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
   const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
+  const [showSupplierSearchModal, setShowSupplierSearchModal] = useState<boolean>(false);
   const [isCostTableExpanded, setIsCostTableExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [uploadingQuoteId, setUploadingQuoteId] = useState<string | null>(null);
   const [forwarders, setForwarders] = useState<any[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'companies', 'YSACC', 'suppliers'), (snapshot) => {
-      const list = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as any))
-        .filter(supplier => supplier.category === '포워딩사');
-      setForwarders(list);
+      const allList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+      const fwList = allList.filter(supplier => supplier.category === '포워딩사');
+      setForwarders(fwList);
+      setAllSuppliers(allList);
     }, (error) => {
       console.error("Failed to sync suppliers/forwarders in ImportDetail:", error);
     });
@@ -2390,12 +2393,22 @@ customsDuty,
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
-                    <input
-                      type="text"
-                      value={request.importerName || ''}
-                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importerName: e.target.value } : r))}
-                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="text"
+                        readOnly
+                        value={request.importerName || ''}
+                        placeholder="공급업체 검색으로 지정"
+                        style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSupplierSearchModal(true)}
+                        style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🔍 검색
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
@@ -2418,21 +2431,36 @@ customsDuty,
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>INCOTERMS</label>
-                      <input
-                        type="text"
-                        value={request.incoterms || ''}
+                      <select
+                        value={request.incoterms || 'FOB'}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, incoterms: e.target.value } : r))}
                         style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                      />
+                      >
+                        <option value="FOB">FOB</option>
+                        <option value="EXW">EXW</option>
+                        <option value="CIF">CIF</option>
+                        <option value="DDP">DDP</option>
+                        <option value="DAP">DAP</option>
+                        <option value="FCA">FCA</option>
+                        <option value="CFR">CFR</option>
+                        <option value="CPT">CPT</option>
+                        <option value="CIP">CIP</option>
+                        <option value="DPU">DPU</option>
+                      </select>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>결제 방식</label>
-                      <input
-                        type="text"
-                        value={request.paymentTerms || ''}
+                      <select
+                        value={request.paymentTerms || '100% T/T in advance'}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, paymentTerms: e.target.value } : r))}
                         style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                      />
+                      >
+                        <option value="100% T/T in advance">100% T/T in advance</option>
+                        <option value="T/T 30% deposit, 70% balance">T/T 30% deposit, 70% balance</option>
+                        <option value="L/C at sight">L/C at sight</option>
+                        <option value="Net 30 days">Net 30 days</option>
+                        <option value="Net 60 days">Net 60 days</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -3968,6 +3996,19 @@ customsDuty,
             const updated = importRequests.map(r => r.id === id ? { ...r, finalCustomer: cust.name } : r);
             saveToStorage(updated);
             setShowCustomerModal(false);
+          }}
+        />
+      )}
+
+      {/* 🔍 공급사 검색 모달 */}
+      {showSupplierSearchModal && (
+        <SupplierSearchModal
+          suppliers={allSuppliers}
+          onClose={() => setShowSupplierSearchModal(false)}
+          onSelect={(sup) => {
+            const updated = importRequests.map(r => r.id === id ? { ...r, importerName: sup.name } : r);
+            saveToStorage(updated);
+            setShowSupplierSearchModal(false);
           }}
         />
       )}
