@@ -4703,7 +4703,7 @@ customsDuty,
 
           const actualTotalCost = actualPurchaseCost + actualLogisticsCost + actualCustomsCost;
 
-          const actualRevenue = request.paymentCollectedAmount || plannedRevenue;
+          const actualRevenue = (request.taxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.taxInvoiceTotalAmount || plannedRevenue;
           const realizedMargin = actualRevenue - actualTotalCost;
           const realizedMarginRate = actualRevenue ? (realizedMargin / actualRevenue) * 100 : 0;
           const marginGap = realizedMargin - plannedMargin;
