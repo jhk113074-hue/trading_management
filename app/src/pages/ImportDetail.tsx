@@ -465,6 +465,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
+  const matchedCustomer = customers.find(c => c.name?.trim() === (request.finalCustomer || '').trim());
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
@@ -4013,12 +4014,12 @@ customsDuty,
 
                           setDealStatementData({
                             date: request.dealStatementSentDate || new Date().toISOString().split('T')[0],
-                            receiverBizNo: request.dealStatementBizNo || '',
+                            receiverBizNo: request.dealStatementBizNo || matchedCustomer?.bizRegNumber || matchedCustomer?.taxId || '',
                             receiverName: request.dealStatementName || request.finalCustomer || '',
-                            receiverCEO: request.dealStatementCEO || '',
-                            receiverAddr: request.dealStatementAddr || '',
-                            receiverType: request.dealStatementType || '',
-                            receiverItem: request.dealStatementItem || '',
+                            receiverCEO: request.dealStatementCEO || matchedCustomer?.representative || '',
+                            receiverAddr: request.dealStatementAddr || matchedCustomer?.addressKo || matchedCustomer?.addressEn || '',
+                            receiverType: request.dealStatementType || matchedCustomer?.bizType || '',
+                            receiverItem: request.dealStatementItem || matchedCustomer?.itemName || '',
                             items: currentItems,
                             receivableAmount: request.dealStatementReceivable || 0,
                             receiverSign: ''
@@ -4049,7 +4050,7 @@ customsDuty,
                         <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>등록번호</label>
                         <input
                           type="text"
-                          value={request.dealStatementBizNo || ''}
+                          value={request.dealStatementBizNo ?? (matchedCustomer?.bizRegNumber || matchedCustomer?.taxId || '')}
                           onChange={(e) => {
                             const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementBizNo: e.target.value } : r);
                             saveToStorage(updated);
@@ -4062,7 +4063,7 @@ customsDuty,
                         <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>대표자 성명</label>
                         <input
                           type="text"
-                          value={request.dealStatementCEO || ''}
+                          value={request.dealStatementCEO ?? (matchedCustomer?.representative || '')}
                           onChange={(e) => {
                             const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCEO: e.target.value } : r);
                             saveToStorage(updated);
@@ -4087,7 +4088,7 @@ customsDuty,
                         <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>주소</label>
                         <input
                           type="text"
-                          value={request.dealStatementAddr || ''}
+                          value={request.dealStatementAddr ?? (matchedCustomer?.addressKo || matchedCustomer?.addressEn || '')}
                           onChange={(e) => {
                             const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementAddr: e.target.value } : r);
                             saveToStorage(updated);
@@ -4100,7 +4101,7 @@ customsDuty,
                         <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>업태</label>
                         <input
                           type="text"
-                          value={request.dealStatementType || ''}
+                          value={request.dealStatementType ?? (matchedCustomer?.bizType || '')}
                           onChange={(e) => {
                             const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementType: e.target.value } : r);
                             saveToStorage(updated);
@@ -4113,7 +4114,7 @@ customsDuty,
                         <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>종목</label>
                         <input
                           type="text"
-                          value={request.dealStatementItem || ''}
+                          value={request.dealStatementItem ?? (matchedCustomer?.itemName || '')}
                           onChange={(e) => {
                             const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItem: e.target.value } : r);
                             saveToStorage(updated);
