@@ -2066,34 +2066,6 @@ customsDuty,
               </div>
             </div>
 
-            {/* 수입 확정 상태 결정 카드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', gridColumn: 'span 2' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>⚓ 수입 진행 상태 결정</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-default)', paddingTop: '8px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
-                  <select
-                    value={request.customerDecision || '검토중'}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      const nextStatus = val === '승인' ? '발주 진행' : '진행 결정 요청';
-                      const updated = importRequests.map(r => r.id === id ? { ...r, customerDecision: val, status: nextStatus } : r);
-                      saveToStorage(updated);
-                      if (val === '승인') {
-                        navigate(`/imports/${id}?mode=active`, { replace: true });
-                      } else {
-                        navigate(`/imports/${id}?mode=quote`, { replace: true });
-                      }
-                    }}
-                    style={{ padding: '5px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: '#fff' }}
-                  >
-                    <option value="검토중">검토중 (Under Review)</option>
-                    <option value="승인">승인 (Approved - 실무 진행)</option>
-                    <option value="반려">반려 (Rejected)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
