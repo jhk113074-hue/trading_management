@@ -8,6 +8,31 @@ export interface ProductPriceHistory {
   validTo?: string;
   minQty?: number;
   discountRate?: number;
+
+  // ── 수입원가 이력 전용 (수입관리 "정산완료" 시 자동 반영되는 항목) ──
+  // 이 필드가 있으면 "수입 제품"의 실제 정산 원가 기록임을 의미하며,
+  // 상품 상세 화면에서 상세내역(원가 구성)을 펼쳐볼 수 있다.
+  sourceImportId?: string;   // 수입관리 문서 ID (companies/YSACC/imports/{id})
+  poNumber?: string;         // 연결된 PO 번호
+  exchangeRate?: number;     // 정산 시 적용환율
+  incoterms?: string;        // 정산 시 인코텀즈
+  importCostDetail?: {
+    qty: number;                 // 이 상품에 배분된 수량
+    goodsAmountKrw: number;      // 물품금액(KRW, 배분분)
+    freightKrw: number;          // 국제운임(KRW, 배분분)
+    insuranceKrw: number;        // 보험료(KRW, 배분분)
+    originInlandKrw: number;     // 수출국 내륙운송·수출비(KRW, 배분분)
+    cifKrw: number;              // CIF 과세가격(배분분)
+    customsDutyRate: number;     // 관세율(%)
+    customsDuty: number;         // 관세(배분분)
+    clearanceFee: number;        // 통관비(배분분)
+    portFee: number;             // 항만·공항비용(배분분)
+    domesticTransportFee: number;// 국내운송비(배분분)
+    handlingFee: number;         // 하역·장비비(배분분)
+    otherFee: number;            // 기타비용(배분분)
+    totalImportCost: number;     // 총 수입원가(배분분)
+    unitCost: number;            // 단위당 수입원가 (= price와 동일)
+  };
 }
 
 export interface ProductSupplierLink {

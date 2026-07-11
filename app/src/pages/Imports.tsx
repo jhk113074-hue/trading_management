@@ -28,7 +28,8 @@ const computePoNumber = (importCompany: string, sellerName: string, id: string):
 };
 
 import { ProductSearchModal } from '../components/ProductSearchModal';
-import type { Product } from '../types/product';
+import type { Product, ProductPriceHistory } from '../types/product';
+import { useAuth } from '../contexts/AuthContext';
 
 export const INITIAL_IMPORTS: ImportRequest[] = [];
 
@@ -430,8 +431,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     );
   };
   const [isCostTableExpanded, setIsCostTableExpanded] = useState(true);
+  const [isActualCostTableExpanded, setIsActualCostTableExpanded] = useState(true);
   const isQuoteMode = mode === 'quotes';
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
   const [importRequests, setImportRequests] = useState<ImportRequest[]>([]);
 
   // 📅 날짜/기간 필터링 상태 추가 (수입견적: 월별 default, 수입관리: 날짜 default)
@@ -884,6 +887,100 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       const nextList = importRequests.filter(req => req.id !== id);
       saveToStorage(nextList);
     }
+  };
+
+  // 📦 실행/정산 원가 → 상품별 수입원가 이력 반영
+  // "실행원가" 계산표에 입력된 실제 청구 금액을 기준으로, 상품 DB와 연결된(productId 보유)
+  // 품목마다 금액 비중으로 원가를 배분해 각 상품의 purchasePrices 이력에 한 줄씩 추가한다.
+  // 수입과 무관한(연결 안 된) 상품은 전혀 건드리지 않으므로, 수입제품에 한해서만 이력이 쌓인다.
+  const handleSettleImportCost = () => {
+    if (!editingRequest || !editingRequest.id) return;
+    const cb = editingRequest.actualCostBreakdown || {};
+    const items = editingRequest.piItems || [];
+    const linkedItems = items.filter(it => !!it.productId);
+
+    if (linkedItems.length === 0) {
+      alert('상품 DB와 연결된 품목이 없습니다. 위 "수입 제품 및 패킹 명세 목록"에서 🔍 버튼으로 상품 DB의 제품을 먼저 지정해주세요.');
+      return;
+    }
+    if (editingRequest.settlementCompleted) {
+      if (!window.confirm('이미 정산완료 처리된 건입니다. 다시 정산하면 각 상품의 원가 이력에 새 항목이 추가됩니다. 계속하시겠습니까?')) {
+        return;
+      }
+    }
+
+    const { totalImportCost } = calculateTotalCostHelper(cb, items);
+    const totalAmount = items.reduce((sum, it) => sum + (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), 0);
+    const today = new Date().toISOString().slice(0, 10);
+    const applied = cb.appliedExchangeRate || 1450;
+
+    linkedItems.forEach(it => {
+      const itemAmount = (Number(it.qty) || 0) * (Number(it.unitPrice) || 0);
+      const share = totalAmount > 0 ? itemAmount / totalAmount : 1 / linkedItems.length;
+      const itemQty = Number(it.qty) || 1;
+
+      const goodsAmountKrw = Math.round(((cb.buyingPriceUsd || 0) * applied * (cb.buyingQty || 0)) * share);
+      const freightKrw = Math.round(((cb.freightUsd || 0) * applied) * share);
+      const insuranceKrw = Math.round(((cb.insuranceUsd || 0) * applied) * share);
+      const originInlandKrw = Math.round(((cb.originInlandUsd || 0) * applied) * share);
+      const cifKrw = goodsAmountKrw + freightKrw + insuranceKrw + originInlandKrw;
+      const customsDutyRate = (cb.ftaTaxRate || 0) + (cb.antiDumpingRate || 0);
+      const customsDuty = Math.round(cifKrw * (customsDutyRate / 100));
+      const clearanceFee = Math.round((cb.clearanceFee || 0) * share);
+      const portFee = Math.round((cb.portFee || 0) * share);
+      const domesticTransportFee = Math.round((cb.domesticTransportFee || 0) * share);
+      const handlingFee = Math.round((cb.handlingFee || 0) * share);
+      const otherFee = Math.round((cb.otherFee || 0) * share);
+      const itemTotalImportCost = Math.round(totalImportCost * share);
+      const unitCost = Math.round(itemTotalImportCost / itemQty);
+
+      const historyEntry: ProductPriceHistory = {
+        validFrom: today,
+        supplierCode: '',
+        supplierName: editingRequest.importerName || '',
+        currency: 'KRW',
+        price: unitCost,
+        remarks: `수입원가 자동반영 (PO ${editingRequest.poNumber || '-'})`,
+        sourceImportId: editingRequest.id,
+        poNumber: editingRequest.poNumber,
+        exchangeRate: cb.appliedExchangeRate,
+        incoterms: cb.incoterms,
+        importCostDetail: {
+          qty: itemQty,
+          goodsAmountKrw,
+          freightKrw,
+          insuranceKrw,
+          originInlandKrw,
+          cifKrw,
+          customsDutyRate,
+          customsDuty,
+          clearanceFee,
+          portFee,
+          domesticTransportFee,
+          handlingFee,
+          otherFee,
+          totalImportCost: itemTotalImportCost,
+          unitCost
+        }
+      };
+
+      const targetProduct = products.find(pr => pr.id === it.productId);
+      const existingPrices = (targetProduct?.purchasePrices || []) as ProductPriceHistory[];
+      setDoc(
+        doc(db, 'companies', 'YSACC', 'products', it.productId as string),
+        { purchasePrices: [historyEntry, ...existingPrices] },
+        { merge: true }
+      ).catch(err => console.error('Failed to write import cost history to product:', err));
+    });
+
+    const settledInfo = { settlementCompleted: true, settledAt: today, settledBy: userProfile?.name || '' };
+    setEditingRequest(p => p ? ({ ...p, ...settledInfo }) : null);
+    // 정산 정보는 즉시 원본 문서에도 반영 (수정완료를 누르지 않아도 유실되지 않도록)
+    setDoc(doc(db, 'companies', COMPANY_ID, 'imports', editingRequest.id), settledInfo, { merge: true }).catch(err => {
+      console.error('Failed to save settlement flag on import doc:', err);
+    });
+
+    alert(`${linkedItems.length}개 품목의 수입원가 이력이 상품 DB에 반영되었습니다.`);
   };
 
   const filteredRequests = useMemo(() => {
@@ -1561,10 +1658,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                                   setProductSearchTargetIdx(idx);
                                   setShowProductSearch(true);
                                 }}
-                                style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                                title="상품 DB에서 가져오기"
+                                style={{ padding: '3px 6px', background: item.productId ? '#f0fdf4' : 'var(--border-color)', border: item.productId ? '1px solid #16a34a' : '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                title={item.productId ? '상품 DB 연결됨 — 정산완료 시 이 품목의 원가 이력이 자동 반영됩니다' : '상품 DB에서 가져오기'}
                               >
-                                🔍
+                                {item.productId ? '✅' : '🔍'}
                               </button>
                             </div>
                           </td>
@@ -1840,7 +1937,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     hsCode: prod.hsCode || '',
                     unitPrice: String(prod.purchasePrice || ''),
                     unit: prod.unit || 'EA',
-                    weight: String(prod.weight || '')
+                    weight: String(prod.weight || ''),
+                    productId: prod.id
                   };
                 }
                 return { ...p, piItems: next };
@@ -1856,7 +1954,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     hsCode: prod.hsCode || '',
                     unitPrice: String(prod.purchasePrice || ''),
                     unit: prod.unit || 'EA',
-                    weight: String(prod.weight || '')
+                    weight: String(prod.weight || ''),
+                    productId: prod.id
                   };
                 }
                 return { ...p, piItems: next };
@@ -2171,10 +2270,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                                   setProductSearchTargetIdx(idx);
                                   setShowProductSearch(true);
                                 }}
-                                style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                                title="상품 DB에서 가져오기"
+                                style={{ padding: '3px 6px', background: item.productId ? '#f0fdf4' : 'var(--border-color)', border: item.productId ? '1px solid #16a34a' : '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
+                                title={item.productId ? '상품 DB 연결됨 — 정산완료 시 이 품목의 원가 이력이 자동 반영됩니다' : '상품 DB에서 가져오기'}
                               >
-                                🔍
+                                {item.productId ? '✅' : '🔍'}
                               </button>
                             </div>
                           </td>
@@ -2359,6 +2458,206 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   </table>
                 </div>
               </div>
+
+              {/* 💰 실행/정산 원가 (수입관리 전용) — 견적 시점 예상원가와 별개로, 실제 청구서 기준 확정 금액을 입력하고
+                  "정산완료" 시 상품 DB와 연결된 품목마다 원가 이력으로 자동 반영한다. */}
+              {!isQuoteMode && editingRequest && (() => {
+                const acb = editingRequest.actualCostBreakdown || {};
+                const {
+                  goodsAmountKrw, freightKrw, insuranceKrw, originInlandKrw,
+                  cifKrw, customsDuty, totalImportCost, unitCost
+                } = calculateTotalCostHelper(acb, editingRequest.piItems || []);
+                const linkedCount = (editingRequest.piItems || []).filter(it => !!it.productId).length;
+                const setAcb = (nextB: any) => setEditingRequest(p => p ? ({ ...p, actualCostBreakdown: nextB }) : null);
+
+                return (
+                  <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginTop: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                        💰 실행/정산 원가 (Actual Cost Settlement)
+                        {editingRequest.settlementCompleted && (
+                          <span style={{ marginLeft: '8px', fontSize: '11px', fontWeight: 700, color: '#16a34a', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '4px', padding: '2px 8px' }}>
+                            ✅ 정산완료 {editingRequest.settledAt ? `(${editingRequest.settledAt})` : ''}
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsActualCostTableExpanded(!isActualCostTableExpanded)}
+                        style={{ padding: '4px 10px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 650, color: '#475569', cursor: 'pointer' }}
+                      >
+                        {isActualCostTableExpanded ? '상세 접기 ▴' : '상세 펼치기 ▾'}
+                      </button>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '11.5px', color: '#64748b' }}>
+                      견적 시점 예상원가와 별개로, 실제 청구서(운임/보험/관세/통관비 등)를 기준으로 확정 금액을 입력하세요.
+                      입력 후 "정산완료 & 상품원가 반영"을 누르면 아래 품목 중 상품 DB와 연결된 항목({linkedCount}개)의 단위당 수입원가 이력에 자동으로 기록됩니다.
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>실제 적용환율</label>
+                        <input type="number" value={acb.appliedExchangeRate || ''} onChange={e => setAcb({ ...acb, appliedExchangeRate: Number(e.target.value) || 0 })}
+                          style={{ height: '34px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, padding: '0 8px', outline: 'none' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>인코텀즈</label>
+                        <select value={acb.incoterms || 'FOB'} onChange={e => setAcb({ ...acb, incoterms: e.target.value })}
+                          style={{ height: '34px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, padding: '0 8px', outline: 'none', background: '#fff' }}>
+                          <option value="EXW">EXW</option>
+                          <option value="FOB">FOB</option>
+                          <option value="CIF">CIF</option>
+                          <option value="DDP">DDP</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>실제 청구 물품금액 (USD)</label>
+                        <input type="number" value={acb.buyingPriceUsd || ''} onChange={e => setAcb({ ...acb, buyingPriceUsd: Number(e.target.value) || 0 })}
+                          style={{ height: '34px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, padding: '0 8px', outline: 'none' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수량</label>
+                        <input type="number" value={acb.buyingQty || ''} onChange={e => setAcb({ ...acb, buyingQty: Number(e.target.value) || 0 })}
+                          style={{ height: '34px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 600, padding: '0 8px', outline: 'none' }} />
+                      </div>
+                    </div>
+
+                    {isActualCostTableExpanded && (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '32px' }}>
+                              <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>항목</th>
+                              <th style={{ padding: '6px 8px', textAlign: 'left', width: '160px', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>입력값</th>
+                              <th style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12.5px', fontWeight: 750, color: '#475569' }}>계산금액 (KRW)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>물품금액 (Invoice Amount)</td>
+                              <td style={{ color: '#64748b' }}>-</td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{goodsAmountKrw.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 국제운임 ($)</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.freightUsd || ''} onChange={e => setAcb({ ...acb, freightUsd: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{freightKrw.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 보험료 ($)</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.insuranceUsd || ''} onChange={e => setAcb({ ...acb, insuranceUsd: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{insuranceKrw.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>수출국 내륙운송·수출비 ($)</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.originInlandUsd || ''} onChange={e => setAcb({ ...acb, originInlandUsd: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{originInlandKrw.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#f8fafc', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 800, color: '#0f172a' }}>CIF 과세가격</td>
+                              <td style={{ color: '#475569', fontSize: '11px' }}>자동</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{cifKrw.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 관세율 (%)</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.ftaTaxRate || ''} onChange={e => setAcb({ ...acb, ftaTaxRate: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', color: '#64748b' }}>-</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>관세 (자동)</td>
+                              <td style={{ color: '#475569', fontSize: '11px' }}>CIF × 관세율</td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{customsDuty.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 통관비</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.clearanceFee || ''} onChange={e => setAcb({ ...acb, clearanceFee: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(acb.clearanceFee || 0).toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 항만·공항비용</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.portFee || ''} onChange={e => setAcb({ ...acb, portFee: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(acb.portFee || 0).toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 국내운송비</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.domesticTransportFee || ''} onChange={e => setAcb({ ...acb, domesticTransportFee: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(acb.domesticTransportFee || 0).toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f1f5f9', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>실제 하역·장비비</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.handlingFee || ''} onChange={e => setAcb({ ...acb, handlingFee: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(acb.handlingFee || 0).toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #cbd5e1', height: '32px', fontSize: '12.5px' }}>
+                              <td style={{ fontWeight: 600, color: '#334155' }}>기타 비용</td>
+                              <td style={{ padding: '2px 4px' }}>
+                                <input type="number" value={acb.otherFee || ''} onChange={e => setAcb({ ...acb, otherFee: Number(e.target.value) || 0 })}
+                                  style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b' }}>{(acb.otherFee || 0).toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ background: '#eff6ff', height: '36px', fontSize: '13px' }}>
+                              <td style={{ fontWeight: 800, color: '#1e3a8a' }}>총 실행원가 (Total Actual Cost)</td>
+                              <td style={{ color: '#475569', fontSize: '11px' }}>자동 계산</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{totalImportCost.toLocaleString()} 원</td>
+                            </tr>
+                            <tr style={{ background: '#fefce8', height: '36px', fontSize: '13px' }}>
+                              <td style={{ fontWeight: 800, color: '#b45309' }}>단위당 실행원가</td>
+                              <td style={{ color: '#475569', fontSize: '11px' }}>총 실행원가 ÷ 수량</td>
+                              <td style={{ textAlign: 'right', fontWeight: 800, color: '#b45309' }}>{unitCost.toLocaleString()} 원</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {editingRequest.costBreakdown?.appliedExchangeRate ? (() => {
+                      const { totalImportCost: quotedTotal } = calculateTotalCostHelper(editingRequest.costBreakdown || {}, editingRequest.piItems || []);
+                      const diffRate = quotedTotal > 0 ? Math.round(((totalImportCost - quotedTotal) / quotedTotal) * 1000) / 10 : 0;
+                      return (
+                        <div style={{ fontSize: '12px', color: diffRate > 5 ? '#dc2626' : '#475569', background: diffRate > 5 ? '#fef2f2' : '#f8fafc', border: `1px solid ${diffRate > 5 ? '#fecaca' : '#e2e8f0'}`, borderRadius: '4px', padding: '8px 10px' }}>
+                          견적원가 {quotedTotal.toLocaleString()}원 대비 실행원가 오차율: <b>{diffRate > 0 ? '+' : ''}{diffRate}%</b>
+                          {diffRate > 5 && ' — 마진 감소 가능성이 있으니 확인해주세요.'}
+                        </div>
+                      );
+                    })() : null}
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        onClick={handleSettleImportCost}
+                        style={{ padding: '10px 18px', background: '#16a34a', border: 'none', color: '#fff', borderRadius: '6px', fontSize: '13.5px', fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        ✅ 정산완료 & 상품원가 반영 ({linkedCount}개 품목)
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* 📥 해외공급사 견적 비교 & 원가/마진 산정 통합 세션 (isQuoteMode 전용) */}
               {isQuoteMode && editingRequest && (

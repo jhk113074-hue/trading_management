@@ -37,6 +37,9 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
   // C구역(선택입력) 접기/펼치기 — IIFE 안에 두면 Hook Rules 위반이므로 최상단에 선언
   const [openOptional, setOpenOptional] = useState(false);
 
+  // 수입원가 이력(purchasePrices 중 sourceImportId가 있는 행) 상세내역 펼침 상태
+  const [expandedPriceHistoryIdx, setExpandedPriceHistoryIdx] = useState<number | null>(null);
+
   const [newLargeVal, setNewLargeVal] = useState('');
   const [newMediumVal, setNewMediumVal] = useState('');
   const [newSmallVal, setNewSmallVal] = useState('');
@@ -1257,17 +1260,19 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                           <th style={{ padding: '8px', width: '90px' }}>통화</th>
                           <th style={{ padding: '8px', width: '130px', textAlign: 'right' }}>납품 단가</th>
                           <th style={{ padding: '8px' }}>비고</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '70px' }}>상세</th>
                           <th style={{ padding: '8px', textAlign: 'center', width: '60px' }}>삭제</th>
                         </tr>
                       </thead>
                       <tbody>
                         {(!formData.purchasePrices || formData.purchasePrices.length === 0) ? (
                           <tr>
-                            <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
+                            <td colSpan={7} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>등록된 납품 단가 정보가 없습니다. 단가를 추가해 주세요.</td>
                           </tr>
                         ) : (
                           formData.purchasePrices.map((hist, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid #cbd5e1' }}>
+                          <React.Fragment key={idx}>
+                            <tr style={{ borderBottom: hist.sourceImportId && expandedPriceHistoryIdx === idx ? 'none' : '1px solid #cbd5e1', background: hist.sourceImportId ? '#f0fdf4' : undefined }}>
                               <td style={{ padding: '6px 8px' }}>
                                 <DateInput
                                   value={hist.validFrom}
@@ -1341,20 +1346,40 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                 />
                               </td>
                               <td style={{ padding: '6px 8px' }}>
-                                <input
-                                  type="text"
-                                  value={hist.remarks}
-                                  placeholder="계약조건 메모 등"
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setFormData(prev => {
-                                      const next = [...(prev.purchasePrices || [])];
-                                      next[idx] = { ...next[idx], remarks: val };
-                                      return { ...prev, purchasePrices: next };
-                                    });
-                                  }}
-                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
-                                />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {hist.sourceImportId && (
+                                    <span style={{ flexShrink: 0, fontSize: '10.5px', fontWeight: 750, color: '#16a34a', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                                      📥 수입원가
+                                    </span>
+                                  )}
+                                  <input
+                                    type="text"
+                                    value={hist.remarks}
+                                    placeholder="계약조건 메모 등"
+                                    onChange={e => {
+                                      const val = e.target.value;
+                                      setFormData(prev => {
+                                        const next = [...(prev.purchasePrices || [])];
+                                        next[idx] = { ...next[idx], remarks: val };
+                                        return { ...prev, purchasePrices: next };
+                                      });
+                                    }}
+                                    style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
+                                  />
+                                </div>
+                              </td>
+                              <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                                {hist.sourceImportId && hist.importCostDetail ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedPriceHistoryIdx(expandedPriceHistoryIdx === idx ? null : idx)}
+                                    style={{ background: '#fff', border: '1px solid #cbd5e1', color: '#3b82f6', borderRadius: '4px', padding: '0 10px', cursor: 'pointer', fontSize: '12.5px', height: '34px', boxSizing: 'border-box', fontWeight: 700 }}
+                                  >
+                                    {expandedPriceHistoryIdx === idx ? '접기 ▴' : '보기 ▾'}
+                                  </button>
+                                ) : (
+                                  <span style={{ color: '#cbd5e1' }}>-</span>
+                                )}
                               </td>
                               <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                                 <button
@@ -1364,6 +1389,7 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                       ...prev,
                                       purchasePrices: (prev.purchasePrices || []).filter((_, i) => i !== idx)
                                     }));
+                                    if (expandedPriceHistoryIdx === idx) setExpandedPriceHistoryIdx(null);
                                   }}
                                   style={{ background: '#fef2f2', border: '1px solid #cbd5e1', color: '#ef4444', borderRadius: '4px', padding: '0 10px', cursor: 'pointer', fontSize: '12.5px', height: '34px', boxSizing: 'border-box' }}
                                 >
@@ -1371,6 +1397,37 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                                 </button>
                               </td>
                             </tr>
+                            {hist.sourceImportId && hist.importCostDetail && expandedPriceHistoryIdx === idx && (
+                              <tr style={{ borderBottom: '1px solid #cbd5e1', background: '#f8fafc' }}>
+                                <td colSpan={7} style={{ padding: '12px 16px' }}>
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 24px', fontSize: '12px', color: '#334155' }}>
+                                    <span><b>PO번호</b> {hist.poNumber || '-'}</span>
+                                    <span><b>인코텀즈</b> {hist.incoterms || '-'}</span>
+                                    <span><b>적용환율</b> {hist.exchangeRate ? hist.exchangeRate.toLocaleString() : '-'}</span>
+                                    <span><b>배분 수량</b> {hist.importCostDetail.qty.toLocaleString()}</span>
+                                  </div>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 20px', fontSize: '12px', color: '#475569', marginTop: '10px' }}>
+                                    <span>물품금액: <b>{hist.importCostDetail.goodsAmountKrw.toLocaleString()}원</b></span>
+                                    <span>국제운임: <b>{hist.importCostDetail.freightKrw.toLocaleString()}원</b></span>
+                                    <span>보험료: <b>{hist.importCostDetail.insuranceKrw.toLocaleString()}원</b></span>
+                                    <span>수출국내륙비: <b>{hist.importCostDetail.originInlandKrw.toLocaleString()}원</b></span>
+                                    <span>CIF 과세가격: <b>{hist.importCostDetail.cifKrw.toLocaleString()}원</b></span>
+                                    <span>관세율: <b>{hist.importCostDetail.customsDutyRate}%</b></span>
+                                    <span>관세: <b>{hist.importCostDetail.customsDuty.toLocaleString()}원</b></span>
+                                    <span>통관비: <b>{hist.importCostDetail.clearanceFee.toLocaleString()}원</b></span>
+                                    <span>항만·공항비용: <b>{hist.importCostDetail.portFee.toLocaleString()}원</b></span>
+                                    <span>국내운송비: <b>{hist.importCostDetail.domesticTransportFee.toLocaleString()}원</b></span>
+                                    <span>하역·장비비: <b>{hist.importCostDetail.handlingFee.toLocaleString()}원</b></span>
+                                    <span>기타비용: <b>{hist.importCostDetail.otherFee.toLocaleString()}원</b></span>
+                                  </div>
+                                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed #cbd5e1', display: 'flex', gap: '24px', fontSize: '13px' }}>
+                                    <span style={{ color: '#1e3a8a', fontWeight: 800 }}>총 수입원가(배분분): {hist.importCostDetail.totalImportCost.toLocaleString()}원</span>
+                                    <span style={{ color: '#b45309', fontWeight: 800 }}>단위당 수입원가: {hist.importCostDetail.unitCost.toLocaleString()}원</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                           ))
                         )}
                       </tbody>

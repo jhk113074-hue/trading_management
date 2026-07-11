@@ -146,7 +146,7 @@ export interface ImportRequest {
   piItemUnitPrice?: string;
   piItemAmount?: string;
   freightInvoiceAmount?: string;
-  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; hsCode?: string; unit?: string; palletSize?: string; cbm?: string; weight?: string; netWeight?: string; grossWeight?: string }>;
+  piItems?: Array<{ name: string; qty: string; unitPrice: string; amount: string; hsCode?: string; unit?: string; palletSize?: string; cbm?: string; weight?: string; netWeight?: string; grossWeight?: string; productId?: string }>;
   incoterms?: string;
   paymentTerms?: string;
   pol?: string;
@@ -245,4 +245,27 @@ export interface ImportRequest {
   profitReviewedBy?: string; // 검토자
   profitReviewedDate?: string; // 검토 완료일
   profitReviewCompleted?: boolean; // 손익검토 완료 여부
+
+  // ── 수입관리(실무) 전용: 실행/정산 원가 ──
+  // costBreakdown은 "견적 시점" 예상원가로 그대로 두고,
+  // 실제 청구서 기준 확정 금액은 actualCostBreakdown에 별도로 입력한다.
+  actualCostBreakdown?: {
+    incoterms?: string;
+    freightUsd?: number;
+    insuranceUsd?: number;
+    originInlandUsd?: number;
+    clearanceFee?: number;
+    portFee?: number;
+    domesticTransportFee?: number;
+    handlingFee?: number;
+    otherFee?: number;
+    appliedExchangeRate?: number;  // 실제 결제/정산 기준 환율
+    buyingPriceUsd?: number;       // 실제 청구된 외화 단가 (USD)
+    buyingQty?: number;            // 실제 수량
+    ftaTaxRate?: number;           // 실제 관세율 (%)
+    antiDumpingRate?: number;      // 실제 반덤핑세율 (%)
+  };
+  settlementCompleted?: boolean;  // 수입원가 정산완료 여부
+  settledAt?: string;             // 정산완료 처리일
+  settledBy?: string;             // 정산 처리자
 }
