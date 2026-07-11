@@ -916,6 +916,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     return base.filter(req =>
       req.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.id.includes(searchTerm) ||
+      (req.importerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (req.shipperName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       req.routeFrom.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [importRequests, searchTerm, isQuoteMode, dateFilterType, selectedYear, selectedMonth, rangeStart, rangeEnd]);
@@ -993,7 +995,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#fff', overflow: 'hidden', maxWidth: '320px', width: '100%', height: '34px', boxSizing: 'border-box' }}>
             <input 
               type="text" 
-              placeholder="의뢰번호, 품명, 출발지 검색..." 
+              placeholder="의뢰번호, 품명, 수입처, 출발지 검색..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               style={{ border: 'none', padding: '0 12px', fontSize: '13px', outline: 'none', flex: 1, height: '100%', color: '#1e293b' }}
