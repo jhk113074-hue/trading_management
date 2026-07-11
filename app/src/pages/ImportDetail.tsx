@@ -2561,7 +2561,7 @@ customsDuty,
                 </div>
 
                 {/* Right Card: 운송 개요 (2줄 구성) */}
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   {/* Row 1: 운송수단, 출발 PORT, 도착 PORT */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -2592,28 +2592,6 @@ customsDuty,
                         type="text"
                         value={request.pod || ''}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pod: e.target.value } : r))}
-                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Row 2: 총 운송 물동량, 총중량 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 운송 물동량 (Volume)</label>
-                      <input
-                        type="text"
-                        value={request.volume || ''}
-                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, volume: e.target.value } : r))}
-                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총중량 (Weight)</label>
-                      <input
-                        type="text"
-                        value={request.weight || ''}
-                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, weight: e.target.value } : r))}
                         style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       />
                     </div>
