@@ -157,7 +157,7 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                   <th style={{ padding: '8px 10px' }}>사업자번호</th>
                   <th style={{ padding: '8px 10px' }}>대표자</th>
                   <th style={{ padding: '8px 10px' }}>전화번호</th>
-                  <th style={{ padding: '8px 10px', width: '230px', textAlign: 'center' }}>관리</th>
+                  <th style={{ padding: '8px 10px', width: '130px', textAlign: 'center' }}>관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,30 +177,34 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                         <button
                           onClick={() => onSelect(s)}
+                          title="선택"
                           style={{
-                            padding: '4px 8px', background: '#3b82f6', color: '#fff',
+                            width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                            background: '#3b82f6', color: '#fff',
                             border: 'none', borderRadius: '4px', cursor: 'pointer',
-                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                            fontSize: '13px', transition: 'background-color 0.15s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
                         >
-                          선택
+                          ✔️
                         </button>
                         <button
                           onClick={() => {
                             setEditingSupplier(s);
                             setShowEditModal(true);
                           }}
+                          title="편집"
                           style={{
-                            padding: '4px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569',
+                            width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                            background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569',
                             borderRadius: '4px', cursor: 'pointer',
-                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                            fontSize: '12px', transition: 'background-color 0.15s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                         >
-                          편집
+                          ✏️
                         </button>
                         <button
                           onClick={() => {
@@ -211,15 +215,17 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                             } as any);
                             setShowEditModal(true);
                           }}
+                          title="복사"
                           style={{
-                            padding: '4px 8px', background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534',
+                            width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                            background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534',
                             borderRadius: '4px', cursor: 'pointer',
-                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                            fontSize: '12px', transition: 'background-color 0.15s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dcfce7'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f0fdf4'}
                         >
-                          복사
+                          📋
                         </button>
                         <button
                           onClick={async (e) => {
@@ -235,15 +241,17 @@ export const ForwarderSearchModal: React.FC<Props> = ({ onClose, onSelect, suppl
                               }
                             }
                           }}
+                          title="삭제"
                           style={{
-                            padding: '4px 8px', background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b',
+                            width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                            background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b',
                             borderRadius: '4px', cursor: 'pointer',
-                            fontSize: '11.5px', fontWeight: 750, transition: 'background-color 0.15s'
+                            fontSize: '12px', transition: 'background-color 0.15s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
                           onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
                         >
-                          삭제
+                          🗑️
                         </button>
                       </div>
                     </td>
