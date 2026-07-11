@@ -131,6 +131,9 @@ export interface TaxDocumentRow {
 export interface ImportRequest {
   id: string;
   taxDocumentRows?: TaxDocumentRow[];
+  importTaxDocumentRows?: TaxDocumentRow[];
+  freightTaxDocumentRows?: TaxDocumentRow[];
+  customsTaxDocumentRows?: TaxDocumentRow[];
   status: string;
   blAwb?: string;
   poNumber?: string;
