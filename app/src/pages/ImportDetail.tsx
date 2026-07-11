@@ -450,7 +450,7 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc', file: File) => {
+  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs', file: File) => {
     if (!file) return;
     try {
       setUploading(key);
@@ -496,7 +496,7 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc', fileIndex: number) => {
+  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs', fileIndex: number) => {
     if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
       if (key === 'customerPi' || key === 'freightInvoice') {
         const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
@@ -530,7 +530,7 @@ export const ImportDetail: React.FC = () => {
   };
 
   const renderMultiUploadZone = (
-    key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc',
+    key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs',
     label: string,
     filesVal: any
   ) => {
@@ -1763,7 +1763,12 @@ customsDuty,
               );
             })()}
 
-            {renderSupplierQuotesSection()}
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginTop: '20px', marginBottom: '20px' }}>
+              <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📁 운송비 견적서 및 관세 정보 보관</span>
+              </div>
+              {renderMultiUploadZone('costCalcDocs', '클릭 혹은 업로드할 증빙 파일 드래그', documents.costCalcDocs)}
+            </div>
 
             {/* 다음단계로 가기 버튼 */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
@@ -2138,6 +2143,13 @@ customsDuty,
                   />
                 </div>
               </div>
+            </div>
+
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+              <div style={{ borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📁 운송비 견적서 및 관세 정보 보관</span>
+              </div>
+              {renderMultiUploadZone('costCalcDocs', '클릭 혹은 업로드할 증빙 파일 드래그', documents.costCalcDocs)}
             </div>
 
           </div>
