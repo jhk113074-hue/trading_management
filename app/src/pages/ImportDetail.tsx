@@ -358,7 +358,7 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const [documents, setDocuments] = useState<{ [key: string]: { name: string; url: string } }>({
+  const [documents, setDocuments] = useState<{ [key: string]: any }>({
     bizReg: { name: 'bizReg_YSACC.pdf', url: '#' }
   });
 
@@ -368,7 +368,7 @@ export const ImportDetail: React.FC = () => {
     if (docs) setDocuments(docs);
   }, [request?.id, JSON.stringify((request as any)?.documents)]);
 
-  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo', file: File) => {
+  const handleFileUpload = async (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc', file: File) => {
     if (!file) return;
     try {
       setUploading(key);
@@ -378,20 +378,28 @@ export const ImportDetail: React.FC = () => {
 
       if (key === 'customerPi' || key === 'freightInvoice') {
         const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
+        const currentVal = (request as any)[fileProp];
+        const currentFiles = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
+        const nextFiles = [...currentFiles, { name: file.name, url: downloadUrl, path: snapshot.ref.fullPath }];
+
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
             return {
               ...r,
-              [fileProp]: { name: file.name, url: downloadUrl, path: snapshot.ref.fullPath }
+              [fileProp]: nextFiles
             };
           }
           return r;
         });
         saveToStorage(updatedList);
       } else {
+        const currentVal = (documents as any)[key];
+        const currentFiles = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
+        const nextFiles = [...currentFiles, { name: file.name, url: downloadUrl }];
+
         const nextDocs = {
           ...documents,
-          [key]: { name: file.name, url: downloadUrl }
+          [key]: nextFiles
         };
         setDocuments(nextDocs);
         const updatedList = importRequests.map(r => r.id === id ? ({ ...r, documents: nextDocs } as ImportRequest) : r);
@@ -406,28 +414,67 @@ export const ImportDetail: React.FC = () => {
     }
   };
 
-  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo') => {
-    if (window.confirm('삭제하시겠습니까?')) {
+  const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc', fileIndex: number) => {
+    if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
       if (key === 'customerPi' || key === 'freightInvoice') {
         const fileProp = key === 'customerPi' ? 'customerPiFile' : 'freightInvoiceFile';
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
+            const currentVal = (r as any)[fileProp];
+            const currentFiles = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
+            const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
             return {
               ...r,
-              [fileProp]: null
+              [fileProp]: nextFiles.length > 0 ? nextFiles : null
             };
           }
           return r;
         });
         saveToStorage(updatedList);
       } else {
-        const nextDocs = { ...documents };
-        delete nextDocs[key as any];
+        const currentVal = (documents as any)[key];
+        const currentFiles = Array.isArray(currentVal) ? currentVal : (currentVal ? [currentVal] : []);
+        const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
+        
+        const nextDocs = {
+          ...documents,
+          [key]: nextFiles.length > 0 ? nextFiles : null
+        };
         setDocuments(nextDocs);
         const updatedList = importRequests.map(r => r.id === id ? ({ ...r, documents: nextDocs } as ImportRequest) : r);
         saveToStorage(updatedList);
       }
     }
+  };
+
+  const renderMultiUploadZone = (
+    key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc',
+    label: string,
+    filesVal: any
+  ) => {
+    const fileList = Array.isArray(filesVal) ? filesVal : (filesVal ? [filesVal] : []);
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {fileList.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '2px' }}>
+            {fileList.map((f: any, idx: number) => (
+              <div key={idx} style={{ border: '1px solid var(--border-default)', padding: '6px 10px', borderRadius: '4px', fontSize: '12px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(f.url, f.name)}>
+                  📄 {f.name} (미리보기)
+                </span>
+                <button onClick={() => handleFileDelete(key, idx)} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <UploadZone
+          label={label}
+          isUploading={uploading === key}
+          onFileSelect={(file) => handleFileUpload(key, file)}
+        />
+      </div>
+    );
   };
 
   const totalQty = (request.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
@@ -632,20 +679,7 @@ export const ImportDetail: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입요청 원본 파일</label>
-                  {request.customerPiFile ? (
-                    <div style={{ border: '1px solid #cbd5e1', padding: '8px 12px', borderRadius: '4px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '90px', boxSizing: 'border-box' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(request.customerPiFile?.url || '', request.customerPiFile?.name || '')}>
-                        📄 {request.customerPiFile?.name || ''} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('customerPi')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="수입요청 관련 파일 업로드"
-                      isUploading={uploading === 'customerPi'}
-                      onFileSelect={(file) => handleFileUpload('customerPi', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('customerPi', '수입요청 관련 파일 업로드', request.customerPiFile)}
                 </div>
               </div>
             </div>
@@ -1925,20 +1959,7 @@ customsDuty,
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     C/I &amp; P/L * {documents.ciPl && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {documents.ciPl ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.ciPl.url, documents.ciPl.name)}>
-                        📄 {documents.ciPl.name} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('ciPl')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="C/I &amp; P/L 업로드"
-                      isUploading={uploading === 'ciPl'}
-                      onFileSelect={(file) => handleFileUpload('ciPl', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('ciPl', 'C/I & P/L 업로드', documents.ciPl)}
                 </div>
 
                 {/* 2. CO */}
@@ -1946,20 +1967,7 @@ customsDuty,
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     CO * {documents.co && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {documents.co ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.co.url, documents.co.name)}>
-                        📄 {documents.co.name} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('co')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="CO 업로드"
-                      isUploading={uploading === 'co'}
-                      onFileSelect={(file) => handleFileUpload('co', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('co', 'CO 업로드', documents.co)}
                 </div>
 
                 {/* 3. BL */}
@@ -1967,20 +1975,7 @@ customsDuty,
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     BL(AWB) * {documents.blAwbDoc && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {documents.blAwbDoc ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.blAwbDoc.url, documents.blAwbDoc.name)}>
-                        📄 {documents.blAwbDoc.name} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('blAwbDoc')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="BL(AWB) 업로드"
-                      isUploading={uploading === 'blAwbDoc'}
-                      onFileSelect={(file) => handleFileUpload('blAwbDoc', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('blAwbDoc', 'BL(AWB) 업로드', documents.blAwbDoc)}
                   <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
                     <input 
                       type="text"
@@ -2001,20 +1996,7 @@ customsDuty,
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     수입신고필증 (수입면장) * {documents.customsPermit && <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✅</span>}
                   </div>
-                  {documents.customsPermit ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.customsPermit.url, documents.customsPermit.name)}>
-                        📄 {documents.customsPermit.name} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('customsPermit')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="수입신고필증 업로드"
-                      isUploading={uploading === 'customsPermit'}
-                      onFileSelect={(file) => handleFileUpload('customsPermit', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('customsPermit', '수입신고필증 업로드', documents.customsPermit)}
                 </div>
               </div>
 
@@ -2030,20 +2012,7 @@ customsDuty,
                     <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       📋 HS CODE 관세 및 수입요건 정보 {documents.hsCustomsInfo && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {documents.hsCustomsInfo ? (
-                      <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.hsCustomsInfo.url, documents.hsCustomsInfo.name)}>
-                          📄 {documents.hsCustomsInfo.name} (미리보기)
-                        </span>
-                        <button onClick={() => handleFileDelete('hsCustomsInfo')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                      </div>
-                    ) : (
-                      <UploadZone
-                        label="HS CODE 관세 및 수입요건 정보 업로드"
-                        isUploading={uploading === 'hsCustomsInfo'}
-                        onFileSelect={(file) => handleFileUpload('hsCustomsInfo', file)}
-                      />
-                    )}
+                    {renderMultiUploadZone('hsCustomsInfo', 'HS CODE 관세 및 수입요건 정보 업로드', documents.hsCustomsInfo)}
                   </div>
 
                   {/* 2. 수입운임 거래명세표 */}
@@ -2051,20 +2020,7 @@ customsDuty,
                     <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       💵 수입운임 거래명세표 {request.freightInvoiceFile && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {request.freightInvoiceFile ? (
-                      <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(request.freightInvoiceFile?.url || '', request.freightInvoiceFile?.name || '')}>
-                          📄 {request.freightInvoiceFile?.name || ''} (미리보기)
-                        </span>
-                        <button onClick={() => handleFileDelete('freightInvoice')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                      </div>
-                    ) : (
-                      <UploadZone
-                        label="수입운임 거래명세표 업로드"
-                        isUploading={uploading === 'freightInvoice'}
-                        onFileSelect={(file) => handleFileUpload('freightInvoice', file)}
-                      />
-                    )}
+                    {renderMultiUploadZone('freightInvoice', '수입운임 거래명세표 업로드', request.freightInvoiceFile)}
                   </div>
 
                   {/* 3. 인증/검역 */}
@@ -2072,20 +2028,7 @@ customsDuty,
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       인증/검역 {documents.inspect && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {documents.inspect ? (
-                      <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.inspect.url, documents.inspect.name)}>
-                          📄 {documents.inspect.name} (미리보기)
-                        </span>
-                        <button onClick={() => handleFileDelete('inspect')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                      </div>
-                    ) : (
-                      <UploadZone
-                        label="인증/검역 서류 업로드"
-                        isUploading={uploading === 'inspect'}
-                        onFileSelect={(file) => handleFileUpload('inspect', file)}
-                      />
-                    )}
+                    {renderMultiUploadZone('inspect', '인증/검역 서류 업로드', documents.inspect)}
                   </div>
 
                   {/* 4. 기타 */}
@@ -2093,20 +2036,7 @@ customsDuty,
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       기타 {documents.etc && <span style={{ color: '#16a34a' }}>✅</span>}
                     </div>
-                    {documents.etc ? (
-                      <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.etc.url, documents.etc.name)}>
-                          📄 {documents.etc.name} (미리보기)
-                        </span>
-                        <button onClick={() => handleFileDelete('etc')} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
-                      </div>
-                    ) : (
-                      <UploadZone
-                        label="기타 파일 업로드"
-                        isUploading={uploading === 'etc'}
-                        onFileSelect={(file) => handleFileUpload('etc', file)}
-                      />
-                    )}
+                    {renderMultiUploadZone('etc', '기타 파일 업로드', documents.etc)}
                   </div>
                 </div>
 
@@ -2115,20 +2045,7 @@ customsDuty,
                   <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     수입세금계산서 {documents.taxInvoice && <span style={{ color: '#16a34a' }}>✅</span>}
                   </div>
-                  {documents.taxInvoice ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '12.5px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.taxInvoice.url, documents.taxInvoice.name)}>
-                        📄 {documents.taxInvoice.name} (미리보기)
-                      </span>
-                      <button onClick={() => handleFileDelete('taxInvoice')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-                    </div>
-                  ) : (
-                    <UploadZone
-                      label="수입세금계산서 업로드"
-                      isUploading={uploading === 'taxInvoice'}
-                      onFileSelect={(file) => handleFileUpload('taxInvoice', file)}
-                    />
-                  )}
+                  {renderMultiUploadZone('taxInvoice', '수입세금계산서 업로드', documents.taxInvoice)}
                 </div>
               </div>
             </div>
@@ -2224,27 +2141,7 @@ customsDuty,
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>거래명세표 및 세금계산서 유첨 파일</label>
-                  {documents.freightDoc ? (
-                    <div style={{ border: '1px solid var(--border-default)', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(documents.freightDoc.url, documents.freightDoc.name)}>
-                        📄 {documents.freightDoc.name}
-                      </span>
-                      <button onClick={() => handleFileDelete('freightDoc' as any)} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
-                    </div>
-                  ) : (
-                    <div style={{ position: 'relative', border: '1px dashed var(--border-default)', padding: '24px 14px', borderRadius: '6px', textAlign: 'center', fontSize: '12.5px', color: 'var(--text-secondary)', background: '#fff', cursor: 'pointer' }}>
-                      {uploading === 'freightDoc' ? '⏳ 업로드 중...' : '📤 클릭 혹은 업로드할 증빙 파일 드래그'}
-                      <input 
-                        type="file" 
-                        disabled={uploading !== null} 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleFileUpload('freightDoc' as any, file);
-                        }} 
-                        style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} 
-                      />
-                    </div>
-                  )}
+                  {renderMultiUploadZone('freightDoc', '클릭 혹은 업로드할 증빙 파일 드래그', documents.freightDoc)}
                 </div>
               </div>
 
