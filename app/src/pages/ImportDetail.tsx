@@ -375,6 +375,63 @@ export const ImportDetail: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const parseBankUsdString = (text: string) => {
+    let swift = '';
+    let bankName = '';
+    let accountNo = '';
+    let holder = '';
+
+    const textClean = (text || '').trim();
+    if (!textClean) return { bankName, accountNo, holder, swift };
+
+    // 1. Extract SWIFT
+    const swiftIndex = textClean.toUpperCase().indexOf('SWIFT:');
+    let rawAccountAndHolder = textClean;
+    if (swiftIndex !== -1) {
+      swift = textClean.substring(swiftIndex + 6).trim();
+      rawAccountAndHolder = textClean.substring(0, swiftIndex).trim();
+    }
+
+    // 2. Extract Holder inside parentheses
+    const parenStart = rawAccountAndHolder.indexOf('(');
+    const parenEnd = rawAccountAndHolder.lastIndexOf(')');
+    let textLeft = rawAccountAndHolder;
+    if (parenStart !== -1 && parenEnd !== -1 && parenEnd > parenStart) {
+      holder = rawAccountAndHolder.substring(parenStart + 1, parenEnd).trim();
+      textLeft = (rawAccountAndHolder.substring(0, parenStart) + ' ' + rawAccountAndHolder.substring(parenEnd + 1)).trim();
+    }
+
+    // 3. Extract Account Number (look for a token containing at least 4 digits, or digits with dashes)
+    const tokens = textLeft.split(/\s+/);
+    let accountTokenIndex = -1;
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      const digitCount = (tok.match(/\d/g) || []).length;
+      if (digitCount >= 4) {
+        accountNo = tok;
+        accountTokenIndex = i;
+        break;
+      }
+    }
+
+    // 4. Determine Bank Name
+    if (accountTokenIndex !== -1) {
+      bankName = tokens.slice(0, accountTokenIndex).join(' ').trim();
+      if (!holder) {
+        holder = tokens.slice(accountTokenIndex + 1).join(' ').trim();
+      }
+    } else {
+      if (tokens.length >= 2) {
+        bankName = tokens[0];
+        accountNo = tokens.slice(1).join(' ').trim();
+      } else {
+        accountNo = textLeft;
+      }
+    }
+
+    return { bankName, accountNo, holder, swift };
+  };
+
   const saveToStorage = (updatedList: ImportRequest[]) => {
     setImportRequests(updatedList); // 낙관적 업데이트 (Firestore onSnapshot이 곧 확정값으로 재동기화)
     const updatedRecord = updatedList.find(r => r.id === id);
@@ -465,26 +522,7 @@ export const ImportDetail: React.FC = () => {
     // 이름으로 공급사 매칭
     const matchingSupplier = allSuppliers.find(s => s.name === request.importerName);
     if (matchingSupplier && matchingSupplier.bankUsd) {
-      const text = matchingSupplier.bankUsd.trim();
-      const swiftIndex = text.toUpperCase().indexOf('SWIFT:');
-      let rawAccountAndHolder = text;
-      let parsedSwift = '';
-      let parsedBankName = '';
-      let parsedBankAccount = '';
-      let parsedBankHolder = '';
-
-      if (swiftIndex !== -1) {
-        parsedSwift = text.substring(swiftIndex + 6).trim();
-        rawAccountAndHolder = text.substring(0, swiftIndex).trim();
-      }
-      const parts = rawAccountAndHolder.split(/\s+/);
-      if (parts.length >= 3) {
-        parsedBankName = parts[0];
-        parsedBankAccount = parts[1];
-        parsedBankHolder = parts.slice(2).join(' ').replace(/[\(\)]/g, '');
-      } else {
-        parsedBankAccount = text;
-      }
+      const { bankName: parsedBankName, accountNo: parsedBankAccount, holder: parsedBankHolder, swift: parsedSwift } = parseBankUsdString(matchingSupplier.bankUsd);
 
       if (parsedBankName || parsedBankAccount || parsedSwift || parsedBankHolder) {
         const nextBank = {
@@ -4996,28 +5034,7 @@ customsDuty,
           suppliers={allSuppliers}
           onClose={() => setShowSupplierSearchModal(false)}
           onSelect={(sup) => {
-            let parsedBankName = '';
-            let parsedBankAccount = '';
-            let parsedBankHolder = '';
-            let parsedSwift = '';
-
-            if (sup.bankUsd) {
-              const text = sup.bankUsd.trim();
-              const swiftIndex = text.toUpperCase().indexOf('SWIFT:');
-              let rawAccountAndHolder = text;
-              if (swiftIndex !== -1) {
-                parsedSwift = text.substring(swiftIndex + 6).trim();
-                rawAccountAndHolder = text.substring(0, swiftIndex).trim();
-              }
-              const parts = rawAccountAndHolder.split(/\s+/);
-              if (parts.length >= 3) {
-                parsedBankName = parts[0];
-                parsedBankAccount = parts[1];
-                parsedBankHolder = parts.slice(2).join(' ').replace(/[\(\)]/g, '');
-              } else {
-                parsedBankAccount = text;
-              }
-            }
+            const { bankName: parsedBankName, accountNo: parsedBankAccount, holder: parsedBankHolder, swift: parsedSwift } = parseBankUsdString(sup.bankUsd || '');
 
             const updated = importRequests.map(r => {
               if (r.id === id) {
