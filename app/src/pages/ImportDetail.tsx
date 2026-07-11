@@ -559,6 +559,277 @@ export const ImportDetail: React.FC = () => {
     );
   };
 
+  const renderSupplierQuotesSection = () => {
+    const quotes = request.supplierQuotes || [];
+    const quoteItems = request.piItems || [];
+    const hasMultipleItems = quoteItems.length > 1;
+
+    const saveQuotes = (nextQuotes: any[]) => {
+      saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
+    };
+
+    const addSupplierQuote = () => {
+      const newQuote = {
+        id: `q${Date.now()}`,
+        supplierName: '',
+        amount: 0,
+        currency: 'USD',
+        quoteDate: new Date().toISOString().slice(0, 10),
+        status: '검토중' as const,
+        note: '',
+        itemIndices: quoteItems.map((_, i) => i)
+      };
+      saveQuotes([...quotes, newQuote]);
+    };
+
+    const updateQuote = (qid: string, patch: any) => {
+      saveQuotes(quotes.map(q => q.id === qid ? { ...q, ...patch } : q));
+    };
+
+    const toggleQuoteItem = (qid: string, itemIdx: number) => {
+      const target = quotes.find(q => q.id === qid);
+      if (!target) return;
+      const current = target.itemIndices ?? quoteItems.map((_, i) => i);
+      const next = current.includes(itemIdx) ? current.filter((i: any) => i !== itemIdx) : [...current, itemIdx].sort((a, b) => a - b);
+      updateQuote(qid, { itemIndices: next.length > 0 ? next : current });
+    };
+
+    const deleteQuote = (qid: string) => {
+      if (!window.confirm('이 공급사 견적을 삭제하시겠습니까?')) return;
+      saveQuotes(quotes.filter(q => q.id !== qid));
+    };
+
+    const confirmSupplier = (qid: string) => {
+      const target = quotes.find(q => q.id === qid);
+      if (!target) return;
+      const coveredIdx = (target.itemIndices && target.itemIndices.length > 0) ? target.itemIndices : quoteItems.map((_, i) => i);
+      const coveredNames = coveredIdx.map(i => quoteItems[i]?.name || `품목${i + 1}`).join(', ');
+
+      if (!window.confirm(`"${target.supplierName || '이 공급사'}"의 금액(${target.amount.toLocaleString()} ${target.currency || 'USD'})을 확정합니다.\n적용 품목: ${coveredNames}\n해당 품목들의 단가가 이 금액에 맞춰 재계산됩니다. 계속할까요?`)) return;
+
+      const originalSubtotal = coveredIdx.reduce((sum, i) => sum + ((Number(quoteItems[i]?.qty) || 0) * (Number(quoteItems[i]?.unitPrice) || 0)), 0);
+      const nextPiItems = quoteItems.map((it, i) => {
+        if (!coveredIdx.includes(i)) return it;
+        const qty = Number(it.qty) || 0;
+        const origAmount = qty * (Number(it.unitPrice) || 0);
+        const share = originalSubtotal > 0 ? origAmount / originalSubtotal : 1 / coveredIdx.length;
+        const allocatedAmount = target.amount * share;
+        const nextPrice = qty > 0 ? Number((allocatedAmount / qty).toFixed(4)) : 0;
+        return {
+          ...it,
+          unitPrice: String(nextPrice),
+          amount: String(nextPrice * qty)
+        };
+      });
+
+      const nextQuotes = quotes.map(q => q.id === qid ? { ...q, status: '확정' as const } : { ...q, status: q.status === '확정' ? '검토중' as const : q.status });
+
+      const totalBuyingAmount = nextPiItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
+      const totalBuyingQty = nextPiItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0) || 1;
+      const nextCostBreakdown = {
+        ...(request.costBreakdown || {}),
+        buyingPriceUsd: Math.round((totalBuyingAmount / totalBuyingQty) * 10000) / 10000,
+        buyingQty: totalBuyingQty
+      };
+
+      const baseList = importRequests.map(r => {
+        if (r.id === id) {
+          return {
+            ...r,
+            piItems: nextPiItems,
+            supplierQuotes: nextQuotes
+          };
+        }
+        return r;
+      });
+
+      const updatedList = recalculateDetailCosts(baseList, nextCostBreakdown);
+      saveToStorage(updatedList);
+    };
+
+    const statusColor = {
+      '검토중': { bg: '#fef3c7', fg: '#d97706' },
+      '네고중': { bg: '#e0f2fe', fg: '#0284c7' },
+      '확정': { bg: '#dcfce7', fg: '#16a34a' },
+      '거절': { bg: '#fee2e2', fg: '#dc2626' }
+    };
+
+    return (
+      <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+          <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>🤝 해외공급사 견적 비교 및 견적서 보관</span>
+          <button
+            type="button"
+            onClick={addSupplierQuote}
+            style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+          >
+            ＋ 공급사 견적 추가
+          </button>
+        </div>
+
+        <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
+                <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사명</th>
+                {hasMultipleItems && <th style={{ padding: '6px 10px', width: '220px' }}>품목</th>}
+                <th style={{ padding: '6px 10px', width: '90px' }}>통화</th>
+                <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
+                <th style={{ padding: '6px 10px', width: '140px' }}>견적일</th>
+                <th style={{ padding: '6px 10px', width: '110px' }}>상태</th>
+                <th style={{ padding: '6px 10px' }}>견적서 보관 (멀티 드래그&amp;드롭/캡처붙여넣기)</th>
+                <th style={{ padding: '6px 10px' }}>비고 (협상 메모 등)</th>
+                <th style={{ padding: '6px 10px', width: '90px', textAlign: 'center' }}>확정</th>
+                <th style={{ padding: '6px 10px', width: '50px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {quotes.length === 0 ? (
+                <tr>
+                  <td colSpan={hasMultipleItems ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                    등록된 공급사 견적이 없습니다. 아래 "＋ 공급사 견적 추가"로 시작하세요.
+                  </td>
+                </tr>
+              ) : (
+                quotes.map(q => {
+                  const sc = statusColor[q.status || '검토중'] || statusColor['검토중'];
+                  const coveredIdx = q.itemIndices ?? quoteItems.map((_, i) => i);
+
+                  const handleQuoteFileUploadLocal = async (quoteId: string, file: File) => {
+                    if (!file) return;
+                    try {
+                      setUploadingQuoteId(quoteId);
+                      const storageRef = ref(storage, `imports/${id}/supplierQuotes/${quoteId}/${file.name}`);
+                      const snapshot = await uploadBytes(storageRef, file);
+                      const downloadUrl = await getDownloadURL(snapshot.ref);
+                      const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                      updateQuote(quoteId, {
+                        files: [...currentFiles, { name: file.name, url: downloadUrl }]
+                      } as any);
+                      alert(`${file.name} 업로드가 완료되었습니다.`);
+                    } catch (e) {
+                      console.error(e);
+                      alert('업로드 실패');
+                    } finally {
+                      setUploadingQuoteId(null);
+                    }
+                  };
+
+                  const handleQuoteFileDeleteLocal = (quoteId: string, fileIndex: number) => {
+                    if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
+                      const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                      const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
+                      updateQuote(quoteId, {
+                        files: nextFiles.length > 0 ? nextFiles : null
+                      } as any);
+                    }
+                  };
+
+                  return (
+                    <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: q.status === '확정' ? '#f0fdf4' : undefined }}>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input type="text" value={q.supplierName} onChange={e => updateQuote(q.id, { supplierName: e.target.value })}
+                          placeholder="공급사명" style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                      </td>
+                      {hasMultipleItems && (
+                        <td style={{ padding: '6px 8px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {quoteItems.map((it, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => toggleQuoteItem(q.id, i)}
+                                title={it.name || `품목${i + 1}`}
+                                style={{
+                                  padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
+                                  border: coveredIdx.includes(i) ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                                  background: coveredIdx.includes(i) ? '#2563eb' : '#fff',
+                                  color: coveredIdx.includes(i) ? '#fff' : '#64748b'
+                                }}
+                              >
+                                {it.name || `품목${i + 1}`}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      )}
+                      <td style={{ padding: '6px 8px' }}>
+                        <select value={q.currency || 'USD'} onChange={e => updateQuote(q.id, { currency: e.target.value })}
+                          style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
+                          <option value="USD">USD</option>
+                          <option value="CNY">CNY</option>
+                          <option value="KRW">KRW</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input type="number" value={q.amount} onChange={e => updateQuote(q.id, { amount: Number(e.target.value) || 0 })}
+                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', fontWeight: 700, boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input type="date" value={q.quoteDate || ''} onChange={e => updateQuote(q.id, { quoteDate: e.target.value })}
+                          style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <select value={q.status || '검토중'} onChange={e => updateQuote(q.id, { status: e.target.value as any })}
+                          style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: sc.bg, color: sc.fg, fontWeight: 700, boxSizing: 'border-box' }}>
+                          <option value="검토중">검토중</option>
+                          <option value="네고중">네고중</option>
+                          <option value="확정">확정</option>
+                          <option value="거절">거절</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '6px 8px', minWidth: '220px' }}>
+                        {(() => {
+                          const fileList = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
+                          return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {fileList.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  {fileList.map((f: any, fIdx: number) => (
+                                    <div key={fIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '11.5px' }}>
+                                      <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '140px' }} onClick={() => previewFile(f.url, f.name)}>
+                                        📄 {f.name}
+                                      </span>
+                                      <button type="button" onClick={() => handleQuoteFileDeleteLocal(q.id, fIdx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', padding: '0 2px' }}>×</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <UploadZone
+                                label="드래그 드롭 / 화면캡처(Ctrl+V)"
+                                isUploading={uploadingQuoteId === q.id}
+                                onFileSelect={(file) => handleQuoteFileUploadLocal(q.id, file)}
+                              />
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <input type="text" value={q.note || ''} onChange={e => updateQuote(q.id, { note: e.target.value })} placeholder="예: 1차 3.8→3.6 협의"
+                          style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <button type="button" onClick={() => confirmSupplier(q.id)} disabled={q.status === '확정'}
+                          style={{ padding: '5px 10px', background: q.status === '확정' ? '#94a3b8' : '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: q.status === '확정' ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+                          {q.status === '확정' ? '✅ 완료' : '확정'}
+                        </button>
+                      </td>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                        <button type="button" onClick={() => deleteQuote(q.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>✕</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const totalQty = (request.piItems || []).reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
   const totalAmount = (request.piItems || []).reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
   const totalCbm = (request.piItems || []).reduce((sum, it) => sum + (Number(it.cbm) || 0), 0);
@@ -1011,285 +1282,30 @@ export const ImportDetail: React.FC = () => {
           </div>
         )}
 
-        {activeTab === '견적수령/네고' && (() => {
-          const quotes = request.supplierQuotes || [];
-          const quoteItems = request.piItems || [];
-          const hasMultipleItems = quoteItems.length > 1;
-          const totalQtyForCalc = totalQty || 1;
+        {activeTab === '견적수령/네고' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '8px' }}>
+              🤝 ② 견적수령/네고
+            </h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: '#64748b' }}>
+              공급사별로 받은 견적을 한 줄씩 입력하세요. 협상 중 가격이 바뀌면 금액 칸을 그대로 수정하시면 됩니다.
+              { (request.piItems || []).length > 1 && ' 품목이 여러 개일 때는 "품목" 칸에서 이 견적이 어떤 품목을 커버하는지 선택하세요(기본은 전체 품목).'}
+              {' '}최종 합의된 공급사에서 "확정"을 누르면 해당 품목들의 단가가 자동으로 반영됩니다.
+            </p>
 
-          const saveQuotes = (nextQuotes: NonNullable<ImportRequest['supplierQuotes']>) => {
-            saveToStorage(importRequests.map(r => r.id === id ? { ...r, supplierQuotes: nextQuotes } : r));
-          };
+            {renderSupplierQuotesSection()}
 
-          const addSupplierQuote = () => {
-            const newQuote = {
-              id: `q${Date.now()}`,
-              supplierName: '',
-              amount: 0,
-              currency: 'USD',
-              quoteDate: new Date().toISOString().slice(0, 10),
-              status: '검토중' as const,
-              note: '',
-              itemIndices: quoteItems.map((_, i) => i) // 기본값: 전체 품목 커버 (품목 1개면 신경 쓸 필요 없음)
-            };
-            saveQuotes([...quotes, newQuote]);
-          };
-
-          const updateQuote = (qid: string, patch: Partial<NonNullable<ImportRequest['supplierQuotes']>[number]>) => {
-            saveQuotes(quotes.map(q => q.id === qid ? { ...q, ...patch } : q));
-          };
-
-          const toggleQuoteItem = (qid: string, itemIdx: number) => {
-            const target = quotes.find(q => q.id === qid);
-            if (!target) return;
-            const current = target.itemIndices ?? quoteItems.map((_, i) => i);
-            const next = current.includes(itemIdx) ? current.filter(i => i !== itemIdx) : [...current, itemIdx].sort((a, b) => a - b);
-            updateQuote(qid, { itemIndices: next.length > 0 ? next : current }); // 최소 1개는 유지
-          };
-
-          const deleteQuote = (qid: string) => {
-            if (!window.confirm('이 공급사 견적을 삭제하시겠습니까?')) return;
-            saveQuotes(quotes.filter(q => q.id !== qid));
-          };
-
-          const confirmSupplier = (qid: string) => {
-            const target = quotes.find(q => q.id === qid);
-            if (!target) return;
-            const coveredIdx = (target.itemIndices && target.itemIndices.length > 0) ? target.itemIndices : quoteItems.map((_, i) => i);
-            const coveredNames = coveredIdx.map(i => quoteItems[i]?.name || `품목${i + 1}`).join(', ');
-
-            if (!window.confirm(`"${target.supplierName || '이 공급사'}"의 금액(${target.amount.toLocaleString()} ${target.currency || 'USD'})을 확정합니다.\n적용 품목: ${coveredNames}\n해당 품목들의 단가가 이 금액에 맞춰 재계산됩니다. 계속할까요?`)) return;
-
-            // 협상금액을 커버 품목들에 "원래 요청 비중"대로 배분해 품목별 단가를 재산정
-            // (품목별 마진/HS코드 등은 그대로 두고, 단가만 협상 결과에 맞게 조정)
-            const originalSubtotal = coveredIdx.reduce((sum, i) => sum + ((Number(quoteItems[i]?.qty) || 0) * (Number(quoteItems[i]?.unitPrice) || 0)), 0);
-            const nextPiItems = quoteItems.map((it, i) => {
-              if (!coveredIdx.includes(i)) return it;
-              const qty = Number(it.qty) || 0;
-              const origAmount = qty * (Number(it.unitPrice) || 0);
-              const share = originalSubtotal > 0 ? origAmount / originalSubtotal : 1 / coveredIdx.length;
-              const allocatedAmount = target.amount * share;
-              const nextUnitPrice = qty > 0 ? allocatedAmount / qty : Number(it.unitPrice) || 0;
-              return { ...it, unitPrice: (Math.round(nextUnitPrice * 10000) / 10000).toString(), amount: allocatedAmount.toFixed(2) };
-            });
-
-            const nextQuotes = quotes.map(q => q.id === qid ? { ...q, status: '확정' as const } : q);
-
-            // ③ 수입원가계산의 블렌디드 물품금액/수량도 전체 품목 기준으로 동기화 (환율 적용 등 오버헤드 계산용)
-            const totalBuyingAmount = nextPiItems.reduce((sum, it) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0);
-            const totalBuyingQty = nextPiItems.reduce((sum, it) => sum + (Number(it.qty) || 0), 0) || totalQtyForCalc;
-            const nextCostBreakdown = {
-              ...(request.costBreakdown || {}),
-              buyingPriceUsd: Math.round((totalBuyingAmount / totalBuyingQty) * 10000) / 10000,
-              buyingQty: totalBuyingQty
-            };
-
-            saveToStorage(importRequests.map(r => r.id === id
-              ? { ...r, supplierQuotes: nextQuotes, piItems: nextPiItems, costBreakdown: nextCostBreakdown }
-              : r));
-            alert('확정되었습니다. 해당 품목들의 단가와 ③ 수입원가계산의 물품금액에 자동으로 반영되었습니다.');
-          };
-
-          const statusColor: Record<string, { bg: string; fg: string; border: string }> = {
-            '검토중': { bg: '#f1f5f9', fg: '#475569', border: '#cbd5e1' },
-            '네고중': { bg: '#fef3c7', fg: '#b45309', border: '#fde68a' },
-            '확정': { bg: '#f0fdf4', fg: '#16a34a', border: '#bbf7d0' },
-            '거절': { bg: '#fef2f2', fg: '#dc2626', border: '#fecaca' }
-          };
-
-          return (
-            <div>
-              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '8px' }}>
-                🤝 ② 견적수령/네고
-              </h3>
-              <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: '#64748b' }}>
-                공급사별로 받은 견적을 한 줄씩 입력하세요. 협상 중 가격이 바뀌면 금액 칸을 그대로 수정하시면 됩니다.
-                {hasMultipleItems && ' 품목이 여러 개일 때는 "품목" 칸에서 이 견적이 어떤 품목을 커버하는지 선택하세요(기본은 전체 품목).'}
-                {' '}최종 합의된 공급사에서 "확정"을 누르면 해당 품목들의 단가가 자동으로 반영됩니다.
-              </p>
-
-              <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
-                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>공급사명</th>
-                      {hasMultipleItems && <th style={{ padding: '6px 10px', width: '220px' }}>품목</th>}
-                      <th style={{ padding: '6px 10px', width: '90px' }}>통화</th>
-                      <th style={{ padding: '6px 10px', textAlign: 'right', width: '130px' }}>금액</th>
-                      <th style={{ padding: '6px 10px', width: '140px' }}>견적일</th>
-                      <th style={{ padding: '6px 10px', width: '110px' }}>상태</th>
-                      <th style={{ padding: '6px 10px' }}>견적서 보관 (멀티 드래그&amp;드롭/캡처붙여넣기)</th>
-                      <th style={{ padding: '6px 10px' }}>비고 (협상 메모 등)</th>
-                      <th style={{ padding: '6px 10px', width: '90px', textAlign: 'center' }}>확정</th>
-                      <th style={{ padding: '6px 10px', width: '50px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quotes.length === 0 ? (
-                      <tr>
-                        <td colSpan={hasMultipleItems ? 10 : 9} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
-                          등록된 공급사 견적이 없습니다. 아래 "＋ 공급사 견적 추가"로 시작하세요.
-                        </td>
-                      </tr>
-                    ) : (
-                      quotes.map(q => {
-                        const sc = statusColor[q.status || '검토중'];
-                        const coveredIdx = q.itemIndices ?? quoteItems.map((_, i) => i);
-                        
-                        const handleQuoteFileUploadLocal = async (quoteId: string, file: File) => {
-                          if (!file) return;
-                          try {
-                            setUploadingQuoteId(quoteId);
-                            const storageRef = ref(storage, `imports/${id}/supplierQuotes/${quoteId}/${file.name}`);
-                            const snapshot = await uploadBytes(storageRef, file);
-                            const downloadUrl = await getDownloadURL(snapshot.ref);
-                            const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
-                            updateQuote(quoteId, {
-                              files: [...currentFiles, { name: file.name, url: downloadUrl }]
-                            } as any);
-                            alert(`${file.name} 업로드가 완료되었습니다.`);
-                          } catch (e) {
-                            console.error(e);
-                            alert('업로드 실패');
-                          } finally {
-                            setUploadingQuoteId(null);
-                          }
-                        };
-
-                        const handleQuoteFileDeleteLocal = (quoteId: string, fileIndex: number) => {
-                          if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
-                            const currentFiles = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
-                            const nextFiles = currentFiles.filter((_: any, idx: number) => idx !== fileIndex);
-                            updateQuote(quoteId, {
-                              files: nextFiles.length > 0 ? nextFiles : null
-                            } as any);
-                          }
-                        };
-
-                        return (
-                          <tr key={q.id} style={{ borderBottom: '1px solid var(--border-color)', background: q.status === '확정' ? '#f0fdf4' : undefined }}>
-                            <td style={{ padding: '6px 8px' }}>
-                              <input type="text" value={q.supplierName} onChange={e => updateQuote(q.id, { supplierName: e.target.value })}
-                                placeholder="공급사명" style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-                            </td>
-                            {hasMultipleItems && (
-                              <td style={{ padding: '6px 8px' }}>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                  {quoteItems.map((it, i) => (
-                                    <button
-                                      key={i}
-                                      type="button"
-                                      onClick={() => toggleQuoteItem(q.id, i)}
-                                      title={it.name || `품목${i + 1}`}
-                                      style={{
-                                        padding: '3px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
-                                        whiteSpace: 'nowrap',
-                                        border: coveredIdx.includes(i) ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                                        background: coveredIdx.includes(i) ? '#2563eb' : '#fff',
-                                        color: coveredIdx.includes(i) ? '#fff' : '#64748b'
-                                      }}
-                                    >
-                                      {it.name || `품목${i + 1}`}
-                                    </button>
-                                  ))}
-                                </div>
-                              </td>
-                            )}
-                            <td style={{ padding: '6px 8px' }}>
-                              <select value={q.currency || 'USD'} onChange={e => updateQuote(q.id, { currency: e.target.value })}
-                                style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
-                                <option value="USD">USD</option>
-                                <option value="CNY">CNY</option>
-                                <option value="KRW">KRW</option>
-                                <option value="EUR">EUR</option>
-                              </select>
-                            </td>
-                            <td style={{ padding: '6px 8px' }}>
-                              <input type="number" value={q.amount} onChange={e => updateQuote(q.id, { amount: Number(e.target.value) || 0 })}
-                                style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', fontWeight: 700, boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ padding: '6px 8px' }}>
-                              <input type="date" value={q.quoteDate || ''} onChange={e => updateQuote(q.id, { quoteDate: e.target.value })}
-                                style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ padding: '6px 8px' }}>
-                              <select value={q.status || '검토중'} onChange={e => updateQuote(q.id, { status: e.target.value as any })}
-                                style={{ width: '100%', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', outline: 'none', background: sc.bg, color: sc.fg, fontWeight: 700, boxSizing: 'border-box' }}>
-                                <option value="검토중">검토중</option>
-                                <option value="네고중">네고중</option>
-                                <option value="확정">확정</option>
-                                <option value="거절">거절</option>
-                              </select>
-                            </td>
-                            <td style={{ padding: '6px 8px', minWidth: '220px' }}>
-                              {(() => {
-                                const fileList = Array.isArray((q as any).files) ? (q as any).files : ((q as any).files ? [(q as any).files] : []);
-                                return (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {fileList.length > 0 && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                        {fileList.map((f: any, fIdx: number) => (
-                                          <div key={fIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 6px', fontSize: '11.5px' }}>
-                                            <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '140px' }} onClick={() => previewFile(f.url, f.name)}>
-                                              📄 {f.name}
-                                            </span>
-                                            <button type="button" onClick={() => handleQuoteFileDeleteLocal(q.id, fIdx)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px', padding: '0 2px' }}>×</button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    <UploadZone
-                                      label="드래그 드롭 / 화면캡처(Ctrl+V)"
-                                      isUploading={uploadingQuoteId === q.id}
-                                      onFileSelect={(file) => handleQuoteFileUploadLocal(q.id, file)}
-                                    />
-                                  </div>
-                                );
-                              })()}
-                            </td>
-                            <td style={{ padding: '6px 8px' }}>
-                              <input type="text" value={q.note || ''} onChange={e => updateQuote(q.id, { note: e.target.value })} placeholder="예: 1차 3.8→3.6 협의"
-                                style={{ width: '100%', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-                            </td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                              <button type="button" onClick={() => confirmSupplier(q.id)} disabled={q.status === '확정'}
-                                style={{ padding: '5px 10px', background: q.status === '확정' ? '#94a3b8' : '#16a34a', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: q.status === '확정' ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
-                                {q.status === '확정' ? '✅ 완료' : '확정'}
-                              </button>
-                            </td>
-                            <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                              <button type="button" onClick={() => deleteQuote(q.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>✕</button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={addSupplierQuote}
-                  style={{ padding: '7px 14px', background: '#fff', color: '#2563eb', border: '1px solid #2563eb', borderRadius: '6px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  ＋ 공급사 견적 추가
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('수입원가계산')}
-                  style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  다음 단계 (수입원가계산) ➡️
-                </button>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('수입원가계산')}
+                style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                다음 단계 (수입원가계산) ➡️
+              </button>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {activeTab === '수입원가계산' && (
           <div>
@@ -1347,6 +1363,8 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {renderSupplierQuotesSection()}
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -1846,6 +1864,8 @@ customsDuty,
                 </button>
               </div>
             </div>
+
+            {renderSupplierQuotesSection()}
 
             {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
             <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
