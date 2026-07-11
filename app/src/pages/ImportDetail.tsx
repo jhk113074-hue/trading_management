@@ -2440,57 +2440,64 @@ customsDuty,
             {/* Section 1: 기본 정보 */}
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px' }}>수입 기본 정보 및 운송 개요</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입주체</label>
-                    <select
-                      value={request.importCompany || 'YSACC'}
-                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
-                      style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                    >
-                      <option value="YSACC">YSACC</option>
-                      <option value="영성ACC">영성ACC</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input
-                        type="text"
-                        readOnly
-                        value={request.importerName || ''}
-                        placeholder="공급업체 검색으로 지정"
-                        style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSupplierSearchModal(true)}
-                        style={{ height: '30px', padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+                {/* Left Card: 기본 정보 (2줄 구성) */}
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Row 1: 수입주체, 수입처, 최종 고객사 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 2fr 2fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입주체</label>
+                      <select
+                        value={request.importCompany || 'YSACC'}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       >
-                        🔍 검색
-                      </button>
+                        <option value="YSACC">YSACC</option>
+                        <option value="영성ACC">영성ACC</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={request.importerName || ''}
+                          placeholder="공급업체 지정"
+                          style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSupplierSearchModal(true)}
+                          style={{ height: '30px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          🔍
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input
+                          type="text"
+                          readOnly
+                          value={request.finalCustomer || ''}
+                          placeholder="고객사 지정"
+                          style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomerModal(true)}
+                          style={{ height: '30px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          🔍
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input
-                        type="text"
-                        readOnly
-                        value={request.finalCustomer || ''}
-                        style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomerModal(true)}
-                        style={{ height: '30px', padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        🔍 검색
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+
+                  {/* Row 2: INCOTERMS, 결제 방식, PO 번호, PI 번호 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr 1.6fr 1.6fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>INCOTERMS</label>
                       <select
@@ -2524,9 +2531,6 @@ customsDuty,
                         <option value="Net 60 days">Net 60 days</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>PO 번호</label>
                       <input
@@ -2556,21 +2560,23 @@ customsDuty,
                   </div>
                 </div>
 
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송수단</label>
-                    <select
-                      value={request.transportType || 'By Sea'}
-                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, transportType: e.target.value } : r))}
-                      style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                    >
-                      <option value="By Sea">By Sea</option>
-                      <option value="By Air">By Air</option>
-                      <option value="By Truck">By Truck</option>
-                      <option value="기타">기타</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {/* Right Card: 운송 개요 (2줄 구성) */}
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {/* Row 1: 운송수단, 출발 PORT, 도착 PORT */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송수단</label>
+                      <select
+                        value={request.transportType || 'By Sea'}
+                        onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, transportType: e.target.value } : r))}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      >
+                        <option value="By Sea">By Sea</option>
+                        <option value="By Air">By Air</option>
+                        <option value="By Truck">By Truck</option>
+                        <option value="기타">기타</option>
+                      </select>
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>출발 PORT (POL)</label>
                       <input
@@ -2590,7 +2596,9 @@ customsDuty,
                       />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+
+                  {/* Row 2: 총 운송 물동량, 총중량 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 운송 물동량 (Volume)</label>
                       <input
