@@ -938,8 +938,7 @@ export const ImportDetail: React.FC = () => {
             { key: '수입원가계산', label: '③ 수입원가계산' },
             { key: '견적서작성', label: '④ 견적서작성' },
             { key: '수입내역', label: '⑤ 발주/매입' },
-            { key: '운송사/관세사 선정', label: '⑥ 물류/통관' },
-            { key: '서류', label: '서류' },
+            { key: '운송사/관세사 선정', label: '⑥ 물류/통관/서류' },
             { key: '정산', label: '⑦ 정산/완료' },
             { key: '손익검토', label: '⑧ 손익검토' },
             { key: '로그', label: '로그' }
@@ -948,7 +947,7 @@ export const ImportDetail: React.FC = () => {
             if (viewMode === 'quote') {
               return tab.key === '수입품 견적요청' || tab.key === '견적수령/네고' || tab.key === '수입원가계산' || tab.key === '견적서작성' || tab.key === '로그';
             } else {
-              return tab.key === '수입내역' || tab.key === '운송사/관세사 선정' || tab.key === '서류' || tab.key === '정산' || tab.key === '손익검토' || tab.key === '로그';
+              return tab.key === '수입내역' || tab.key === '운송사/관세사 선정' || tab.key === '정산' || tab.key === '손익검토' || tab.key === '로그';
             }
           })
           .map(tab => (
@@ -2756,7 +2755,7 @@ customsDuty,
               🚢 운송사 및 통관 관세사 선정 관리
             </h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
               <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>
                   Forwarder (지정 운송사)
@@ -2868,22 +2867,8 @@ customsDuty,
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => {
-                  alert('운송사 및 관세사 정보가 성공적으로 반영되었습니다.');
-                  setActiveTab('서류');
-                }}
-                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                저장 후 다음단계로
-              </button>
-            </div>
-          </div>
-        )}
+            <div style={{ borderBottom: '2px solid var(--border-default)', margin: '32px 0 24px 0' }} />
 
-        {activeTab === '서류' && (
-          <div>
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '16px' }}>
               📁 수입 서류 및 통관 서류 업로드 관리
             </h3>
@@ -2989,6 +2974,18 @@ customsDuty,
                   {renderMultiUploadZone('taxInvoice', '수입세금계산서 업로드', documents.taxInvoice)}
                 </div>
               </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button 
+                onClick={() => {
+                  alert('물류/통관 및 서류 정보가 성공적으로 반영되었습니다.');
+                  setActiveTab('정산');
+                }}
+                style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                저장 후 다음단계로
+              </button>
             </div>
           </div>
         )}
