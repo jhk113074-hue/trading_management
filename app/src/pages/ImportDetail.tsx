@@ -133,8 +133,8 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
         borderRadius: '6px',
         textAlign: 'center',
         fontSize: '12px',
-        color: dragOver ? '#2563eb' : '#64748b',
-        background: dragOver ? '#eff6ff' : '#fff',
+        color: dragOver ? '#2563eb' : '#475569',
+        background: dragOver ? '#eff6ff' : '#f8fafc',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
         outline: 'none',
@@ -142,12 +142,36 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px'
+        gap: '8px'
       }}
     >
-      <span style={{ fontSize: '14px' }}>{isUploading ? '⏳' : '📤'}</span>
-      <span style={{ fontWeight: 600 }}>{isUploading ? '업로드 중...' : label}</span>
-      <span style={{ fontSize: '10px', color: '#94a3b8' }}>(클릭/드래그 또는 선택 후 Ctrl+V 스크린샷/파일 붙여넣기)</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+        <span style={{ fontSize: '14px' }}>📁</span>
+        <span style={{ fontWeight: 600, fontSize: '12.5px', color: '#475569' }}>
+          {isUploading ? '업로드 중...' : (label && !label.includes('드래그') ? `이곳에 ${label} 관련 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.` : '이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.')}
+        </span>
+      </div>
+      <button
+        type="button"
+        disabled={isUploading}
+        style={{
+          background: '#3b82f6',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '4px',
+          height: '34px',
+          padding: '0 16px',
+          fontSize: '12.5px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+          transition: 'background-color 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+      >
+        파일 선택하기
+      </button>
       <input
         type="file"
         ref={fileInputRef}
