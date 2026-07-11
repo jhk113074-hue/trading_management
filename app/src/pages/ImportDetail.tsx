@@ -3869,672 +3869,656 @@ customsDuty,
                 </div>
               </div>
 
-              {/* 4-1. 거래명세표 발행 및 관리 */}
-              <div style={{ background: '#f0fdf4', padding: '18px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '6px', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#166534' }}>
-                    📄 4-1. 거래명세표 발행 및 관리 (Statement of Transaction)
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const currentItems = request.dealStatementItems && request.dealStatementItems.length > 0
-                        ? request.dealStatementItems
-                        : (request.piItems || []).map((item: any) => {
-                            const qty = Number(item.qty) || 0;
-                            const totalQty = request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                            const estimatedPrice = Math.round((request.customerQuoteAmount || 0) / totalQty);
-                            return {
-                              month: new Date().toISOString().split('T')[0].split('-')[1],
-                              day: new Date().toISOString().split('T')[0].split('-')[2],
-                              name: item.name || '',
-                              spec: item.unit || 'EA',
-                              qty: qty,
-                              price: estimatedPrice,
-                              remarks: ''
-                            };
+              
+              {/* 2-Column Grid: Left (Deal Statement) & Right (Tax Invoice & Collections) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '12px', alignItems: 'start' }}>
+                
+                {/* Left Side: 4-1. 거래명세표 발행 및 관리 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#166534' }}>
+                        📄 4-1. 거래명세표 발행 및 관리
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentItems = request.dealStatementItems && request.dealStatementItems.length > 0
+                            ? request.dealStatementItems
+                            : (request.piItems || []).map((item: any) => {
+                                const qty = Number(item.qty) || 0;
+                                const totalQty = request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                                const estimatedPrice = Math.round((request.customerQuoteAmount || 0) / totalQty);
+                                return {
+                                  month: new Date().toISOString().split('T')[0].split('-')[1],
+                                  day: new Date().toISOString().split('T')[0].split('-')[2],
+                                  name: item.name || '',
+                                  spec: item.unit || 'EA',
+                                  qty: qty,
+                                  price: estimatedPrice,
+                                  remarks: ''
+                                };
+                              });
+
+                          setDealStatementData({
+                            date: request.dealStatementSentDate || new Date().toISOString().split('T')[0],
+                            receiverBizNo: request.dealStatementBizNo || '',
+                            receiverName: request.dealStatementName || request.finalCustomer || '',
+                            receiverCEO: request.dealStatementCEO || '',
+                            receiverAddr: request.dealStatementAddr || '',
+                            receiverType: request.dealStatementType || '',
+                            receiverItem: request.dealStatementItem || '',
+                            items: currentItems,
+                            receivableAmount: request.dealStatementReceivable || 0,
+                            receiverSign: ''
                           });
+                          setShowDealStatementModal(true);
+                        }}
+                        style={{ padding: '4px 8px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        🖨️ 거래명세표 인쇄/발행
+                      </button>
+                    </div>
 
-                      setDealStatementData({
-                        date: request.dealStatementSentDate || new Date().toISOString().split('T')[0],
-                        receiverBizNo: request.dealStatementBizNo || '',
-                        receiverName: request.dealStatementName || request.finalCustomer || '',
-                        receiverCEO: request.dealStatementCEO || '',
-                        receiverAddr: request.dealStatementAddr || '',
-                        receiverType: request.dealStatementType || '',
-                        receiverItem: request.dealStatementItem || '',
-                        items: currentItems,
-                        receivableAmount: request.dealStatementReceivable || 0,
-                        receiverSign: ''
-                      });
-                      setShowDealStatementModal(true);
-                    }}
-                    style={{ padding: '6px 12px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    🖨️ 거래명세표 발행 및 인쇄 팝업
-                  </button>
-                </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>상호</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementName || request.finalCustomer || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementName: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', fontWeight: 600 }}
+                          placeholder="회사명"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>등록번호</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementBizNo || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementBizNo: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px' }}
+                          placeholder="사업자번호"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>대표자 성명</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementCEO || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCEO: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px' }}
+                          placeholder="대표자명"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>발행일자</label>
+                        <input
+                          type="date"
+                          value={request.dealStatementSentDate || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementSentDate: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px' }}
+                        />
+                      </div>
+                      <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>주소</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementAddr || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementAddr: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px' }}
+                          placeholder="사업장 주소"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>업태</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementType || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementType: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px' }}
+                          placeholder="업태"
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>종목</label>
+                        <input
+                          type="text"
+                          value={request.dealStatementItem || ''}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItem: e.target.value } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px' }}
+                          placeholder="종목"
+                        />
+                      </div>
+                    </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '14px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>공급받는자 상호</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementName || request.finalCustomer || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementName: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px', fontWeight: 600 }}
-                      placeholder="회사명"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>등록번호</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementBizNo || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementBizNo: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                      placeholder="사업자번호"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>대표자 성명</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementCEO || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCEO: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                      placeholder="대표자명"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>발행일자</label>
-                    <input
-                      type="date"
-                      value={request.dealStatementSentDate || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementSentDate: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                    />
-                  </div>
-                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>주소</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementAddr || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementAddr: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                      placeholder="사업장 주소"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>업태</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementType || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementType: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                      placeholder="업태"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>종목</label>
-                    <input
-                      type="text"
-                      value={request.dealStatementItem || ''}
-                      onChange={(e) => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItem: e.target.value } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', padding: '0 8px' }}
-                      placeholder="종목"
-                    />
-                  </div>
-                </div>
-
-                {/* 품목 목록 테이블 */}
-                <div style={{ background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#166534' }}>거래명세표 포함 품목 정보</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = request.dealStatementItems || [];
-                        const nextItems = [
-                          ...current,
-                          {
-                            month: new Date().toISOString().split('T')[0].split('-')[1],
-                            day: new Date().toISOString().split('T')[0].split('-')[2],
-                            name: '',
-                            spec: 'EA',
-                            qty: 1,
-                            price: 0,
-                            remarks: ''
-                          }
-                        ];
-                        const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '2px 8px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      ＋ 품목 추가
-                    </button>
-                  </div>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #cbd5e1', height: '30px', background: '#f8fafc' }}>
-                        <th style={{ padding: '4px', width: '50px' }}>월</th>
-                        <th style={{ padding: '4px', width: '50px' }}>일</th>
-                        <th style={{ padding: '4px' }}>품목명</th>
-                        <th style={{ padding: '4px', width: '80px' }}>규격</th>
-                        <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>수량</th>
-                        <th style={{ padding: '4px', width: '120px', textAlign: 'right' }}>단가 (₩)</th>
-                        <th style={{ padding: '4px', width: '120px', textAlign: 'right' }}>공급가액</th>
-                        <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>삭제</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const currentItems = request.dealStatementItems && request.dealStatementItems.length > 0
-                          ? request.dealStatementItems
-                          : (request.piItems || []).map((item: any) => {
-                              const qty = Number(item.qty) || 0;
-                              const totalQty = request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                              const estimatedPrice = Math.round((request.customerQuoteAmount || 0) / totalQty);
-                              return {
+                    {/* 품목 목록 테이블 */}
+                    <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#166534' }}>거래명세표 포함 품목 정보</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = request.dealStatementItems || [];
+                            const nextItems = [
+                              ...current,
+                              {
                                 month: new Date().toISOString().split('T')[0].split('-')[1],
                                 day: new Date().toISOString().split('T')[0].split('-')[2],
-                                name: item.name || '',
-                                spec: item.unit || 'EA',
-                                qty: qty,
-                                price: estimatedPrice,
+                                name: '',
+                                spec: 'EA',
+                                qty: 1,
+                                price: 0,
                                 remarks: ''
-                              };
-                            });
-
-                        return currentItems.map((item: any, idx: number) => {
-                          const updateItem = (fields: Partial<typeof item>) => {
-                            const nextItems = currentItems.map((it: any, i: number) => i === idx ? { ...it, ...fields } : it);
-                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
-                            saveToStorage(updated);
-                          };
-                          const deleteItem = () => {
-                            const nextItems = currentItems.filter((_: any, i: number) => i !== idx);
-                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
-                            saveToStorage(updated);
-                          };
-
-                          return (
-                            <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '38px' }}>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="text"
-                                  value={item.month}
-                                  onChange={(e) => updateItem({ month: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="text"
-                                  value={item.day}
-                                  onChange={(e) => updateItem({ day: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="text"
-                                  value={item.name}
-                                  onChange={(e) => updateItem({ name: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 4px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="text"
-                                  value={item.spec}
-                                  onChange={(e) => updateItem({ spec: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 4px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="number"
-                                  value={item.qty || ''}
-                                  onChange={(e) => updateItem({ qty: Number(e.target.value) || 0 })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px' }}>
-                                <input
-                                  type="number"
-                                  value={item.price || ''}
-                                  onChange={(e) => updateItem({ price: Number(e.target.value) || 0 })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px', textAlign: 'right', fontWeight: 'bold' }}>
-                                ₩{(item.qty * item.price).toLocaleString()}
-                              </td>
-                              <td style={{ padding: '2px', textAlign: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={deleteItem}
-                                  style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  🗑️
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div style={{ background: '#eff6ff', padding: '18px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e3a8a' }}>
-                    📑 4-2. 고객사 세금계산서 / 수금 정산
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const defaultItemName = request.itemName || '';
-                      const quoteTotal = request.customerQuoteAmount || 0;
-                      const computedSupply = Math.round(quoteTotal / 1.1);
-                      const computedVat = quoteTotal - computedSupply;
-                      const qty = Number(request.costBreakdown?.buyingQty) || request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
-                      const unitPrice = Math.round(computedSupply / qty);
-
-                      const updated = importRequests.map(r => r.id === id ? { 
-                        ...r, 
-                        taxInvoiceItemName: defaultItemName,
-                        taxInvoiceUnitPrice: unitPrice,
-                        taxInvoiceTotalAmount: computedSupply,
-                        taxInvoiceVat: computedVat,
-                        taxInvoiceGrandTotal: quoteTotal
-                      } : r);
-                      saveToStorage(updated);
-                    }}
-                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', padding: '4px 8px', transition: 'background 0.2s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
-                  >
-                    ⚡ 견적정보에서 계산서 자동입력
-                  </button>
-                </div>
-                {/* 증빙서류 발행 내역 테이블 */}
-                <div style={{ overflowX: 'auto', marginBottom: '20px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '850px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '34px' }}>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '130px' }}>구분</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '160px' }}>발행일자</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '200px' }}>승인번호</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '160px', textAlign: 'right' }}>공급가액</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '140px', textAlign: 'right' }}>부가세액</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '140px', textAlign: 'right' }}>합계금액</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px' }}>비고</th>
-                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '50px', textAlign: 'center' }}>삭제</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const rows: TaxDocumentRow[] = request.taxDocumentRows || [
-                          {
-                            id: 'r1',
-                            type: '세금계산서',
-                            issueDate: request.taxInvoiceIssuedDate || '',
-                            docNumber: request.taxInvoiceNumber || '',
-                            supplyAmount: request.taxInvoiceTotalAmount || 0,
-                            vatAmount: request.taxInvoiceVat || 0,
-                            grandTotal: request.taxInvoiceGrandTotal || 0,
-                            remarks: request.taxInvoiceItemName || ''
-                          },
-                          {
-                            id: 'r2',
-                            type: '거래명세표',
-                            issueDate: request.dealStatementSentDate || '',
-                            docNumber: '',
-                            supplyAmount: 0,
-                            vatAmount: 0,
-                            grandTotal: 0,
-                            remarks: ''
-                          }
-                        ];
-
-                        const updateRow = (rowId: string, fields: Partial<TaxDocumentRow>) => {
-                          const updatedRows = rows.map(r => {
-                            if (r.id === rowId) {
-                              const newRow = { ...r, ...fields };
-                              if (fields.supplyAmount !== undefined || fields.vatAmount !== undefined) {
-                                const supply = fields.supplyAmount !== undefined ? fields.supplyAmount : r.supplyAmount;
-                                const vat = fields.vatAmount !== undefined ? fields.vatAmount : (fields.supplyAmount !== undefined ? Math.round(fields.supplyAmount * 0.1) : r.vatAmount);
-                                newRow.vatAmount = vat;
-                                newRow.grandTotal = supply + vat;
                               }
-                              return newRow;
+                            ];
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '1px 6px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          ＋ 품목 추가
+                        </button>
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #cbd5e1', height: '24px', background: '#f8fafc' }}>
+                            <th style={{ padding: '2px', width: '25px' }}>월</th>
+                            <th style={{ padding: '2px', width: '25px' }}>일</th>
+                            <th style={{ padding: '2px' }}>품목명</th>
+                            <th style={{ padding: '2px', width: '45px' }}>규격</th>
+                            <th style={{ padding: '2px', width: '45px', textAlign: 'right' }}>수량</th>
+                            <th style={{ padding: '2px', width: '75px', textAlign: 'right' }}>단가(₩)</th>
+                            <th style={{ padding: '2px', width: '80px', textAlign: 'right' }}>금액</th>
+                            <th style={{ padding: '2px', width: '25px', textAlign: 'center' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const currentItems = request.dealStatementItems && request.dealStatementItems.length > 0
+                              ? request.dealStatementItems
+                              : (request.piItems || []).map((item: any) => {
+                                  const qty = Number(item.qty) || 0;
+                                  const totalQty = request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                                  const estimatedPrice = Math.round((request.customerQuoteAmount || 0) / totalQty);
+                                  return {
+                                    month: new Date().toISOString().split('T')[0].split('-')[1],
+                                    day: new Date().toISOString().split('T')[0].split('-')[2],
+                                    name: item.name || '',
+                                    spec: item.unit || 'EA',
+                                    qty: qty,
+                                    price: estimatedPrice,
+                                    remarks: ''
+                                  };
+                                });
+
+                            return currentItems.map((item: any, idx: number) => {
+                              const updateItem = (fields: Partial<typeof item>) => {
+                                const nextItems = currentItems.map((it: any, i: number) => i === idx ? { ...it, ...fields } : it);
+                                const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+                                saveToStorage(updated);
+                              };
+                              const deleteItem = () => {
+                                const nextItems = currentItems.filter((_: any, i: number) => i !== idx);
+                                const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+                                saveToStorage(updated);
+                              };
+
+                              return (
+                                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '32px' }}>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="text"
+                                      value={item.month}
+                                      onChange={(e) => updateItem({ month: e.target.value })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="text"
+                                      value={item.day}
+                                      onChange={(e) => updateItem({ day: e.target.value })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'center', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="text"
+                                      value={item.name}
+                                      onChange={(e) => updateItem({ name: e.target.value })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 2px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="text"
+                                      value={item.spec}
+                                      onChange={(e) => updateItem({ spec: e.target.value })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 2px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="number"
+                                      value={item.qty || ''}
+                                      onChange={(e) => updateItem({ qty: Number(e.target.value) || 0 })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 2px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px' }}>
+                                    <input
+                                      type="number"
+                                      value={item.price || ''}
+                                      onChange={(e) => updateItem({ price: Number(e.target.value) || 0 })}
+                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 2px', fontSize: '11px' }}
+                                    />
+                                  </td>
+                                  <td style={{ padding: '1px', textAlign: 'right', fontWeight: 'bold' }}>
+                                    ₩{(item.qty * item.price).toLocaleString()}
+                                  </td>
+                                  <td style={{ padding: '1px', textAlign: 'center' }}>
+                                    <button
+                                      type="button"
+                                      onClick={deleteItem}
+                                      style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
+                                    >
+                                      ✕
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side: 4-2. 세금계산서 정산 & 4-3. 수금 내역 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  
+                  {/* 4-2. 고객사 세금계산서 정산 */}
+                  <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#1e3a8a' }}>
+                        📑 4-2. 고객사 세금계산서 정산
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const defaultItemName = request.itemName || '';
+                          const quoteTotal = request.customerQuoteAmount || 0;
+                          const computedSupply = Math.round(quoteTotal / 1.1);
+                          const computedVat = quoteTotal - computedSupply;
+                          const qty = Number(request.costBreakdown?.buyingQty) || request.piItems?.reduce((sum, it) => sum + (Number(it.qty) || 0), 0) || 1;
+                          const unitPrice = Math.round(computedSupply / qty);
+
+                          const updated = importRequests.map(r => r.id === id ? { 
+                            ...r, 
+                            taxInvoiceItemName: defaultItemName,
+                            taxInvoiceUnitPrice: unitPrice,
+                            taxInvoiceTotalAmount: computedSupply,
+                            taxInvoiceVat: computedVat,
+                            taxInvoiceGrandTotal: quoteTotal
+                          } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700, cursor: 'pointer', padding: '2px 6px' }}
+                      >
+                        ⚡ 자동계산 입력
+                      </button>
+                    </div>
+
+                    {/* 세금계산서 테이블 */}
+                    <div style={{ overflowX: 'auto', background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '550px', fontSize: '11px' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '28px' }}>
+                            <th style={{ padding: '2px 4px', width: '80px' }}>구분</th>
+                            <th style={{ padding: '2px 4px', width: '100px' }}>발행일자</th>
+                            <th style={{ padding: '2px 4px', width: '110px' }}>승인번호</th>
+                            <th style={{ padding: '2px 4px', width: '100px', textAlign: 'right' }}>공급가액</th>
+                            <th style={{ padding: '2px 4px', width: '80px', textAlign: 'right' }}>부가세</th>
+                            <th style={{ padding: '2px 4px', width: '90px', textAlign: 'right' }}>합계</th>
+                            <th style={{ padding: '2px 4px', width: '30px', textAlign: 'center' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const rows: TaxDocumentRow[] = request.taxDocumentRows || [
+                              {
+                                id: 'r1',
+                                type: '세금계산서',
+                                issueDate: request.taxInvoiceIssuedDate || '',
+                                docNumber: request.taxInvoiceNumber || '',
+                                supplyAmount: request.taxInvoiceTotalAmount || 0,
+                                vatAmount: request.taxInvoiceVat || 0,
+                                grandTotal: request.taxInvoiceGrandTotal || 0,
+                                remarks: request.taxInvoiceItemName || ''
+                              }
+                            ];
+
+                            const updateRow = (rowId: string, fields: Partial<TaxDocumentRow>) => {
+                              const updatedRows = rows.map(r => {
+                                if (r.id === rowId) {
+                                  const newRow = { ...r, ...fields };
+                                  if (fields.supplyAmount !== undefined || fields.vatAmount !== undefined) {
+                                    const supply = fields.supplyAmount !== undefined ? fields.supplyAmount : r.supplyAmount;
+                                    const vat = fields.vatAmount !== undefined ? fields.vatAmount : (fields.supplyAmount !== undefined ? Math.round(fields.supplyAmount * 0.1) : r.vatAmount);
+                                    newRow.vatAmount = vat;
+                                    newRow.grandTotal = supply + vat;
+                                  }
+                                  return newRow;
+                                }
+                                return r;
+                              });
+
+                              const firstInvoice = updatedRows.find(r => r.type === '세금계산서');
+
+                              const compatibilityFields: any = {
+                                taxDocumentRows: updatedRows
+                              };
+                              if (firstInvoice) {
+                                compatibilityFields.taxInvoiceIssuedDate = firstInvoice.issueDate;
+                                compatibilityFields.taxInvoiceNumber = firstInvoice.docNumber;
+                                compatibilityFields.taxInvoiceTotalAmount = firstInvoice.supplyAmount;
+                                compatibilityFields.taxInvoiceVat = firstInvoice.vatAmount;
+                                compatibilityFields.taxInvoiceGrandTotal = firstInvoice.grandTotal;
+                                compatibilityFields.taxInvoiceItemName = firstInvoice.remarks;
+                              }
+
+                              const updatedRequests = importRequests.map(r => r.id === id ? { ...r, ...compatibilityFields } as any : r);
+                              saveToStorage(updatedRequests);
+                            };
+
+                            const deleteRow = (rowId: string) => {
+                              const updatedRows = rows.filter(r => r.id !== rowId);
+                              const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } as any : r);
+                              saveToStorage(updatedRequests);
+                            };
+
+                            return (
+                              <>
+                                {rows.map((row) => (
+                                  <tr key={row.id} style={{ borderBottom: '1px solid #e2e8f0', height: '36px' }}>
+                                    <td style={{ padding: '1px' }}>
+                                      <select
+                                        value={row.type}
+                                        onChange={(e) => updateRow(row.id, { type: e.target.value as any })}
+                                        style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}
+                                      >
+                                        <option value="세금계산서">세금계산서</option>
+                                        <option value="영수증">영수증</option>
+                                        <option value="기타">기타</option>
+                                      </select>
+                                    </td>
+                                    <td style={{ padding: '1px' }}>
+                                      <input
+                                        type="date"
+                                        value={row.issueDate || ''}
+                                        onChange={(e) => updateRow(row.id, { issueDate: e.target.value })}
+                                        style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 2px' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '1px' }}>
+                                      <input
+                                        type="text"
+                                        value={row.docNumber || ''}
+                                        onChange={(e) => updateRow(row.id, { docNumber: e.target.value })}
+                                        placeholder="승인번호"
+                                        style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 4px' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '1px' }}>
+                                      <input
+                                        type="number"
+                                        value={row.supplyAmount || ''}
+                                        onChange={(e) => updateRow(row.id, { supplyAmount: Number(e.target.value) || 0 })}
+                                        style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', padding: '0 4px' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '1px' }}>
+                                      <input
+                                        type="number"
+                                        value={row.vatAmount || ''}
+                                        onChange={(e) => updateRow(row.id, { vatAmount: Number(e.target.value) || 0 })}
+                                        style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', textAlign: 'right', padding: '0 4px' }}
+                                      />
+                                    </td>
+                                    <td style={{ padding: '2px', textAlign: 'right', fontWeight: 800 }}>
+                                      ₩{(row.grandTotal || 0).toLocaleString()}
+                                    </td>
+                                    <td style={{ padding: '1px', textAlign: 'center' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteRow(row.id)}
+                                        style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
+                                      >
+                                        🗑️
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                                <tr>
+                                  <td colSpan={7} style={{ padding: '4px 0' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const nextId = "r_" + Date.now();
+                                        const updatedRows = [...rows, {
+                                          id: nextId,
+                                          type: '세금계산서',
+                                          issueDate: '',
+                                          docNumber: '',
+                                          supplyAmount: 0,
+                                          vatAmount: 0,
+                                          grandTotal: 0,
+                                          remarks: ''
+                                        }];
+                                        const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } as any : r);
+                                        saveToStorage(updatedRequests);
+                                      }}
+                                      style={{ width: '100%', height: '28px', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: 700, color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                    >
+                                      ➕ 증빙 추가 (행 추가)
+                                    </button>
+                                  </td>
+                                </tr>
+                              </>
+                            );
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 4-3. 수금 내역 및 잔액 관리 */}
+                  <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>
+                        💰 수금 관리 (청구총액: ₩{(request.customerQuoteAmount || request.amount || 0).toLocaleString()})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = request.collections || [];
+                          const nextCollections = [
+                            ...current,
+                            {
+                              id: "col_" + Date.now(),
+                              round: current.length + 1,
+                              date: new Date().toISOString().split('T')[0],
+                              amount: 0,
+                              remarks: ''
                             }
-                            return r;
-                          });
+                          ];
+                          const totalCollected = nextCollections.reduce((sum, c) => sum + c.amount, 0);
+                          const updated = importRequests.map(r => r.id === id ? { 
+                            ...r, 
+                            collections: nextCollections,
+                            paymentCollectedAmount: totalCollected,
+                            paymentCollectedDate: nextCollections[nextCollections.length - 1]?.date || ''
+                          } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '2px 6px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        ＋ 수금 등록
+                      </button>
+                    </div>
 
-                          const firstInvoice = updatedRows.find(r => r.type === '세금계산서');
-                          const firstStatement = updatedRows.find(r => r.type === '거래명세표');
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '24px', background: '#f8fafc' }}>
+                          <th style={{ padding: '4px 6px', width: '70px' }}>차수</th>
+                          <th style={{ padding: '4px 6px', width: '110px' }}>수금 일자</th>
+                          <th style={{ padding: '4px 6px', width: '110px', textAlign: 'right' }}>수금액</th>
+                          <th style={{ padding: '4px 6px', width: '110px', textAlign: 'right' }}>잔액</th>
+                          <th style={{ padding: '4px 6px' }}>메모</th>
+                          <th style={{ padding: '4px 6px', width: '30px' }}></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const collectionsList = request.collections || [];
+                          let cumulativeCollected = 0;
+                          const totalToReceive = request.customerQuoteAmount || request.amount || 0;
 
-                          const compatibilityFields: any = {
-                            taxDocumentRows: updatedRows
-                          };
-                          if (firstInvoice) {
-                            compatibilityFields.taxInvoiceIssuedDate = firstInvoice.issueDate;
-                            compatibilityFields.taxInvoiceNumber = firstInvoice.docNumber;
-                            compatibilityFields.taxInvoiceTotalAmount = firstInvoice.supplyAmount;
-                            compatibilityFields.taxInvoiceVat = firstInvoice.vatAmount;
-                            compatibilityFields.taxInvoiceGrandTotal = firstInvoice.grandTotal;
-                            compatibilityFields.taxInvoiceItemName = firstInvoice.remarks;
-                          }
-                          if (firstStatement) {
-                            compatibilityFields.dealStatementSentDate = firstStatement.issueDate;
-                          }
-
-                          const updatedRequests = importRequests.map(r => r.id === id ? { ...r, ...compatibilityFields } : r);
-                          saveToStorage(updatedRequests);
-                        };
-
-                        const deleteRow = (rowId: string) => {
-                          const updatedRows = rows.filter(r => r.id !== rowId);
-                          const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } : r);
-                          saveToStorage(updatedRequests);
-                        };
-
-                        return (
-                          <>
-                            {rows.map((row) => (
-                              <tr key={row.id} style={{ borderBottom: '1px solid #e2e8f0', height: '48px' }}>
-                                <td style={{ padding: '6px 4px' }}>
-                                  <select
-                                    value={row.type}
-                                    onChange={(e) => updateRow(row.id, { type: e.target.value as any })}
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', padding: '0 8px', outline: 'none' }}
-                                  >
-                                    <option value="세금계산서">세금계산서</option>
-                                    <option value="영수증">영수증</option>
-                                    <option value="기타">기타</option>
-                                  </select>
+                          if (collectionsList.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={6} style={{ textAlign: 'center', padding: '8px', color: '#64748b', fontSize: '11px' }}>
+                                  등록된 수금 내역이 없습니다.
                                 </td>
-                                <td style={{ padding: '6px 4px' }}>
+                              </tr>
+                            );
+                          }
+
+                          return collectionsList.map((col) => {
+                            cumulativeCollected += col.amount;
+                            const balanceAfterThisRound = Math.max(0, totalToReceive - cumulativeCollected);
+
+                            const updateCol = (fields: Partial<any>) => {
+                              const nextCols = collectionsList.map(c => c.id === col.id ? { ...c, ...fields } : c);
+                              const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
+                              const updated = importRequests.map(r => r.id === id ? { 
+                                ...r, 
+                                collections: nextCols,
+                                paymentCollectedAmount: newTotal,
+                                paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
+                              } : r);
+                              saveToStorage(updated);
+                            };
+
+                            const deleteCol = () => {
+                              const nextCols = collectionsList.filter(c => c.id !== col.id).map((c, i) => ({ ...c, round: i + 1 }));
+                              const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
+                              const updated = importRequests.map(r => r.id === id ? { 
+                                ...r, 
+                                collections: nextCols,
+                                paymentCollectedAmount: newTotal,
+                                paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
+                              } : r);
+                              saveToStorage(updated);
+                            };
+
+                            return (
+                              <tr key={col.id} style={{ borderBottom: '1px solid #e2e8f0', height: '32px' }}>
+                                <td style={{ padding: '4px 6px', fontWeight: 'bold', color: '#1e3a8a' }}>{col.round}차 수금</td>
+                                <td style={{ padding: '1px' }}>
                                   <input
                                     type="date"
-                                    value={row.issueDate || ''}
-                                    onChange={(e) => updateRow(row.id, { issueDate: e.target.value })}
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                                    value={col.date}
+                                    onChange={(e) => updateCol({ date: e.target.value })}
+                                    style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 4px', fontSize: '11px' }}
                                   />
                                 </td>
-                                <td style={{ padding: '6px 4px' }}>
-                                  <input
-                                    type="text"
-                                    value={row.docNumber || ''}
-                                    onChange={(e) => updateRow(row.id, { docNumber: e.target.value })}
-                                    placeholder={row.type === '세금계산서' ? '국세청 승인번호' : '문서번호'}
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
-                                  />
-                                </td>
-                                <td style={{ padding: '6px 4px' }}>
+                                <td style={{ padding: '1px' }}>
                                   <input
                                     type="number"
-                                    value={row.supplyAmount || ''}
-                                    onChange={(e) => updateRow(row.id, { supplyAmount: Number(e.target.value) || 0 })}
-                                    placeholder="₩ 공급가액"
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                    value={col.amount || ''}
+                                    onChange={(e) => updateCol({ amount: Number(e.target.value) || 0 })}
+                                    style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 4px', fontWeight: 'bold', fontSize: '11px' }}
+                                    placeholder="수금액"
                                   />
                                 </td>
-                                <td style={{ padding: '6px 4px' }}>
-                                  <input
-                                    type="number"
-                                    value={row.vatAmount || ''}
-                                    onChange={(e) => updateRow(row.id, { vatAmount: Number(e.target.value) || 0 })}
-                                    placeholder="₩ 부가세"
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                                  />
+                                <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: balanceAfterThisRound === 0 ? '#166534' : '#ef4444' }}>
+                                  ₩{balanceAfterThisRound.toLocaleString()}
                                 </td>
-                                <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
-                                  ₩{(row.grandTotal || 0).toLocaleString()}
-                                </td>
-                                <td style={{ padding: '6px 4px' }}>
+                                <td style={{ padding: '1px' }}>
                                   <input
                                     type="text"
-                                    value={row.remarks || ''}
-                                    onChange={(e) => updateRow(row.id, { remarks: e.target.value })}
-                                    placeholder="비고 입력"
-                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                                    value={col.remarks || ''}
+                                    onChange={(e) => updateCol({ remarks: e.target.value })}
+                                    style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 4px', fontSize: '11px' }}
                                   />
                                 </td>
-                                <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                                <td style={{ padding: '1px', textAlign: 'center' }}>
                                   <button
                                     type="button"
-                                    onClick={() => deleteRow(row.id)}
-                                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
+                                    onClick={deleteCol}
+                                    style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
                                   >
-                                    🗑️
+                                    ✕
                                   </button>
                                 </td>
                               </tr>
-                            ))}
-                            {/* 추가 행 버튼 */}
-                            <tr>
-                              <td colSpan={8} style={{ padding: '8px 4px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const nextId = `r_${Date.now()}`;
-                                    const updatedRows = [...rows, {
-                                      id: nextId,
-                                      type: '세금계산서' as const,
-                                      issueDate: '',
-                                      docNumber: '',
-                                      supplyAmount: 0,
-                                      vatAmount: 0,
-                                      grandTotal: 0,
-                                      remarks: ''
-                                    }];
-                                    const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } : r);
-                                    saveToStorage(updatedRequests);
-                                  }}
-                                  style={{ width: '100%', height: '34px', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
-                                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                                >
-                                  ➕ 증빙서류 발행 내역 추가 (행 추가)
-                                </button>
-                              </td>
-                            </tr>
-                          </>
-                        );
-                      })()}
-                    </tbody>
-                  </table>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* 수금확정 및 탭이동 버튼 */}
+                  <div style={{ marginTop: '4px' }}>
+                    {request.paymentCollectedAmount && request.paymentCollectedAmount >= (request.customerQuoteAmount || request.amount || 0) ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = importRequests.map(r => r.id === id ? { ...r, status: '손익검토 대기' } : r);
+                          saveToStorage(updated);
+                          setActiveTab('손익검토');
+                          alert('전액 수금이 완료되었습니다. 손익검토 탭으로 이동합니다.');
+                        }}
+                        style={{ width: '100%', padding: '8px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                        disabled={request.status === '업무 종료'}
+                      >
+                        {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 전액 수금 완료 → 손익검토로 이동'}
+                      </button>
+                    ) : (
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
+                        잔액: ₩{Math.max(0, (request.customerQuoteAmount || request.amount || 0) - (request.paymentCollectedAmount || 0)).toLocaleString()} (완료 시 손익검토 활성화)
+                      </div>
+                    )}
+                  </div>
+                  
                 </div>
-
-                {/* 4-3. 수금 내역 및 잔액 관리 */}
-                <div style={{ marginTop: '16px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>💰 수금 관리 (받아야 할 돈 총액: ₩{(request.customerQuoteAmount || request.amount || 0).toLocaleString()})</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = request.collections || [];
-                        const nextCollections = [
-                          ...current,
-                          {
-                            id: `col_${Date.now()}`,
-                            round: current.length + 1,
-                            date: new Date().toISOString().split('T')[0],
-                            amount: 0,
-                            remarks: ''
-                          }
-                        ];
-                        const totalCollected = nextCollections.reduce((sum, c) => sum + c.amount, 0);
-                        const updated = importRequests.map(r => r.id === id ? { 
-                          ...r, 
-                          collections: nextCollections,
-                          paymentCollectedAmount: totalCollected,
-                          paymentCollectedDate: nextCollections[nextCollections.length - 1]?.date || ''
-                        } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '4px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      ＋ 수금 등록
-                    </button>
-                  </div>
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '30px', background: '#f8fafc' }}>
-                        <th style={{ padding: '6px 8px', width: '80px' }}>수금 차수</th>
-                        <th style={{ padding: '6px 8px', width: '150px' }}>수금 일자</th>
-                        <th style={{ padding: '6px 8px', width: '180px', textAlign: 'right' }}>수금액 (₩)</th>
-                        <th style={{ padding: '6px 8px', width: '180px', textAlign: 'right' }}>수금 잔액 (₩)</th>
-                        <th style={{ padding: '6px 8px' }}>비고</th>
-                        <th style={{ padding: '6px 8px', width: '60px', textAlign: 'center' }}>삭제</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const collectionsList = request.collections || [];
-                        let cumulativeCollected = 0;
-                        const totalToReceive = request.customerQuoteAmount || request.amount || 0;
-
-                        if (collectionsList.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={6} style={{ textAlign: 'center', padding: '12px', color: '#64748b', fontSize: '11px' }}>
-                                등록된 수금 내역이 없습니다. 우측 상단의 수금 등록 버튼을 눌러주세요.
-                              </td>
-                            </tr>
-                          );
-                        }
-
-                        return collectionsList.map((col) => {
-                          cumulativeCollected += col.amount;
-                          const balanceAfterThisRound = Math.max(0, totalToReceive - cumulativeCollected);
-
-                          const updateCol = (fields: Partial<typeof col>) => {
-                            const nextCols = collectionsList.map(c => c.id === col.id ? { ...c, ...fields } : c);
-                            const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
-                            const updated = importRequests.map(r => r.id === id ? { 
-                              ...r, 
-                              collections: nextCols,
-                              paymentCollectedAmount: newTotal,
-                              paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
-                            } : r);
-                            saveToStorage(updated);
-                          };
-
-                          const deleteCol = () => {
-                            const nextCols = collectionsList.filter(c => c.id !== col.id).map((c, i) => ({ ...c, round: i + 1 }));
-                            const newTotal = nextCols.reduce((sum, c) => sum + c.amount, 0);
-                            const updated = importRequests.map(r => r.id === id ? { 
-                              ...r, 
-                              collections: nextCols,
-                              paymentCollectedAmount: newTotal,
-                              paymentCollectedDate: nextCols[nextCols.length - 1]?.date || ''
-                            } : r);
-                            saveToStorage(updated);
-                          };
-
-                          return (
-                            <tr key={col.id} style={{ borderBottom: '1px solid #e2e8f0', height: '38px' }}>
-                              <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#1e3a8a' }}>{col.round}차 수금</td>
-                              <td style={{ padding: '2px 4px' }}>
-                                <input
-                                  type="date"
-                                  value={col.date}
-                                  onChange={(e) => updateCol({ date: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px' }}
-                                />
-                              </td>
-                              <td style={{ padding: '2px 4px' }}>
-                                <input
-                                  type="number"
-                                  value={col.amount || ''}
-                                  onChange={(e) => updateCol({ amount: Number(e.target.value) || 0 })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 6px', fontWeight: 'bold' }}
-                                  placeholder="₩ 수금액"
-                                />
-                              </td>
-                              <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800, color: balanceAfterThisRound === 0 ? '#166534' : '#ef4444' }}>
-                                ₩{balanceAfterThisRound.toLocaleString()}
-                              </td>
-                              <td style={{ padding: '2px 4px' }}>
-                                <input
-                                  type="text"
-                                  value={col.remarks || ''}
-                                  onChange={(e) => updateCol({ remarks: e.target.value })}
-                                  style={{ width: '100%', height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px' }}
-                                  placeholder="수금 메모"
-                                />
-                              </td>
-                              <td style={{ padding: '2px 4px', textAlign: 'center' }}>
-                                <button
-                                  type="button"
-                                  onClick={deleteCol}
-                                  style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  🗑️
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-
-                {request.paymentCollectedAmount && request.paymentCollectedAmount >= (request.customerQuoteAmount || request.amount || 0) ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = importRequests.map(r => r.id === id ? { ...r, status: '손익검토 대기' } : r);
-                        saveToStorage(updated);
-                        setActiveTab('손익검토');
-                        alert('전액 수금이 완료되었습니다. 마지막으로 ⑥ 손익검토 탭에서 최종 검토를 완료해주세요.');
-                      }}
-                      style={{ padding: '8px 16px', background: request.status === '업무 종료' ? '#94a3b8' : '#166534', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: request.status === '업무 종료' ? 'default' : 'pointer' }}
-                      disabled={request.status === '업무 종료'}
-                    >
-                      {request.status === '업무 종료' ? '✅ 업무 종료됨' : '✅ 전액 수금 완료 → 손익검토로 이동'}
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    수금 총액이 받아야 할 돈 총액(₩{((request.customerQuoteAmount || request.amount || 0)).toLocaleString()}) 이상 수금되어야 다음 단계로 진행할 수 있습니다. 
-                    (현재 총 수금액: ₩{(request.paymentCollectedAmount || 0).toLocaleString()}, 잔액: ₩{Math.max(0, (request.customerQuoteAmount || request.amount || 0) - (request.paymentCollectedAmount || 0)).toLocaleString()})
-                  </div>
-                )}
               </div>
-            </div>
+              </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
               <button
