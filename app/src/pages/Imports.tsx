@@ -1016,8 +1016,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 64px)', fontFamily: 'Inter, sans-serif' }}>
       
-      {/* Title Header */}
-      <div style={{ marginBottom: '20px' }}>
+      {!showAddModal && (
+        <>
+          {/* Title Header */}
+          <div style={{ marginBottom: '20px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isQuoteMode ? '수입 견적관리' : '수입관리'}
           <span style={{ fontSize: '10px', fontWeight: 500, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>v1.4.2_clean</span>
@@ -1366,39 +1368,37 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           </tbody>
         </table>
       </div>
+        </>
+      )}
 
-      {/* Add Modal (Modalless & Resizeable/Draggable Window) */}
+      {/* Add Form Panel (Replaced draggable subwindow with a flat full page layout) */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10009, pointerEvents: 'none' }}>
-          <div style={{
-            position: 'absolute',
-            left: `${modalPosition.x}px`,
-            top: `${modalPosition.y}px`,
-            background: '#fff',
-            borderRadius: '12px',
-            width: '1240px',
-            minWidth: '600px',
-            maxWidth: '98vw',
-            height: '85vh',
-            maxHeight: '90vh',
-            padding: '16px 20px',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15), 0 0 1px 1px rgba(0,0,0,0.2)',
-            boxSizing: 'border-box',
-            pointerEvents: 'auto',
-            resize: 'both',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div 
-              onMouseDown={handleHeaderMouseDown}
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', cursor: 'move', userSelect: 'none' }}
+        <div style={{ background: '#fff', borderRadius: '8px', border: '1px solid #cbd5e1', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>신규수입등록 📌</h3>
+            <button onClick={() => setShowAddModal(false)} style={{
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              height: '34px',
+              padding: '0 16px',
+              fontSize: '12.5px',
+              fontWeight: 750,
+              color: '#475569',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
             >
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>신규수입등록 📌 <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 }}>(헤더를 잡고 드래그 이동 / 우측하단 드래그로 크기조절 가능)</span></h3>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
-            </div>
-            
-            <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '6px' }}>
+              ✕ 목록으로 돌아가기
+            </button>
+          </div>
+          
+          <form onSubmit={handleAddRequest} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* 📥 신규수입등록 초소형 접수 정보 그리드 (2줄 압축형) */}
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
                 
@@ -1904,7 +1904,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
               </div>
             </form>
           </div>
-        </div>
       )}
       {/* Supplier Search Modal (Subwindow) */}
       {showSupplierSearch && (
