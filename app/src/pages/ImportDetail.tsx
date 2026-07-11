@@ -2438,65 +2438,65 @@ customsDuty,
         {activeTab === '수입내역' && (
           <div>
             {/* Section 1: 기본 정보 */}
-            <div style={{ marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>수입 기본 정보 및 운송 개요</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입주체</label>
+            <div style={{ marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px' }}>수입 기본 정보 및 운송 개요</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입주체</label>
                     <select
                       value={request.importCompany || 'YSACC'}
                       onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importCompany: e.target.value as any } : r))}
-                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                     >
                       <option value="YSACC">YSACC</option>
                       <option value="영성ACC">영성ACC</option>
                     </select>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>수입처 (공급업체)</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       <input
                         type="text"
                         readOnly
                         value={request.importerName || ''}
                         placeholder="공급업체 검색으로 지정"
-                        style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                        style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowSupplierSearchModal(true)}
-                        style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ height: '30px', padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         🔍 검색
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>최종 고객사</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       <input
                         type="text"
                         readOnly
                         value={request.finalCustomer || ''}
-                        style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
+                        style={{ flex: 1, height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#f1f5f9' }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowCustomerModal(true)}
-                        style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ height: '30px', padding: '0 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         🔍 검색
                       </button>
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>INCOTERMS</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>INCOTERMS</label>
                       <select
                         value={request.incoterms || 'FOB'}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, incoterms: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       >
                         <option value="FOB">FOB</option>
                         <option value="EXW">EXW</option>
@@ -2510,12 +2510,12 @@ customsDuty,
                         <option value="DPU">DPU</option>
                       </select>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>결제 방식</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>결제 방식</label>
                       <select
                         value={request.paymentTerms || '100% T/T in advance'}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, paymentTerms: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       >
                         <option value="100% T/T in advance">100% T/T in advance</option>
                         <option value="T/T 30% deposit, 70% balance">T/T 30% deposit, 70% balance</option>
@@ -2527,13 +2527,13 @@ customsDuty,
                   </div>
                 </div>
 
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송수단</label>
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>운송수단</label>
                     <select
                       value={request.transportType || 'By Sea'}
                       onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, transportType: e.target.value } : r))}
-                      style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                     >
                       <option value="By Sea">By Sea</option>
                       <option value="By Air">By Air</option>
@@ -2541,43 +2541,43 @@ customsDuty,
                       <option value="기타">기타</option>
                     </select>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>출발 PORT (POL)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>출발 PORT (POL)</label>
                       <input
                         type="text"
                         value={request.pol || ''}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pol: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>도착 PORT (POD)</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>도착 PORT (POD)</label>
                       <input
                         type="text"
                         value={request.pod || ''}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pod: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 운송 물동량 (Volume)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총 운송 물동량 (Volume)</label>
                       <input
                         type="text"
                         value={request.volume || ''}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, volume: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총중량 (Weight)</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>총중량 (Weight)</label>
                       <input
                         type="text"
                         value={request.weight || ''}
                         onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, weight: e.target.value } : r))}
-                        style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
                       />
                     </div>
                   </div>
@@ -2586,9 +2586,21 @@ customsDuty,
             </div>
 
             {/* Section 2: 품목 명세 */}
-            <div style={{ marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>수입 제품 및 패킹 명세 리스트</h3>
-              <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '4px', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>수입 제품 및 패킹 명세 리스트</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
+                  }}
+                  style={{ padding: '0 10px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', height: '28px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ＋ 상품 추가 (Add Row)
+                </button>
+              </div>
+              <div style={{ border: '1px solid var(--border-default)', borderRadius: '6px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '34px' }}>
@@ -2609,10 +2621,10 @@ customsDuty,
                   <tbody>
                     {(request.piItems && request.piItems.length > 0) ? (
                       request.piItems.map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '40px' }}>
-                          <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '38px' }}>
+                          <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 600 }}>{idx + 1}</td>
                           <td style={{ padding: '4px 6px' }}>
-                            <div style={{ display: 'flex', gap: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                               <input
                                 type="text"
                                 value={item.name || ''}
@@ -2630,7 +2642,7 @@ customsDuty,
                                   setProductSearchTargetIdx(idx);
                                   setShowProductSearch(true);
                                 }}
-                                style={{ height: '30px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                style={{ height: '30px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                               >
                                 🔍
                               </button>
@@ -2663,17 +2675,24 @@ customsDuty,
                             />
                           </td>
                           <td style={{ padding: '4px 6px' }}>
-                            <input
-                              type="text"
-                              value={item.unit || ''}
+                            <select
+                              value={item.unit || 'EA'}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 const nextItems = [...(request.piItems || [])];
                                 nextItems[idx] = { ...nextItems[idx], unit: val };
                                 saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
-                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'center', boxSizing: 'border-box' }}
-                            />
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', background: '#fff', boxSizing: 'border-box' }}
+                            >
+                              <option value="EA">EA</option>
+                              <option value="SET">SET</option>
+                              <option value="BOX">BOX</option>
+                              <option value="M2">M2</option>
+                              <option value="PCS">PCS</option>
+                              <option value="ROLL">ROLL</option>
+                              <option value="KG">KG</option>
+                            </select>
                           </td>
                           <td style={{ padding: '4px 6px' }}>
                             <input
@@ -2701,7 +2720,7 @@ customsDuty,
                                 nextItems[idx] = { ...nextItems[idx], palletSize: val };
                                 saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                               }}
-                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
                           <td style={{ padding: '4px 6px' }}>
@@ -2780,125 +2799,117 @@ customsDuty,
                 </table>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '12px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
-                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                  }}
-                  style={{ padding: '6px 14px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  ＋ 상품 추가 (Add Row)
-                </button>
-              </div>
             </div>
 
             {/* PO 생성 컨트롤 세션 */}
-            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-default)', marginTop: '24px' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 800, color: '#1e3a8a' }}>📋 발주서 (PO) 생성 추가 세부설정</h4>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '300px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>결제 방식 (Payment Terms)</label>
-                  <input
-                    type="text"
-                    value={request.paymentTerms || '100% T/T in advance'}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, paymentTerms: val } : r);
-                      saveToStorage(updated);
-                    }}
-                    style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                  />
-                </div>
-              </div>
+            <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--border-default)', marginTop: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
+                {/* Left side: PO Settings & Shipping Mark Inputs */}
+                <div>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '13.5px', fontWeight: 800, color: '#1e3a8a' }}>📋 발주서 (PO) 생성 추가 세부설정 및 쉬핑마크</h4>
+                  
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: 'var(--text-secondary)' }}>결제 방식 (Payment Terms)</label>
+                      <input
+                        type="text"
+                        value={request.paymentTerms || '100% T/T in advance'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, paymentTerms: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '6px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                      />
+                    </div>
+                  </div>
 
-              {/* 공통 쉬핑마크 설정 (주문관리 차용) */}
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '12px' }}>
-                <strong style={{ fontSize: '13px', color: '#0a1e3f', display: 'block', marginBottom: '10px' }}>⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)</strong>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도형 선택</label>
-                    <select
-                      value={commonShippingMark.shape}
-                      onChange={(e) => {
-                        const next = { ...commonShippingMark, shape: e.target.value };
-                        setCommonShippingMark(next);
-                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff' }}
-                    >
-                      <option value="diamond">◇ 다이아몬드</option>
-                      <option value="none">없음 (None)</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>회사/고객 약자</label>
-                    <input
-                      type="text"
-                      value={commonShippingMark.company}
-                      onChange={(e) => {
-                        const next = { ...commonShippingMark, company: e.target.value };
-                        setCommonShippingMark(next);
-                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도착 포트</label>
-                    <input
-                      type="text"
-                      value={commonShippingMark.port}
-                      onChange={(e) => {
-                        const next = { ...commonShippingMark, port: e.target.value };
-                        setCommonShippingMark(next);
-                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도착 국가</label>
-                    <input
-                      type="text"
-                      value={commonShippingMark.country}
-                      onChange={(e) => {
-                        const next = { ...commonShippingMark, country: e.target.value };
-                        setCommonShippingMark(next);
-                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>원산지</label>
-                    <input
-                      type="text"
-                      value={commonShippingMark.origin}
-                      onChange={(e) => {
-                        const next = { ...commonShippingMark, origin: e.target.value };
-                        setCommonShippingMark(next);
-                        const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '6px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none' }}
-                    />
+                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                    <strong style={{ fontSize: '12px', color: '#0a1e3f', display: 'block', marginBottom: '8px' }}>⚙️ 공통 쉬핑마크 설정 (Common Shipping Mark Setup)</strong>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도형 선택</label>
+                        <select
+                          value={commonShippingMark.shape}
+                          onChange={(e) => {
+                            const next = { ...commonShippingMark, shape: e.target.value };
+                            setCommonShippingMark(next);
+                            const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', background: '#fff', height: '30px' }}
+                        >
+                          <option value="diamond">◇ 다이아몬드</option>
+                          <option value="none">없음 (None)</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>회사/고객 약자</label>
+                        <input
+                          type="text"
+                          value={commonShippingMark.company}
+                          onChange={(e) => {
+                            const next = { ...commonShippingMark, company: e.target.value };
+                            setCommonShippingMark(next);
+                            const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도착 포트</label>
+                        <input
+                          type="text"
+                          value={commonShippingMark.port}
+                          onChange={(e) => {
+                            const next = { ...commonShippingMark, port: e.target.value };
+                            setCommonShippingMark(next);
+                            const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>도착 국가</label>
+                        <input
+                          type="text"
+                          value={commonShippingMark.country}
+                          onChange={(e) => {
+                            const next = { ...commonShippingMark, country: e.target.value };
+                            setCommonShippingMark(next);
+                            const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>원산지</label>
+                        <input
+                          type="text"
+                          value={commonShippingMark.origin}
+                          onChange={(e) => {
+                            const next = { ...commonShippingMark, origin: e.target.value };
+                            setCommonShippingMark(next);
+                            const updated = importRequests.map(r => r.id === id ? { ...r, commonShippingMark: next } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ padding: '4px 6px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* 실시간 미리보기 */}
-                <div style={{ background: '#fff', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100px' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 700 }}>🔍 실시간 쉬핑마크 미리보기 (Live Preview)</div>
-                  <div style={{ border: '1px solid var(--border-color)', padding: '12px', minWidth: '180px', background: '#fafafa', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {/* Right side: Live Preview */}
+                <div style={{ background: '#fff', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px', fontWeight: 700 }}>🔍 실시간 쉬핑마크 미리보기 (Live Preview)</div>
+                  <div style={{ border: '1px solid var(--border-color)', padding: '8px 12px', minWidth: '200px', background: '#fafafa', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
                     {commonShippingMark.shape === 'diamond' ? (
-                      <div style={{ position: 'relative', width: '90px', height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
+                      <div style={{ position: 'relative', width: '90px', height: '54px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '2px 0' }}>
                         <svg viewBox="0 0 100 60" style={{ position: 'absolute', width: '100%', height: '100%' }}>
                           <polygon points="50,2 98,30 50,58 2,30" fill="none" stroke="#334155" strokeWidth="2" />
                         </svg>
@@ -2907,7 +2918,7 @@ customsDuty,
                     ) : (
                       <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{commonShippingMark.company}</strong>
                     )}
-                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: 600, lineHeight: '1.4' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 600, lineHeight: '1.3' }}>
                       {commonShippingMark.port}, {commonShippingMark.country}<br/>
                       PO NO : {request.poNumber || request.id}<br/>
                       {commonShippingMark.origin}
