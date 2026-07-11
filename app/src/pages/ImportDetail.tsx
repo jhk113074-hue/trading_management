@@ -1279,7 +1279,305 @@ customsDuty,
                 })()}
               </div>
 
-              <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            </div>
+
+            {/* 다음단계로 가기 버튼 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('견적서작성')}
+                style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                다음 단계 (견적서작성) ➡️
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === '견적서작성' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              ✍️ ③ YSACC/영성ACC 견적서작성 및 발행
+            </h3>
+
+            {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 견적 포함 품목 목록</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextItems = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                  }}
+                  style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  + 항목 추가
+                </button>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '32px' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '35px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>No</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>DESCRIPTION OF COMMODITY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '90px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>QTY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '60px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>UNIT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '95px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>U.PRICE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '100px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '40px' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(request.piItems || []).map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '36px' }}>
+                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, name: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', outline: 'none', boxSizing: 'border-box' }}
+                          />
+                        </td>
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="text"
+                            value={item.hsCode}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, hsCode: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }}
+                          />
+                        </td>
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.qty}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const nextItems = [...(request.piItems || [])];
+                              const qtyVal = Number(val) || 0;
+                              const priceVal = Number(item.unitPrice) || 0;
+                              nextItems[idx] = { ...item, qty: val, amount: (qtyVal * priceVal).toFixed(2) };
+                              
+                              let nextB = { ...(request.costBreakdown || {}) };
+                              if (idx === 0) {
+                                nextB = { ...nextB, buyingQty: qtyVal };
+                              }
+                              const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
+                              saveToStorage(recalculateDetailCosts(updated, nextB));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
+                        </td>
+                        <td style={{ padding: '2px 4px' }}>
+                          <select
+                            value={item.unit || 'EA'}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, unit: e.target.value as any };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                          >
+                            <option value="EA">EA</option>
+                            <option value="KG">KG</option>
+                            <option value="ROLL">ROLL</option>
+                            <option value="BOX">BOX</option>
+                            <option value="PALLET">PALLET</option>
+                          </select>
+                        </td>
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.unitPrice}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const nextItems = [...(request.piItems || [])];
+                              const qtyVal = Number(item.qty) || 0;
+                              const priceVal = Number(val) || 0;
+                              nextItems[idx] = { ...item, unitPrice: val, amount: (qtyVal * priceVal).toFixed(2) };
+                              
+                              let nextB = { ...(request.costBreakdown || {}) };
+                              if (idx === 0) {
+                                nextB = { ...nextB, buyingPriceUsd: priceVal };
+                              }
+                              const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
+                              saveToStorage(recalculateDetailCosts(updated, nextB));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b', paddingRight: '8px' }}>
+                          {Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("항목을 삭제하시겠습니까?")) {
+                                const nextItems = (request.piItems || []).filter((_, i) => i !== idx);
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* 수입원가 요약 및 마진 설정 카드 2열 배치 */}
+            {(() => {
+              const cb = request.costBreakdown || {};
+              const {
+                totalImportCost,
+                totalCashRequired,
+                unitCost
+              } = calculateTotalCostHelper(cb, request.piItems || []);
+
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                  {/* 왼쪽 카드: 수입원가 요약 정보 */}
+                  <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>수입원가 계산 요약 (Summary)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>총 수입원가 (Total Import Cost)</span>
+                      <strong style={{ color: '#1e3a8a' }}>{totalImportCost.toLocaleString()} 원</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>총 현금소요액 (Total Cash Required)</span>
+                      <strong style={{ color: '#475569' }}>{totalCashRequired.toLocaleString()} 원</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: '#475569', fontWeight: 600 }}>단위당 수입원가 (Cost per Unit)</span>
+                      <strong style={{ color: '#b45309' }}>{unitCost.toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}</strong>
+                    </div>
+                  </div>
+
+                  {/* 오른쪽 카드: 마진 및 견적액 설정 */}
+                  <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px' }}>마진 및 고객 견적액 설정 (Margin &amp; Quote)</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>마진율 (%)</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <input 
+                          type="number" 
+                          value={request.marginRate ?? ''} 
+                          onChange={(e) => {
+                            const rate = Number(e.target.value) || 0;
+                            const totalCost = calculateDetailTotalCost(request);
+                            const marginAmount = Math.round(totalCost * (rate / 100));
+                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, marginRate: rate, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
+                          }} 
+                          style={{ width: '100px', height: '34px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', padding: '0 6px', fontWeight: 600, color: '#1e293b' }} 
+                        />
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>%</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>마진 금액 (₩)</label>
+                      <strong style={{ fontSize: '13px', color: '#b45309' }}>{(request.marginAmount || 0).toLocaleString()} 원</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>고객 제시 견적금액</label>
+                      <input 
+                        type="number" 
+                        value={request.customerQuoteAmount || ''} 
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const totalCost = calculateDetailTotalCost(request);
+                          const marginAmount = val - totalCost;
+                          const marginRate = totalCost > 0 ? (marginAmount / totalCost) * 100 : 0;
+                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, customerQuoteAmount: val, marginAmount, marginRate } : r));
+                        }} 
+                        style={{ width: '130px', height: '34px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right', padding: '0 6px', fontWeight: 600, color: '#1e3a8a' }} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <label style={{ fontSize: '12.5px', color: '#475569', fontWeight: 750, textTransform: 'uppercase', letterSpacing: '0.02em' }}>최종 판매단가 (Unit Price)</label>
+                      <strong style={{ fontSize: '13px', color: '#10b981' }}>
+                        {Math.round((request.customerQuoteAmount || 0) / (request.costBreakdown?.buyingQty || 1)).toLocaleString()} 원 / {(request.piItems?.[0]?.unit || 'UNIT')}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 거래 조건 및 특기사항 설정 */}
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '20px' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>📋 거래 조건 및 특기사항 설정 (Terms &amp; Remarks)</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>PAYMENT TERMS (결제조건)</label>
+                  <input
+                    type="text"
+                    value={request.paymentTerms || ''}
+                    placeholder="예: 100% T/T in advance"
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, paymentTerms: e.target.value } : r))}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>DELIVERY TERMS (인도조건)</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value="공장도착도 (Delivered to Factory)"
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#475569', outline: 'none', background: '#f1f5f9' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>PORT OF LOADING (선적항)</label>
+                  <input
+                    type="text"
+                    value={request.pol || ''}
+                    placeholder="예: SHANGHAI PORT, CHINA"
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pol: e.target.value } : r))}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>PORT OF DISCHARGE (도착항)</label>
+                  <input
+                    type="text"
+                    value={request.pod || ''}
+                    placeholder="예: INCHEON PORT, KOREA"
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, pod: e.target.value } : r))}
+                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>REMARKS (특기사항)</label>
+                  <textarea
+                    value={request.requestNote || ''}
+                    placeholder="별도 특기사항 없음"
+                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, requestNote: e.target.value } : r))}
+                    rows={3}
+                    style={{ padding: '8px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 수입 확정 및 견적서 출력 카드 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', gridColumn: 'span 2' }}>
                 <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>⚓ 수입 확정 및 견적서 출력</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-default)', paddingTop: '8px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
