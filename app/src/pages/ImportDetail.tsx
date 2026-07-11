@@ -1732,7 +1732,7 @@ customsDuty,
                 ✍️ ④ YSACC/영성ACC 견적서작성 및 발행
               </h3>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {request.customerDecision !== '승인' && (
+                {request.customerDecision !== '승인' ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -1762,6 +1762,27 @@ customsDuty,
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
                   >
                     ⚓ 수입 확정 승인
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    style={{
+                      background: '#10b981',
+                      border: 'none',
+                      borderRadius: '4px',
+                      height: '34px',
+                      padding: '0 12px',
+                      fontSize: '12.5px',
+                      fontWeight: 750,
+                      color: '#fff',
+                      cursor: 'default',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    ✅ 수입 승인 완료
                   </button>
                 )}
                 <button
