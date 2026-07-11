@@ -760,6 +760,42 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     }
   };
 
+  const handleCopyRequest = (req: ImportRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`의뢰번호 ${req.id} 건을 복사하여 새로운 수입건으로 등록하시겠습니까?`)) {
+      const nextId = String(Math.floor(100000 + Math.random() * 900000));
+      
+      const compPrefix = req.importCompany === 'YS' ? 'YS' : 'YSACC';
+      const sellerAbbr = 'TBD';
+      const currentYear = new Date().getFullYear().toString();
+      const serial = nextId.slice(-2);
+      const generatedPo = `PO-${compPrefix}-${sellerAbbr}-${currentYear}-${serial}`;
+
+      const currentYearStr = new Date().getFullYear().toString();
+      const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+      const currentDay = new Date().getDate().toString().padStart(2, '0');
+      const dateStr = `${currentYearStr.slice(-2)}${currentMonth}${currentDay}`;
+      const randomSerial = String(Math.floor(100 + Math.random() * 900));
+      const generatedQuoteNo = `QT-${dateStr}-${randomSerial}`;
+
+      const copied: ImportRequest = {
+        ...req,
+        id: nextId,
+        poNumber: generatedPo,
+        quoteNumber: generatedQuoteNo,
+        createdAt: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\s/g, ''),
+        requestDate: new Date().toISOString().slice(0, 10),
+        itemName: req.itemName.includes('(복사)') ? req.itemName : `${req.itemName} (복사)`,
+        customerDecision: isQuoteMode ? '검토중' : '승인',
+        status: isQuoteMode ? '진행 결정 요청' : '발주 진행'
+      };
+
+      const nextList = [copied, ...importRequests];
+      saveToStorage(nextList);
+      alert(`의뢰번호 ${nextId} 건으로 복사되었습니다.`);
+    }
+  };
+
   // 📦 실행/정산 원가 → 상품별 수입원가 이력 반영
   // "실행원가" 계산표에 입력된 실제 청구 금액을 기준으로, 상품 DB와 연결된(productId 보유)
   // 품목마다 금액 비중으로 원가를 배분해 각 상품의 purchasePrices 이력에 한 줄씩 추가한다.
@@ -1219,6 +1255,22 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 {/* 관리 (수정 및 삭제 버튼) */}
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                    <button
+                      onClick={(e) => handleCopyRequest(req, e)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#10b981',
+                        fontSize: '15px',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        fontWeight: 'bold'
+                      }}
+                      title="의뢰 복사"
+                    >
+                      📋
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
