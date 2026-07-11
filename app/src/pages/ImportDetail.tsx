@@ -1731,30 +1731,64 @@ customsDuty,
               <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>
                 ✍️ ④ YSACC/영성ACC 견적서작성 및 발행
               </h3>
-              <button
-                type="button"
-                onClick={() => setShowEstimatePrintModal(true)}
-                title="견적서 인쇄 / PDF 출력"
-                style={{
-                  background: '#f1f5f9',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '4px',
-                  height: '34px',
-                  padding: '0 12px',
-                  fontSize: '12.5px',
-                  fontWeight: 750,
-                  color: '#475569',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-              >
-                🖨️ 견적서 출력
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {request.customerDecision !== '승인' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("수입 확정 처리하고 수입관리로 등록하시겠습니까?")) {
+                        const updated = importRequests.map(r => r.id === id ? { ...r, customerDecision: '승인' as any, status: '발주 진행' } : r);
+                        saveToStorage(updated);
+                        navigate(`/imports/${id}?mode=active`, { replace: true });
+                        alert("수입 확정 처리되어 수입관리로 정상 등록되었습니다.");
+                      }
+                    }}
+                    style={{
+                      background: '#3b82f6',
+                      border: 'none',
+                      borderRadius: '4px',
+                      height: '34px',
+                      padding: '0 12px',
+                      fontSize: '12.5px',
+                      fontWeight: 750,
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                  >
+                    ⚓ 수입 확정 승인
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowEstimatePrintModal(true)}
+                  title="견적서 인쇄 / PDF 출력"
+                  style={{
+                    background: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    height: '34px',
+                    padding: '0 12px',
+                    fontSize: '12.5px',
+                    fontWeight: 750,
+                    color: '#475569',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                >
+                  🖨️ 견적서 출력
+                </button>
+              </div>
             </div>
 
             {/* 수입 제품 및 패킹 명세 목록 (수정/삭제 가능) */}
@@ -2032,10 +2066,10 @@ customsDuty,
               </div>
             </div>
 
-            {/* 수입 확정 및 견적서 출력 카드 */}
+            {/* 수입 확정 상태 결정 카드 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', gridColumn: 'span 2' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>⚓ 수입 확정 및 견적서 출력</span>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>⚓ 수입 진행 상태 결정</span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-default)', paddingTop: '8px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객사 진행 결정 (수입확정여부)</label>
                   <select
@@ -2057,66 +2091,6 @@ customsDuty,
                     <option value="승인">승인 (Approved - 실무 진행)</option>
                     <option value="반려">반려 (Rejected)</option>
                   </select>
-                </div>
-                {request.customerDecision !== '승인' && (
-                  <div style={{ marginTop: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm("수입 확정 처리하고 수입관리로 등록하시겠습니까?")) {
-                          const updated = importRequests.map(r => r.id === id ? { ...r, customerDecision: '승인' as any, status: '발주 진행' } : r);
-                          saveToStorage(updated);
-                          navigate(`/imports/${id}?mode=active`, { replace: true });
-                          alert("수입 확정 처리되어 수입관리로 정상 등록되었습니다.");
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '34px',
-                        background: '#3b82f6',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '12.5px',
-                        fontWeight: 750,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
-                    >
-                      ⚓ 수입확정 (수입관리 등록)
-                    </button>
-                  </div>
-                )}
-                <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: '10px', marginTop: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowEstimatePrintModal(true)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      background: '#0f766e',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    📄 YSACC/영성ACC 공식 견적서 발행 (인쇄/PDF)
-                  </button>
                 </div>
               </div>
             </div>
