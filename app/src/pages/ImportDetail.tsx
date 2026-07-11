@@ -293,7 +293,7 @@ export const ImportDetail: React.FC = () => {
   const request = importRequests.find(r => r.id === id) || DEFAULT_REQUEST(id || '');
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
-  const [activeTab, setActiveTab] = useState<'수입요청' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입요청');
+  const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
@@ -324,7 +324,7 @@ export const ImportDetail: React.FC = () => {
   useEffect(() => {
     if (request && request.id === id) {
       if (viewMode === 'quote') {
-        setActiveTab('수입요청');
+        setActiveTab('수입품 견적요청');
       } else {
         setActiveTab('수입내역');
       }
@@ -558,19 +558,21 @@ export const ImportDetail: React.FC = () => {
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: '24px', borderBottom: '2px solid var(--border-color)', marginBottom: '24px' }}>
           {([
-            { key: '수입요청', label: '① 수입요청 (견적/원가 산정)' },
-            { key: '수입내역', label: '③ 발주/매입' },
-            { key: '운송사/관세사 선정', label: '④ 물류/통관' },
+            { key: '수입품 견적요청', label: '① 수입품 견적요청' },
+            { key: '수입원가계산', label: '② 수입원가계산' },
+            { key: '견적서작성', label: '③ 견적서작성' },
+            { key: '수입내역', label: '④ 발주/매입' },
+            { key: '운송사/관세사 선정', label: '⑤ 물류/통관' },
             { key: '서류', label: '서류' },
-            { key: '정산', label: '⑤ 정산/완료' },
-            { key: '손익검토', label: '⑥ 손익검토' },
+            { key: '정산', label: '⑥ 정산/완료' },
+            { key: '손익검토', label: '⑦ 손익검토' },
             { key: '로그', label: '로그' }
           ] as const)
           .filter(tab => {
             if (viewMode === 'quote') {
-              return tab.key === '수입요청';
+              return tab.key === '수입품 견적요청' || tab.key === '수입원가계산' || tab.key === '견적서작성';
             } else {
-              return true; // Keep all tabs including '수입요청' in active mode
+              return true;
             }
           })
           .map(tab => (
@@ -596,10 +598,10 @@ export const ImportDetail: React.FC = () => {
         </div>
 
         {/* Tab Contents */}
-        {activeTab === '수입요청' && (
+        {activeTab === '수입품 견적요청' && (
           <div>
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
-              📥 ① 수입요청 접수 정보
+              📥 ① 수입품 견적요청 접수 정보
             </h3>
             <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '20px' }}>
               {/* 상단 기본정보 Grid (3열 구성) */}
@@ -684,56 +686,55 @@ export const ImportDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* 📦 수입 제품 및 패킹 명세 목록 */}
-            <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', background: '#f8fafc', marginTop: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>📦 수입 제품 및 패킹 명세 목록</span>
+            {/* 수입 제품 및 패킹 명세 목록 */}
+            <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📦 수입 제품 및 패킹 명세 목록</span>
                 <button
                   type="button"
                   onClick={() => {
                     const nextItems = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
                     saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
                   }}
-                  style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
                   + 항목 추가
                 </button>
               </div>
 
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', minWidth: '950px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--border-color)', borderBottom: '1px solid var(--border-default)', height: '30px' }}>
-                      <th style={{ padding: '4px', textAlign: 'center', width: '40px' }}>No</th>
-                      <th style={{ padding: '4px', textAlign: 'left', minWidth: '180px' }}>DESCRIPTION OF COMMODITY</th>
-                      <th style={{ padding: '4px', width: '90px' }}>HS CODE</th>
-                      <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>QTY</th>
-                      <th style={{ padding: '4px', width: '50px', textAlign: 'center' }}>UNIT</th>
-                      <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>U.PRICE</th>
-                      <th style={{ padding: '4px', width: '90px', textAlign: 'right' }}>TOTAL AMOUNT</th>
-                      <th style={{ padding: '4px', width: '130px' }}>PALLET SIZE</th>
-                      <th style={{ padding: '4px', width: '70px', textAlign: 'right' }}>CBM</th>
-                      <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>N.WT (KG)</th>
-                      <th style={{ padding: '4px', width: '80px', textAlign: 'right' }}>G.WT (KG)</th>
-                      <th style={{ padding: '4px', width: '30px' }}></th>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '32px' }}>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '35px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>No</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>DESCRIPTION OF COMMODITY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '85px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>HS CODE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '65px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>QTY</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '55px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>UNIT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '85px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>U.PRICE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '90px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>TOTAL AMOUNT</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'left', width: '100px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>PALLET SIZE</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '60px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>CBM</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>N.WT (KG)</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'right', width: '75px', fontSize: '11.5px', fontWeight: 750, color: '#475569' }}>G.WT (KG)</th>
+                      <th style={{ padding: '6px 8px', textAlign: 'center', width: '40px' }}></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(request.piItems && request.piItems.length > 0) ? request.piItems.map((item, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
-                        <td style={{ padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
-                        <td style={{ padding: '4px' }}>
+                    {(request.piItems || []).map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '36px' }}>
+                        <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                        <td style={{ padding: '2px 4px' }}>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <input 
-                              type="text" 
-                              value={item.name} 
+                            <input
+                              type="text"
+                              value={item.name}
                               onChange={(e) => {
-                                const next = [...(request.piItems || [])];
-                                next[idx] = { ...next[idx], name: e.target.value };
-                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                              }} 
-                              style={{ flex: 1, padding: '3px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }} 
-                              placeholder="품명 입력" 
+                                const nextItems = [...(request.piItems || [])];
+                                nextItems[idx] = { ...item, name: e.target.value };
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }}
+                              style={{ flex: 1, height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', outline: 'none' }}
                             />
                             <button
                               type="button"
@@ -741,92 +742,151 @@ export const ImportDetail: React.FC = () => {
                                 setProductSearchTargetIdx(idx);
                                 setShowProductSearch(true);
                               }}
-                              style={{ padding: '3px 6px', background: 'var(--border-color)', border: '1px solid var(--border-default)', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}
-                              title="상품 DB에서 가져오기"
+                              style={{ height: '26px', padding: '0 8px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' }}
                             >
                               🔍
                             </button>
                           </div>
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="text" value={item.hsCode || ''} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], hsCode: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="text"
+                            value={item.hsCode}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, hsCode: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="number" value={item.qty || ''} onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], qty: e.target.value };
-                            const cb = request.costBreakdown || {};
-                            const nextB = { ...cb, buyingQty: idx === 0 ? val : (cb.buyingQty || val) };
-                            const totalCost = calculateDetailTotalCost({ ...request, piItems: next, costBreakdown: nextB });
-                            const marginAmount = Math.round(totalCost * ((request.marginRate || 0) / 100));
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next, costBreakdown: nextB, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.qty}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const nextItems = [...(request.piItems || [])];
+                              const qtyVal = Number(val) || 0;
+                              const priceVal = Number(item.unitPrice) || 0;
+                              nextItems[idx] = { ...item, qty: val, amount: (qtyVal * priceVal).toFixed(2) };
+                              
+                              let nextB = { ...(request.costBreakdown || {}) };
+                              if (idx === 0) {
+                                nextB = { ...nextB, buyingQty: qtyVal };
+                              }
+                              const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
+                              saveToStorage(recalculateDetailCosts(updated, nextB));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="text" value={item.unit || 'EA'} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], unit: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 4px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'center' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <select
+                            value={item.unit || 'EA'}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, unit: e.target.value as any };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11.5px', padding: '0 2px', outline: 'none', boxSizing: 'border-box' }}
+                          >
+                            <option value="EA">EA</option>
+                            <option value="KG">KG</option>
+                            <option value="ROLL">ROLL</option>
+                            <option value="BOX">BOX</option>
+                            <option value="PALLET">PALLET</option>
+                          </select>
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="number" step="any" value={item.unitPrice || ''} onChange={(e) => {
-                            const val = Number(e.target.value) || 0;
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], unitPrice: e.target.value };
-                            const cb = request.costBreakdown || {};
-                            const nextB = { ...cb, buyingPriceUsd: idx === 0 ? val : (cb.buyingPriceUsd || val) };
-                            const totalCost = calculateDetailTotalCost({ ...request, piItems: next, costBreakdown: nextB });
-                            const marginAmount = Math.round(totalCost * ((request.marginRate || 0) / 100));
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next, costBreakdown: nextB, marginAmount, customerQuoteAmount: totalCost + marginAmount } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.unitPrice}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const nextItems = [...(request.piItems || [])];
+                              const qtyVal = Number(item.qty) || 0;
+                              const priceVal = Number(val) || 0;
+                              nextItems[idx] = { ...item, unitPrice: val, amount: (qtyVal * priceVal).toFixed(2) };
+                              
+                              let nextB = { ...(request.costBreakdown || {}) };
+                              if (idx === 0) {
+                                nextB = { ...nextB, buyingPriceUsd: priceVal };
+                              }
+                              const updated = importRequests.map(r => r.id === id ? { ...r, piItems: nextItems, costBreakdown: nextB } : r);
+                              saveToStorage(recalculateDetailCosts(updated, nextB));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px', textAlign: 'right', fontWeight: 600 }}>
-                          {((Number(item.qty) || 0) * (Number(item.unitPrice) || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: '#1e293b', paddingRight: '8px' }}>
+                          {Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="text" value={item.palletSize || ''} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], palletSize: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none' }} placeholder="예: 110*110*120" />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="text"
+                            value={item.palletSize}
+                            placeholder="예: 110*110*120"
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, palletSize: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 4px', outline: 'none', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="number" value={item.cbm || ''} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], cbm: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.cbm}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, cbm: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="number" value={item.netWeight || ''} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], netWeight: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.netWeight}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, netWeight: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px' }}>
-                          <input type="number" value={item.grossWeight || ''} onChange={(e) => {
-                            const next = [...(request.piItems || [])];
-                            next[idx] = { ...next[idx], grossWeight: e.target.value };
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '11px', outline: 'none', textAlign: 'right' }} />
+                        <td style={{ padding: '2px 4px' }}>
+                          <input
+                            type="number"
+                            value={item.grossWeight}
+                            onChange={(e) => {
+                              const nextItems = [...(request.piItems || [])];
+                              nextItems[idx] = { ...item, grossWeight: e.target.value };
+                              saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                            }}
+                            style={{ width: '100%', height: '26px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 4px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                          />
                         </td>
-                        <td style={{ padding: '4px', textAlign: 'center' }}>
-                          <button type="button" onClick={() => {
-                            const next = (request.piItems || []).filter((_, i) => i !== idx);
-                            saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
-                          }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm("항목을 삭제하시겠습니까?")) {
+                                const nextItems = (request.piItems || []).filter((_, i) => i !== idx);
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                              }
+                            }}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '16px', cursor: 'pointer', fontWeight: 'bold' }}
+                          >
+                            ×
+                          </button>
                         </td>
                       </tr>
-                    )) : (
-                      <tr><td colSpan={12} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-secondary)' }}>등록된 수입 제품이 없습니다.</td></tr>
-                    )}
+                    ))}
                     {request.piItems && request.piItems.length > 0 && (
                       <tr style={{ background: '#f1f5f9', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
                         <td colSpan={3} style={{ padding: '6px 12px', textAlign: 'center', color: '#1e293b' }}>TOTAL</td>
@@ -855,8 +915,25 @@ export const ImportDetail: React.FC = () => {
               </div>
             </div>
 
+            {/* 다음단계로 가기 버튼 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('수입원가계산')}
+                style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                다음 단계 (수입원가계산) ➡️
+              </button>
+            </div>
+          </div>
+        )}
 
-
+        {activeTab === '수입원가계산' && (
+          <div>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              📊 ② 수입원가계산 (Trade Cost Calculator)
+            </h3>
+            
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
