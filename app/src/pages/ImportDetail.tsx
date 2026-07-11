@@ -433,8 +433,28 @@ export const ImportDetail: React.FC = () => {
   };
 
   const saveToStorage = (updatedList: ImportRequest[]) => {
-    setImportRequests(updatedList); // 낙관적 업데이트 (Firestore onSnapshot이 곧 확정값으로 재동기화)
-    const updatedRecord = updatedList.find(r => r.id === id);
+    const processedList = updatedList.map(r => {
+      if (r.id === id) {
+        const items = r.piItems || [];
+        const validItems = items.filter(it => it && it.name && it.name.trim() !== '');
+        let computedItemName = r.itemName;
+        if (validItems.length > 0) {
+          computedItemName = validItems.length === 1 
+            ? validItems[0].name 
+            : `${validItems[0].name} 외 ${validItems.length - 1}건`;
+        } else if (!r.itemName || r.itemName === '신규 품목 정보 입력') {
+          computedItemName = '신규 품목 정보 입력';
+        }
+        return {
+          ...r,
+          itemName: computedItemName
+        };
+      }
+      return r;
+    });
+
+    setImportRequests(processedList); // 낙관적 업데이트 (Firestore onSnapshot이 곧 확정값으로 재동기화)
+    const updatedRecord = processedList.find(r => r.id === id);
     if (updatedRecord) {
       const { id: recId, ...rest } = updatedRecord;
       setDoc(doc(db, 'companies', COMPANY_ID, 'imports', recId), rest, { merge: true }).catch(err => {
