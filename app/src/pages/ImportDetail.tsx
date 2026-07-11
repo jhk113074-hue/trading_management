@@ -3370,110 +3370,118 @@ customsDuty,
               💰 수입 관세 / 부가세 / 운임 정산 등록
             </h3>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'block', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
-                  🧾 1. 수입세금계산서 (세관 발행분)
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>공급가액 (금액, ₩)</label>
-                    <input 
-                      type="number"
-                      value={request.taxAmount || ''}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, taxAmount: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                      placeholder="공급가액 입력"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>부가세액 (세액, ₩)</label>
-                    <input 
-                      type="number"
-                      value={request.taxVat || ''}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, taxVat: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                      placeholder="세액 입력"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#0f766e' }}>총계 (합계금액, ₩)</label>
-                    <input 
-                      type="text"
-                      readOnly
-                      value={((Number(request.taxAmount) || 0) + (Number(request.taxVat) || 0)).toLocaleString() + ' 원'}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', background: '#f1f5f9', fontWeight: 'bold', color: '#0f766e' }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'block', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
-                  🚚 2. 운임 (국내 내륙 운송 / 포워딩 청구분)
-                </span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>운임 금액 (공급가, ₩)</label>
-                    <input 
-                      type="number"
-                      value={request.freightAmount || ''}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, freightAmount: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                      placeholder="운임 금액 입력"
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>운임 세액 (부가세, ₩)</label>
-                    <input 
-                      type="number"
-                      value={request.freightVat || ''}
-                      onChange={(e) => {
-                        const val = Number(e.target.value) || 0;
-                        const updated = importRequests.map(r => r.id === id ? { ...r, freightVat: val } : r);
-                        saveToStorage(updated);
-                      }}
-                      style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                      placeholder="운임 부가세 입력"
-                    />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Row 1: 3-Column Grid for Tax Invoice, Freight, and Customs Duty */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                
+                {/* 1. 수입세금계산서 (세관 발행분) */}
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
+                    🧾 1. 수입세금계산서 (세관)
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>공급가액 (금액, ₩)</label>
+                      <input 
+                        type="number"
+                        value={request.taxAmount || ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, taxAmount: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        placeholder="공급가액 입력"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>부가세액 (세액, ₩)</label>
+                      <input 
+                        type="number"
+                        value={request.taxVat || ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, taxVat: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        placeholder="세액 입력"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#0f766e' }}>총계 (합계금액, ₩)</label>
+                      <input 
+                        type="text"
+                        readOnly
+                        value={((Number(request.taxAmount) || 0) + (Number(request.taxVat) || 0)).toLocaleString() + ' 원'}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', background: '#f1f5f9', fontWeight: 'bold', color: '#0f766e', height: '30px' }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>거래명세표 및 세금계산서 유첨 파일</label>
-                  {renderMultiUploadZone('freightDoc', '클릭 혹은 업로드할 증빙 파일 드래그', documents.freightDoc)}
+                {/* 2. 운임 (국내 내륙 운송 / 포워딩 청구분) */}
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
+                    🚚 2. 운임 (내륙/포워더)
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>운임 금액 (공급가, ₩)</label>
+                      <input 
+                        type="number"
+                        value={request.freightAmount || ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, freightAmount: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        placeholder="운임 금액 입력"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>운임 세액 (부가세, ₩)</label>
+                      <input 
+                        type="number"
+                        value={request.freightVat || ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, freightVat: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        placeholder="운임 부가세 입력"
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>증빙 서류</label>
+                      {renderMultiUploadZone('freightDoc', '운임 증빙 첨부', documents.freightDoc, true)}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', display: 'block', borderBottom: '1px solid var(--border-default)', paddingBottom: '6px', marginBottom: '14px' }}>
-                  🏛️ 3. 관세 (Customs Duty)
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '300px' }}>
-                  <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>납부 관세액 (₩)</label>
-                  <input 
-                    type="number"
-                    value={request.customsTaxAmount || ''}
-                    onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, customsTaxAmount: val } : r);
-                      saveToStorage(updated);
-                    }}
-                    style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }}
-                    placeholder="납부 관세 금액 입력"
-                  />
+                {/* 3. 관세 (Customs Duty) */}
+                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-default)', paddingBottom: '4px' }}>
+                    🏛️ 3. 관세 (Customs Duty)
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>납부 관세액 (₩)</label>
+                      <input 
+                        type="number"
+                        value={request.customsTaxAmount || ''}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          const updated = importRequests.map(r => r.id === id ? { ...r, customsTaxAmount: val } : r);
+                          saveToStorage(updated);
+                        }}
+                        style={{ padding: '4px 8px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px', outline: 'none', height: '30px' }}
+                        placeholder="납부 관세 금액 입력"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
