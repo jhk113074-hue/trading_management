@@ -430,7 +430,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
   // 📅 날짜/기간 필터링 상태 추가 (수입견적: 월별 default, 수입관리: 날짜 default)
   const [dateFilterType, setDateFilterType] = useState<string>('All');
-  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
+  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'eta'>('date');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [rangeStart, setRangeStart] = useState<string>(() => {
@@ -997,7 +997,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
     // 📅 날짜/기간 실필터 적용
     base = base.filter(req => {
-      const dateStr = dateFilterTarget === 'etd' ? req.etd : req.requestDate;
+      const dateStr = dateFilterTarget === 'eta' ? req.eta : req.requestDate;
       if (!dateStr) return false;
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return false;
@@ -1267,11 +1267,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           {/* 조회 기준 */}
           <select 
             value={dateFilterTarget}
-            onChange={(e) => setDateFilterTarget(e.target.value as 'date' | 'etd')}
+            onChange={(e) => setDateFilterTarget(e.target.value as 'date' | 'eta')}
             style={{ padding: '0 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', background: '#fff', outline: 'none', height: '34px', boxSizing: 'border-box', color: '#1e293b', cursor: 'pointer', fontWeight: 600 }}
           >
             <option value="date">날짜 기준</option>
-            <option value="etd">ETD 기준</option>
+            <option value="eta">ETA 기준</option>
           </select>
 
           {/* 조회 기간 대분류 */}
