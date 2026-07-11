@@ -547,6 +547,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     active_transportType: 160,
     active_importCompany: 140,
     active_routeFrom: 160,
+    active_etd: 110,
+    active_eta: 110,
     active_finalCustomer: 140,
     active_managerName: 100,
     active_customerQuoteAmount: 140,
@@ -1052,7 +1054,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         } else if (key === 'appliedExchangeRate') {
           aVal = Number(a.costBreakdown?.appliedExchangeRate) || 0;
           bVal = Number(b.costBreakdown?.appliedExchangeRate) || 0;
-        } else if (['id', 'poNumber', 'importCompany', 'itemName', 'finalCustomer', 'importerName', 'customerDecision', 'transportType', 'routeFrom', 'managerName'].includes(key)) {
+        } else if (['id', 'poNumber', 'importCompany', 'itemName', 'finalCustomer', 'importerName', 'customerDecision', 'transportType', 'routeFrom', 'managerName', 'etd', 'eta'].includes(key)) {
           aVal = (a as any)[key] || '';
           bVal = (b as any)[key] || '';
         } else if (key === 'customerQuoteAmount') {
@@ -1325,6 +1327,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   {renderTh('active_transportType', '운송내용', 'transportType')}
                   {renderTh('active_importCompany', '수입주체', 'importCompany', 'center')}
                   {renderTh('active_routeFrom', '경로', 'routeFrom')}
+                  {renderTh('active_etd', 'ETD', 'etd')}
+                  {renderTh('active_eta', 'ETA', 'eta')}
                   {renderTh('active_finalCustomer', '최종고객', 'finalCustomer')}
                   {renderTh('active_managerName', '담당자', 'managerName')}
                   {renderTh('active_customerQuoteAmount', '수입금액', 'customerQuoteAmount', 'right')}
@@ -1485,6 +1489,20 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           ⚓ {req.routeTo}
                         </span>
                       </div>
+                    </td>
+
+                    {/* ETD */}
+                    <td style={getTdStyle('active_etd')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0369a1' }}>
+                        {req.etd || '-'}
+                      </span>
+                    </td>
+
+                    {/* ETA */}
+                    <td style={getTdStyle('active_eta')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#166534' }}>
+                        {req.eta || '-'}
+                      </span>
                     </td>
 
                     {/* 최종고객 */}
