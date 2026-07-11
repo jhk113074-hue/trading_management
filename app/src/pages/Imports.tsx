@@ -1574,11 +1574,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 경로 */}
                     <td style={getTdStyle('active_routeFrom')}>
                       <div style={{ display: 'flex', gap: '2px', flexDirection: 'column', fontSize: '12.5px', color: '#475569', fontWeight: 600 }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          📍 {req.routeFrom} ➔
+                        <span>
+                          {req.routeFrom} ➔
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b' }}>
-                          ⚓ {req.routeTo}
+                        <span style={{ color: '#64748b' }}>
+                          {req.routeTo || '-'}
                         </span>
                       </div>
                     </td>
