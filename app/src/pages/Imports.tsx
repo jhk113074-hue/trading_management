@@ -1389,7 +1389,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       </div>
 
       {/* Main Table Grid */}
-      <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '4px', border: '1px solid #cbd5e1', overflowX: 'auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', height: '40px' }}>
