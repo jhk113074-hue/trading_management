@@ -36,6 +36,63 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
     category: defaultCategory || '공급사', bankKrw: '', bankUsd: '', contacts: []
   });
 
+  const parseBankString = (text: string) => {
+    let swift = '';
+    let bankName = '';
+    let accountNo = '';
+    let holder = '';
+
+    const textClean = (text || '').trim();
+    if (!textClean) return { bankName, accountNo, holder, swift };
+
+    // 1. Extract SWIFT
+    const swiftIndex = textClean.toUpperCase().indexOf('SWIFT:');
+    let rawAccountAndHolder = textClean;
+    if (swiftIndex !== -1) {
+      swift = textClean.substring(swiftIndex + 6).trim();
+      rawAccountAndHolder = textClean.substring(0, swiftIndex).trim();
+    }
+
+    // 2. Extract Holder inside parentheses
+    const parenStart = rawAccountAndHolder.indexOf('(');
+    const parenEnd = rawAccountAndHolder.lastIndexOf(')');
+    let textLeft = rawAccountAndHolder;
+    if (parenStart !== -1 && parenEnd !== -1 && parenEnd > parenStart) {
+      holder = rawAccountAndHolder.substring(parenStart + 1, parenEnd).trim();
+      textLeft = (rawAccountAndHolder.substring(0, parenStart) + ' ' + rawAccountAndHolder.substring(parenEnd + 1)).trim();
+    }
+
+    // 3. Extract Account Number (look for a token containing at least 4 digits, or digits with dashes)
+    const tokens = textLeft.split(/\s+/);
+    let accountTokenIndex = -1;
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      const digitCount = (tok.match(/\d/g) || []).length;
+      if (digitCount >= 4) {
+        accountNo = tok;
+        accountTokenIndex = i;
+        break;
+      }
+    }
+
+    // 4. Determine Bank Name
+    if (accountTokenIndex !== -1) {
+      bankName = tokens.slice(0, accountTokenIndex).join(' ').trim();
+      if (!holder) {
+        holder = tokens.slice(accountTokenIndex + 1).join(' ').trim();
+      }
+    } else {
+      if (tokens.length >= 2) {
+        bankName = tokens[0];
+        accountNo = tokens.slice(1).join(' ').trim();
+      } else {
+        accountNo = textLeft;
+      }
+    }
+
+    return { bankName, accountNo, holder, swift };
+  };
+
   // 기존 bankKrw/bankUsd 역파싱하여 개별 상태에 채워넣기
   useEffect(() => {
     if (initialSupplier) {
@@ -46,34 +103,19 @@ export const SupplierModal: React.FC<Props> = ({ initialSupplier, onClose, onSav
 
       // 1. 원화 통장 역파싱
       if (initialSupplier.bankKrw) {
-        const text = initialSupplier.bankKrw.trim();
-        const parts = text.split(/\s+/);
-        if (parts.length >= 3) {
-          setKrwBankName(parts[0]);
-          setKrwBankAccount(parts[1]);
-          setKrwBankHolder(parts.slice(2).join(' ').replace(/[\(\)]/g, ''));
-        } else {
-          setKrwBankAccount(text);
-        }
+        const { bankName, accountNo, holder } = parseBankString(initialSupplier.bankKrw);
+        setKrwBankName(bankName);
+        setKrwBankAccount(accountNo);
+        setKrwBankHolder(holder);
       }
 
       // 2. 외화 통장 역파싱
       if (initialSupplier.bankUsd) {
-        const text = initialSupplier.bankUsd.trim();
-        const swiftIndex = text.toUpperCase().indexOf('SWIFT:');
-        let rawAccountAndHolder = text;
-        if (swiftIndex !== -1) {
-          setUsdSwift(text.substring(swiftIndex + 6).trim());
-          rawAccountAndHolder = text.substring(0, swiftIndex).trim();
-        }
-        const parts = rawAccountAndHolder.split(/\s+/);
-        if (parts.length >= 3) {
-          setUsdBankName(parts[0]);
-          setUsdBankAccount(parts[1]);
-          setUsdBankHolder(parts.slice(2).join(' ').replace(/[\(\)]/g, ''));
-        } else {
-          setUsdBankAccount(text);
-        }
+        const { bankName, accountNo, holder, swift } = parseBankString(initialSupplier.bankUsd);
+        setUsdBankName(bankName);
+        setUsdBankAccount(accountNo);
+        setUsdBankHolder(holder);
+        setUsdSwift(swift);
       }
     }
   }, [initialSupplier]);
