@@ -1333,13 +1333,22 @@ export const ImportDetail: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', gridColumn: 'span 2' }}>
                   <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.02em' }}>수입처 (공급업체)</label>
-                  <input
-                    type="text"
-                    value={request.importerName || ''}
-                    onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importerName: e.target.value } : r))}
-                    placeholder="공급업체 명 직접 입력"
-                    style={{ height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={request.importerName || ''}
+                      onChange={(e) => saveToStorage(importRequests.map(r => r.id === id ? { ...r, importerName: e.target.value } : r))}
+                      placeholder="우측 [검색] 버튼으로 선택하거나 직접 입력"
+                      style={{ flex: 1, height: '34px', padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSupplierSearchModal(true)}
+                      style={{ height: '34px', padding: '0 14px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔍 검색
+                    </button>
+                  </div>
                 </div>
               </div>
 
