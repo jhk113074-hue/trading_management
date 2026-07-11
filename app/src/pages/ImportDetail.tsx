@@ -2541,6 +2541,7 @@ customsDuty,
                       <th style={{ padding: '8px 12px', width: '80px', textAlign: 'right' }}>CBM</th>
                       <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>N.WT (KG)</th>
                       <th style={{ padding: '8px 12px', width: '100px', textAlign: 'right' }}>G.WT (KG)</th>
+                      <th style={{ padding: '8px 12px', width: '60px', textAlign: 'center' }}>액션</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2549,17 +2550,29 @@ customsDuty,
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', height: '40px' }}>
                           <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>{idx + 1}</td>
                           <td style={{ padding: '4px 6px' }}>
-                            <input
-                              type="text"
-                              value={item.name || ''}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                const nextItems = [...(request.piItems || [])];
-                                nextItems[idx] = { ...nextItems[idx], name: val };
-                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
-                              }}
-                              style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
-                            />
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <input
+                                type="text"
+                                value={item.name || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const nextItems = [...(request.piItems || [])];
+                                  nextItems[idx] = { ...nextItems[idx], name: val };
+                                  saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: nextItems } : r));
+                                }}
+                                style={{ flex: 1, height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', boxSizing: 'border-box' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProductSearchTargetIdx(idx);
+                                  setShowProductSearch(true);
+                                }}
+                                style={{ height: '30px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                              >
+                                🔍
+                              </button>
+                            </div>
                           </td>
                           <td style={{ padding: '4px 6px' }}>
                             <input
@@ -2669,11 +2682,23 @@ customsDuty,
                               style={{ width: '100%', height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 6px', fontSize: '12px', textAlign: 'right', boxSizing: 'border-box' }}
                             />
                           </td>
+                          <td style={{ padding: '4px 6px', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = (request.piItems || []).filter((_, i) => i !== idx);
+                                saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
+                              }}
+                              style={{ width: '26px', height: '26px', padding: 0, background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '4px', color: '#dc2626', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              ✕
+                            </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={11} style={{ padding: '24px', textAlign: 'center' }}>등록된 제품 명세가 없습니다.</td>
+                        <td colSpan={12} style={{ padding: '24px', textAlign: 'center' }}>등록된 제품 명세가 없습니다.</td>
                       </tr>
                     )}
                     
@@ -2686,10 +2711,24 @@ customsDuty,
                         <td style={{ padding: '8px 12px', textAlign: 'right', color: '#b45309' }}>{totalCbm.toFixed(2)} CBM</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right' }}>{totalNetWt.toLocaleString()} kg</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right' }}>{totalGrossWt.toLocaleString()} kg</td>
+                        <td></td>
                       </tr>
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = [...(request.piItems || []), { name: '', qty: '', unitPrice: '', amount: '', hsCode: '', unit: 'EA', palletSize: '', cbm: '', netWeight: '', grossWeight: '' }];
+                    saveToStorage(importRequests.map(r => r.id === id ? { ...r, piItems: next } : r));
+                  }}
+                  style={{ padding: '6px 14px', background: '#0f766e', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  ＋ 상품 추가 (Add Row)
+                </button>
               </div>
             </div>
 
