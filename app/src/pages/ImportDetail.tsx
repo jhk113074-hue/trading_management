@@ -634,9 +634,9 @@ export const ImportDetail: React.FC = () => {
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
       if (key.startsWith('paymentFxMemo_') || key.startsWith('paymentRemittanceSlip_')) {
-        const parts = key.split('_');
-        const fileType = parts[0] === 'paymentFxMemo' ? 'fxMemoFiles' : 'remittanceSlipFiles';
-        const paymentId = parts[1];
+        const prefix = key.startsWith('paymentFxMemo_') ? 'paymentFxMemo_' : 'paymentRemittanceSlip_';
+        const fileType = prefix === 'paymentFxMemo_' ? 'fxMemoFiles' : 'remittanceSlipFiles';
+        const paymentId = key.substring(prefix.length);
 
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
@@ -700,9 +700,9 @@ export const ImportDetail: React.FC = () => {
   const handleFileDelete = (key: 'ciPl' | 'bizReg' | 'co' | 'etc' | 'customerPi' | 'freightInvoice' | 'inspect' | 'customsPermit' | 'taxInvoice' | 'blAwbDoc' | 'hsCustomsInfo' | 'freightDoc' | 'costCalcDocs' | 'supplierPi' | string, fileIndex: number) => {
     if (window.confirm('선택한 파일을 삭제하시겠습니까?')) {
       if (key.startsWith('paymentFxMemo_') || key.startsWith('paymentRemittanceSlip_')) {
-        const parts = key.split('_');
-        const fileType = parts[0] === 'paymentFxMemo' ? 'fxMemoFiles' : 'remittanceSlipFiles';
-        const paymentId = parts[1];
+        const prefix = key.startsWith('paymentFxMemo_') ? 'paymentFxMemo_' : 'paymentRemittanceSlip_';
+        const fileType = prefix === 'paymentFxMemo_' ? 'fxMemoFiles' : 'remittanceSlipFiles';
+        const paymentId = key.substring(prefix.length);
 
         const updatedList = importRequests.map(r => {
           if (r.id === id) {
