@@ -1452,7 +1452,16 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
                     {/* 품명 */}
                     <td style={getTdStyle('quote_itemName')}>
-                      {req.itemName}
+                      {(() => {
+                        const items = req.piItems || [];
+                        const validItems = items.filter((it: any) => it && it.name && it.name.trim() !== '');
+                        if (validItems.length > 0) {
+                          return validItems.length === 1 
+                            ? validItems[0].name 
+                            : `${validItems[0].name} 외 ${validItems.length - 1}건`;
+                        }
+                        return req.itemName || '신규 품목 정보 입력';
+                      })()}
                     </td>
 
                     {/* 견적단가 */}
@@ -1550,7 +1559,16 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
                     {/* 품명 */}
                     <td style={getTdStyle('active_itemName')}>
-                      {req.itemName}
+                      {(() => {
+                        const items = req.piItems || [];
+                        const validItems = items.filter((it: any) => it && it.name && it.name.trim() !== '');
+                        if (validItems.length > 0) {
+                          return validItems.length === 1 
+                            ? validItems[0].name 
+                            : `${validItems[0].name} 외 ${validItems.length - 1}건`;
+                        }
+                        return req.itemName || '신규 품목 정보 입력';
+                      })()}
                     </td>
 
                     {/* 운송내용 */}
