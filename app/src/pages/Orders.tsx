@@ -143,7 +143,7 @@ export const Orders: React.FC = () => {
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All');
   const [dateFilterType, setDateFilterType] = useState<string>('Last3Months');
-  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'eta'>('date');
+  const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
   const [selectedQuarter, setSelectedQuarter] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
@@ -371,9 +371,9 @@ export const Orders: React.FC = () => {
     if (dateFilterType !== 'All') {
       result = result.filter(o => {
         let d: Date | null = null;
-        if (dateFilterTarget === 'eta') {
-          if (o.eta) {
-            d = new Date(o.eta);
+        if (dateFilterTarget === 'etd') {
+          if (o.etd) {
+            d = new Date(o.etd);
           }
         } else {
           if (o.poDate) {
@@ -557,9 +557,9 @@ export const Orders: React.FC = () => {
       <div style={{ width: '1px', height: '24px', background: '#cbd5e1', margin: '0 4px', flexShrink: 0 }} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
         <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>조회 기준</label>
-        <select value={dateFilterTarget} onChange={e => setDateFilterTarget(e.target.value as 'date' | 'eta')} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box', fontWeight: 600 }}>
+        <select value={dateFilterTarget} onChange={e => setDateFilterTarget(e.target.value as 'date' | 'etd')} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box', fontWeight: 600 }}>
           <option value="date">날짜 기준</option>
-          <option value="eta">ETA 기준</option>
+          <option value="etd">ETD 기준</option>
         </select>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
