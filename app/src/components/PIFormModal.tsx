@@ -431,6 +431,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               contactPerson: prev.contactPerson || cust.nameKo || '',
               email: prev.email || cust.email || ''
             };
+            if (baselineStateRef.current) {
+              baselineStateRef.current.formData = getSnapshot(updated, items);
+            }
             return updated;
           }
         }
