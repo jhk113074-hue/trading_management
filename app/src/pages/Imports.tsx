@@ -1474,7 +1474,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
                           const totalUsd = buyingQty * buyingPriceUsd;
-                          return `${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                          return `$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
                     </td>
