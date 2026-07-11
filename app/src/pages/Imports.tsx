@@ -1149,6 +1149,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 </>
               ) : (
                 <>
+                  <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '110px' }}>의뢰일</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '100px' }}>주문번호</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '180px' }}>PO번호</th>
                   <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', width: '150px' }}>수입처</th>
@@ -1241,6 +1242,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   </>
                 ) : (
                   <>
+                    {/* 의뢰일 */}
+                    <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+                      {req.requestDate || req.createdAt || '-'}
+                    </td>
+
                     {/* 주문번호 */}
                     <td style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>
                       {req.id}
