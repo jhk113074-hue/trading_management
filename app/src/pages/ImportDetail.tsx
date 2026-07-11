@@ -933,6 +933,57 @@ export const ImportDetail: React.FC = () => {
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
               📊 ② 수입원가계산 (Trade Cost Calculator)
             </h3>
+
+            {/* 수입품 견적요청 기본정보 요약 & 품목 확인 */}
+            <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>📥 수입품 견적요청 기본정보 요약</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', fontSize: '12.5px' }}>
+                <div><strong>요청 접수일:</strong> {request.requestDate || '-'}</div>
+                <div><strong>고객사 담당자:</strong> {request.requestedBy || '-'}</div>
+                <div><strong>수입주체:</strong> {request.importCompany || '-'}</div>
+                <div><strong>최종 고객사:</strong> {request.finalCustomer || '-'}</div>
+                <div style={{ gridColumn: 'span 2' }}><strong>수입처 (공급업체):</strong> {request.importerName || '-'}</div>
+                <div style={{ gridColumn: 'span 2' }}><strong>상세 내용:</strong> {request.requestNote || '없음'}</div>
+              </div>
+              
+              {/* 품목 리스트 요약 (Read-Only) */}
+              <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '10px', marginTop: '4px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '6px' }}>📦 요청 품목 목록 ({request.piItems?.length || 0}건)</span>
+                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', height: '28px', borderBottom: '1px solid #cbd5e1' }}>
+                        <th style={{ padding: '4px 8px', width: '40px', textAlign: 'center' }}>No</th>
+                        <th style={{ padding: '4px 8px' }}>DESCRIPTION OF COMMODITY</th>
+                        <th style={{ padding: '4px 8px', width: '100px' }}>HS CODE</th>
+                        <th style={{ padding: '4px 8px', width: '80px', textAlign: 'right' }}>QTY</th>
+                        <th style={{ padding: '4px 8px', width: '60px', textAlign: 'center' }}>UNIT</th>
+                        <th style={{ padding: '4px 8px', width: '100px', textAlign: 'right' }}>U.PRICE</th>
+                        <th style={{ padding: '4px 8px', width: '110px', textAlign: 'right' }}>TOTAL AMOUNT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(request.piItems || []).map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', height: '28px', background: '#fff' }}>
+                          <td style={{ textAlign: 'center', color: '#64748b' }}>{idx + 1}</td>
+                          <td style={{ padding: '4px 8px' }}>{item.name}</td>
+                          <td style={{ padding: '4px 8px' }}>{item.hsCode}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right' }}>{Number(item.qty || 0).toLocaleString()}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'center' }}>{item.unit}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right' }}>${Number(item.unitPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: 600 }}>${Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        </tr>
+                      ))}
+                      {(!request.piItems || request.piItems.length === 0) && (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '10px', color: '#64748b' }}>등록된 품목이 없습니다.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
