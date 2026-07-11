@@ -1363,8 +1363,6 @@ export const ImportDetail: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {renderSupplierQuotesSection()}
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div style={{ background: '#fff', padding: '20px', borderRadius: '4px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', gridColumn: 'span 2', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -1764,6 +1762,8 @@ customsDuty,
                 </div>
               );
             })()}
+
+            {renderSupplierQuotesSection()}
 
             {/* 다음단계로 가기 버튼 */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
