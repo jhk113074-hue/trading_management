@@ -1072,7 +1072,7 @@ export const ImportDetail: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {rows.map((row) => (
-              <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '85px 105px 120px 1fr 1fr 1fr 24px', gap: '6px', alignItems: 'center', background: '#fff', padding: '4px 6px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+              <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '75px 100px 90px 1fr 1fr 1fr 20px', gap: '4px', alignItems: 'center', background: '#fff', padding: '3px 5px', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
                 <select
                   value={row.type}
                   onChange={(e) => {
@@ -3850,23 +3850,23 @@ customsDuty,
               💰 수입 관세 / 부가세 / 운임 정산 등록
             </h3>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Row 1: 3-Column Grid for Tax Invoice, Freight, and Customs Duty */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* 1. 수입세금계산서 (세관) */}
-                {renderTaxInvoiceTable('🧾 1. 수입세금계산서 (세관)', 'importTaxDocumentRows', '세금계산서', request.taxAmount || 0, request.taxVat || 0, '수입세매입')}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* 2-Column Grid for Tax Invoice, Freight, and Customs Duty */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Left side: 세관 & 관세 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {renderTaxInvoiceTable('🧾 1. 수입세금계산서 (세관)', 'importTaxDocumentRows', '세금계산서', request.taxAmount || 0, request.taxVat || 0, '수입세매입')}
+                  {renderTaxInvoiceTable('🏛️ 3. 관세 (Customs Duty)', 'customsTaxDocumentRows', '영수증', request.customsTaxAmount || 0, 0, '관세납부')}
+                </div>
 
-                {/* 2. 운임 (내륙/포워더) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Right side: 내륙운임 & 운임증빙 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {renderTaxInvoiceTable('🚚 2. 운임 (내륙/포워더)', 'freightTaxDocumentRows', '세금계산서', request.freightAmount || 0, request.freightVat || 0, '내륙운임')}
                   <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>📎 운임 증빙 서류 통합 관리</label>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>📎 운임 증빙 서류 통합 관리</label>
                     {renderMultiUploadZone('freightDoc', '운임 증빙 첨부', documents.freightDoc, true)}
                   </div>
                 </div>
-
-                {/* 3. 관세 (Customs Duty) */}
-                {renderTaxInvoiceTable('🏛️ 3. 관세 (Customs Duty)', 'customsTaxDocumentRows', '영수증', request.customsTaxAmount || 0, 0, '관세납부')}
               </div>
 
               <div style={{ background: '#eff6ff', padding: '18px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
