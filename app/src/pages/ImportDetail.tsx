@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import type { ImportRequest } from '../types';
+import type { ImportRequest, TaxDocumentRow } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -3125,86 +3125,199 @@ customsDuty,
                     ⚡ 견적정보에서 계산서 자동입력
                   </button>
                 </div>
+                {/* 증빙서류 발행 내역 테이블 */}
+                <div style={{ overflowX: 'auto', marginBottom: '20px', background: '#fff', padding: '12px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '850px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '34px' }}>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '130px' }}>구분</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '160px' }}>발행일자</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '200px' }}>승인번호</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '160px', textAlign: 'right' }}>공급가액</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '140px', textAlign: 'right' }}>부가세액</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '140px', textAlign: 'right' }}>합계금액</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px' }}>비고</th>
+                        <th style={{ fontSize: '11.5px', fontWeight: 750, color: '#475569', textTransform: 'uppercase', padding: '6px 8px', width: '50px', textAlign: 'center' }}>삭제</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const rows: TaxDocumentRow[] = request.taxDocumentRows || [
+                          {
+                            id: 'r1',
+                            type: '세금계산서',
+                            issueDate: request.taxInvoiceIssuedDate || '',
+                            docNumber: request.taxInvoiceNumber || '',
+                            supplyAmount: request.taxInvoiceTotalAmount || 0,
+                            vatAmount: request.taxInvoiceVat || 0,
+                            grandTotal: request.taxInvoiceGrandTotal || 0,
+                            remarks: request.taxInvoiceItemName || ''
+                          },
+                          {
+                            id: 'r2',
+                            type: '거래명세표',
+                            issueDate: request.dealStatementSentDate || '',
+                            docNumber: '',
+                            supplyAmount: 0,
+                            vatAmount: 0,
+                            grandTotal: 0,
+                            remarks: ''
+                          }
+                        ];
+
+                        const updateRow = (rowId: string, fields: Partial<TaxDocumentRow>) => {
+                          const updatedRows = rows.map(r => {
+                            if (r.id === rowId) {
+                              const newRow = { ...r, ...fields };
+                              if (fields.supplyAmount !== undefined || fields.vatAmount !== undefined) {
+                                const supply = fields.supplyAmount !== undefined ? fields.supplyAmount : r.supplyAmount;
+                                const vat = fields.vatAmount !== undefined ? fields.vatAmount : (fields.supplyAmount !== undefined ? Math.round(fields.supplyAmount * 0.1) : r.vatAmount);
+                                newRow.vatAmount = vat;
+                                newRow.grandTotal = supply + vat;
+                              }
+                              return newRow;
+                            }
+                            return r;
+                          });
+
+                          const firstInvoice = updatedRows.find(r => r.type === '세금계산서');
+                          const firstStatement = updatedRows.find(r => r.type === '거래명세표');
+
+                          const compatibilityFields: any = {
+                            taxDocumentRows: updatedRows
+                          };
+                          if (firstInvoice) {
+                            compatibilityFields.taxInvoiceIssuedDate = firstInvoice.issueDate;
+                            compatibilityFields.taxInvoiceNumber = firstInvoice.docNumber;
+                            compatibilityFields.taxInvoiceTotalAmount = firstInvoice.supplyAmount;
+                            compatibilityFields.taxInvoiceVat = firstInvoice.vatAmount;
+                            compatibilityFields.taxInvoiceGrandTotal = firstInvoice.grandTotal;
+                            compatibilityFields.taxInvoiceItemName = firstInvoice.remarks;
+                          }
+                          if (firstStatement) {
+                            compatibilityFields.dealStatementSentDate = firstStatement.issueDate;
+                          }
+
+                          const updatedRequests = importRequests.map(r => r.id === id ? { ...r, ...compatibilityFields } : r);
+                          saveToStorage(updatedRequests);
+                        };
+
+                        const deleteRow = (rowId: string) => {
+                          const updatedRows = rows.filter(r => r.id !== rowId);
+                          const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } : r);
+                          saveToStorage(updatedRequests);
+                        };
+
+                        return (
+                          <>
+                            {rows.map((row) => (
+                              <tr key={row.id} style={{ borderBottom: '1px solid #e2e8f0', height: '48px' }}>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <select
+                                    value={row.type}
+                                    onChange={(e) => updateRow(row.id, { type: e.target.value as any })}
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', padding: '0 8px', outline: 'none' }}
+                                  >
+                                    <option value="세금계산서">세금계산서</option>
+                                    <option value="거래명세표">거래명세표</option>
+                                    <option value="영수증">영수증</option>
+                                    <option value="기타">기타</option>
+                                  </select>
+                                </td>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <input
+                                    type="date"
+                                    value={row.issueDate || ''}
+                                    onChange={(e) => updateRow(row.id, { issueDate: e.target.value })}
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <input
+                                    type="text"
+                                    value={row.docNumber || ''}
+                                    onChange={(e) => updateRow(row.id, { docNumber: e.target.value })}
+                                    placeholder={row.type === '세금계산서' ? '국세청 승인번호' : '문서번호'}
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <input
+                                    type="number"
+                                    value={row.supplyAmount || ''}
+                                    onChange={(e) => updateRow(row.id, { supplyAmount: Number(e.target.value) || 0 })}
+                                    placeholder="₩ 공급가액"
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <input
+                                    type="number"
+                                    value={row.vatAmount || ''}
+                                    onChange={(e) => updateRow(row.id, { vatAmount: Number(e.target.value) || 0 })}
+                                    placeholder="₩ 부가세"
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 4px', textAlign: 'right', fontSize: '13.5px', fontWeight: 800, color: '#1e293b' }}>
+                                  ₩{(row.grandTotal || 0).toLocaleString()}
+                                </td>
+                                <td style={{ padding: '6px 4px' }}>
+                                  <input
+                                    type="text"
+                                    value={row.remarks || ''}
+                                    onChange={(e) => updateRow(row.id, { remarks: e.target.value })}
+                                    placeholder="비고 입력"
+                                    style={{ width: '100%', height: '34px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', padding: '0 8px', outline: 'none', boxSizing: 'border-box' }}
+                                  />
+                                </td>
+                                <td style={{ padding: '6px 4px', textAlign: 'center' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => deleteRow(row.id)}
+                                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
+                                  >
+                                    🗑️
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {/* 추가 행 버튼 */}
+                            <tr>
+                              <td colSpan={8} style={{ padding: '8px 4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextId = `r_${Date.now()}`;
+                                    const updatedRows = [...rows, {
+                                      id: nextId,
+                                      type: '세금계산서' as const,
+                                      issueDate: '',
+                                      docNumber: '',
+                                      supplyAmount: 0,
+                                      vatAmount: 0,
+                                      grandTotal: 0,
+                                      remarks: ''
+                                    }];
+                                    const updatedRequests = importRequests.map(r => r.id === id ? { ...r, taxDocumentRows: updatedRows } : r);
+                                    saveToStorage(updatedRequests);
+                                  }}
+                                  style={{ width: '100%', height: '34px', background: '#fff', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 700, color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', transition: 'background 0.2s' }}
+                                  onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                                >
+                                  ➕ 증빙서류 발행 내역 추가 (행 추가)
+                                </button>
+                              </td>
+                            </tr>
+                          </>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>거래명세표 발송일</label>
-                    <input type="date" value={request.dealStatementSentDate || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementSentDate: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>고객 확인일</label>
-                    <input type="date" value={request.dealStatementConfirmedDate || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementConfirmedDate: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 번호</label>
-                    <input type="text" value={request.taxInvoiceNumber || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceNumber: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} placeholder="승인번호 입력" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 발행일</label>
-                    <input type="date" value={request.taxInvoiceIssuedDate || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceIssuedDate: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 품명</label>
-                    <input type="text" value={request.taxInvoiceItemName || ''} onChange={(e) => {
-                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceItemName: e.target.value } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none' }} placeholder="품명 입력" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 단가 (₩)</label>
-                    <input type="number" value={request.taxInvoiceUnitPrice || ''} onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceUnitPrice: val } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="단가 입력" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 총액 (공급가액, ₩)</label>
-                    <input type="number" value={request.taxInvoiceTotalAmount || ''} onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const computedVat = Math.round(val * 0.1);
-                      const computedGrand = val + computedVat;
-                      const updated = importRequests.map(r => r.id === id ? { 
-                        ...r, 
-                        taxInvoiceTotalAmount: val,
-                        taxInvoiceVat: computedVat,
-                        taxInvoiceGrandTotal: computedGrand
-                      } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="공급가액 입력" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 부가세 (₩)</label>
-                    <input type="number" value={request.taxInvoiceVat || ''} onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const supply = Number(request.taxInvoiceTotalAmount) || 0;
-                      const updated = importRequests.map(r => r.id === id ? { 
-                        ...r, 
-                        taxInvoiceVat: val,
-                        taxInvoiceGrandTotal: supply + val
-                      } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="부가세 입력" />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>세금계산서 합계 (₩)</label>
-                    <input type="number" value={request.taxInvoiceGrandTotal || ''} onChange={(e) => {
-                      const val = Number(e.target.value) || 0;
-                      const updated = importRequests.map(r => r.id === id ? { ...r, taxInvoiceGrandTotal: val } : r);
-                      saveToStorage(updated);
-                    }} style={{ padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '13px', outline: 'none', textAlign: 'right' }} placeholder="합계 금액 입력" />
-                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>대금 수령일</label>
                     <input type="date" value={request.paymentCollectedDate || ''} onChange={(e) => {

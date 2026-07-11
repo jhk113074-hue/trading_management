@@ -117,8 +117,20 @@ export interface RecurringTaskRule {
   isActive: boolean;
 }
 
+export interface TaxDocumentRow {
+  id: string;
+  type: '세금계산서' | '거래명세표' | '영수증' | '기타';
+  issueDate: string;
+  docNumber: string;
+  supplyAmount: number;
+  vatAmount: number;
+  grandTotal: number;
+  remarks: string;
+}
+
 export interface ImportRequest {
   id: string;
+  taxDocumentRows?: TaxDocumentRow[];
   status: string;
   blAwb?: string;
   poNumber?: string;
