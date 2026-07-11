@@ -400,6 +400,30 @@ export const ImportDetail: React.FC = () => {
     };
   });
   const [showPoModal, setShowPoModal] = useState<boolean>(false);
+  const [showDealStatementModal, setShowDealStatementModal] = useState<boolean>(false);
+  const [dealStatementData, setDealStatementData] = useState<{
+    date: string;
+    receiverBizNo: string;
+    receiverName: string;
+    receiverCEO: string;
+    receiverAddr: string;
+    receiverType: string;
+    receiverItem: string;
+    items: Array<{ month: string; day: string; name: string; spec: string; qty: number; price: number; remarks: string }>;
+    receivableAmount: number;
+    receiverSign: string;
+  }>({
+    date: '',
+    receiverBizNo: '',
+    receiverName: '',
+    receiverCEO: '',
+    receiverAddr: '',
+    receiverType: '',
+    receiverItem: '',
+    items: [],
+    receivableAmount: 0,
+    receiverSign: ''
+  });
   const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
   const [showSupplierSearchModal, setShowSupplierSearchModal] = useState<boolean>(false);
   const [isCostTableExpanded, setIsCostTableExpanded] = useState<boolean>(true);
@@ -4024,13 +4048,48 @@ customsDuty,
                                   />
                                 </td>
                                 <td style={{ padding: '6px 4px', textAlign: 'center' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => deleteRow(row.id)}
-                                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
-                                  >
-                                    🗑️
-                                  </button>
+                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                                    {row.type === '거래명세표' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setDealStatementData({
+                                            date: row.issueDate || new Date().toISOString().split('T')[0],
+                                            receiverBizNo: '',
+                                            receiverName: request.finalCustomer || '',
+                                            receiverCEO: '',
+                                            receiverAddr: '',
+                                            receiverType: '',
+                                            receiverItem: '',
+                                            items: [
+                                              {
+                                                month: (row.issueDate || new Date().toISOString().split('T')[0]).split('-')[1] || '',
+                                                day: (row.issueDate || new Date().toISOString().split('T')[0]).split('-')[2] || '',
+                                                name: row.remarks || request.itemName || '수입 물품 매입 대금',
+                                                spec: '규격',
+                                                qty: 1,
+                                                price: row.supplyAmount || 0,
+                                                remarks: ''
+                                              }
+                                            ],
+                                            receivableAmount: 0,
+                                            receiverSign: ''
+                                          });
+                                          setShowDealStatementModal(true);
+                                        }}
+                                        style={{ background: '#3b82f6', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        🖨️ 발행
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteRow(row.id)}
+                                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }}
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -4873,6 +4932,439 @@ customsDuty,
           </div>
         </div>
       )}
+
+      {showDealStatementModal && (
+        <div style={{
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(15, 23, 42, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            background: '#ffffff',
+            width: '1000px',
+            height: '85vh',
+            borderRadius: '8px',
+            boxShadow: '0 20px 40px rgba(15,23,42,0.2)',
+            border: '1px solid #cbd5e1',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Header */}
+            <div style={{ padding: '12px 16px', background: '#fafafa', borderBottom: '1px solid #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e293b' }}>
+                🖨️ 거래명세표 발행 및 수정 인쇄
+              </span>
+              <button 
+                onClick={() => setShowDealStatementModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+              {/* Left Column: Edit Form */}
+              <div style={{ width: '450px', padding: '16px', borderRight: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px' }}>
+                  공급받는 자 (고객사) 정보 입력
+                </span>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>등록번호</label>
+                    <input 
+                      type="text"
+                      placeholder="예: 123-45-67890"
+                      value={dealStatementData.receiverBizNo}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverBizNo: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>상호 (법인명)</label>
+                    <input 
+                      type="text"
+                      value={dealStatementData.receiverName}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverName: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>성명 (대표자)</label>
+                    <input 
+                      type="text"
+                      value={dealStatementData.receiverCEO}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverCEO: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>발행일자</label>
+                    <input 
+                      type="date"
+                      value={dealStatementData.date}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, date: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>사업장 주소</label>
+                    <input 
+                      type="text"
+                      value={dealStatementData.receiverAddr}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverAddr: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>업태</label>
+                    <input 
+                      type="text"
+                      value={dealStatementData.receiverType}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverType: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>종목</label>
+                    <input 
+                      type="text"
+                      value={dealStatementData.receiverItem}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, receiverItem: e.target.value })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px', marginTop: '10px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
+                    품목 목록 수량/단가 편집
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextItems = [
+                        ...dealStatementData.items,
+                        { month: '', day: '', name: '', spec: '', qty: 1, price: 0, remarks: '' }
+                      ];
+                      setDealStatementData({ ...dealStatementData, items: nextItems });
+                    }}
+                    style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    ＋ 품목 추가
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {dealStatementData.items.map((item, idx) => (
+                    <div key={idx} style={{ background: '#f8fafc', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e3a8a' }}>품목 #{idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextItems = dealStatementData.items.filter((_, i) => i !== idx);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          삭제
+                        </button>
+                      </div>
+                      <input 
+                        type="text"
+                        placeholder="품명"
+                        value={item.name}
+                        onChange={(e) => {
+                          const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it);
+                          setDealStatementData({ ...dealStatementData, items: nextItems });
+                        }}
+                        style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                      />
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
+                        <input 
+                          type="text"
+                          placeholder="규격"
+                          value={item.spec}
+                          onChange={(e) => {
+                            const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, spec: e.target.value } : it);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                        <input 
+                          type="number"
+                          placeholder="수량"
+                          value={item.qty || ''}
+                          onChange={(e) => {
+                            const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, qty: Number(e.target.value) || 0 } : it);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }}
+                        />
+                        <input 
+                          type="number"
+                          placeholder="단가 (₩)"
+                          value={item.price || ''}
+                          onChange={(e) => {
+                            const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, price: Number(e.target.value) || 0 } : it);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>미수금 (₩)</label>
+                  <input 
+                    type="number"
+                    value={dealStatementData.receivableAmount || ''}
+                    onChange={(e) => setDealStatementData({ ...dealStatementData, receivableAmount: Number(e.target.value) || 0 })}
+                    style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Visual Excel Preview */}
+              <div style={{ flex: 1, padding: '16px', background: '#f1f5f9', display: 'flex', flexDirection: 'column', overflowY: 'auto', alignItems: 'center' }}>
+                <div style={{
+                  width: '520px',
+                  background: '#ffffff',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                  padding: '24px',
+                  boxSizing: 'border-box',
+                  border: '2px solid #059669',
+                  fontFamily: 'serif',
+                  color: '#000'
+                }}>
+                  {/* Excel View content layout */}
+                  <h2 style={{ textAlign: 'center', letterSpacing: '10px', fontSize: '22px', borderBottom: '2px double #059669', paddingBottom: '4px', margin: '0 0 16px 0', color: '#065f46' }}>거 래 명 세 표</h2>
+                  
+                  {/* 공급자 / 공급받는자 */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', marginBottom: '10px' }}>
+                    <tbody>
+                      <tr>
+                        {/* 공급자 */}
+                        <td style={{ width: '50%', border: '1px solid #059669', padding: '4px', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>공급자</div>
+                          <div><strong>등록번호:</strong> 730-17-00185</div>
+                          <div style={{ position: 'relative' }}>
+                            <strong>상호:</strong> 영성ACC 
+                            <img src={ysaccStampImg} style={{ position: 'absolute', right: '10px', top: '-10px', width: '40px', opacity: 0.8 }} />
+                          </div>
+                          <div><strong>성명:</strong> 김주한</div>
+                          <div><strong>주소:</strong> 청주시 흥덕구 월명로 73</div>
+                          <div><strong>업태/종목:</strong> 도소매 / 기자재</div>
+                        </td>
+                        {/* 공급받는자 */}
+                        <td style={{ width: '50%', border: '1px solid #059669', padding: '4px', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>공급받는 자</div>
+                          <div><strong>등록번호:</strong> {dealStatementData.receiverBizNo || '-'}</div>
+                          <div><strong>상호:</strong> {dealStatementData.receiverName || '-'}</div>
+                          <div><strong>성명:</strong> {dealStatementData.receiverCEO || '-'}</div>
+                          <div><strong>주소:</strong> {dealStatementData.receiverAddr || '-'}</div>
+                          <div><strong>업태/종목:</strong> {dealStatementData.receiverType || '-'}/{dealStatementData.receiverItem || '-'}</div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Items list */}
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', textAlign: 'center' }}>
+                    <thead>
+                      <tr style={{ background: '#ecfdf5', color: '#065f46', fontWeight: 'bold', height: '24px' }}>
+                        <th style={{ border: '1px solid #059669', width: '25px' }}>월</th>
+                        <th style={{ border: '1px solid #059669', width: '25px' }}>일</th>
+                        <th style={{ border: '1px solid #059669' }}>품목</th>
+                        <th style={{ border: '1px solid #059669', width: '50px' }}>규격</th>
+                        <th style={{ border: '1px solid #059669', width: '35px' }}>수량</th>
+                        <th style={{ border: '1px solid #059669', width: '65px' }}>단가</th>
+                        <th style={{ border: '1px solid #059669', width: '75px' }}>공급가액</th>
+                        <th style={{ border: '1px solid #059669', width: '55px' }}>세액</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 10 }).map((_, rIdx) => {
+                        const item = dealStatementData.items[rIdx];
+                        const supplyVal = item ? (item.qty * item.price) : 0;
+                        const vatVal = item ? Math.round(supplyVal * 0.1) : 0;
+                        return (
+                          <tr key={rIdx} style={{ height: '22px' }}>
+                            <td style={{ border: '1px solid #059669' }}>{item?.month || ''}</td>
+                            <td style={{ border: '1px solid #059669' }}>{item?.day || ''}</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'left', paddingLeft: '4px' }}>{item?.name || ''}</td>
+                            <td style={{ border: '1px solid #059669' }}>{item?.spec || ''}</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? item.qty.toLocaleString() : ''}</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? item.price.toLocaleString() : ''}</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? supplyVal.toLocaleString() : ''}</td>
+                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? vatVal.toLocaleString() : ''}</td>
+                          </tr>
+                        );
+                      })}
+                      {/* Summary calculations */}
+                      <tr style={{ background: '#ecfdf5', height: '24px', fontWeight: 'bold' }}>
+                        <td colSpan={4} style={{ border: '1px solid #059669' }}>합계</td>
+                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
+                          {dealStatementData.items.reduce((s, i) => s + i.qty, 0).toLocaleString()}
+                        </td>
+                        <td style={{ border: '1px solid #059669' }}></td>
+                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
+                          {dealStatementData.items.reduce((s, i) => s + (i.qty * i.price), 0).toLocaleString()}
+                        </td>
+                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
+                          {dealStatementData.items.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0).toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ padding: '12px 16px', background: '#fafafa', borderTop: '1px solid #cbd5e1', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button 
+                onClick={() => setShowDealStatementModal(false)}
+                style={{ padding: '8px 16px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                닫기
+              </button>
+              <button 
+                onClick={() => {
+                  const printWin = window.open('', '_blank');
+                  if (!printWin) return alert('팝업 차단기를 해제해주세요.');
+                  
+                  const itemsHtml = Array.from({ length: 10 }).map((_, rIdx) => {
+                    const item = dealStatementData.items[rIdx];
+                    const supplyVal = item ? (item.qty * item.price) : 0;
+                    const vatVal = item ? Math.round(supplyVal * 0.1) : 0;
+                    return `
+                      <tr style="height: 24px;">
+                        <td style="border: 1px solid #059669; text-align: center;">${item?.month || ''}</td>
+                        <td style="border: 1px solid #059669; text-align: center;">${item?.day || ''}</td>
+                        <td style="border: 1px solid #059669; text-align: left; padding-left: 6px;">${item?.name || ''}</td>
+                        <td style="border: 1px solid #059669; text-align: center;">${item?.spec || ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? item.qty.toLocaleString() : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? item.price.toLocaleString() : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? supplyVal.toLocaleString() : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? vatVal.toLocaleString() : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: left; padding-left: 6px;">${item?.remarks || ''}</td>
+                      </tr>
+                    `;
+                  }).join('');
+
+                  const sumQty = dealStatementData.items.reduce((s, i) => s + i.qty, 0);
+                  const sumSupply = dealStatementData.items.reduce((s, i) => s + (i.qty * i.price), 0);
+                  const sumVat = dealStatementData.items.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+
+                  printWin.document.write(`
+                    <html>
+                    <head>
+                      <title>거래명세표</title>
+                      <style>
+                        body { font-family: 'Malgun Gothic', 'Dotum', sans-serif; padding: 20px; color: #000; }
+                        table { width: 100%; border-collapse: collapse; }
+                        td, th { border: 1px solid #059669; padding: 6px; font-size: 12px; }
+                        .title { text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 12px; border-bottom: 2px double #059669; padding-bottom: 6px; margin-bottom: 20px; color: #065f46; }
+                      </style>
+                    </head>
+                    <body onload="window.print(); window.close();">
+                      <div class="title">거 래 명 세 표</div>
+                      <table style="margin-bottom: 12px;">
+                        <tr>
+                          <td style="width: 50%; vertical-align: top;">
+                            <div style="font-weight: bold; font-size: 13px; color: #065f46; margin-bottom: 6px;">공 급 자</div>
+                            <div><strong>등록번호:</strong> 730-17-00185</div>
+                            <div style="position: relative;">
+                              <strong>상호(법인명):</strong> 영성에이씨씨(영성ACC)
+                              <img src="${ysaccStampImg}" style="position: absolute; right: 20px; top: -10px; width: 60px;" />
+                            </div>
+                            <div><strong>성명:</strong> 김주한</div>
+                            <div><strong>사업장 주소:</strong> 충청북도 청주시 흥덕구 월명로 73, 111-201</div>
+                            <div><strong>업태/종목:</strong> 도소매업 외 / 물탱크 및 기자재</div>
+                          </td>
+                          <td style="width: 50%; vertical-align: top;">
+                            <div style="font-weight: bold; font-size: 13px; color: #065f46; margin-bottom: 6px;">공급받는 자</div>
+                            <div><strong>등록번호:</strong> ${dealStatementData.receiverBizNo}</div>
+                            <div><strong>상호(법인명):</strong> ${dealStatementData.receiverName}</div>
+                            <div><strong>성명:</strong> ${dealStatementData.receiverCEO}</div>
+                            <div><strong>사업장 주소:</strong> ${dealStatementData.receiverAddr}</div>
+                            <div><strong>업태/종목:</strong> ${dealStatementData.receiverType} / ${dealStatementData.receiverItem}</div>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <div style="font-size: 12px; font-weight: bold; margin-bottom: 8px;">일자: ${dealStatementData.date}</div>
+
+                      <table style="margin-bottom: 12px;">
+                        <thead>
+                          <tr style="background: #ecfdf5; color: #065f46; font-weight: bold;">
+                            <th style="width: 30px;">월</th>
+                            <th style="width: 30px;">일</th>
+                            <th>품목</th>
+                            <th style="width: 60px;">규격</th>
+                            <th style="width: 40px;">수량</th>
+                            <th style="width: 80px;">단가</th>
+                            <th style="width: 100px;">공급가액</th>
+                            <th style="width: 80px;">세액</th>
+                            <th>비고</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${itemsHtml}
+                          <tr style="background: #ecfdf5; font-weight: bold; height: 26px;">
+                            <td colspan="4" style="text-align: center;">합계</td>
+                            <td style="text-align: right; padding-right: 6px;">${sumQty.toLocaleString()}</td>
+                            <td></td>
+                            <td style="text-align: right; padding-right: 6px;">${sumSupply.toLocaleString()}</td>
+                            <td style="text-align: right; padding-right: 6px;">${sumVat.toLocaleString()}</td>
+                            <td></td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <table style="margin-top: 16px;">
+                        <tr style="height: 36px; font-weight: bold;">
+                          <td style="width: 20%; background: #ecfdf5; text-align: center;">공급가액합계</td>
+                          <td style="text-align: right; padding-right: 8px;">₩${sumSupply.toLocaleString()}</td>
+                          <td style="width: 20%; background: #ecfdf5; text-align: center;">세액합계</td>
+                          <td style="text-align: right; padding-right: 8px;">₩${sumVat.toLocaleString()}</td>
+                          <td style="width: 20%; background: #ecfdf5; text-align: center;">총합계금액</td>
+                          <td style="text-align: right; padding-right: 8px; font-size: 14px; color: #1e3a8a;">₩${(sumSupply + sumVat).toLocaleString()}</td>
+                        </tr>
+                        <tr style="height: 36px; font-weight: bold;">
+                          <td style="background: #ecfdf5; text-align: center;">미수금</td>
+                          <td style="text-align: right; padding-right: 8px; color: #ef4444;">₩${dealStatementData.receivableAmount.toLocaleString()}</td>
+                          <td style="background: #ecfdf5; text-align: center;">인수자</td>
+                          <td colspan="3" style="padding-left: 8px;">${dealStatementData.receiverSign || dealStatementData.receiverCEO || dealStatementData.receiverName || ''} (인/서명)</td>
+                        </tr>
+                      </table>
+                    </body>
+                    </html>
+                  `);
+                  printWin.document.close();
+                }}
+                style={{ padding: '8px 16px', background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                🖨️ 발행 인쇄
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showProductSearch && productSearchTargetIdx !== null && (
         <ProductSearchModal
           products={products}
