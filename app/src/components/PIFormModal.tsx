@@ -577,6 +577,9 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       });
       if (changed) {
         setItems(formattedItems);
+        if (baselineStateRef.current) {
+          baselineStateRef.current.formData = getSnapshot(formData, formattedItems);
+        }
       }
     }
   }, [products, items]);
