@@ -138,6 +138,8 @@ export interface ImportRequest {
   blAwb?: string;
   poNumber?: string;
   piNumber?: string;
+  ciNumber?: string;
+  ciDate?: string;
   quoteNumber?: string;
   forwarderName?: string;
   itemName: string;

@@ -2919,6 +2919,36 @@ customsDuty,
                       />
                     </div>
                   </div>
+
+                  {/* Row 3: CI 번호, CI 날짜 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.5fr 2.8fr', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>CI 번호</label>
+                      <input
+                        type="text"
+                        value={request.ciNumber || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, ciNumber: val } : r));
+                        }}
+                        placeholder="CI 번호 직접 입력"
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>CI 날짜</label>
+                      <input
+                        type="date"
+                        value={request.ciDate || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          saveToStorage(importRequests.map(r => r.id === id ? { ...r, ciDate: val } : r));
+                        }}
+                        style={{ height: '30px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none', background: '#fff' }}
+                      />
+                    </div>
+                    <div /> {/* Spacer */}
+                  </div>
                 </div>
 
                 {/* Right Card: 운송 개요 (2줄 구성) */}
