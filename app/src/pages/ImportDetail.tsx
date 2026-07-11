@@ -542,9 +542,18 @@ export const ImportDetail: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '2px' }}>
             {fileList.map((f: any, idx: number) => (
               <div key={idx} style={{ border: '1px solid var(--border-default)', padding: '6px 10px', borderRadius: '4px', fontSize: '12px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 600 }} onClick={() => previewFile(f.url, f.name)}>
-                  📄 {f.name} (미리보기)
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>
+                  <span style={{ color: '#475569', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.name}</span>
+                  <button 
+                    onClick={() => previewFile(f.url, f.name)} 
+                    style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', fontWeight: 700, color: '#475569', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
+                    title="미리보기"
+                  >
+                    👁️ 미리보기
+                  </button>
+                </div>
                 <button onClick={() => handleFileDelete(key, idx)} title="삭제" style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', fontWeight: 'bold' }}>🗑️</button>
               </div>
             ))}
