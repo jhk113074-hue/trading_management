@@ -221,6 +221,24 @@ export interface ImportRequest {
   // 문서함 (Firestore 이관: key별 {name,url})
   documents?: { [key: string]: { name: string; url: string; path?: string } };
 
+  // 거래명세표 개별 관리 정보
+  dealStatementName?: string;
+  dealStatementBizNo?: string;
+  dealStatementCEO?: string;
+  dealStatementAddr?: string;
+  dealStatementType?: string;
+  dealStatementItem?: string;
+  dealStatementItems?: Array<{
+    month: string;
+    day: string;
+    name: string;
+    spec: string;
+    qty: number;
+    price: number;
+    remarks: string;
+  }>;
+  dealStatementReceivable?: number;
+
   // ── 1단계: 수입요청 접수 ──
   requestDate?: string; // 고객사 수입요청 접수일
   requestedBy?: string; // 고객사 담당자
