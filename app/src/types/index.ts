@@ -195,21 +195,12 @@ export interface ImportRequest {
     supplierId?: string;
     supplierName: string;
     itemName?: string;
-    amount: number; // 최신(현재) 협상 금액 — rounds가 있으면 마지막 라운드 금액과 동일하게 유지
+    amount: number; // 현재 협상 금액 (네고 중 바뀌면 이 값을 직접 수정)
     currency?: string; // USD/CNY/KRW 등
-    quoteDate?: string; // 최초 견적 접수일
+    quoteDate?: string; // 견적 접수일
     file?: { name: string; url: string; path?: string } | null;
-    note?: string;
+    note?: string; // 협상 메모 (예: "1차 3.8→3.6 협의")
     status?: '검토중' | '네고중' | '확정' | '거절'; // 이 공급사 견적의 진행 상태
-    rounds?: Array<{
-      id: string;
-      round: number;       // 라운드 번호 (1차, 2차, ...)
-      by: '공급사' | '당사'; // 이번 제시를 누가 했는지
-      amount: number;       // 이번 라운드 제시 금액
-      currency?: string;
-      date: string;         // 제시일
-      memo?: string;        // 협상 메모
-    }>;
   }>;
   costBreakdown?: {
     productCost?: number; // 제품 원가 (KRW 환산)
