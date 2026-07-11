@@ -1237,14 +1237,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매입액 (수입원가)</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{isQuoteMode ? '총 구매(예상액)' : '총 매입액 (수입원가)'}</span>
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccBuying.toLocaleString()} / 영성: ₩{stats.youngsungBuying.toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#dc2626' }}>₩{stats.totalBuying.toLocaleString()}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>총 매출액 (견적/판매)</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{isQuoteMode ? '총 견적가액' : '총 매출액 (견적/판매)'}</span>
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{stats.ysaccSales.toLocaleString()} / 영성: ₩{stats.youngsungSales.toLocaleString()})</span>
           </div>
           <div style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>₩{stats.totalSales.toLocaleString()}</div>
@@ -1402,8 +1402,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   {renderTh('quote_importCompany', '견적주체(YSACC/영성ACC)', 'importCompany', 'center')}
                   {renderTh('quote_itemName', '품명', 'itemName')}
                   {renderTh('quote_finalSellingPrice', '견적단가', 'finalSellingPrice', 'right')}
-                  {renderTh('quote_totalBuyingCost', '매입액', 'totalBuyingCost', 'right')}
-                  {renderTh('quote_customerQuoteAmount', '매출액', 'customerQuoteAmount', 'right')}
+                  {renderTh('quote_totalBuyingCost', '구매(예상액)', 'totalBuyingCost', 'right')}
+                  {renderTh('quote_customerQuoteAmount', '견적가액', 'customerQuoteAmount', 'right')}
                   {renderTh('quote_finalCustomer', '최종고객', 'finalCustomer')}
                   {renderTh('quote_importerName', '수입처', 'importerName')}
                   {renderTh('quote_buyingPrice', '수입견적단가', 'buyingPrice', 'right')}
