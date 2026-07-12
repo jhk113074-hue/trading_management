@@ -502,7 +502,7 @@ export const ImportDetail: React.FC = () => {
     receiverAddr: string;
     receiverType: string;
     receiverItem: string;
-    items: Array<{ month: string; day: string; name: string; spec: string; qty: number; price: number; remarks: string }>;
+    items: Array<{ month: string; day: string; name: string; spec: string; qty: number; price: number; remarks: string; currency?: 'KRW' | 'USD' }>;
     receivableAmount: number;
     receiverSign: string;
     currency: 'KRW' | 'USD';
@@ -4262,7 +4262,7 @@ customsDuty,
                             <th style={{ padding: '2px' }}>품목명</th>
                             <th style={{ padding: '2px', width: '45px' }}>규격</th>
                             <th style={{ padding: '2px', width: '45px', textAlign: 'right' }}>수량</th>
-                            <th style={{ padding: '2px', width: '75px', textAlign: 'right' }}>단가({request.dealStatementCurrency === 'USD' ? '$' : '₩'})</th>
+                            <th style={{ padding: '2px', width: '90px', textAlign: 'right' }}>단가(₩/$)</th>
                             <th style={{ padding: '2px', width: '80px', textAlign: 'right' }}>금액</th>
                             <th style={{ padding: '2px', width: '25px', textAlign: 'center' }}></th>
                           </tr>
@@ -4351,15 +4351,25 @@ customsDuty,
                                     />
                                   </td>
                                   <td style={{ padding: '1px' }}>
-                                    <input
-                                      type="number"
-                                      value={item.price || ''}
-                                      onChange={(e) => updateItem({ price: Number(e.target.value) || 0 })}
-                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 2px', fontSize: '11px' }}
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                      <select
+                                        value={item.currency || 'KRW'}
+                                        onChange={(e) => updateItem({ currency: e.target.value as 'KRW' | 'USD' })}
+                                        style={{ height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 2px', fontWeight: 600, color: '#1e293b' }}
+                                      >
+                                        <option value="KRW">₩</option>
+                                        <option value="USD">$</option>
+                                      </select>
+                                      <input
+                                        type="number"
+                                        value={item.price || ''}
+                                        onChange={(e) => updateItem({ price: Number(e.target.value) || 0 })}
+                                        style={{ flex: 1, height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', textAlign: 'right', padding: '0 2px', fontSize: '11px' }}
+                                      />
+                                    </div>
                                   </td>
                                   <td style={{ padding: '1px', textAlign: 'right', fontWeight: 'bold' }}>
-                                    {request.dealStatementCurrency === 'USD' ? '$' : '₩'}{(item.qty * item.price).toLocaleString()}
+                                    {item.currency === 'USD' ? '$' : '₩'}{(item.qty * item.price).toLocaleString()}
                                   </td>
                                   <td style={{ padding: '1px', textAlign: 'center' }}>
                                     <button
@@ -5760,7 +5770,7 @@ customsDuty,
                           🔍
                         </button>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.7fr 1.5fr', gap: '6px' }}>
                         <input 
                           type="text"
                           placeholder="규격"
@@ -5781,9 +5791,20 @@ customsDuty,
                           }}
                           style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', textAlign: 'right' }}
                         />
+                        <select
+                          value={item.currency || 'KRW'}
+                          onChange={(e) => {
+                            const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, currency: e.target.value as 'KRW' | 'USD' } : it);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ height: '28px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 2px', fontWeight: 600, color: '#1e293b' }}
+                        >
+                          <option value="KRW">₩</option>
+                          <option value="USD">$</option>
+                        </select>
                         <input 
                           type="number"
-                          placeholder={`단가 (${dealStatementData.currency === 'USD' ? '$' : '₩'})`}
+                          placeholder={`단가 (${item.currency === 'USD' ? '$' : '₩'})`}
                           value={item.price || ''}
                           onChange={(e) => {
                             const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, price: Number(e.target.value) || 0 } : it);
@@ -5866,37 +5887,54 @@ customsDuty,
                       </tr>
                     </thead>
                     <tbody>
-                      {Array.from({ length: 10 }).map((_, rIdx) => {
-                        const item = dealStatementData.items[rIdx];
-                        const supplyVal = item ? (item.qty * item.price) : 0;
-                        const vatVal = item ? Math.round(supplyVal * 0.1) : 0;
+                      {(() => {
+                        const sumQty = dealStatementData.items.reduce((s, i) => s + i.qty, 0);
+                        const krwItems = dealStatementData.items.filter(i => !i.currency || i.currency === 'KRW');
+                        const usdItems = dealStatementData.items.filter(i => i.currency === 'USD');
+                        const krwSupply = krwItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                        const krwVat = krwItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+                        const usdSupply = usdItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                        const usdVat = usdItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+
                         return (
-                          <tr key={rIdx} style={{ height: '22px' }}>
-                            <td style={{ border: '1px solid #059669' }}>{item?.month || ''}</td>
-                            <td style={{ border: '1px solid #059669' }}>{item?.day || ''}</td>
-                            <td style={{ border: '1px solid #059669', textAlign: 'left', paddingLeft: '4px' }}>{item?.name || ''}</td>
-                            <td style={{ border: '1px solid #059669' }}>{item?.spec || ''}</td>
-                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? item.qty.toLocaleString() : ''}</td>
-                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? item.price.toLocaleString() : ''}</td>
-                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? supplyVal.toLocaleString() : ''}</td>
-                            <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? vatVal.toLocaleString() : ''}</td>
-                          </tr>
+                          <>
+                            {Array.from({ length: 10 }).map((_, rIdx) => {
+                              const item = dealStatementData.items[rIdx];
+                              const supplyVal = item ? (item.qty * item.price) : 0;
+                              const vatVal = item ? Math.round(supplyVal * 0.1) : 0;
+                              const itemSym = item?.currency === 'USD' ? '$' : '₩';
+                              return (
+                                <tr key={rIdx} style={{ height: '22px' }}>
+                                  <td style={{ border: '1px solid #059669' }}>{item?.month || ''}</td>
+                                  <td style={{ border: '1px solid #059669' }}>{item?.day || ''}</td>
+                                  <td style={{ border: '1px solid #059669', textAlign: 'left', paddingLeft: '4px' }}>{item?.name || ''}</td>
+                                  <td style={{ border: '1px solid #059669' }}>{item?.spec || ''}</td>
+                                  <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? item.qty.toLocaleString() : ''}</td>
+                                  <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? `${itemSym}${item.price.toLocaleString()}` : ''}</td>
+                                  <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? `${itemSym}${supplyVal.toLocaleString()}` : ''}</td>
+                                  <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>{item ? `${itemSym}${vatVal.toLocaleString()}` : ''}</td>
+                                </tr>
+                              );
+                            })}
+                            {/* Summary calculations */}
+                            <tr style={{ background: '#ecfdf5', height: '24px', fontWeight: 'bold' }}>
+                              <td colSpan={4} style={{ border: '1px solid #059669' }}>합계</td>
+                              <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
+                                {sumQty.toLocaleString()}
+                              </td>
+                              <td style={{ border: '1px solid #059669' }}></td>
+                              <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px', whiteSpace: 'nowrap', fontSize: '9px' }}>
+                                {krwSupply > 0 ? `₩${krwSupply.toLocaleString()} ` : ''}
+                                {usdSupply > 0 ? `$${usdSupply.toLocaleString()}` : ''}
+                              </td>
+                              <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px', whiteSpace: 'nowrap', fontSize: '9px' }}>
+                                {krwVat > 0 ? `₩${krwVat.toLocaleString()} ` : ''}
+                                {usdVat > 0 ? `$${usdVat.toLocaleString()}` : ''}
+                              </td>
+                            </tr>
+                          </>
                         );
-                      })}
-                      {/* Summary calculations */}
-                      <tr style={{ background: '#ecfdf5', height: '24px', fontWeight: 'bold' }}>
-                        <td colSpan={4} style={{ border: '1px solid #059669' }}>합계</td>
-                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
-                          {dealStatementData.items.reduce((s, i) => s + i.qty, 0).toLocaleString()}
-                        </td>
-                        <td style={{ border: '1px solid #059669' }}></td>
-                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
-                          {dealStatementData.items.reduce((s, i) => s + (i.qty * i.price), 0).toLocaleString()}
-                        </td>
-                        <td style={{ border: '1px solid #059669', textAlign: 'right', paddingRight: '4px' }}>
-                          {dealStatementData.items.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0).toLocaleString()}
-                        </td>
-                      </tr>
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -5916,11 +5954,11 @@ customsDuty,
                   const printWin = window.open('', '_blank');
                   if (!printWin) return alert('팝업 차단기를 해제해주세요.');
                   
-                  const currencySym = dealStatementData.currency === 'USD' ? '$' : '₩';
                   const itemsHtml = Array.from({ length: 10 }).map((_, rIdx) => {
                     const item = dealStatementData.items[rIdx];
                     const supplyVal = item ? (item.qty * item.price) : 0;
                     const vatVal = item ? Math.round(supplyVal * 0.1) : 0;
+                    const itemSym = item?.currency === 'USD' ? '$' : '₩';
                     return `
                       <tr style="height: 24px;">
                         <td style="border: 1px solid #059669; text-align: center;">${item?.month || ''}</td>
@@ -5928,17 +5966,40 @@ customsDuty,
                         <td style="border: 1px solid #059669; text-align: left; padding-left: 6px;">${item?.name || ''}</td>
                         <td style="border: 1px solid #059669; text-align: center;">${item?.spec || ''}</td>
                         <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? item.qty.toLocaleString() : ''}</td>
-                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? item.price.toLocaleString() : ''}</td>
-                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? supplyVal.toLocaleString() : ''}</td>
-                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? vatVal.toLocaleString() : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? `${itemSym}${item.price.toLocaleString()}` : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? `${itemSym}${supplyVal.toLocaleString()}` : ''}</td>
+                        <td style="border: 1px solid #059669; text-align: right; padding-right: 6px;">${item ? `${itemSym}${vatVal.toLocaleString()}` : ''}</td>
                         <td style="border: 1px solid #059669; text-align: left; padding-left: 6px;">${item?.remarks || ''}</td>
                       </tr>
                     `;
                   }).join('');
 
                   const sumQty = dealStatementData.items.reduce((s, i) => s + i.qty, 0);
-                  const sumSupply = dealStatementData.items.reduce((s, i) => s + (i.qty * i.price), 0);
-                  const sumVat = dealStatementData.items.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+                  const krwItems = dealStatementData.items.filter(i => !i.currency || i.currency === 'KRW');
+                  const usdItems = dealStatementData.items.filter(i => i.currency === 'USD');
+                  const krwSupply = krwItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                  const krwVat = krwItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+                  const usdSupply = usdItems.reduce((s, i) => s + (i.qty * i.price), 0);
+                  const usdVat = usdItems.reduce((s, i) => s + Math.round((i.qty * i.price) * 0.1), 0);
+
+                  const sumSupplyText = [
+                    krwSupply > 0 ? `₩${krwSupply.toLocaleString()}` : '',
+                    usdSupply > 0 ? `$${usdSupply.toLocaleString()}` : ''
+                  ].filter(Boolean).join(' / ') || '₩0';
+
+                  const sumVatText = [
+                    krwVat > 0 ? `₩${krwVat.toLocaleString()}` : '',
+                    usdVat > 0 ? `$${usdVat.toLocaleString()}` : ''
+                  ].filter(Boolean).join(' / ') || '₩0';
+
+                  const grandTotalText = [
+                    krwSupply > 0 ? `₩${(krwSupply + krwVat).toLocaleString()}` : '',
+                    usdSupply > 0 ? `$${(usdSupply + usdVat).toLocaleString()}` : ''
+                  ].filter(Boolean).join(' / ') || '₩0';
+
+                  const receivableText = dealStatementData.currency === 'USD' 
+                    ? `$${dealStatementData.receivableAmount.toLocaleString()}` 
+                    : `₩${dealStatementData.receivableAmount.toLocaleString()}`;
 
                   printWin.document.write(`
                     <html>
@@ -5999,8 +6060,8 @@ customsDuty,
                             <td colspan="4" style="text-align: center;">합계</td>
                             <td style="text-align: right; padding-right: 6px;">${sumQty.toLocaleString()}</td>
                             <td></td>
-                            <td style="text-align: right; padding-right: 6px;">${sumSupply.toLocaleString()}</td>
-                            <td style="text-align: right; padding-right: 6px;">${sumVat.toLocaleString()}</td>
+                            <td style="text-align: right; padding-right: 6px; white-space: nowrap;">${sumSupplyText}</td>
+                            <td style="text-align: right; padding-right: 6px; white-space: nowrap;">${sumVatText}</td>
                             <td></td>
                           </tr>
                         </tbody>
@@ -6009,15 +6070,15 @@ customsDuty,
                       <table style="margin-top: 16px;">
                         <tr style="height: 36px; font-weight: bold;">
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">공급가액합계</td>
-                          <td style="text-align: right; padding-right: 8px;">${currencySym}${sumSupply.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px;">${sumSupplyText}</td>
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">세액합계</td>
-                          <td style="text-align: right; padding-right: 8px;">${currencySym}${sumVat.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px;">${sumVatText}</td>
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">총합계금액</td>
-                          <td style="text-align: right; padding-right: 8px; font-size: 14px; color: #1e3a8a;">${currencySym}${(sumSupply + sumVat).toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px; font-size: 14px; color: #1e3a8a;">${grandTotalText}</td>
                         </tr>
                         <tr style="height: 36px; font-weight: bold;">
                           <td style="background: #ecfdf5; text-align: center;">미수금</td>
-                          <td style="text-align: right; padding-right: 8px; color: #ef4444;">${currencySym}${dealStatementData.receivableAmount.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px; color: #ef4444;">${receivableText}</td>
                           <td style="background: #ecfdf5; text-align: center;">인수자</td>
                           <td colspan="3" style="padding-left: 8px;">${dealStatementData.receiverSign || dealStatementData.receiverCEO || dealStatementData.receiverName || ''} (인/서명)</td>
                         </tr>
@@ -6071,12 +6132,14 @@ customsDuty,
           }}
           onSelect={(prod) => {
             const idx = dealStatementProductSearchTargetIdx;
+            const pCurr: 'KRW' | 'USD' = (prod.currency === 'USD' || prod.currency === 'KRW') ? prod.currency : 'KRW';
             if (showDealStatementModal) {
               const nextItems = dealStatementData.items.map((it, i) => i === idx ? {
                 ...it,
                 name: prod.nameKo || prod.nameEn || '',
                 spec: prod.unit || 'EA',
-                price: prod.purchasePrice || 0
+                price: prod.purchasePrice || 0,
+                currency: pCurr
               } : it);
               setDealStatementData({ ...dealStatementData, items: nextItems });
             } else {
@@ -6093,14 +6156,16 @@ customsDuty,
                       spec: item.unit || 'EA',
                       qty: qty,
                       price: estimatedPrice,
-                      remarks: ''
+                      remarks: '',
+                      currency: request.dealStatementCurrency || 'KRW'
                     };
                   });
               const nextItems = currentItems.map((it: any, i: number) => i === idx ? {
                 ...it,
                 name: prod.nameKo || prod.nameEn || '',
                 spec: prod.unit || 'EA',
-                price: prod.purchasePrice || 0
+                price: prod.purchasePrice || 0,
+                currency: pCurr
               } : it);
               const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
               saveToStorage(updated);

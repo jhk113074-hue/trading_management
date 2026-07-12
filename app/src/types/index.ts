@@ -238,6 +238,7 @@ export interface ImportRequest {
     qty: number;
     price: number;
     remarks: string;
+    currency?: 'KRW' | 'USD';
   }>;
   dealStatementReceivable?: number;
   dealStatementCurrency?: 'KRW' | 'USD';
