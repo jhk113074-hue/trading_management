@@ -1420,13 +1420,6 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           >
             목록 받기
           </button>
-          <button 
-            style={{ padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box', transition: 'background 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
-            onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
-          >
-            테이블 설정
-          </button>
         </div>
       </div>
 
