@@ -6388,7 +6388,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         <td style={{ padding: '6px', textAlign: 'center' }}>v{doc.version}</td>
                                         <td style={{ padding: '6px', textAlign: 'center' }}>{doc.issuedBy}</td>
                                         <td style={{ padding: '6px', textAlign: 'center', display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                          <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '15.5px' }}>보기</a>
+                                          <button
+                                            type="button"
+                                            onClick={() => previewFile(doc.fileUrl, doc.fileName)}
+                                            style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', fontSize: '15.5px', cursor: 'pointer' }}
+                                          >
+                                            보기
+                                          </button>
                                           <a href={doc.fileUrl} download style={{ padding: '3px 8px', backgroundColor: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '15.5px' }}>↓ 다운</a>
                                         </td>
                                       </tr>
@@ -6433,7 +6439,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               <td style={{ padding: '8px', textAlign: 'center' }}>{doc.issuedBy}</td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
-                                  <a href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', textDecoration: 'none', fontSize: '15.5px', fontWeight: 'bold', display: 'inline-block', whiteSpace: 'nowrap' }}>보기</a>
+                                  <button
+                                    type="button"
+                                    onClick={() => previewFile(doc.fileUrl, doc.fileName)}
+                                    style={{ padding: '4px 10px', backgroundColor: '#f1f5f9', border: '1px solid var(--border-default)', borderRadius: '4px', color: '#334155', fontSize: '15.5px', fontWeight: 'bold', display: 'inline-block', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                  >
+                                    보기
+                                  </button>
                                   <a href={doc.fileUrl} download style={{ padding: '4px 10px', backgroundColor: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: '4px', color: '#0369a1', textDecoration: 'none', fontSize: '15.5px', fontWeight: 'bold', display: 'inline-block', whiteSpace: 'nowrap' }}>↓ 다운로드</a>
                                   <button onClick={() => handleDeletePoIssuedDoc(doc.id, doc.fileName)} style={{ padding: '4px 10px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', color: '#dc2626', fontSize: '15.5px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>취소</button>
                                 </div>
