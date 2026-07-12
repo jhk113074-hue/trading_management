@@ -6757,11 +6757,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                         <DateInput value={basicForm.cargoCutoffDate || ''} onChange={e => setBasicForm(p => ({ ...p, cargoCutoffDate: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>ETD (출항예정일)</span>
+                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>
+                          ETD (출항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!basicForm.etd?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                        </span>
                         <DateInput value={basicForm.etd || ''} onChange={e => setBasicForm(p => ({ ...p, etd: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>ETA (입항예정일)</span>
+                        <span style={{ fontSize: '14.5px', fontWeight: 600, color: '#4b5563' }}>
+                          ETA (입항예정일) <span style={{ color: '#ef4444' }}>*</span> {!!basicForm.eta?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                        </span>
                         <DateInput value={basicForm.eta || ''} onChange={e => setBasicForm(p => ({ ...p, eta: e.target.value }))} disabled={!isEditing} style={inputStyle(isEditing)} />
                       </div>
                     </div>
