@@ -491,6 +491,7 @@ export const ImportDetail: React.FC = () => {
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
+  const [profitCurrency, setProfitCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
     return {
       shape: (request as any).commonShippingMark?.shape || 'diamond',
@@ -4855,80 +4856,206 @@ customsDuty,
         )}
 
         {activeTab === '손익검토' && (() => {
-          // 계획 (견적단계) 계산: 실제 제품 매입가를 제외하고 2. 예상 운임 + 3. 예상 관세/통관비만 합산
-          const plannedFreight = request.costBreakdown?.freightCost || 0;
-          const plannedCustoms = request.costBreakdown?.customsCost || 0;
+          const rate = Number(request.costBreakdown?.appliedExchangeRate) || 1350;
 
-          const plannedCost = plannedFreight + plannedCustoms;
-          const plannedMargin = request.marginAmount || 0;
-          const plannedRevenue = request.customerQuoteAmount || request.amount || 0;
+          // 0. 매입 제품 USD 계산
+          const buyingQty = Number(request.costBreakdown?.buyingQty) || 0;
+          const buyingPriceUsd = Number(request.costBreakdown?.buyingPriceUsd) || 0;
+          let totalBuyingUsd = buyingQty * buyingPriceUsd;
+          if (totalBuyingUsd === 0) {
+            totalBuyingUsd = request.piItems && request.piItems.length > 0
+              ? request.piItems.reduce((s: number, it: any) => s + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+              : 0;
+          }
 
-          // 실적 계산 (수입세금계산서 공급가액 + 운임 공급가액 + 관세액, 부가세 제외)
-          // 1) 실제 제품 매입가: 수입세금계산서 공급가액 (부가세 제외)
-          const actualPurchaseCost = (request.importTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.taxAmount || 0;
+          // 1. 계획 (견적단계) Costs
+          const plannedProductKrw = Math.round(totalBuyingUsd * rate);
+          const plannedProductUsd = totalBuyingUsd;
+          const plannedFreightKrw = request.costBreakdown?.freightCost || 0;
+          const plannedFreightUsd = plannedFreightKrw / rate;
+          const plannedCustomsKrw = request.costBreakdown?.customsCost || 0;
+          const plannedCustomsUsd = plannedCustomsKrw / rate;
 
-          // 2) 실제 물류비: 운임 공급가액 (부가세 제외)
-          const actualLogisticsCost = (request.freightTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.freightAmount || 0;
+          const plannedTotalCostKrw = plannedProductKrw + plannedFreightKrw + plannedCustomsKrw;
+          const plannedTotalCostUsd = plannedProductUsd + plannedFreightUsd + plannedCustomsUsd;
 
-          // 3) 실제 관세: 납부 관세액 (부가세 제외)
-          const actualCustomsCost = (request.customsTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.customsTaxAmount || 0;
+          // 2. 실적 Costs
+          const actualProductCostKrw = (request.importTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.taxAmount || Math.round(totalBuyingUsd * rate);
+          const actualProductCostUsd = totalBuyingUsd;
+          const actualFreightCostKrw = (request.freightTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.freightAmount || 0;
+          const actualFreightCostUsd = actualFreightCostKrw / rate;
+          const actualCustomsCostKrw = (request.customsTaxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.customsTaxAmount || 0;
+          const actualCustomsCostUsd = actualCustomsCostKrw / rate;
 
-          const actualTotalCost = actualPurchaseCost + actualLogisticsCost + actualCustomsCost;
+          const actualTotalCostKrw = actualProductCostKrw + actualFreightCostKrw + actualCustomsCostKrw;
+          const actualTotalCostUsd = actualProductCostUsd + actualFreightCostUsd + actualCustomsCostUsd;
 
-          const actualRevenue = (request.taxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.taxInvoiceTotalAmount || plannedRevenue;
-          const realizedMargin = actualRevenue - actualTotalCost;
-          const realizedMarginRate = actualRevenue ? (realizedMargin / actualRevenue) * 100 : 0;
-          const marginGap = realizedMargin - plannedMargin;
+          // 3. 매출 (고객 청구액) 계산
+          const plannedRevenueKrw = request.customerQuoteAmount || request.amount || 0;
+          const plannedRevenueUsd = plannedRevenueKrw / rate;
+
+          let actualRevenueKrw = 0;
+          let actualRevenueUsd = 0;
+
+          if (settlementBasis === 'DEAL_STATEMENT') {
+            const statementCurrencyLocal = statementItems[0]?.currency || request.dealStatementCurrency || 'KRW';
+            if (statementCurrencyLocal === 'USD') {
+              actualRevenueUsd = statementTotal;
+              actualRevenueKrw = statementTotal * rate;
+            } else {
+              actualRevenueKrw = statementTotal;
+              actualRevenueUsd = statementTotal / rate;
+            }
+          } else {
+            actualRevenueKrw = (request.taxDocumentRows || []).reduce((sum, r) => sum + (Number(r.supplyAmount) || 0), 0) || request.taxInvoiceTotalAmount || plannedRevenueKrw;
+            actualRevenueUsd = actualRevenueKrw / rate;
+          }
+
+          // 4. 관점별 출력 변수 매핑
+          const isUsd = profitCurrency === 'USD';
+          
+          const pProduct = isUsd ? plannedProductUsd : plannedProductKrw;
+          const aProduct = isUsd ? actualProductCostUsd : actualProductCostKrw;
+          const diffProduct = aProduct - pProduct;
+
+          const pFreight = isUsd ? plannedFreightUsd : plannedFreightKrw;
+          const aFreight = isUsd ? actualFreightCostUsd : actualFreightCostKrw;
+          const diffFreight = aFreight - pFreight;
+
+          const pCustoms = isUsd ? plannedCustomsUsd : plannedCustomsKrw;
+          const aCustoms = isUsd ? actualCustomsCostUsd : actualCustomsCostKrw;
+          const diffCustoms = aCustoms - pCustoms;
+
+          const pTotalCost = isUsd ? plannedTotalCostUsd : plannedTotalCostKrw;
+          const aTotalCost = isUsd ? actualTotalCostUsd : actualTotalCostKrw;
+          const diffTotalCost = aTotalCost - pTotalCost;
+
+          const pRevenue = isUsd ? plannedRevenueUsd : plannedRevenueKrw;
+          const aRevenue = isUsd ? actualRevenueUsd : actualRevenueKrw;
+          const diffRevenue = aRevenue - pRevenue;
+
+          const pMargin = pRevenue - pTotalCost;
+          const aMargin = aRevenue - aTotalCost;
+          const diffMargin = aMargin - pMargin;
+
+          const pMarginRate = pRevenue ? (pMargin / pRevenue) * 100 : 0;
+          const aMarginRate = aRevenue ? (aMargin / aRevenue) * 100 : 0;
+
+          const fmt = (val: number) => isUsd 
+            ? `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : `₩${Math.round(val).toLocaleString()}`;
 
           return (
           <div>
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
-              📊 ⑥ 손익검토 (최종)
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', margin: 0 }}>
+                📊 ⑥ 손익검토 (최종)
+              </h3>
+              <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                <button
+                  type="button"
+                  onClick={() => setProfitCurrency('KRW')}
+                  style={{
+                    padding: '4px 12px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '11.5px',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    background: !isUsd ? '#fff' : 'transparent',
+                    color: !isUsd ? '#1e293b' : '#64748b',
+                    boxShadow: !isUsd ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  KRW 관점
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProfitCurrency('USD')}
+                  style={{
+                    padding: '4px 12px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    fontSize: '11.5px',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    background: isUsd ? '#fff' : 'transparent',
+                    color: isUsd ? '#1e293b' : '#64748b',
+                    boxShadow: isUsd ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  USD 관점
+                </button>
+              </div>
+            </div>
 
             <div style={{ border: '1px solid var(--border-default)', borderRadius: '8px', overflow: 'hidden', marginBottom: '20px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)', height: '36px' }}>
                     <th style={{ padding: '8px 12px', textAlign: 'left' }}>구분</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>② 계획 (견적단계)</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>실적 (③④⑤ 반영)</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '160px' }}>차이</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '180px' }}>② 계획 (견적단계)</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '180px' }}>실적 (③④⑤ 반영)</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right', width: '180px' }}>차이</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>매입원가 (제품+운임+통관 등)</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{plannedCost.toLocaleString()} 원</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{actualTotalCost.toLocaleString()} 원</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: actualTotalCost > plannedCost ? '#dc2626' : '#166534', fontWeight: 700 }}>
-                      {(actualTotalCost - plannedCost) >= 0 ? '+' : ''}{(actualTotalCost - plannedCost).toLocaleString()} 원
+                    <td style={{ padding: '8px 12px', paddingLeft: '20px', color: '#64748b', fontSize: '12px' }}>└ 매입 - 수입 제품 (PI)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(pProduct)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(aProduct)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffProduct > 0 ? '#dc2626' : '#166534', fontSize: '12px' }}>
+                      {diffProduct >= 0 ? '+' : ''}{fmt(diffProduct)}
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>매출 (고객 청구/수금액)</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{plannedRevenue.toLocaleString()} 원</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{actualRevenue.toLocaleString()} 원</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', color: actualRevenue >= plannedRevenue ? '#166534' : '#dc2626', fontWeight: 700 }}>
-                      {(actualRevenue - plannedRevenue) >= 0 ? '+' : ''}{(actualRevenue - plannedRevenue).toLocaleString()} 원
+                    <td style={{ padding: '8px 12px', paddingLeft: '20px', color: '#64748b', fontSize: '12px' }}>└ 매입 - 운임 (Freight)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(pFreight)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(aFreight)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffFreight > 0 ? '#dc2626' : '#166534', fontSize: '12px' }}>
+                      {diffFreight >= 0 ? '+' : ''}{fmt(diffFreight)}
                     </td>
                   </tr>
-                  <tr style={{ background: '#f8fafc', height: '40px', borderTop: '2px solid var(--border-default)' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 800 }}>마진</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800 }}>{plannedMargin.toLocaleString()} 원 ({(request.marginRate || 0).toFixed(1)}%)</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#1e3a8a' }}>{realizedMargin.toLocaleString()} 원 ({realizedMarginRate.toFixed(1)}%)</td>
-                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: marginGap >= 0 ? '#166534' : '#dc2626' }}>
-                      {marginGap >= 0 ? '+' : ''}{marginGap.toLocaleString()} 원
+                  <tr style={{ borderBottom: '1px solid var(--border-color)', height: '36px' }}>
+                    <td style={{ padding: '8px 12px', paddingLeft: '20px', color: '#64748b', fontSize: '12px' }}>└ 매입 - 관세/통관 (Customs)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(pCustoms)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748b', fontSize: '12px' }}>{fmt(aCustoms)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffCustoms > 0 ? '#dc2626' : '#166534', fontSize: '12px' }}>
+                      {diffCustoms >= 0 ? '+' : ''}{fmt(diffCustoms)}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1.5px solid #cbd5e1', height: '36px', background: '#f8fafc', fontWeight: 'bold' }}>
+                    <td style={{ padding: '8px 12px' }}>매입원가 합계</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt(pTotalCost)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt(aTotalCost)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffTotalCost > 0 ? '#dc2626' : '#166534' }}>
+                      {diffTotalCost >= 0 ? '+' : ''}{fmt(diffTotalCost)}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', height: '38px', fontWeight: 'bold' }}>
+                    <td style={{ padding: '8px 12px', color: '#1e3a8a' }}>매출 (고객 청구/수금액) <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#64748b' }}>({settlementBasis === 'DEAL_STATEMENT' ? '거래명세표 기준' : '세금계산서 기준'})</span></td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{fmt(pRevenue)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#1e3a8a' }}>{fmt(aRevenue)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffRevenue >= 0 ? '#166534' : '#dc2626' }}>
+                      {diffRevenue >= 0 ? '+' : ''}{fmt(diffRevenue)}
+                    </td>
+                  </tr>
+                  <tr style={{ background: '#f0fdf4', height: '40px', fontWeight: 'bold' }}>
+                    <td style={{ padding: '8px 12px', color: '#166534' }}>마진 (Margin)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#166534' }}>{fmt(pMargin)} ({pMarginRate.toFixed(1)}%)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: '#166534' }}>{fmt(aMargin)} ({aMarginRate.toFixed(1)}%)</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', color: diffMargin >= 0 ? '#166534' : '#dc2626' }}>
+                      {diffMargin >= 0 ? '+' : ''}{fmt(diffMargin)}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div style={{ background: marginGap >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${marginGap >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius: '8px', padding: '14px 16px', fontSize: '12.5px', color: marginGap >= 0 ? '#166534' : '#991b1b', marginBottom: '20px' }}>
-              {marginGap >= 0
-                ? `✅ 계획 대비 마진이 ${marginGap.toLocaleString()}원 초과 달성되었습니다.`
-                : `⚠️ 계획 대비 마진이 ${Math.abs(marginGap).toLocaleString()}원 부족합니다. 원인을 검토해주세요.`}
+            <div style={{ background: diffMargin >= 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${diffMargin >= 0 ? '#bbf7d0' : '#fecaca'}`, borderRadius: '8px', padding: '14px 16px', fontSize: '12.5px', color: diffMargin >= 0 ? '#166534' : '#991b1b', marginBottom: '20px' }}>
+              {diffMargin >= 0
+                ? `✅ 계획 대비 마진이 ${fmt(diffMargin)} 초과 달성되었습니다.`
+                : `⚠️ 계획 대비 마진이 ${fmt(Math.abs(diffMargin))} 부족합니다. 원인을 검토해주세요.`}
             </div>
 
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
