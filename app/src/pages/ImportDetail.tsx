@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { ImportRequest, TaxDocumentRow } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, getDocs } from 'firebase/firestore';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import { ForwarderSearchModal } from '../components/ForwarderSearchModal';
@@ -490,6 +490,19 @@ export const ImportDetail: React.FC = () => {
   const currencySymbol = settlementCurrency === 'USD' ? '$' : '₩';
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
+
+  const [myCompaniesMap, setMyCompaniesMap] = useState<Record<string, any>>({});
+
+  const companyKey = currentLetterhead === '영성ACC' ? 'YS' : 'YSACC';
+  const myCompany = myCompaniesMap[companyKey] || {};
+
+  const displayBizNo = myCompany.bizNo || (currentLetterhead === '영성ACC' ? '730-17-00185' : '217-87-00385');
+  const displayName = currentLetterhead === '영성ACC' ? '영성ACC' : '(주)와이에스에이씨씨';
+  const displayCEO = myCompany.representative || '김주한';
+  const displayAddress = myCompany.addressKo || (currentLetterhead === '영성ACC' ? '청주시 흥덕구 월명로 73' : '청주시 흥덕구 가로수로 1251, 201-1');
+  const displayBizType = myCompany.bizType || '도소매';
+  const displayItemName = myCompany.itemName || '기자재';
+  const displayBizItem = [displayBizType, displayItemName].filter(Boolean).join(' / ') || '도소매 / 기자재';
   const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
   const [profitCurrency, setProfitCurrency] = useState<'KRW' | 'USD'>('KRW');
   const [commonShippingMark, setCommonShippingMark] = useState(() => {
@@ -533,6 +546,22 @@ export const ImportDetail: React.FC = () => {
   const [isCostTableExpanded, setIsCostTableExpanded] = useState<boolean>(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [uploadingQuoteId, setUploadingQuoteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMyCompanies = async () => {
+      try {
+        const snap = await getDocs(collection(doc(db, 'companies', 'YSACC'), 'my_companies'));
+        const map: Record<string, any> = {};
+        snap.docs.forEach((d: any) => {
+          map[d.id] = d.data();
+        });
+        setMyCompaniesMap(map);
+      } catch (err) {
+        console.error("Failed to fetch my companies details:", err);
+      }
+    };
+    fetchMyCompanies();
+  }, []);
   const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -6052,14 +6081,14 @@ customsDuty,
                         {/* 공급자 */}
                         <td style={{ width: '50%', border: '1px solid #059669', padding: '4px', verticalAlign: 'top' }}>
                           <div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>공급자</div>
-                          <div><strong>등록번호:</strong> 730-17-00185</div>
+                          <div><strong>등록번호:</strong> {displayBizNo}</div>
                           <div style={{ position: 'relative' }}>
-                            <strong>상호:</strong> {currentLetterhead === '영성ACC' ? '영성ACC' : '(주)와이에스에이씨씨'} 
+                            <strong>상호:</strong> {displayName} 
                             <img src={currentLetterhead === '영성ACC' ? '/YS_ACC_CIR_STAMP.jpg' : '/YSACC_CIR_STAMP.png'} style={{ position: 'absolute', right: '10px', top: '-10px', width: '40px', opacity: 0.8 }} />
                           </div>
-                          <div><strong>성명:</strong> 김주한</div>
-                          <div><strong>주소:</strong> 청주시 흥덕구 월명로 73</div>
-                          <div><strong>업태/종목:</strong> 도소매 / 기자재</div>
+                          <div><strong>성명:</strong> {displayCEO}</div>
+                          <div><strong>주소:</strong> {displayAddress}</div>
+                          <div><strong>업태/종목:</strong> {displayBizItem}</div>
                         </td>
                         {/* 공급받는자 */}
                         <td style={{ width: '50%', border: '1px solid #059669', padding: '4px', verticalAlign: 'top' }}>
@@ -6220,14 +6249,14 @@ customsDuty,
                         <tr>
                           <td style="width: 50%; vertical-align: top;">
                             <div style="font-weight: bold; font-size: 13px; color: #065f46; margin-bottom: 6px;">공 급 자</div>
-                            <div><strong>등록번호:</strong> 730-17-00185</div>
+                            <div><strong>등록번호:</strong> ${displayBizNo}</div>
                             <div style="position: relative;">
-                              <strong>상호(법인명):</strong> \${currentLetterhead === '영성ACC' ? '영성ACC' : '(주)와이에스에이씨씨'}
-                              <img src="\${currentLetterhead === '영성ACC' ? '/YS_ACC_CIR_STAMP.jpg' : '/YSACC_CIR_STAMP.png'}" style="position: absolute; right: 20px; top: -10px; width: 60px;" />
+                              <strong>상호(법인명):</strong> ${displayName}
+                              <img src="${currentLetterhead === '영성ACC' ? '/YS_ACC_CIR_STAMP.jpg' : '/YSACC_CIR_STAMP.png'}" style="position: absolute; right: 20px; top: -10px; width: 60px;" />
                             </div>
-                            <div><strong>성명:</strong> 김주한</div>
-                            <div><strong>사업장 주소:</strong> 충청북도 청주시 흥덕구 월명로 73, 111-201</div>
-                            <div><strong>업태/종목:</strong> 도소매업 외 / 물탱크 및 기자재</div>
+                            <div><strong>성명:</strong> ${displayCEO}</div>
+                            <div><strong>사업장 주소:</strong> ${displayAddress}</div>
+                            <div><strong>업태/종목:</strong> ${displayBizItem}</div>
                           </td>
                           <td style="width: 50%; vertical-align: top;">
                             <div style="font-weight: bold; font-size: 13px; color: #065f46; margin-bottom: 6px;">공급받는 자</div>
