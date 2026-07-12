@@ -483,9 +483,11 @@ export const Orders: React.FC = () => {
     }, 0);
     
     const salesOrders = processedOrders.filter(o => (o.etd || "").trim() !== "");
-    const salesTotalUsd = salesOrders.reduce((sum, o) => {
+    const salesTotalKrw = salesOrders.reduce((sum, o) => {
       const pi = quotations.find(q => q.id === o.quotationId);
-      return sum + (o.totalAmount || pi?.totalUsd || 0);
+      const amount = o.totalAmount || pi?.totalUsd || 0;
+      const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+      return sum + (amount * rate);
     }, 0);
 
     return {
@@ -501,14 +503,18 @@ export const Orders: React.FC = () => {
       }, 0),
       urgentCount: processedOrders.filter(o => o.nextAction.level === 'RED').length,
       salesCount: salesOrders.length,
-      salesTotalUsd,
-      salesYsaccUsd: salesOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
+      salesTotalKrw,
+      salesYsaccKrw: salesOrders.filter(o => o.issuingCompany === 'YSACC').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (pi?.totalUsd || o.totalAmount || 0);
+        const amount = o.totalAmount || pi?.totalUsd || 0;
+        const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+        return sum + (amount * rate);
       }, 0),
-      salesYsUsd: salesOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
+      salesYsKrw: salesOrders.filter(o => o.issuingCompany === 'YS').reduce((sum, o) => {
         const pi = quotations.find(q => q.id === o.quotationId);
-        return sum + (pi?.totalUsd || o.totalAmount || 0);
+        const amount = o.totalAmount || pi?.totalUsd || 0;
+        const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+        return sum + (amount * rate);
       }, 0),
     };
   }, [processedOrders, quotations]);
@@ -1066,10 +1072,18 @@ export const Orders: React.FC = () => {
                         return sum + (pi?.totalUsd || o.totalAmount || 0);
                       }, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
-                    <td style={{ width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }} />
+                    <td style={{ padding: '14px 16px', color: '#2563eb', fontSize: '16px', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap', width: colWidths[5], minWidth: colWidths[5], maxWidth: colWidths[5], boxSizing: 'border-box' }}>
+                      ₩{processedOrders.reduce((sum, o) => {
+                        const pi = quotations.find(q => q.id === o.quotationId);
+                        const amount = o.totalAmount || pi?.totalUsd || 0;
+                        const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+                        return sum + Math.round(amount * rate);
+                      }, 0).toLocaleString()}
+                    </td>
                     <td style={{ width: colWidths[6], minWidth: colWidths[6], maxWidth: colWidths[6], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[7], minWidth: colWidths[7], maxWidth: colWidths[7], boxSizing: 'border-box' }} />
                     <td style={{ width: colWidths[8], minWidth: colWidths[8], maxWidth: colWidths[8], boxSizing: 'border-box' }} />
+                    <td style={{ width: colWidths[9], minWidth: colWidths[9], maxWidth: colWidths[9], boxSizing: 'border-box' }} />
                   </tr>
                 )}
               </tbody>
@@ -1138,9 +1152,9 @@ export const Orders: React.FC = () => {
         <div style={{ background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>매출액 (ETD 기준)</span>
-            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ${Math.round(stats.salesYsaccUsd).toLocaleString()} / 영성: ${Math.round(stats.salesYsUsd).toLocaleString()})</span>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>(YSACC: ₩{Math.round(stats.salesYsaccKrw).toLocaleString()} / 영성: ₩{Math.round(stats.salesYsKrw).toLocaleString()})</span>
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: '#d97706' }}>${stats.salesTotalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: '20px', fontWeight: 900, color: '#d97706' }}>₩{Math.round(stats.salesTotalKrw).toLocaleString()}</div>
         </div>
         <div style={{ background: stats.urgentCount > 0 ? '#fef2f2' : '#fff', border: stats.urgentCount > 0 ? '1px solid #fecaca' : '1px solid #cbd5e1', borderRadius: '4px', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: stats.urgentCount > 0 ? '#dc2626' : '#475569' }}>오늘 처리 필요 (긴급)</span>
