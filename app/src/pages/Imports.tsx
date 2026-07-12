@@ -1114,7 +1114,10 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     
     filteredRequests.forEach(req => {
       // 매출액 (KRW)
-      const sales = Number(req.customerQuoteAmount) || Number(req.amount) || 0;
+      const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+        : 0;
+      const sales = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
       totalSales += sales;
       
       // 매입액 (USD) - 단가 * 수량 기준 외화 구매총액
@@ -1517,7 +1520,13 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 견적가 (매출액) */}
                     <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
-                        ₩{(req.customerQuoteAmount || 0).toLocaleString()}
+                        {(() => {
+                          const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+                            : 0;
+                          const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
+                          return `₩${sales.toLocaleString()}`;
+                        })()}
                       </span>
                     </td>
 
@@ -1666,7 +1675,13 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     {/* 매출액 */}
                     <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
-                        ₩{(req.customerQuoteAmount || req.amount || 0).toLocaleString()}
+                        {(() => {
+                          const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+                            : 0;
+                          const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
+                          return `₩${sales.toLocaleString()}`;
+                        })()}
                       </span>
                     </td>
                   </>
