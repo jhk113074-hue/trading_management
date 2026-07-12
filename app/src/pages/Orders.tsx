@@ -428,8 +428,10 @@ export const Orders: React.FC = () => {
         } else if (sortKey === '매출액') {
           const piA = quotations.find(q => q.id === a.quotationId);
           const piB = quotations.find(q => q.id === b.quotationId);
-          valA = (a.totalAmount || piA?.totalUsd || 0) * (a.customsExchangeRate || 0);
-          valB = (b.totalAmount || piB?.totalUsd || 0) * (b.customsExchangeRate || 0);
+          const rateA = a.customsExchangeRate || a.exchangeRate || piA?.exchangeRate || 1350;
+          const rateB = b.customsExchangeRate || b.exchangeRate || piB?.exchangeRate || 1350;
+          valA = (a.totalAmount || piA?.totalUsd || 0) * rateA;
+          valB = (b.totalAmount || piB?.totalUsd || 0) * rateB;
         } else if (sortKey === 'ETD') {
           valA = a.etd || '';
           valB = b.etd || '';
@@ -982,8 +984,8 @@ export const Orders: React.FC = () => {
                       </td>
                       <td style={getTdStyle(5, { fontWeight: 700, color: '#2563eb', textAlign: 'right', fontSize: '14px' })}>
                         {(() => {
-                          const rate = order.customsExchangeRate || 0;
-                          return rate > 0 ? `₩${Math.round(amount * rate).toLocaleString()}` : '-';
+                          const rate = order.customsExchangeRate || order.exchangeRate || pi?.exchangeRate || 1350;
+                          return `₩${Math.round(amount * rate).toLocaleString()}`;
                         })()}
                       </td>
                       <td style={getTdStyle(6, { color: '#475569', fontWeight: 600, fontSize: '13px', textAlign: 'center' })}>{order.etd || '-'}</td>
