@@ -376,8 +376,9 @@ export const Orders: React.FC = () => {
             d = new Date(o.etd);
           }
         } else {
-          if (o.poDate) {
-            d = new Date(o.poDate);
+          const dateStr = o.etd || o.poDate;
+          if (dateStr) {
+            d = new Date(dateStr);
           } else if (o.createdAt) {
             if (typeof (o.createdAt as any).toDate === 'function') {
               d = (o.createdAt as any).toDate();
@@ -409,8 +410,8 @@ export const Orders: React.FC = () => {
         let valB: any = '';
 
         if (sortKey === '날짜') {
-          valA = a.poDate || a.createdAt || '';
-          valB = b.poDate || b.createdAt || '';
+          valA = a.etd || a.poDate || a.createdAt || '';
+          valB = b.etd || b.poDate || b.createdAt || '';
         } else if (sortKey === '주문번호') {
           valA = a.ciNumber || a.id || '';
           valB = b.ciNumber || b.id || '';
@@ -975,7 +976,7 @@ export const Orders: React.FC = () => {
                       onMouseEnter={e => (e.currentTarget as HTMLTableRowElement).style.background = '#f8fafc'}
                       onMouseLeave={e => (e.currentTarget as HTMLTableRowElement).style.background = ''}
                     >
-                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.poDate || '-'}</td>
+                      <td style={getTdStyle(0, { color: '#64748b', fontSize: '13px', fontWeight: 500, textAlign: 'center' })}>{order.etd || order.poDate || '-'}</td>
                       <td style={getTdStyle(1, { fontWeight: 700, color: '#2563eb', fontSize: '13px' })}>{order.ciNumber || order.id}</td>
                       <td style={getTdStyle(2, { textAlign: 'center' })}>{issuerBadge}</td>
                       <td style={getTdStyle(3, { color: '#1e293b', fontWeight: 600, fontSize: '13px' })} title={order.customer}>{order.customer}</td>
