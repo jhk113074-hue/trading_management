@@ -4286,7 +4286,7 @@ customsDuty,
                                   };
                                 });
 
-                            return currentItems.map((item: any, idx: number) => {
+                            const rows = currentItems.map((item: any, idx: number) => {
                               const updateItem = (fields: Partial<typeof item>) => {
                                 const nextItems = currentItems.map((it: any, i: number) => i === idx ? { ...it, ...fields } : it);
                                 const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
@@ -4383,6 +4383,32 @@ customsDuty,
                                 </tr>
                               );
                             });
+
+                            const sumQty = currentItems.reduce((s: number, i: any) => s + (Number(i.qty) || 0), 0);
+                            const krwItems = currentItems.filter((i: any) => !i.currency || i.currency === 'KRW');
+                            const usdItems = currentItems.filter((i: any) => i.currency === 'USD');
+                            const krwTotal = krwItems.reduce((s: number, i: any) => s + ((Number(i.qty) || 0) * (Number(i.price) || 0)), 0);
+                            const usdTotal = usdItems.reduce((s: number, i: any) => s + ((Number(i.qty) || 0) * (Number(i.price) || 0)), 0);
+
+                            const totalAmountText = [
+                              krwTotal > 0 ? `₩${krwTotal.toLocaleString()}` : '',
+                              usdTotal > 0 ? `$${usdTotal.toLocaleString()}` : ''
+                            ].filter(Boolean).join(' / ') || '₩0';
+
+                            return (
+                              <>
+                                {rows}
+                                <tr style={{ background: '#f8fafc', fontWeight: 'bold', height: '30px', borderTop: '1.5px solid #cbd5e1' }}>
+                                  <td colSpan={4} style={{ padding: '2px', textAlign: 'center' }}>합계</td>
+                                  <td style={{ padding: '2px', textAlign: 'right', paddingRight: '6px' }}>{sumQty.toLocaleString()}</td>
+                                  <td style={{ padding: '2px' }}></td>
+                                  <td style={{ padding: '2px', textAlign: 'right', fontWeight: '800', color: '#1e3a8a', paddingRight: '6px', whiteSpace: 'nowrap' }}>
+                                    {totalAmountText}
+                                  </td>
+                                  <td style={{ padding: '2px' }}></td>
+                                </tr>
+                              </>
+                            );
                           })()}
                         </tbody>
                       </table>
