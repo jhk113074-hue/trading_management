@@ -311,6 +311,7 @@ export const ImportDetail: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [productSearchTargetIdx, setProductSearchTargetIdx] = useState<number | null>(null);
+  const [dealStatementProductSearchTargetIdx, setDealStatementProductSearchTargetIdx] = useState<number | null>(null);
 
   // 실시간 상품 DB 가져오기 (매핑 순서 교정 적용)
   useEffect(() => {
@@ -4276,12 +4277,22 @@ customsDuty,
                                     />
                                   </td>
                                   <td style={{ padding: '1px' }}>
-                                    <input
-                                      type="text"
-                                      value={item.name}
-                                      onChange={(e) => updateItem({ name: e.target.value })}
-                                      style={{ width: '100%', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 2px', fontSize: '11px' }}
-                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                      <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => updateItem({ name: e.target.value })}
+                                        style={{ flex: 1, height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 2px', fontSize: '11px' }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setDealStatementProductSearchTargetIdx(idx)}
+                                        style={{ height: '24px', padding: '0 4px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        title="품목 검색"
+                                      >
+                                        🔍
+                                      </button>
+                                    </div>
                                   </td>
                                   <td style={{ padding: '1px' }}>
                                     <input
@@ -5653,16 +5664,26 @@ customsDuty,
                           삭제
                         </button>
                       </div>
-                      <input 
-                        type="text"
-                        placeholder="품명"
-                        value={item.name}
-                        onChange={(e) => {
-                          const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it);
-                          setDealStatementData({ ...dealStatementData, items: nextItems });
-                        }}
-                        style={{ height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
-                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <input 
+                          type="text"
+                          placeholder="품명"
+                          value={item.name}
+                          onChange={(e) => {
+                            const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it);
+                            setDealStatementData({ ...dealStatementData, items: nextItems });
+                          }}
+                          style={{ flex: 1, height: '28px', padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setDealStatementProductSearchTargetIdx(idx)}
+                          style={{ height: '28px', padding: '0 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="품목 검색"
+                        >
+                          🔍
+                        </button>
+                      </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1.5fr', gap: '6px' }}>
                         <input 
                           type="text"
@@ -5962,6 +5983,53 @@ customsDuty,
             }
             setShowProductSearch(false);
             setProductSearchTargetIdx(null);
+          }}
+        />
+      )}
+
+      {dealStatementProductSearchTargetIdx !== null && (
+        <ProductSearchModal
+          products={products}
+          onClose={() => {
+            setDealStatementProductSearchTargetIdx(null);
+          }}
+          onSelect={(prod) => {
+            const idx = dealStatementProductSearchTargetIdx;
+            if (showDealStatementModal) {
+              const nextItems = dealStatementData.items.map((it, i) => i === idx ? {
+                ...it,
+                name: prod.nameKo || prod.nameEn || '',
+                spec: prod.unit || 'EA',
+                price: prod.purchasePrice || 0
+              } : it);
+              setDealStatementData({ ...dealStatementData, items: nextItems });
+            } else {
+              const currentItems = request.dealStatementItems && request.dealStatementItems.length > 0
+                ? request.dealStatementItems
+                : (request.piItems || []).map((item: any) => {
+                    const qty = Number(item.qty) || 0;
+                    const totalQty = request.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+                    const estimatedPrice = Math.round((request.customerQuoteAmount || 0) / totalQty);
+                    return {
+                      month: new Date().toISOString().split('T')[0].split('-')[1],
+                      day: new Date().toISOString().split('T')[0].split('-')[2],
+                      name: item.name || '',
+                      spec: item.unit || 'EA',
+                      qty: qty,
+                      price: estimatedPrice,
+                      remarks: ''
+                    };
+                  });
+              const nextItems = currentItems.map((it: any, i: number) => i === idx ? {
+                ...it,
+                name: prod.nameKo || prod.nameEn || '',
+                spec: prod.unit || 'EA',
+                price: prod.purchasePrice || 0
+              } : it);
+              const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+              saveToStorage(updated);
+            }
+            setDealStatementProductSearchTargetIdx(null);
           }}
         />
       )}
