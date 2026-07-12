@@ -2999,7 +2999,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc', minHeight: '142px', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-          <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155' }}>{label}</span>
+          <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155' }}>{label} {fileList.length > 0 && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
         </div>
         {isEditing && (
           <div
@@ -9375,18 +9375,18 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                   {/* 수출신고번호, 수출면장 기준환율 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '250px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출신고번호 {!!basicForm.exportDeclarationNo?.trim() && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
                     <input type="text" value={basicForm.exportDeclarationNo || ''} onChange={e => setBasicForm(p => ({ ...p, exportDeclarationNo: e.target.value }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 010-22-19-1234567" />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '160px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출면장 기준환율</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>수출면장 기준환율 {!!basicForm.customsExchangeRate && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
                     <input type="number" step="0.01" value={basicForm.customsExchangeRate || ''} onChange={e => setBasicForm(p => ({ ...p, customsExchangeRate: parseFloat(e.target.value) || 0 }))} disabled={!isEditing} style={{ ...inputStyle(isEditing), height: '34px', fontSize: '13.5px', padding: '6px 10px', boxSizing: 'border-box', border: '1px solid #cbd5e1', width: '100%' }} placeholder="예: 1352.50" />
                   </div>
 
                   {/* B/L 번호 목록 다중 입력 */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '320px', flex: 1, borderLeft: '1px solid var(--border-default)', paddingLeft: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록</span>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B/L 번호 목록 {(basicForm.blNumbers || (basicForm.blNumber ? [basicForm.blNumber] : [])).some(bl => !!bl?.trim()) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
                       {isEditing && (
                         <button
                           type="button"
