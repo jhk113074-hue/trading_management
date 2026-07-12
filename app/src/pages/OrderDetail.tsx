@@ -9495,9 +9495,71 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               const files = (order.coaFilesBySupplier || {})[sup] || [];
                               const inputId = `coa-file-input-${sup.replace(/\s+/g, '-')}`;
                               return (
-                                <div key={sup} style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#fff' }}>
+                                <div
+                                  key={sup}
+                                  tabIndex={isEditing ? 0 : undefined}
+                                  onDragOver={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#3b82f6';
+                                    e.currentTarget.style.background = '#f0f9ff';
+                                  }}
+                                  onDragLeave={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.background = '#fff';
+                                  }}
+                                  onDrop={e => {
+                                    if (!isEditing) return;
+                                    e.preventDefault();
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.background = '#fff';
+                                    if (uploadingCoaSupplier !== null) return;
+                                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                      const fakeEvent = { target: { files: e.dataTransfer.files } } as any;
+                                      handleSupplierCoaUpload(fakeEvent, sup);
+                                    }
+                                  }}
+                                  onPaste={async e => {
+                                    if (!isEditing) return;
+                                    const clipboardItems = e.clipboardData.items;
+                                    const filesToUpload: File[] = [];
+                                    for (let i = 0; i < clipboardItems.length; i++) {
+                                      if (clipboardItems[i].type.indexOf('image') !== -1) {
+                                        const file = clipboardItems[i].getAsFile();
+                                        if (file) {
+                                          e.preventDefault();
+                                          const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                                          const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
+                                          const renamedFile = new File(
+                                            [file],
+                                            `screenshot_${dateStr}_${timeStr}.png`,
+                                            { type: file.type }
+                                          );
+                                          filesToUpload.push(renamedFile);
+                                        }
+                                      }
+                                    }
+                                    if (filesToUpload.length > 0) {
+                                      const fakeEvent = { target: { files: filesToUpload } } as any;
+                                      handleSupplierCoaUpload(fakeEvent, sup);
+                                    }
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '4px',
+                                    padding: '6px',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '4px',
+                                    background: '#fff',
+                                    outline: 'none',
+                                    transition: 'all 0.2s'
+                                  }}
+                                >
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup}</span>
+                                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup} {files.length > 0 && <span style={{ color: '#10b981', marginLeft: '2px' }}>✅</span>}</span>
                                     {isEditing && (
                                       <>
                                         <button
@@ -9551,7 +9613,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       ))}
                                     </div>
                                   ) : (
-                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음</span>
+                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음 (드래그 가능)</span>
                                   )}
                                 </div>
                               );
