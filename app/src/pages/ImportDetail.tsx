@@ -504,6 +504,7 @@ export const ImportDetail: React.FC = () => {
     items: Array<{ month: string; day: string; name: string; spec: string; qty: number; price: number; remarks: string }>;
     receivableAmount: number;
     receiverSign: string;
+    currency: 'KRW' | 'USD';
   }>({
     date: '',
     receiverBizNo: '',
@@ -514,7 +515,8 @@ export const ImportDetail: React.FC = () => {
     receiverItem: '',
     items: [],
     receivableAmount: 0,
-    receiverSign: ''
+    receiverSign: '',
+    currency: 'KRW'
   });
   const [showForwarderModal, setShowForwarderModal] = useState<boolean>(false);
   const [showSupplierSearchModal, setShowSupplierSearchModal] = useState<boolean>(false);
@@ -4065,7 +4067,8 @@ customsDuty,
                             receiverItem: request.dealStatementItem || matchedCustomer?.itemName || '',
                             items: currentItems,
                             receivableAmount: request.dealStatementReceivable || 0,
-                            receiverSign: ''
+                            receiverSign: '',
+                            currency: request.dealStatementCurrency || 'KRW'
                           });
                           setShowDealStatementModal(true);
                         }}
@@ -4166,6 +4169,20 @@ customsDuty,
                           placeholder="종목"
                         />
                       </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 750, color: '#475569' }}>통화</label>
+                        <select
+                          value={request.dealStatementCurrency || 'KRW'}
+                          onChange={(e) => {
+                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCurrency: e.target.value as 'KRW' | 'USD' } : r);
+                            saveToStorage(updated);
+                          }}
+                          style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', fontWeight: 600, color: '#1e293b' }}
+                        >
+                          <option value="KRW">원화 (KRW ₩)</option>
+                          <option value="USD">달러 (USD $)</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* 품목 목록 테이블 */}
@@ -4204,7 +4221,7 @@ customsDuty,
                             <th style={{ padding: '2px' }}>품목명</th>
                             <th style={{ padding: '2px', width: '45px' }}>규격</th>
                             <th style={{ padding: '2px', width: '45px', textAlign: 'right' }}>수량</th>
-                            <th style={{ padding: '2px', width: '75px', textAlign: 'right' }}>단가(₩)</th>
+                            <th style={{ padding: '2px', width: '75px', textAlign: 'right' }}>단가({request.dealStatementCurrency === 'USD' ? '$' : '₩'})</th>
                             <th style={{ padding: '2px', width: '80px', textAlign: 'right' }}>금액</th>
                             <th style={{ padding: '2px', width: '25px', textAlign: 'center' }}></th>
                           </tr>
@@ -4291,7 +4308,7 @@ customsDuty,
                                     />
                                   </td>
                                   <td style={{ padding: '1px', textAlign: 'right', fontWeight: 'bold' }}>
-                                    ₩{(item.qty * item.price).toLocaleString()}
+                                    {request.dealStatementCurrency === 'USD' ? '$' : '₩'}{(item.qty * item.price).toLocaleString()}
                                   </td>
                                   <td style={{ padding: '1px', textAlign: 'center' }}>
                                     <button
@@ -5588,6 +5605,17 @@ customsDuty,
                       style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}
                     />
                   </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>통화</label>
+                    <select
+                      value={dealStatementData.currency || 'KRW'}
+                      onChange={(e) => setDealStatementData({ ...dealStatementData, currency: e.target.value as 'KRW' | 'USD' })}
+                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b' }}
+                    >
+                      <option value="KRW">원화 (KRW ₩)</option>
+                      <option value="USD">달러 (USD $)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '4px', marginTop: '10px' }}>
@@ -5658,7 +5686,7 @@ customsDuty,
                         />
                         <input 
                           type="number"
-                          placeholder="단가 (₩)"
+                          placeholder={`단가 (${dealStatementData.currency === 'USD' ? '$' : '₩'})`}
                           value={item.price || ''}
                           onChange={(e) => {
                             const nextItems = dealStatementData.items.map((it, i) => i === idx ? { ...it, price: Number(e.target.value) || 0 } : it);
@@ -5672,7 +5700,7 @@ customsDuty,
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '10px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>미수금 (₩)</label>
+                  <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>미수금 ({dealStatementData.currency === 'USD' ? '$' : '₩'})</label>
                   <input 
                     type="number"
                     value={dealStatementData.receivableAmount || ''}
@@ -5791,6 +5819,7 @@ customsDuty,
                   const printWin = window.open('', '_blank');
                   if (!printWin) return alert('팝업 차단기를 해제해주세요.');
                   
+                  const currencySym = dealStatementData.currency === 'USD' ? '$' : '₩';
                   const itemsHtml = Array.from({ length: 10 }).map((_, rIdx) => {
                     const item = dealStatementData.items[rIdx];
                     const supplyVal = item ? (item.qty * item.price) : 0;
@@ -5883,15 +5912,15 @@ customsDuty,
                       <table style="margin-top: 16px;">
                         <tr style="height: 36px; font-weight: bold;">
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">공급가액합계</td>
-                          <td style="text-align: right; padding-right: 8px;">₩${sumSupply.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px;">${currencySym}${sumSupply.toLocaleString()}</td>
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">세액합계</td>
-                          <td style="text-align: right; padding-right: 8px;">₩${sumVat.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px;">${currencySym}${sumVat.toLocaleString()}</td>
                           <td style="width: 20%; background: #ecfdf5; text-align: center;">총합계금액</td>
-                          <td style="text-align: right; padding-right: 8px; font-size: 14px; color: #1e3a8a;">₩${(sumSupply + sumVat).toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px; font-size: 14px; color: #1e3a8a;">${currencySym}${(sumSupply + sumVat).toLocaleString()}</td>
                         </tr>
                         <tr style="height: 36px; font-weight: bold;">
                           <td style="background: #ecfdf5; text-align: center;">미수금</td>
-                          <td style="text-align: right; padding-right: 8px; color: #ef4444;">₩${dealStatementData.receivableAmount.toLocaleString()}</td>
+                          <td style="text-align: right; padding-right: 8px; color: #ef4444;">${currencySym}${dealStatementData.receivableAmount.toLocaleString()}</td>
                           <td style="background: #ecfdf5; text-align: center;">인수자</td>
                           <td colspan="3" style="padding-left: 8px;">${dealStatementData.receiverSign || dealStatementData.receiverCEO || dealStatementData.receiverName || ''} (인/서명)</td>
                         </tr>

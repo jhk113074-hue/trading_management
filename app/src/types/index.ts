@@ -240,6 +240,7 @@ export interface ImportRequest {
     remarks: string;
   }>;
   dealStatementReceivable?: number;
+  dealStatementCurrency?: 'KRW' | 'USD';
 
   // ── 1단계: 수입요청 접수 ──
   requestDate?: string; // 고객사 수입요청 접수일
