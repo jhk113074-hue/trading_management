@@ -9243,16 +9243,16 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         disabled={!isEditing}
                                         value={it.marks || ''}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'marks', e.target.value)}
-                                        style={{ width: '95%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px' }}>
                                       <textarea
-                                        rows={2}
+                                        rows={3}
                                         disabled={!isEditing}
                                         value={it.descOfGoods || ''}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'descOfGoods', e.target.value)}
-                                        style={{ width: '97%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', fontFamily: 'inherit', resize: 'vertical' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'center' }}>
@@ -9261,7 +9261,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         disabled={!isEditing}
                                         value={it.qty || 0}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'qty', parseInt(e.target.value, 10) || 0)}
-                                        style={{ width: '85%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', textAlign: 'center' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'center' }}>
@@ -9270,7 +9270,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         disabled={!isEditing}
                                         value={it.packageType || 'PL'}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'packageType', e.target.value)}
-                                        style={{ width: '85%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', textAlign: 'center' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'center' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'right' }}>
@@ -9279,7 +9279,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         disabled={!isEditing}
                                         value={it.netWeight || 0}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'netWeight', parseFloat(e.target.value) || 0)}
-                                        style={{ width: '85%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', textAlign: 'right' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'right' }}>
@@ -9288,7 +9288,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         disabled={!isEditing}
                                         value={it.grossWeight || 0}
                                         onChange={e => updateArrivalReportItem(itemIdx, 'grossWeight', parseFloat(e.target.value) || 0)}
-                                        style={{ width: '85%', padding: '4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '14.5px', textAlign: 'right' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', textAlign: 'right' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px' }}>
@@ -9326,7 +9326,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                             } catch {}
                                           }
                                         }}
-                                        style={{ width: '90%', padding: '4px', border: `1px solid ${(it.measurement||'').startsWith('=') ? '#f59e0b' : 'var(--border-default)'}`, borderRadius: '4px', fontSize: '14.5px' }}
+                                        style={{ width: '100%', boxSizing: 'border-box', height: '34px', padding: '6px', border: `1px solid ${(it.measurement||'').startsWith('=') ? '#f59e0b' : '#cbd5e1'}`, borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b' }}
                                       />
                                     </td>
                                     <td style={{ padding: '5px', textAlign: 'center' }}>
