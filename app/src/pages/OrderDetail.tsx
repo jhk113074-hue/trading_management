@@ -9334,9 +9334,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         type="button"
                                         disabled={!isEditing || packingItemsList.length <= 1}
                                         onClick={() => removeArrivalReportItemRow(itemIdx)}
-                                        style={{ padding: '2px 6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '3px', fontSize: '15.5px', cursor: (isEditing && packingItemsList.length > 1) ? 'pointer' : 'not-allowed' }}
+                                        style={{ padding: '6px 10px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '4px', fontSize: '13.5px', cursor: (isEditing && packingItemsList.length > 1) ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                        title="삭제"
                                       >
-                                        삭제
+                                        🗑️
                                       </button>
                                     </td>
                                   </tr>
