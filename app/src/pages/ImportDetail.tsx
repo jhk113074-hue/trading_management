@@ -6054,7 +6054,7 @@ customsDuty,
                           <div style={{ fontWeight: 'bold', color: '#065f46', marginBottom: '4px' }}>공급자</div>
                           <div><strong>등록번호:</strong> 730-17-00185</div>
                           <div style={{ position: 'relative' }}>
-                            <strong>상호:</strong> {currentLetterhead === '영성ACC' ? '영성ACC' : 'YSACC'} 
+                            <strong>상호:</strong> {currentLetterhead === '영성ACC' ? '영성ACC' : '(주)와이에스에이씨씨'} 
                             <img src={currentLetterhead === '영성ACC' ? '/YS_ACC_CIR_STAMP.jpg' : '/YSACC_CIR_STAMP.png'} style={{ position: 'absolute', right: '10px', top: '-10px', width: '40px', opacity: 0.8 }} />
                           </div>
                           <div><strong>성명:</strong> 김주한</div>
@@ -6222,7 +6222,7 @@ customsDuty,
                             <div style="font-weight: bold; font-size: 13px; color: #065f46; margin-bottom: 6px;">공 급 자</div>
                             <div><strong>등록번호:</strong> 730-17-00185</div>
                             <div style="position: relative;">
-                              <strong>상호(법인명):</strong> \${currentLetterhead === '영성ACC' ? '영성에이씨씨(영성ACC)' : 'YSACC'}
+                              <strong>상호(법인명):</strong> \${currentLetterhead === '영성ACC' ? '영성ACC' : '(주)와이에스에이씨씨'}
                               <img src="\${currentLetterhead === '영성ACC' ? '/YS_ACC_CIR_STAMP.jpg' : '/YSACC_CIR_STAMP.png'}" style="position: absolute; right: 20px; top: -10px; width: 60px;" />
                             </div>
                             <div><strong>성명:</strong> 김주한</div>
