@@ -1764,6 +1764,104 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                 </td>
               </tr>
             ))}
+            {filteredRequests.length > 0 && (
+              <tr style={{ background: '#f8fafc', fontWeight: 'bold', borderTop: '2px solid #cbd5e1', height: '36px' }}>
+                {!isQuoteMode ? (
+                  <>
+                    <td style={getTdStyle('active_requestDate')}>합계</td>
+                    <td style={getTdStyle('active_id')}></td>
+                    <td style={getTdStyle('active_poNumber')}></td>
+                    <td style={getTdStyle('active_importerName')}></td>
+                    <td style={getTdStyle('active_itemName')}></td>
+                    <td style={getTdStyle('active_transportType')}></td>
+                    <td style={getTdStyle('active_importCompany')}></td>
+                    <td style={getTdStyle('active_routeFrom')}></td>
+                    <td style={getTdStyle('active_etd')}></td>
+                    <td style={getTdStyle('active_eta')}></td>
+                    <td style={getTdStyle('active_finalCustomer')}></td>
+                    <td style={getTdStyle('active_managerName')}></td>
+                    <td style={getTdStyle('active_totalBuyingCost', 'right')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#dc2626' }}>
+                        {(() => {
+                          const totalBuyingUsd = filteredRequests.reduce((sum, req) => {
+                            const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+                            const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+                            let totalUsd = buyingQty * buyingPriceUsd;
+                            if (totalUsd === 0) {
+                              totalUsd = req.piItems && req.piItems.length > 0
+                                ? req.piItems.reduce((s: number, it: any) => s + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+                                : 0;
+                            }
+                            return sum + totalUsd;
+                          }, 0);
+                          return `$${totalBuyingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        })()}
+                      </span>
+                    </td>
+                    <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb' }}>
+                        {(() => {
+                          const totalSalesKrw = filteredRequests.reduce((sum, req) => {
+                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.grandTotal) || 0), 0)
+                              : 0;
+                            const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
+                            return sum + sales;
+                          }, 0);
+                          return `₩${totalSalesKrw.toLocaleString()}`;
+                        })()}
+                      </span>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td style={getTdStyle('quote_requestDate')}>합계</td>
+                    <td style={getTdStyle('quote_quoteNumber')}></td>
+                    <td style={getTdStyle('quote_importCompany')}></td>
+                    <td style={getTdStyle('quote_itemName')}></td>
+                    <td style={getTdStyle('quote_finalSellingPrice')}></td>
+                    <td style={getTdStyle('quote_totalBuyingCost', 'right')}>
+                      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#dc2626' }}>
+                        {(() => {
+                          const totalBuyingUsd = filteredRequests.reduce((sum, req) => {
+                            const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+                            const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+                            let totalUsd = buyingQty * buyingPriceUsd;
+                            if (totalUsd === 0) {
+                              totalUsd = req.piItems && req.piItems.length > 0
+                                ? req.piItems.reduce((s: number, it: any) => s + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+                                : 0;
+                            }
+                            return sum + totalUsd;
+                          }, 0);
+                          return `$${totalBuyingUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        })()}
+                      </span>
+                    </td>
+                    <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb' }}>
+                        {(() => {
+                          const totalSalesKrw = filteredRequests.reduce((sum, req) => {
+                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.grandTotal) || 0), 0)
+                              : 0;
+                            const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
+                            return sum + sales;
+                          }, 0);
+                          return `₩${totalSalesKrw.toLocaleString()}`;
+                        })()}
+                      </span>
+                    </td>
+                    <td style={getTdStyle('quote_finalCustomer')}></td>
+                    <td style={getTdStyle('quote_importerName')}></td>
+                    <td style={getTdStyle('quote_buyingPrice')}></td>
+                    <td style={getTdStyle('quote_appliedExchangeRate')}></td>
+                    <td style={getTdStyle('quote_customerDecision')}></td>
+                  </>
+                )}
+                <td style={{ textAlign: 'center' }}></td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
