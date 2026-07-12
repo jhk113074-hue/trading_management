@@ -1123,7 +1123,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       // 매입액 (USD) - 단가 * 수량 기준 외화 구매총액
       const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
       const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-      const totalBuyingCostUsd = buyingQty * buyingPriceUsd;
+      let totalBuyingCostUsd = buyingQty * buyingPriceUsd;
+      if (totalBuyingCostUsd === 0) {
+        totalBuyingCostUsd = req.piItems && req.piItems.length > 0
+          ? req.piItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+          : 0;
+      }
       totalBuying += totalBuyingCostUsd;
 
       // Group by company
@@ -1511,7 +1516,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         {(() => {
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-                          const totalUsd = buyingQty * buyingPriceUsd;
+                          let totalUsd = buyingQty * buyingPriceUsd;
+                          if (totalUsd === 0) {
+                            totalUsd = req.piItems && req.piItems.length > 0
+                              ? req.piItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+                              : 0;
+                          }
                           return `$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
@@ -1666,7 +1676,12 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         {(() => {
                           const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
                           const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
-                          const totalUsd = buyingQty * buyingPriceUsd;
+                          let totalUsd = buyingQty * buyingPriceUsd;
+                          if (totalUsd === 0) {
+                            totalUsd = req.piItems && req.piItems.length > 0
+                              ? req.piItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+                              : 0;
+                          }
                           return `$${totalUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                         })()}
                       </span>
