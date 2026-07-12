@@ -1115,7 +1115,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     filteredRequests.forEach(req => {
       // 매출액 (KRW)
       const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
         : 0;
       const sales = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
       totalSales += sales;
@@ -1532,7 +1532,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
                         {(() => {
                           const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
                             : 0;
                           const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
                           return `₩${sales.toLocaleString()}`;
@@ -1692,7 +1692,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
                         {(() => {
                           const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.grandTotal) || 0), 0)
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
                             : 0;
                           const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
                           return `₩${sales.toLocaleString()}`;
@@ -1803,7 +1803,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         {(() => {
                           const totalSalesKrw = filteredRequests.reduce((sum, req) => {
                             const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.grandTotal) || 0), 0)
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
                               : 0;
                             const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
                             return sum + sales;
@@ -1843,7 +1843,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                         {(() => {
                           const totalSalesKrw = filteredRequests.reduce((sum, req) => {
                             const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.grandTotal) || 0), 0)
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
                               : 0;
                             const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
                             return sum + sales;
