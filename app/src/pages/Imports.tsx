@@ -1278,8 +1278,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       </div>
 
       {/* Filter panel */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '20px', gap: '16px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', marginBottom: '20px', gap: '12px', flexWrap: 'nowrap', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1, flexWrap: 'nowrap' }}>
           
           {/* 조회 기준 */}
           <select 
