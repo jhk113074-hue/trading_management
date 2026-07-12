@@ -1354,7 +1354,18 @@ export const ImportDetail: React.FC = () => {
             {request.status}
           </span>
           <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-            BL(AWB): <strong style={{ color: 'var(--text-primary)' }}>{request.blAwb}</strong> | PO: <strong style={{ color: 'var(--text-primary)' }}>{request.poNumber}</strong>
+            BL(AWB): <strong style={{ color: 'var(--text-primary)' }}>{request.blAwb}</strong> | PO: <strong style={{ color: 'var(--text-primary)' }}>{request.poNumber}</strong> | 수입처: <strong style={{ color: 'var(--text-primary)' }}>{request.importCompany || '-'}</strong> | 수출처: <strong style={{ color: 'var(--text-primary)' }}>{request.importerName || '-'}</strong> | 대표제품: <strong style={{ color: 'var(--text-primary)' }}>
+              {(() => {
+                const items = request.piItems || [];
+                const validItems = items.filter((it: any) => it && it.name && it.name.trim() !== '');
+                if (validItems.length > 0) {
+                  return validItems.length === 1 
+                    ? validItems[0].name 
+                    : `${validItems[0].name} 외 ${validItems.length - 1}건`;
+                }
+                return request.itemName || '-';
+              })()}
+            </strong>
           </span>
         </div>
 
