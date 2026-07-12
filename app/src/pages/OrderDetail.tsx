@@ -5555,45 +5555,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
           {/* 3. 소싱발주 */}
           {activeStep === '소싱/발주' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* 소싱발주 하위 탭 메뉴 */}
-              <div style={{ display: 'flex', borderBottom: '2px solid var(--border-color)', gap: '8px', marginBottom: '8px' }}>
-                {[
-                  { id: '소싱발주', label: '1) 소싱발주' },
-                  { id: 'COA_성적서', label: '2) COA/시험성적서/첨부파일관리' }
-                ].map(tab => {
-                  const isActive = activeSourcingTab === tab.id || (activeSourcingTab !== 'COA_성적서' && tab.id === '소싱발주');
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={async () => {
-                        setActiveSourcingTab(tab.id as any);
-                        await handleSaveBasic(false, tab.id);
-                      }}
-                      style={{
-                        padding: '10px 16px',
-                        fontSize: '15.5px',
-                        fontWeight: 700,
-                        color: isActive ? '#2563eb' : 'var(--text-secondary)',
-                        background: isActive ? '#eff6ff' : 'transparent',
-                        border: 'none',
-                        borderBottom: isActive ? '3px solid #2563eb' : '3px solid transparent',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                        borderRadius: '6px 6px 0 0',
-                        marginBottom: '-2px'
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 1) 소싱발주 */}
-              {(activeSourcingTab === '소싱발주' || (activeSourcingTab !== 'COA_성적서')) && (
-
-                <>
+              {/* 소싱발주 */}
+              <>
                   {/* 공통 입고 요청일 및 납품처 설정 카드 */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -6416,27 +6379,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     )}
                   </div>
 
-                                  </>
-              
-              )}
-
-              {/* 2) COA 및 시험성적서 */}
-              {activeSourcingTab === 'COA_성적서' && (
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ background: '#fff', border: '1px solid var(--border-default)', borderRadius: '8px', padding: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14.5px', fontWeight: 800, color: '#1e3a8a' }}>🔬 COA 및 시험성적서 첨부 파일 관리</h4>
-                    <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                      수입 및 통관을 위한 공급사별 COA(분석증명서)와 시험성적서 파일을 등록 및 관리합니다.
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
-                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
-                    </div>
-                  </div>
-                </div>
-              
-              )}
+                  </>
             </div>
           )}
 
@@ -9465,8 +9408,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
                       {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
                       {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                      {renderFileField('그밖의 서류 유첨', 'otherFiles', 'other-docs-input')}
-                      {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input', 'span 2')}
+                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
+                      {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
+                      {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
                     </div>
                   </div>
                 </div>
