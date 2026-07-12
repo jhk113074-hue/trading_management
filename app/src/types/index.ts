@@ -242,6 +242,7 @@ export interface ImportRequest {
   }>;
   dealStatementReceivable?: number;
   dealStatementCurrency?: 'KRW' | 'USD';
+  settlementBasis?: 'TAX_INVOICE' | 'DEAL_STATEMENT';
 
   // ── 1단계: 수입요청 접수 ──
   requestDate?: string; // 고객사 수입요청 접수일

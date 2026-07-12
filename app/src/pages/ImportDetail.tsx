@@ -479,7 +479,15 @@ export const ImportDetail: React.FC = () => {
       remarks: request.taxInvoiceItemName || ''
     }
   ];
-  const totalBillingAmount = billingRows.reduce((sum, r) => sum + (Number(r.grandTotal) || 0), 0) || (request.customerQuoteAmount || request.amount || 0);
+  const settlementBasis = request.settlementBasis || 'TAX_INVOICE';
+  const statementItems = request.dealStatementItems || [];
+  const statementCurrency = statementItems[0]?.currency || request.dealStatementCurrency || 'KRW';
+  const statementTotal = statementItems.reduce((sum, item) => sum + (item.qty * item.price), 0);
+  const taxInvoiceTotal = billingRows.reduce((sum, r) => sum + (Number(r.grandTotal) || 0), 0) || (request.customerQuoteAmount || request.amount || 0);
+  
+  const totalBillingAmount = settlementBasis === 'DEAL_STATEMENT' ? statementTotal : taxInvoiceTotal;
+  const settlementCurrency = settlementBasis === 'DEAL_STATEMENT' ? statementCurrency : 'KRW';
+  const currencySymbol = settlementCurrency === 'USD' ? '$' : '₩';
   const viewMode = searchParams.get('mode') || (request.customerDecision === '승인' ? 'active' : 'quote');
   const currentLetterhead: 'YSACC' | '영성ACC' = (!request.importCompany || request.importCompany === 'YSACC' || request.importCompany === 'YS') ? 'YSACC' : '영성ACC';
   const [activeTab, setActiveTab] = useState<'수입품 견적요청' | '견적수령/네고' | '수입원가계산' | '견적서작성' | '견적/원가' | '수입내역' | '대금결제' | '운송사/관세사 선정' | '서류' | '정산' | '손익검토' | '로그'>('수입품 견적요청');
@@ -4007,6 +4015,36 @@ customsDuty,
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#1e3a8a', borderBottom: '2px solid var(--border-default)', paddingBottom: '6px', marginBottom: '20px' }}>
               💰 수입 관세 / 부가세 / 운임 정산 등록
             </h3>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#eff6ff', padding: '10px 14px', borderRadius: '6px', border: '1px solid #bfdbfe', marginBottom: '16px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e40af' }}>📊 매출 정산 및 수금 기준 설정:</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#1e293b' }}>
+                <input
+                  type="radio"
+                  name="settlementBasis"
+                  value="TAX_INVOICE"
+                  checked={settlementBasis === 'TAX_INVOICE'}
+                  onChange={() => {
+                    const updated = importRequests.map(r => r.id === id ? { ...r, settlementBasis: 'TAX_INVOICE' as const } : r);
+                    saveToStorage(updated);
+                  }}
+                />
+                세금계산서 기준 (KRW)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', color: '#1e293b', marginLeft: '12px' }}>
+                <input
+                  type="radio"
+                  name="settlementBasis"
+                  value="DEAL_STATEMENT"
+                  checked={settlementBasis === 'DEAL_STATEMENT'}
+                  onChange={() => {
+                    const updated = importRequests.map(r => r.id === id ? { ...r, settlementBasis: 'DEAL_STATEMENT' as const } : r);
+                    saveToStorage(updated);
+                  }}
+                />
+                거래명세표 기준 (₩ 또는 USD)
+              </label>
+            </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {/* 2-Column Grid for Tax Invoice, Freight, and Customs Duty */}
@@ -4641,7 +4679,7 @@ customsDuty,
                   <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #cbd5e1', paddingBottom: '4px' }}>
                       <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e3a8a' }}>
-                        💰 수금 관리 (청구총액: ₩{totalBillingAmount.toLocaleString()})
+                        💰 수금 관리 (청구총액: {currencySymbol}{totalBillingAmount.toLocaleString()})
                       </span>
                       <button
                         type="button"
@@ -4748,7 +4786,7 @@ customsDuty,
                                   />
                                 </td>
                                 <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: balanceAfterThisRound === 0 ? '#166534' : '#ef4444' }}>
-                                  ₩{balanceAfterThisRound.toLocaleString()}
+                                  {currencySymbol}{balanceAfterThisRound.toLocaleString()}
                                 </td>
                                 <td style={{ padding: '1px' }}>
                                   <input
@@ -4793,7 +4831,7 @@ customsDuty,
                       </button>
                     ) : (
                       <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', background: '#f8fafc', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>
-                        잔액: ₩{Math.max(0, totalBillingAmount - (request.paymentCollectedAmount || 0)).toLocaleString()} (완료 시 손익검토 활성화)
+                        잔액: {currencySymbol}{Math.max(0, totalBillingAmount - (request.paymentCollectedAmount || 0)).toLocaleString()} (완료 시 손익검토 활성화)
                       </div>
                     )}
                   </div>
