@@ -997,7 +997,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
 
     // 📅 날짜/기간 실필터 적용
     base = base.filter(req => {
-      const dateStr = dateFilterTarget === 'eta' ? req.eta : req.requestDate;
+      const dateStr = dateFilterTarget === 'eta' ? req.eta : (req.ciDate || req.requestDate);
       if (!dateStr) return false;
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return false;
@@ -1049,8 +1049,8 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             return dir === 'asc' ? etaA.localeCompare(etaB) : etaB.localeCompare(etaA);
           }
 
-          const dateA = a.requestDate || a.createdAt || '';
-          const dateB = b.requestDate || b.createdAt || '';
+          const dateA = a.ciDate || a.requestDate || a.createdAt || '';
+          const dateB = b.ciDate || b.requestDate || b.createdAt || '';
           return dir === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
         }
 
@@ -1485,7 +1485,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   <>
                     {/* 견적일 */}
                     <td style={getTdStyle('quote_requestDate')}>
-                      {req.requestDate || req.createdAt || '-'}
+                      {req.ciDate || req.requestDate || req.createdAt || '-'}
                     </td>
 
                     {/* 견적번호 */}
@@ -1608,7 +1608,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                   <>
                     {/* 의뢰일 */}
                     <td style={getTdStyle('active_requestDate')}>
-                      {req.requestDate || req.createdAt || '-'}
+                      {req.ciDate || req.requestDate || req.createdAt || '-'}
                     </td>
 
                     {/* 주문번호 */}
