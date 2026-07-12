@@ -1113,26 +1113,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     let activeCount = filteredRequests.length;
     
     filteredRequests.forEach(req => {
-      // 매출액 (KRW)
-      const basis = req.settlementBasis || 'TAX_INVOICE';
-      let salesAmount = 0;
-      let salesCurrency = 'KRW';
-      if (basis === 'DEAL_STATEMENT') {
-        const items = req.dealStatementItems || [];
-        salesCurrency = items[0]?.currency || req.dealStatementCurrency || 'KRW';
-        salesAmount = items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-      } else {
-        const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-          ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
-          : 0;
-        salesAmount = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
-      }
-      
-      let salesKrw = salesAmount;
-      if (salesCurrency === 'USD') {
-        const rate = Number(req.costBreakdown?.appliedExchangeRate) || 1350;
-        salesKrw = salesAmount * rate;
-      }
+      // 매출액 (KRW) - 항상 세금계산서 공급가액 기준으로 합산
+      const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+        : 0;
+      const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
       totalSales += salesKrw;
       
       // 매입액 (USD) - 단가 * 수량 기준 외화 구매총액
@@ -1546,21 +1531,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
                         {(() => {
-                          const basis = req.settlementBasis || 'TAX_INVOICE';
-                          let salesAmount = 0;
-                          let salesCurrency = 'KRW';
-                          if (basis === 'DEAL_STATEMENT') {
-                            const items = req.dealStatementItems || [];
-                            salesCurrency = items[0]?.currency || req.dealStatementCurrency || 'KRW';
-                            salesAmount = items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-                          } else {
-                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                              ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
-                              : 0;
-                            salesAmount = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
-                          }
-                          const sym = salesCurrency === 'USD' ? '$' : '₩';
-                          return `${sym}${salesAmount.toLocaleString(undefined, salesCurrency === 'USD' ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {})}`;
+                          const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+                            : 0;
+                          const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
+                          return `₩${sales.toLocaleString()}`;
                         })()}
                       </span>
                     </td>
@@ -1716,21 +1691,11 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#2563eb' }}>
                         {(() => {
-                          const basis = req.settlementBasis || 'TAX_INVOICE';
-                          let salesAmount = 0;
-                          let salesCurrency = 'KRW';
-                          if (basis === 'DEAL_STATEMENT') {
-                            const items = req.dealStatementItems || [];
-                            salesCurrency = items[0]?.currency || req.dealStatementCurrency || 'KRW';
-                            salesAmount = items.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-                          } else {
-                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                              ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
-                              : 0;
-                            salesAmount = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
-                          }
-                          const sym = salesCurrency === 'USD' ? '$' : '₩';
-                          return `${sym}${salesAmount.toLocaleString(undefined, salesCurrency === 'USD' ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {})}`;
+                          const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                            ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+                            : 0;
+                          const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
+                          return `₩${sales.toLocaleString()}`;
                         })()}
                       </span>
                     </td>
@@ -1836,32 +1801,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('active_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb' }}>
                         {(() => {
-                          let krwSum = 0;
-                          let usdSum = 0;
-                          filteredRequests.forEach(req => {
-                            const basis = req.settlementBasis || 'TAX_INVOICE';
-                            let amount = 0;
-                            let currency = 'KRW';
-                            if (basis === 'DEAL_STATEMENT') {
-                              const items = req.dealStatementItems || [];
-                              currency = items[0]?.currency || req.dealStatementCurrency || 'KRW';
-                              amount = items.reduce((s: number, it: any) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-                            } else {
-                              const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                                ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
-                                : 0;
-                              amount = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
-                            }
-                            if (currency === 'USD') {
-                              usdSum += amount;
-                            } else {
-                              krwSum += amount;
-                            }
-                          });
-                          const parts = [];
-                          if (krwSum > 0 || usdSum === 0) parts.push(`₩${krwSum.toLocaleString()}`);
-                          if (usdSum > 0) parts.push(`$${usdSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-                          return parts.join(' / ');
+                          const totalSalesKrw = filteredRequests.reduce((sum, req) => {
+                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
+                              : 0;
+                            const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || req.amount || 0);
+                            return sum + sales;
+                          }, 0);
+                          return `₩${totalSalesKrw.toLocaleString()}`;
                         })()}
                       </span>
                     </td>
@@ -1894,32 +1841,14 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
                     <td style={getTdStyle('quote_customerQuoteAmount', 'right')}>
                       <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb' }}>
                         {(() => {
-                          let krwSum = 0;
-                          let usdSum = 0;
-                          filteredRequests.forEach(req => {
-                            const basis = req.settlementBasis || 'TAX_INVOICE';
-                            let amount = 0;
-                            let currency = 'KRW';
-                            if (basis === 'DEAL_STATEMENT') {
-                              const items = req.dealStatementItems || [];
-                              currency = items[0]?.currency || req.dealStatementCurrency || 'KRW';
-                              amount = items.reduce((s: number, it: any) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
-                            } else {
-                              const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
-                                ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
-                                : 0;
-                              amount = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
-                            }
-                            if (currency === 'USD') {
-                              usdSum += amount;
-                            } else {
-                              krwSum += amount;
-                            }
-                          });
-                          const parts = [];
-                          if (krwSum > 0 || usdSum === 0) parts.push(`₩${krwSum.toLocaleString()}`);
-                          if (usdSum > 0) parts.push(`$${usdSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-                          return parts.join(' / ');
+                          const totalSalesKrw = filteredRequests.reduce((sum, req) => {
+                            const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+                              ? req.taxDocumentRows.reduce((s: number, row: any) => s + (Number(row.supplyAmount) || 0), 0)
+                              : 0;
+                            const sales = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
+                            return sum + sales;
+                          }, 0);
+                          return `₩${totalSalesKrw.toLocaleString()}`;
                         })()}
                       </span>
                     </td>
