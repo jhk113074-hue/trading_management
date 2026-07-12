@@ -525,6 +525,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [selectedImporter, setSelectedImporter] = useState('All');
   const [selectedItemName, setSelectedItemName] = useState('All');
   const [selectedCustomer, setSelectedCustomer] = useState('All');
+  const [selectedImportCompany, setSelectedImportCompany] = useState('All');
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'eta', direction: 'desc' });
   const [colWidths, setColWidths] = useState<Record<string, number>>({
@@ -1013,7 +1014,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
       return true;
     });
 
-    // 🔍 수입처/품명/최종고객별 Select Dropdown 필터 적용
+    // 🔍 수입처/품명/최종고객/수입주체별 Select Dropdown 필터 적용
     if (selectedImporter !== 'All') {
       base = base.filter(req => req.importerName === selectedImporter);
     }
@@ -1022,6 +1023,13 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     }
     if (selectedCustomer !== 'All') {
       base = base.filter(req => req.finalCustomer === selectedCustomer);
+    }
+    if (selectedImportCompany !== 'All') {
+      if (selectedImportCompany === 'YSACC') {
+        base = base.filter(req => req.importCompany === 'YSACC' || req.importCompany === 'YS');
+      } else {
+        base = base.filter(req => req.importCompany !== 'YSACC' && req.importCompany !== 'YS');
+      }
     }
 
     if (searchTerm.trim()) {
@@ -1100,6 +1108,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     selectedImporter,
     selectedItemName,
     selectedCustomer,
+    selectedImportCompany,
     sortConfig
   ]);
 
@@ -1370,6 +1379,17 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
           >
             <option value="All">전체 최종고객</option>
             {uniqueCustomers.map(cust => <option key={cust} value={cust}>{cust}</option>)}
+          </select>
+
+          {/* 🔍 수입주체 필터 */}
+          <select
+            value={selectedImportCompany}
+            onChange={(e) => setSelectedImportCompany(e.target.value)}
+            style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', fontWeight: 600, color: '#1e293b', background: '#fff', height: '34px', boxSizing: 'border-box', cursor: 'pointer', outline: 'none' }}
+          >
+            <option value="All">전체 수입주체</option>
+            <option value="YSACC">YSACC</option>
+            <option value="YS">영성ACC</option>
           </select>
         </div>
 
