@@ -16,6 +16,8 @@ import html2canvas from 'html2canvas';
 import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { DateInput } from '../components/ui/DateInput';
+import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import type { Customer } from '../types/customer';
 
 
 const calculatePkgFromPkgNo = (pkgNo: string | undefined): string => {
@@ -133,6 +135,8 @@ export const OrderDetail: React.FC = () => {
   const [showPoDetails, setShowPoDetails] = useState(false);
   const exportExcelRef = useRef<(() => void) | null>(null);
   const isEditing = true;
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isCustomerSearchOpen, setIsCustomerSearchOpen] = useState(false);
 
   // ── 단계별 독립 체크리스트 상태 ──────────────────────────────────────────
   type StageKey = '수주정보' | '소싱발주' | '물류선적' | '서류관리' | '정산결제';
@@ -913,6 +917,17 @@ export const OrderDetail: React.FC = () => {
         list.push({ ...docSnap.data(), id: docSnap.id } as Supplier);
       });
       setSuppliersList(list);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'companies', COMPANY_ID, 'customers'), (snapshot) => {
+      const list: Customer[] = [];
+      snapshot.forEach(docSnap => {
+        list.push({ ...docSnap.data(), id: docSnap.id } as Customer);
+      });
+      setCustomers(list);
     });
     return () => unsubscribe();
   }, []);
@@ -5013,7 +5028,54 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>고객정보</span>
-                <input type="text" value={basicForm.customer} onChange={e => setBasicForm(prev => ({ ...prev, customer: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="고객사명" />
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <input
+                    type="text"
+                    value={basicForm.customer}
+                    readOnly
+                    onClick={() => isEditing && setIsCustomerSearchOpen(true)}
+                    disabled={!isEditing}
+                    style={{
+                      flex: 1,
+                      minWidth: '0',
+                      padding: '6px 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      height: '34px',
+                      background: isEditing ? '#fff' : '#f1f5f9',
+                      color: isEditing ? '#1e293b' : '#64748b',
+                      cursor: isEditing ? 'pointer' : 'default',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    placeholder="고객사 선택..."
+                  />
+                  {isEditing && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomerSearchOpen(true)}
+                      style={{
+                        padding: '0 12px',
+                        background: '#3b82f6',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        height: '34px',
+                        boxSizing: 'border-box',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#2563eb'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#3b82f6'}
+                    >
+                      검색
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -11964,6 +12026,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 packagesCount: itemPkgCount
               };
             })
+          }}
+        />
+      )}
+
+      {isCustomerSearchOpen && (
+        <CustomerSearchModal
+          customers={customers}
+          onClose={() => setIsCustomerSearchOpen(false)}
+          onSelect={(customer) => {
+            setBasicForm(prev => ({ ...prev, customer: customer.name || '' }));
+            setIsCustomerSearchOpen(false);
           }}
         />
       )}
