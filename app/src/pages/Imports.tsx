@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { ImportRequest } from '../types';
 import { db, COMPANY_ID } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import * as XLSX from 'xlsx';
 import { SupplierSearchModal } from '../components/SupplierSearchModal';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
 import type { Customer } from '../types/customer';
@@ -783,6 +784,87 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
     }
   };
 
+  const handleExportExcel = () => {
+    const data = filteredRequests.map(req => {
+      const items = req.piItems || [];
+      const validItems = items.filter((it: any) => it && it.name && it.name.trim() !== '');
+      let itemNameStr = req.itemName || '신규 품목 정보 입력';
+      if (validItems.length > 0) {
+        itemNameStr = validItems.length === 1 
+          ? validItems[0].name 
+          : `${validItems[0].name} 외 ${validItems.length - 1}건`;
+      }
+
+      const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+        : 0;
+      const salesValue = actualSales > 0 ? actualSales : (req.customerQuoteAmount || 0);
+
+      if (isQuoteMode) {
+        const buyingQty = Number(req.costBreakdown?.buyingQty) || req.piItems?.reduce((sum: number, it: any) => sum + (Number(it.qty) || 0), 0) || 1;
+        const finalPrice = Math.round((req.customerQuoteAmount || 0) / buyingQty);
+
+        const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+        let totalUsd = buyingQty * buyingPriceUsd;
+        if (totalUsd === 0) {
+          totalUsd = req.piItems && req.piItems.length > 0
+            ? req.piItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+            : 0;
+        }
+
+        const decisionStr = req.customerDecision === '승인' ? '승인' : req.customerDecision === '거절' ? '거절' : req.customerDecision === '보류' ? '보류' : '검토중';
+
+        return {
+          '견적일': req.eta || req.requestDate || req.createdAt || '-',
+          '견적번호': req.quoteNumber || `QT-${req.id}`,
+          '견적주체': (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? 'YSACC' : '영성ACC',
+          '품명': itemNameStr,
+          '견적단가': finalPrice || 0,
+          '구매(예상액 USD)': totalUsd,
+          '견적가액': salesValue,
+          '최종고객': req.finalCustomer || '-',
+          '수입처': req.importerName || '-',
+          '수입견적단가': Number(req.costBreakdown?.buyingPriceUsd) || (req.piItems?.[0]?.unitPrice) || 0,
+          '기준환율': req.costBreakdown?.appliedExchangeRate || 1450,
+          '진행상태': decisionStr
+        };
+      } else {
+        const buyingQty = Number(req.costBreakdown?.buyingQty) || 0;
+        const buyingPriceUsd = Number(req.costBreakdown?.buyingPriceUsd) || 0;
+        let totalUsd = buyingQty * buyingPriceUsd;
+        if (totalUsd === 0) {
+          totalUsd = req.piItems && req.piItems.length > 0
+            ? req.piItems.reduce((sum: number, it: any) => sum + ((Number(it.qty) || 0) * (Number(it.unitPrice) || 0)), 0)
+            : 0;
+        }
+
+        return {
+          '의뢰일': req.requestDate || req.createdAt || '-',
+          '주문번호': req.id,
+          'PO번호': req.poNumber || '-',
+          '수입처': req.importerName || '-',
+          '품명': itemNameStr,
+          '운송내용': req.transportType || '-',
+          '수입주체': (req.importCompany === 'YSACC' || req.importCompany === 'YS') ? 'YSACC' : '영성ACC',
+          '경로': req.routeFrom || '-',
+          'ETD': req.etd || '-',
+          'ETA': req.eta || '-',
+          '최종고객': req.finalCustomer || '-',
+          '담당자': req.manager || '-',
+          '매입액(USD)': totalUsd,
+          '매출액': salesValue
+        };
+      }
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    const sheetName = isQuoteMode ? "ImportQuotes" : "Imports";
+    const filename = isQuoteMode ? "import_quotes.xlsx" : "imports.xlsx";
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, filename);
+  };
+
   // 수입 수정 모달 상태
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRequest, setEditingRequest] = useState<Partial<ImportRequest> | null>(null);
@@ -1414,6 +1496,7 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
             </button>
           )}
           <button 
+            onClick={handleExportExcel}
             style={{ padding: '0 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', height: '100%', display: 'flex', alignItems: 'center', boxSizing: 'border-box', transition: 'background 0.2s' }}
             onMouseEnter={e => e.currentTarget.style.background = '#e2e8f0'}
             onMouseLeave={e => e.currentTarget.style.background = '#f1f5f9'}
