@@ -4190,29 +4190,69 @@ customsDuty,
                     <div style={{ background: '#fff', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <span style={{ fontSize: '11px', fontWeight: 800, color: '#166534' }}>거래명세표 포함 품목 정보</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const current = request.dealStatementItems || [];
-                            const nextItems = [
-                              ...current,
-                              {
-                                month: new Date().toISOString().split('T')[0].split('-')[1],
-                                day: new Date().toISOString().split('T')[0].split('-')[2],
-                                name: '',
-                                spec: 'EA',
-                                qty: 1,
-                                price: 0,
-                                remarks: ''
-                              }
-                            ];
-                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
-                            saveToStorage(updated);
-                          }}
-                          style={{ padding: '1px 6px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          ＋ 품목 추가
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!window.confirm("기존에 입력된 거래명세표 품목을 지우고, 수입 제품 리스트(PI)의 품목들을 새로 가져오시겠습니까?")) return;
+                              
+                              const exchangeRate = Number(request.costBreakdown?.appliedExchangeRate || request.costBreakdown?.todayExchangeRate) || 1350;
+                              
+                              const nextItems = (request.piItems || []).map((item: any) => {
+                                const qty = Number(item.qty) || 0;
+                                const uPrice = Number(item.unitPrice) || 0;
+                                
+                                // Default unit price in KRW or USD depending on selected currency
+                                let finalPrice = uPrice;
+                                if (request.dealStatementCurrency === 'USD') {
+                                  finalPrice = uPrice;
+                                } else {
+                                  // Convert USD to KRW using applied exchange rate
+                                  finalPrice = Math.round(uPrice * exchangeRate);
+                                }
+                                
+                                return {
+                                  month: new Date().toISOString().split('T')[0].split('-')[1],
+                                  day: new Date().toISOString().split('T')[0].split('-')[2],
+                                  name: item.name || '',
+                                  spec: item.unit || 'EA',
+                                  qty: qty,
+                                  price: finalPrice,
+                                  remarks: ''
+                                };
+                              });
+                              
+                              const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+                              saveToStorage(updated);
+                            }}
+                            style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            ⚡ 수입품목 가져오기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = request.dealStatementItems || [];
+                              const nextItems = [
+                                ...current,
+                                {
+                                  month: new Date().toISOString().split('T')[0].split('-')[1],
+                                  day: new Date().toISOString().split('T')[0].split('-')[2],
+                                  name: '',
+                                  spec: 'EA',
+                                  qty: 1,
+                                  price: 0,
+                                  remarks: ''
+                                }
+                              ];
+                              const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementItems: nextItems } : r);
+                              saveToStorage(updated);
+                            }}
+                            style={{ padding: '2px 8px', background: '#166534', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            ＋ 품목 추가
+                          </button>
+                        </div>
                       </div>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
                         <thead>
@@ -5633,19 +5673,55 @@ customsDuty,
                   <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>
                     품목 목록 수량/단가 편집
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextItems = [
-                        ...dealStatementData.items,
-                        { month: '', day: '', name: '', spec: '', qty: 1, price: 0, remarks: '' }
-                      ];
-                      setDealStatementData({ ...dealStatementData, items: nextItems });
-                    }}
-                    style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    ＋ 품목 추가
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!window.confirm("기존에 입력된 거래명세표 품목을 지우고, 수입 제품 리스트(PI)의 품목들을 새로 가져오시겠습니까?")) return;
+                        
+                        const exchangeRate = Number(request.costBreakdown?.appliedExchangeRate || request.costBreakdown?.todayExchangeRate) || 1350;
+                        
+                        const nextItems = (request.piItems || []).map((item: any) => {
+                          const qty = Number(item.qty) || 0;
+                          const uPrice = Number(item.unitPrice) || 0;
+                          
+                          let finalPrice = uPrice;
+                          if (dealStatementData.currency === 'USD') {
+                            finalPrice = uPrice;
+                          } else {
+                            finalPrice = Math.round(uPrice * exchangeRate);
+                          }
+                          
+                          return {
+                            month: new Date().toISOString().split('T')[0].split('-')[1],
+                            day: new Date().toISOString().split('T')[0].split('-')[2],
+                            name: item.name || '',
+                            spec: item.unit || 'EA',
+                            qty: qty,
+                            price: finalPrice,
+                            remarks: ''
+                          };
+                        });
+                        setDealStatementData({ ...dealStatementData, items: nextItems });
+                      }}
+                      style={{ padding: '2px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      ⚡ 수입품목 가져오기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextItems = [
+                          ...dealStatementData.items,
+                          { month: '', day: '', name: '', spec: '', qty: 1, price: 0, remarks: '' }
+                        ];
+                        setDealStatementData({ ...dealStatementData, items: nextItems });
+                      }}
+                      style={{ padding: '2px 8px', background: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      ＋ 품목 추가
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
