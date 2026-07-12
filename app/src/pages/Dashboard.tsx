@@ -387,6 +387,7 @@ export const Dashboard: React.FC = () => {
   // ── Trading Data States ──
   const [pis, setPis] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [imports, setImports] = useState<any[]>([]);
   const [tradingLoading, setTradingLoading] = useState(true);
   
   useEffect(() => {
@@ -434,9 +435,20 @@ export const Dashboard: React.FC = () => {
       console.error("Orders subscription error:", err);
     });
 
+    const unsubImports = onSnapshot(collection(doc(db, "companies", COMPANY_ID), "importRequests"), (snapshot) => {
+      const importData: any[] = [];
+      snapshot.forEach(doc => {
+        importData.push({ id: doc.id, ...doc.data() });
+      });
+      setImports(importData);
+    }, (err) => {
+      console.error("Imports subscription error:", err);
+    });
+
     return () => {
       unsubPIs();
       unsubOrders();
+      unsubImports();
     };
   }, [currentUser]);
 
@@ -1244,9 +1256,13 @@ export const Dashboard: React.FC = () => {
 
     const thisYear = String(now.getFullYear());
 
+    // 수출(Orders) 매출 집계 (원화 환산)
     orders.forEach(o => {
       const pi = pis.find(p => p.id === o.quotationId);
-      const amount = pi?.totalUsd || o.totalAmount || 0;
+      const amount = o.totalAmount || pi?.totalUsd || 0;
+      const rate = o.customsExchangeRate || o.exchangeRate || pi?.exchangeRate || 1350;
+      const salesKrw = amount * rate;
+      
       const isYs = o.issuingCompany === 'YS';
 
       if ((o.poDate || "").startsWith(thisMonth)) {
@@ -1264,30 +1280,73 @@ export const Dashboard: React.FC = () => {
         // 1. This Month
         if (etd.startsWith(thisMonth)) {
           if (isYs) {
-            salesYsAmount += amount;
+            salesYsAmount += salesKrw;
             salesYsCount++;
           } else {
-            salesYsaccAmount += amount;
+            salesYsaccAmount += salesKrw;
             salesYsaccCount++;
           }
         }
         // 2. This Year
         if (etd.startsWith(thisYear)) {
           if (isYs) {
-            salesYsYearAmount += amount;
+            salesYsYearAmount += salesKrw;
             salesYsYearCount++;
           } else {
-            salesYsaccYearAmount += amount;
+            salesYsaccYearAmount += salesKrw;
             salesYsaccYearCount++;
           }
         }
         // 3. Total Cumulative
         if (isYs) {
-          salesYsTotalAmount += amount;
+          salesYsTotalAmount += salesKrw;
           salesYsTotalCount++;
         } else {
-          salesYsaccTotalAmount += amount;
+          salesYsaccTotalAmount += salesKrw;
           salesYsaccTotalCount++;
+        }
+      }
+    });
+
+    // 수입(Imports) 매출 집계 (원화 세금계산서 기준 우선)
+    imports.forEach(req => {
+      const actualSales = req.taxDocumentRows && req.taxDocumentRows.length > 0
+        ? req.taxDocumentRows.reduce((sum: number, row: any) => sum + (Number(row.supplyAmount) || 0), 0)
+        : 0;
+      const salesKrw = actualSales > 0 ? actualSales : (Number(req.customerQuoteAmount) || Number(req.amount) || 0);
+
+      const isYsacc = req.importCompany === 'YSACC' || req.importCompany === 'YS';
+      
+      // ETA 날짜 기준 집계
+      const dateStr = req.eta || req.requestDate || "";
+      if (dateStr) {
+        // 1. This Month
+        if (dateStr.startsWith(thisMonth)) {
+          if (isYsacc) {
+            salesYsaccAmount += salesKrw;
+            salesYsaccCount++;
+          } else {
+            salesYsAmount += salesKrw;
+            salesYsCount++;
+          }
+        }
+        // 2. This Year
+        if (dateStr.startsWith(thisYear)) {
+          if (isYsacc) {
+            salesYsaccYearAmount += salesKrw;
+            salesYsaccYearCount++;
+          } else {
+            salesYsYearAmount += salesKrw;
+            salesYsYearCount++;
+          }
+        }
+        // 3. Total Cumulative
+        if (isYsacc) {
+          salesYsaccTotalAmount += salesKrw;
+          salesYsaccTotalCount++;
+        } else {
+          salesYsTotalAmount += salesKrw;
+          salesYsTotalCount++;
         }
       }
     });
@@ -1299,7 +1358,7 @@ export const Dashboard: React.FC = () => {
       salesYsYearAmount, salesYsaccYearAmount, salesYsYearCount, salesYsaccYearCount,
       salesYsTotalAmount, salesYsaccTotalAmount, salesYsTotalCount, salesYsaccTotalCount
     };
-  }, [pis, orders]);
+  }, [pis, orders, imports]);
 
   if (loading) return <div className="content-area" style={{ alignItems: 'center', justifyContent: 'center' }}>데이터를 불러오는 중...</div>;
 
@@ -1634,12 +1693,12 @@ export const Dashboard: React.FC = () => {
               <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
-                  당월 매출 (ETD 기준)
+                  당월 매출 (원화 합산)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
                 </div>
               </div>
 
@@ -1650,9 +1709,9 @@ export const Dashboard: React.FC = () => {
                   전체 누적 매출금액
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
+                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.salesYsaccTotalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
+                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
                 </div>
               </div>
             </div>
