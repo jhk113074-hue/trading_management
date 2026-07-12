@@ -239,6 +239,7 @@ export const OrderDetail: React.FC = () => {
   // ────────────────────────────────────────────────────────────────────────
   const [uploadingField, setUploadingField] = useState<'poFiles' | 'lcFiles' | 'scFiles' | 'ciFiles' | 'plFiles' | 'cooFiles' | 'blFiles' | 'exportDeclarationFiles' | 'coaFiles' | 'otherFiles' | 'containerWorkFiles' | 'transportationFiles' | 'transactionFiles' | 'attachments' | null>(null);
   const [uploadingCertSupplier, setUploadingCertSupplier] = useState<string | null>(null);
+  const [uploadingCoaSupplier, setUploadingCoaSupplier] = useState<string | null>(null);
   const [piData, setPiData] = useState<any | null>(null);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
   const [selectedAddSupplier, setSelectedAddSupplier] = useState('');
@@ -2783,6 +2784,73 @@ export const OrderDetail: React.FC = () => {
     }
   };
 
+  const handleSupplierCoaUpload = async (e: React.ChangeEvent<HTMLInputElement>, supplierName: string) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !order) return;
+    
+    setUploadingCoaSupplier(supplierName);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const uniqueFileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `tasks/${order.id}/coa_${supplierName}/${uniqueFileName}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        
+        return new Promise<{ name: string; url: string; size: number; path: string }>((resolve, reject) => {
+          uploadTask.on('state_changed', null, reject, async () => {
+            try {
+              const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve({
+                name: file.name,
+                url: downloadUrl,
+                size: file.size,
+                path: uploadTask.snapshot.ref.fullPath
+              });
+            } catch (err) {
+              reject(err);
+            }
+          });
+        });
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      const currentCoaFiles = order.coaFilesBySupplier || {};
+      const updatedList = [...(currentCoaFiles[supplierName] || []), ...uploadedFiles];
+      const updatedCoaFiles = {
+        ...currentCoaFiles,
+        [supplierName]: updatedList
+      };
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { coaFilesBySupplier: updatedCoaFiles, updatedAt: serverTimestamp() }, { merge: true });
+      await autoRegisterOrderTask(order.piNumber || '알수없음', order.customer || '알수없음', `매입처(${supplierName}) COA 파일 첨부 업로드: ${uploadedFiles.map(f => f.name).join(', ')}`);
+      
+      alert("✅ 모든 COA 파일이 성공적으로 업로드되었습니다.");
+    } catch (err: any) {
+      console.error("Upload failed", err);
+      alert("업로드 중 에러가 발생했습니다: " + err.message);
+    } finally {
+      setUploadingCoaSupplier(null);
+    }
+  };
+
+  const handleSupplierCoaDelete = async (supplierName: string, fileIdx: number, fileName: string) => {
+    if (!order || !window.confirm(`'${fileName}' 파일을 삭제하시겠습니까?`)) return;
+    try {
+      const currentCoaFiles = order.coaFilesBySupplier || {};
+      const nextList = (currentCoaFiles[supplierName] || []).filter((_: any, i: number) => i !== fileIdx);
+      const updatedCoaFiles = {
+        ...currentCoaFiles,
+        [supplierName]: nextList
+      };
+
+      const orderRef = doc(db, 'companies', COMPANY_ID, 'orders', order.id);
+      await setDoc(orderRef, { coaFilesBySupplier: updatedCoaFiles, updatedAt: serverTimestamp() }, { merge: true });
+      await autoRegisterOrderTask(order.piNumber || '알수없음', order.customer || '알수없음', `매입처(${supplierName}) COA 파일 삭제: ${fileName}`);
+    } catch (err: any) {
+      alert("삭제 실패: " + err.message);
+    }
+  };
+
   const getShippingMarkShapeImgHtml = (shapeSymbol: string, comp: string) => {
     const compEscaped = (comp || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     let svg = '';
@@ -2997,9 +3065,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
   ) => {
     const fileList = order?.[fieldName] || [];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px dashed var(--border-default)', borderRadius: '8px', padding: '12px', background: '#f8fafc', minHeight: '142px', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-          <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#334155' }}>{label} {fileList.length > 0 && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: gridSpan || 'span 1' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>{label} {fileList.length > 0 && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}</span>
         </div>
         {isEditing && (
           <div
@@ -3007,16 +3075,17 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
             style={{
               background: '#f8fafc',
               border: '1px dashed #cbd5e1',
-              padding: '24px 16px',
-              borderRadius: '8px',
+              padding: '6px 10px',
+              borderRadius: '6px',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
+              justifyContent: 'space-between',
+              gap: '6px',
               cursor: uploadingField === fieldName ? 'not-allowed' : 'pointer',
               transition: 'all 0.2s',
               outline: 'none',
+              height: '34px',
+              boxSizing: 'border-box'
             }}
             onFocus={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.background = '#eff6ff'; }}
             onBlur={e => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.background = '#f8fafc'; }}
@@ -3062,9 +3131,9 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
               }
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
               <span>📂</span>
-              <span>이곳에 파일이나 캡처 이미지(Ctrl+V)를 드래그 앤 드롭하여 첨부하세요.</span>
+              <span style={{ fontSize: '11px' }}>파일 드래그 또는 클릭</span>
             </div>
             
             <button
@@ -3074,18 +3143,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 background: '#3b82f6',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '6px',
-                padding: '6px 14px',
-                fontSize: '12.5px',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'background 0.2s',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                height: '24px',
+                boxSizing: 'border-box'
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#2563eb'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#3b82f6'; }}
             >
-              {uploadingField === fieldName ? '업로드 중...' : '파일 선택하기'}
+              {uploadingField === fieldName ? '...' : '선택'}
             </button>
 
             <input
@@ -9408,7 +9478,87 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
                       {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
                       {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
-                      {renderFileField('COA 및 시험성적서', 'coaFiles', 'coa-file-input')}
+                      {/* COA 및 시험성적서 (매입처별 개별/멀티 유첨 구조) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', border: '1px dashed var(--border-default)', borderRadius: '6px', padding: '8px 10px', background: '#f8fafc', boxSizing: 'border-box', gridColumn: 'span 1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                            COA 및 시험성적서 {(order.coaFilesBySupplier && Object.values(order.coaFilesBySupplier).some((files: any) => files && files.length > 0)) && <span style={{ color: '#10b981', marginLeft: '4px' }}>✅</span>}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                          {(() => {
+                            const suppliers = Array.from(new Set(orderItems.map(it => it.supplier?.trim()).filter(Boolean))) as string[];
+                            if (suppliers.length === 0) {
+                              suppliers.push('일반 매입처');
+                            }
+                            return suppliers.map((sup) => {
+                              const files = (order.coaFilesBySupplier || {})[sup] || [];
+                              const inputId = `coa-file-input-${sup.replace(/\s+/g, '-')}`;
+                              return (
+                                <div key={sup} style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px', border: '1px solid #e2e8f0', borderRadius: '4px', background: '#fff' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569' }}>📍 {sup}</span>
+                                    {isEditing && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          disabled={uploadingCoaSupplier !== null}
+                                          onClick={() => document.getElementById(inputId)?.click()}
+                                          style={{
+                                            background: '#3b82f6',
+                                            color: '#fff',
+                                            border: 'none',
+                                            borderRadius: '3px',
+                                            padding: '2px 6px',
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            cursor: 'pointer'
+                                          }}
+                                        >
+                                          {uploadingCoaSupplier === sup ? '...' : '추가'}
+                                        </button>
+                                        <input
+                                          type="file"
+                                          id={inputId}
+                                          style={{ display: 'none' }}
+                                          onChange={(e) => handleSupplierCoaUpload(e, sup)}
+                                          disabled={uploadingCoaSupplier !== null}
+                                          multiple
+                                        />
+                                      </>
+                                    )}
+                                  </div>
+                                  {files.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '2px' }}>
+                                      {files.map((file: any, fIdx: number) => (
+                                        <div key={fIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', background: '#f8fafc', padding: '2px 4px', borderRadius: '3px', border: '1px solid #f1f5f9' }}>
+                                          <span
+                                            onClick={() => previewFile(file.url, file.name)}
+                                            style={{ fontSize: '10.5px', color: '#1e293b', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}
+                                          >
+                                            📎 {file.name}
+                                          </span>
+                                          {isEditing && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSupplierCoaDelete(sup, fIdx, file.name)}
+                                              style={{ background: 'transparent', border: 'none', color: '#ef4444', fontSize: '9px', fontWeight: 700, cursor: 'pointer', padding: '0 2px' }}
+                                            >
+                                              ✕
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>첨부파일 없음</span>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
                       {renderFileField('그밖의 생산/품질 서류', 'otherFiles', 'other-docs-input')}
                       {renderFileField('컨테이너 작업 및 운송 사진 유첨', 'containerWorkFiles', 'container-work-file-input')}
                     </div>
