@@ -1106,7 +1106,7 @@ export const OrderDetail: React.FC = () => {
     }
     if (basicForm.paymentCollectedDate || (basicForm.paymentCollectedInstallments && basicForm.paymentCollectedInstallments.some((inst: any) => (inst.amount || 0) > 0)))
       po정산['입금 진행 완료'] = true;
-    const donePaymentCount = allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료').length;
+    const donePaymentCount = allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료' || basicForm.supplierPayments?.[s]?.status === '입금완료').length;
     if (allOrderSuppliers.length > 0 && donePaymentCount === allOrderSuppliers.length) {
       po정산['공급업체 대금 결제 완료'] = true;
     }
@@ -4987,7 +4987,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               {itemKey === '발주서 발행 및 저장' ? (
                                 `발주서 발행 및 저장 (${allOrderSuppliers.filter(s => issuedDocs.some(d => d.status === 'active' && (d.supplier_name === s || d.po_number.includes(s.replace(/\s+/g, '').substring(0,3).toUpperCase())))).length}/${allOrderSuppliers.length}건)`
                               ) : itemKey === '공급업체 대금 결제 완료' ? (
-                                `공급업체 대금 결제 완료 (${allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료').length}/${allOrderSuppliers.length}건)`
+                                `공급업체 대금 결제 완료 (${allOrderSuppliers.filter(s => basicForm.supplierPayments?.[s]?.status === '결제완료' || basicForm.supplierPayments?.[s]?.status === '입금완료').length}/${allOrderSuppliers.length}건)`
                               ) : itemKey}
                             </span>
                             {/* 자동감지 표시 아이콘 */}
