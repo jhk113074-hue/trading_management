@@ -55,6 +55,7 @@ export const FilePreviewModal: React.FC = () => {
   const { url, name } = previewData;
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
   const isPdf = /\.pdf$/i.test(name);
+  const isExcel = /\.(xlsx|xls|csv)$/i.test(name);
 
   return (
     <div
@@ -177,6 +178,20 @@ export const FilePreviewModal: React.FC = () => {
         ) : isPdf ? (
           <iframe
             src={url}
+            title={name}
+            style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '280px',
+              border: 'none',
+              borderRadius: '6px',
+              background: '#ffffff',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+            }}
+          />
+        ) : isExcel ? (
+          <iframe
+            src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`}
             title={name}
             style={{
               width: '100%',

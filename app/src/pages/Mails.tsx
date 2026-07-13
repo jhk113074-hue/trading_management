@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import type { User } from '../types';
+import { previewFile } from '../components/FilePreviewModal';
 
 interface Attachment {
   name: string;
@@ -860,13 +861,23 @@ export const Mails: React.FC = () => {
                         <img
                           src={file.data}
                           alt={file.name}
-                          onClick={() => setPreviewImageUrl(file.data)}
-                          style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'zoom-in' }}
+                          onClick={() => previewFile(file.data, file.name)}
+                          style={{ width: '100%', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
                         />
                       ) : (
-                        <a href={file.data} download={file.name} style={{ height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', textDecoration: 'none', color: 'var(--text-secondary)' }}>📄</a>
+                        <button
+                          type="button"
+                          onClick={() => previewFile(file.data, file.name)}
+                          style={{ width: '100%', height: '60px', border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', cursor: 'pointer', outline: 'none' }}
+                        >
+                          📄
+                        </button>
                       )}
-                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center' }} title={file.name}>
+                      <span
+                        onClick={() => previewFile(file.data, file.name)}
+                        style={{ fontSize: '9px', color: 'var(--text-secondary)', width: '100%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', textAlign: 'center', cursor: 'pointer' }}
+                        title={file.name}
+                      >
                         {file.name}
                       </span>
                     </div>
