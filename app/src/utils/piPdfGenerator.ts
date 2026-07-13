@@ -94,7 +94,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>${piData.piNumber || 'Proforma Invoice'}</title>
+  <title>${piData.piNumber || 'Proforma Invoice'}${piData.currentVersion && piData.currentVersion > 1 ? `R${piData.currentVersion - 1}` : ''}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #f3f4f6; display: flex; justify-content: center; padding: 25px 0; }
@@ -393,7 +393,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
 
   <!-- Footer Bar -->
   <div class="footer-bar">
-    ${issuerName} &nbsp;·&nbsp; ${piData.issuingCompany === 'YS' ? 'www.ysacc.co.kr' : 'www.ysacc.co.kr'} &nbsp;·&nbsp; ${piData.piNumber || ''} &nbsp;·&nbsp; Page 1 of 1
+    ${issuerName} &nbsp;·&nbsp; ${piData.issuingCompany === 'YS' ? 'www.ysacc.co.kr' : 'www.ysacc.co.kr'} &nbsp;·&nbsp; ${piData.piNumber || ''}${piData.currentVersion && piData.currentVersion > 1 ? `R${piData.currentVersion - 1}` : ''} &nbsp;·&nbsp; Page 1 of 1
   </div>
 
   </div>

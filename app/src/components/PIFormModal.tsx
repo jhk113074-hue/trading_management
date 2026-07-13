@@ -503,7 +503,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                   deliveryTerm: latestRevData.deliveryTerm !== undefined ? latestRevData.deliveryTerm : prev.deliveryTerm,
                   origin: latestRevData.origin !== undefined ? latestRevData.origin : prev.origin,
                   yourRef: latestRevData.yourRef !== undefined ? latestRevData.yourRef : prev.yourRef,
-                  attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || [])
+                  attachments: latestRevData.attachments !== undefined ? latestRevData.attachments : (prev.attachments || []),
+                  currentVersion: latestRevData.version !== undefined ? latestRevData.version : prev.currentVersion
                 };
 
                 baselineStateRef.current = {
@@ -1481,9 +1482,15 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         setDropdownRevId(revRef.id);
       }
       
+      const updatedForm = {
+        ...formData,
+        currentVersion: version
+      };
+      setFormData(updatedForm);
+
       // Update baselineStateRef to current snapshot since it is saved
       baselineStateRef.current = {
-        formData: getSnapshot(formData, items),
+        formData: getSnapshot(updatedForm, items),
         items: true
       };
 
