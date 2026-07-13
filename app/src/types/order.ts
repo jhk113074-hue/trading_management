@@ -41,7 +41,7 @@ export interface Order {
   quotationId: string;
   customer: string;
   manager: string;
-  incoterms: "CIF HCM" | "FOB" | "EXW" | "CFR" | "DAP" | "DDP" | "";
+  incoterms: "CIF" | "FOB" | "EXW" | "CFR" | "DAP" | "DDP" | "";
   paymentTerms: string;
   poDate: string; // YYYY-MM-DD
   requestedDelivery: string;

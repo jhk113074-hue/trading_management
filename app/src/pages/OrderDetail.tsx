@@ -5166,7 +5166,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 {isEditing ? (
                   <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
                     <option value="FOB">FOB</option>
-                    <option value="CIF HCM">CIF HCM</option>
+                    <option value="CIF">CIF</option>
                     <option value="EXW">EXW</option>
                     <option value="CFR">CFR</option>
                     <option value="DAP">DAP</option>

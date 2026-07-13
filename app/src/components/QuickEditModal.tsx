@@ -746,7 +746,7 @@ export const QuickEditModal: React.FC<Props> = ({ order, colKey, onClose, onSave
             >
               <option value="">조건 선택...</option>
               <option value="FOB">FOB</option>
-              <option value="CIF HCM">CIF HCM</option>
+              <option value="CIF">CIF</option>
               <option value="EXW">EXW</option>
               <option value="CFR">CFR</option>
               <option value="DAP">DAP</option>

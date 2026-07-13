@@ -714,7 +714,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>인코텀즈 <span style={{ color: '#ef4444' }}>*</span></label>
               <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}>
                 <option value="FOB">FOB</option>
-                <option value="CIF HCM">CIF HCM</option>
+                <option value="CIF">CIF</option>
                 <option value="EXW">EXW</option>
                 <option value="CFR">CFR</option>
                 <option value="DAP">DAP</option>
