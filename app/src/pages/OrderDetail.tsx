@@ -3289,19 +3289,30 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       console.error("Failed to load company info for PO", e);
     }
 
-    const currentUserKey = auth.currentUser?.email?.split('@')[0] || '';
     let managerTitle = '대표이사';
     let managerName = '김 주 한';
     let managerContact = '010-4494-1028';
 
-    if (currentUserKey === 'alexpark') {
-      managerTitle = '차장';
-      managerName = '박 현';
-      managerContact = '010-3001-1130';
-    } else if (currentUserKey === 'jhk010624') {
-      managerTitle = '사원';
-      managerName = '김 하 은';
-      managerContact = '070-4141-2927';
+    try {
+      const currentUid = auth.currentUser?.uid;
+      if (currentUid) {
+        const userDoc = await getDoc(doc(db, 'users', currentUid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.position) managerTitle = userData.position;
+          if (userData.name) {
+            const n = userData.name.trim();
+            if (n.length === 3) {
+              managerName = `${n[0]} ${n[1]} ${n[2]}`;
+            } else {
+              managerName = n;
+            }
+          }
+          if (userData.phone) managerContact = userData.phone;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load user info for PO print", e);
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
@@ -3680,19 +3691,30 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       console.error("Failed to load company info for PO", e);
     }
 
-    const currentUserKey = auth.currentUser?.email?.split('@')[0] || '';
     let managerTitle = '대표이사';
     let managerName = '김 주 한';
     let managerContact = '010-4494-1028';
 
-    if (currentUserKey === 'alexpark') {
-      managerTitle = '차장';
-      managerName = '박 현';
-      managerContact = '010-3001-1130';
-    } else if (currentUserKey === 'jhk010624') {
-      managerTitle = '사원';
-      managerName = '김 하 은';
-      managerContact = '070-4141-2927';
+    try {
+      const currentUid = auth.currentUser?.uid;
+      if (currentUid) {
+        const userDoc = await getDoc(doc(db, 'users', currentUid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.position) managerTitle = userData.position;
+          if (userData.name) {
+            const n = userData.name.trim();
+            if (n.length === 3) {
+              managerName = `${n[0]} ${n[1]} ${n[2]}`;
+            } else {
+              managerName = n;
+            }
+          }
+          if (userData.phone) managerContact = userData.phone;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load user info for PO issue", e);
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};

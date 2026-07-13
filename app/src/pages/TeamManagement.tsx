@@ -166,6 +166,7 @@ export const TeamManagement: React.FC = () => {
               <tr style={{ borderBottom: '1px solid #f1f5f9', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이름</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>이메일</th>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>전화번호</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>부서</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>직위</th>
                 <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 'bold' }}>입사일</th>
@@ -176,11 +177,12 @@ export const TeamManagement: React.FC = () => {
             </thead>
             <tbody>
               {members.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
+                <tr><td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>등록된 팀원이 없습니다.</td></tr>
               ) : members.map(member => (
                 <tr key={member.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                   <td style={{ padding: '16px 24px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{member.name}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.email}</td>
+                  <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.phone || '-'}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.department || '-'}</td>
                   <td style={{ padding: '16px 24px', color: 'var(--text-secondary)' }}>{member.position || '-'}</td>
                   <td style={{ padding: '16px 24px', color: '#0f172a', fontWeight: 600 }}>{member.joinDate || member.createdAt?.split('T')[0] || '-'}</td>
@@ -224,6 +226,10 @@ export const TeamManagement: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>이메일</label>
                 <input type="email" style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none', backgroundColor: editingId ? '#f1f5f9' : 'white', color: editingId ? 'var(--text-muted)' : 'inherit' }} placeholder="이메일 주소" value={newMember.email} onChange={e => setNewMember({...newMember, email: e.target.value})} disabled={!!editingId} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>전화번호</label>
+                <input style={{ padding: '10px 12px', border: '1px solid var(--border-default)', borderRadius: '6px', fontSize: '14px', outline: 'none' }} placeholder="예: 010-XXXX-XXXX" value={newMember.phone} onChange={e => setNewMember({...newMember, phone: e.target.value})} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>부서</label>
