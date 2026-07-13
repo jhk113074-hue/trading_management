@@ -2017,6 +2017,7 @@ export const OrderDetail: React.FC = () => {
       if (order.paymentTerms !== basicForm.paymentTerms) changes.push(`결제조건 변경: "${order.paymentTerms || ''}" → "${basicForm.paymentTerms}"`);
       if (order.poDate !== basicForm.poDate) changes.push(`PO접수일 변경: "${order.poDate || ''}" → "${basicForm.poDate}"`);
       if (order.requestedDelivery !== basicForm.requestedDelivery) changes.push(`요청납기 변경: "${order.requestedDelivery || ''}" → "${basicForm.requestedDelivery}"`);
+      if (order.deliveryPlace !== basicForm.deliveryPlace) changes.push(`납품처 변경: "${order.deliveryPlace || ''}" → "${basicForm.deliveryPlace}"`);
       if (order.remark !== basicForm.remark) changes.push(`비고(Remarks) 변경: "${order.remark || ''}" → "${basicForm.remark}"`);
       if (order.ciNumber !== basicForm.ciNumber) changes.push(`CI 번호 변경: "${order.ciNumber || ''}" → "${basicForm.ciNumber}"`);
       if (order.isLc !== basicForm.isLc) changes.push(`L/C거래여부 변경: "${order.isLc || ''}" → "${basicForm.isLc}"`);
@@ -2062,6 +2063,7 @@ export const OrderDetail: React.FC = () => {
         paymentTerms: basicForm.paymentTerms,
         poDate: basicForm.poDate,
         requestedDelivery: basicForm.requestedDelivery,
+        deliveryPlace: basicForm.deliveryPlace || '',
         remark: basicForm.remark,
         manager: basicForm.manager,
         externalLinks: links,
