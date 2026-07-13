@@ -875,10 +875,11 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
   const addItem = () => {
     setItems(prev => [...prev, {
       lineNumber: prev.length + 1,
-      productCode: '', description: '', quantity: 0, unit: 'KG',
+      productCode: '', description: '', quantity: 0, unit: 'EA',
       purchasePriceKrw: 0, exchangeRate: formData.exchangeRate || 1400,
       purchasePriceUsd: 0, marginRate: 15, salePriceUsd: 0, lineTotalUsd: 0,
-      palletQty: 1, remarks: '', roundDigits: 2
+      palletQty: 1, remarks: '', roundDigits: 2,
+      selectedPackingMethodId: 'default_injected'
     }]);
   };
 
@@ -1018,6 +1019,8 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
         if (!it.unit) {
           it.unit = 'EA';
         }
+        it.selectedPackingMethodId = 'default_injected';
+        it.packingSpecOverride = undefined;
       }
     }
 
@@ -2272,7 +2275,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                           const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
                           const methods = getProductPackingMethods(prod);
                           const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
-                          const packUnit = selectedMethod?.packageType || 'PLT';
+                          const packUnit = selectedMethod?.packageType || '단품';
                           return (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
                               <input 
