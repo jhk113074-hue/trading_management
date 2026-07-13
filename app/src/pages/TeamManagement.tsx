@@ -10,7 +10,7 @@ export const TeamManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newMember, setNewMember] = useState({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '' });
+  const [newMember, setNewMember] = useState({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalMessage, setModalMessage] = useState({ text: '', type: '' });
   
@@ -45,7 +45,7 @@ export const TeamManagement: React.FC = () => {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: new Date().toISOString().split('T')[0] });
+    setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: new Date().toISOString().split('T')[0], phone: '' });
     setModalMessage({ text: '', type: '' });
     setShowModal(true);
   };
@@ -58,7 +58,8 @@ export const TeamManagement: React.FC = () => {
       role: member.role,
       department: member.department || '',
       position: member.position || '',
-      joinDate: member.joinDate || member.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0]
+      joinDate: member.joinDate || member.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+      phone: member.phone || ''
     });
     setModalMessage({ text: '', type: '' });
     setShowModal(true);
@@ -76,7 +77,8 @@ export const TeamManagement: React.FC = () => {
           role: newMember.role,
           department: newMember.department,
           position: newMember.position,
-          joinDate: newMember.joinDate
+          joinDate: newMember.joinDate,
+          phone: newMember.phone
         });
         setShowModal(false);
         fetchMembers();
@@ -99,6 +101,7 @@ export const TeamManagement: React.FC = () => {
           department: newMember.department,
           position: newMember.position,
           joinDate: newMember.joinDate,
+          phone: newMember.phone,
           createdAt: new Date().toISOString(),
           status: '활성'
         });
@@ -106,7 +109,7 @@ export const TeamManagement: React.FC = () => {
         await secondaryAuth.signOut();
 
         setShowModal(false);
-        setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '' });
+        setNewMember({ name: '', email: '', role: '팀원', department: '', position: '', joinDate: '', phone: '' });
         fetchMembers();
         window.alert(`성공적으로 생성되었습니다.\n기본 비밀번호: ${defaultPassword}`); // Try to use alert for success, but it's okay if blocked because modal closes
       }

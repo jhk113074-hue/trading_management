@@ -3289,6 +3289,21 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       console.error("Failed to load company info for PO", e);
     }
 
+    const currentUserKey = auth.currentUser?.email?.split('@')[0] || '';
+    let managerTitle = '대표이사';
+    let managerName = '김 주 한';
+    let managerContact = '010-4494-1028';
+
+    if (currentUserKey === 'alexpark') {
+      managerTitle = '차장';
+      managerName = '박 현';
+      managerContact = '010-3001-1130';
+    } else if (currentUserKey === 'jhk010624') {
+      managerTitle = '사원';
+      managerName = '김 하 은';
+      managerContact = '070-4141-2927';
+    }
+
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
     const reqDateText = basicForm.requestedDelivery || poDetails.requestDate || '추후 안내 예정';
     const delPlaceText = basicForm.deliveryPlace || poDetails.deliveryPlace || '추후 통보예정';
@@ -3529,15 +3544,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 </tr>
                 <tr>
                   <td class="label">직 위</td>
-                  <td class="value">대표이사</td>
+                  <td class="value">${managerTitle}</td>
                 </tr>
                 <tr>
                   <td class="label">성 명</td>
-                  <td class="value">김 주 한</td>
+                  <td class="value">${managerName}</td>
                 </tr>
                 <tr>
                   <td class="label">연락처</td>
-                  <td class="value">010-4494-1028</td>
+                  <td class="value">${managerContact}</td>
                 </tr>
               </table>
             </div>
@@ -3663,6 +3678,21 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
       }
     } catch (e) {
       console.error("Failed to load company info for PO", e);
+    }
+
+    const currentUserKey = auth.currentUser?.email?.split('@')[0] || '';
+    let managerTitle = '대표이사';
+    let managerName = '김 주 한';
+    let managerContact = '010-4494-1028';
+
+    if (currentUserKey === 'alexpark') {
+      managerTitle = '차장';
+      managerName = '박 현';
+      managerContact = '010-3001-1130';
+    } else if (currentUserKey === 'jhk010624') {
+      managerTitle = '사원';
+      managerName = '김 하 은';
+      managerContact = '070-4141-2927';
     }
 
     const poDetails = basicForm.supplierPoDetails?.[supplierName] || {};
@@ -3906,15 +3936,15 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 </tr>
                 <tr>
                   <td class="label">직 위</td>
-                  <td class="value">대표이사</td>
+                  <td class="value">${managerTitle}</td>
                 </tr>
                 <tr>
                   <td class="label">성 명</td>
-                  <td class="value">김 주 한</td>
+                  <td class="value">${managerName}</td>
                 </tr>
                 <tr>
                   <td class="label">연락처</td>
-                  <td class="value">010-4494-1028</td>
+                  <td class="value">${managerContact}</td>
                 </tr>
               </table>
             </div>
