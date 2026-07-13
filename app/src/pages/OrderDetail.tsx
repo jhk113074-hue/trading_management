@@ -783,7 +783,7 @@ export const OrderDetail: React.FC = () => {
     generalNotes: []
   });
 
-  
+  const [selectedPresetText, setSelectedPresetText] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings'), (docSnap) => {
@@ -838,6 +838,22 @@ export const OrderDetail: React.FC = () => {
       alert("✅ 템플릿이 DB에서 성공적으로 삭제되었습니다.");
     } catch (err: any) {
       alert("템플릿 삭제 실패: " + err.message);
+    }
+  };
+
+  const handleEditPoPreset = async (type: 'specialRemarks' | 'generalNotes', oldText: string, newText: string) => {
+    if (!oldText || !newText.trim()) return;
+    if (!window.confirm("선택한 템플릿의 문구를 DB에서 수정하시겠습니까?")) return;
+    const currentList = poPresets[type];
+    try {
+      const presetsRef = doc(db, 'companies', COMPANY_ID, 'po_presets', 'settings');
+      const nextList = currentList.map(item => item === oldText ? newText : item);
+      await setDoc(presetsRef, {
+        [type]: nextList
+      }, { merge: true });
+      alert("✅ 템플릿이 성공적으로 수정되었습니다.");
+    } catch (err: any) {
+      alert("템플릿 수정 실패: " + err.message);
     }
   };
 
@@ -6344,6 +6360,10 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         onChange={(e) => {
                                           const val = e.target.value;
                                           if (!val) return;
+                                          setSelectedPresetText(prev => ({
+                                            ...prev,
+                                            [supplierName]: val
+                                          }));
                                           setBasicForm(prev => {
                                             const current = prev.supplierPoDetails?.[supplierName] || {};
                                             return {
@@ -6374,8 +6394,35 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                       </button>
                                       <button
                                         type="button"
+                                        onClick={async () => {
+                                          const originalText = selectedPresetText[supplierName];
+                                          const currentText = basicForm.supplierPoDetails?.[supplierName]?.generalNotes || '';
+                                          if (!originalText) {
+                                            alert("수정할 템플릿을 목록(📋 등록된 템플릿 선택)에서 먼저 선택해 주세요.");
+                                            return;
+                                          }
+                                          if (!currentText.trim()) {
+                                            alert("수정할 문구를 입력해주세요.");
+                                            return;
+                                          }
+                                          if (originalText === currentText) {
+                                            alert("템플릿 내용이 변경되지 않았습니다.");
+                                            return;
+                                          }
+                                          await handleEditPoPreset('generalNotes', originalText, currentText);
+                                          setSelectedPresetText(prev => ({
+                                            ...prev,
+                                            [supplierName]: currentText
+                                          }));
+                                        }}
+                                        style={{ padding: '3px 8px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer' }}
+                                      >
+                                        ✏️ 수정 (DB)
+                                      </button>
+                                      <button
+                                        type="button"
                                         onClick={(e) => {
-                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLSelectElement;
+                                          const selectEl = e.currentTarget.previousElementSibling?.previousElementSibling?.previousElementSibling as HTMLSelectElement;
                                           if (selectEl && selectEl.value) {
                                             handleDeletePoPreset('generalNotes', selectEl.value);
                                           } else {
