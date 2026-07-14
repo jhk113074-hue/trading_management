@@ -7618,9 +7618,14 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   };
 
                                   const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
-                                  const w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
-                                  const l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
-                                  const h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+                                  let w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
+                                  let l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
+                                  let h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+
+                                  // Fallback to product level dimensions if method has 0
+                                  if (w === 0) w = (p?.palletWidth || p?.unitWidth || 0);
+                                  if (l === 0) l = (p?.palletLength || p?.unitLength || 0);
+                                  if (h === 0) h = (p?.palletHeight || p?.unitHeight || 0);
 
                                   const residueKey = `residue_${itemCode}_${itemIdx}`;
                                   const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
@@ -7630,16 +7635,28 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   let cbm = '0.000';
                                   let dims = `${w}x${l}x${h}`;
 
+                                  const methodNet = isPlt ? (matchedMethod.palletWeight || 0) : (matchedMethod.unitWeight || 0);
+                                  const methodGross = isPlt ? (matchedMethod.palletGrossWeight || 0) : (matchedMethod.unitGrossWeight || 0);
+                                  const finalNetUnit = methodNet || p?.palletWeight || p?.unitWeight || 0;
+                                  const finalGrossUnit = methodGross || p?.palletGrossWeight || p?.unitGrossWeight || 0;
+
                                   if (isPlt) {
                                     const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
-                                    netW = (matchedMethod.palletWeight || 0) * (qty / qtyPerPallet);
-                                    grossW = (matchedMethod.palletGrossWeight || 0) * (qty / qtyPerPallet);
+                                    netW = finalNetUnit * (qty / qtyPerPallet);
+                                    grossW = finalGrossUnit * (qty / qtyPerPallet);
                                     cbm = String(((w * l * h) / 1000000000 * (qty / qtyPerPallet)).toFixed(3));
                                   } else {
-                                    netW = (matchedMethod.unitWeight || 0) * qty;
-                                    grossW = (matchedMethod.unitGrossWeight || 0) * qty;
+                                    netW = finalNetUnit * qty;
+                                    grossW = finalGrossUnit * qty;
                                     cbm = String(((w * l * h) / 1000000000 * qty).toFixed(3));
                                   }
+
+                                  const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
+                                                          p?.suppliers?.[0]?.supplierName || 
+                                                          p?.purchasePrices?.find((pr: any) => pr.isDefault)?.supplierName ||
+                                                          p?.purchasePrices?.[0]?.supplierName || 
+                                                          '';
+                                  const supplierName = item.supplier || defaultSupplier || '';
 
                                   currentContainerItems.push({
                                     pkgNo: '',
@@ -7648,7 +7665,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     description: item.name || '',
                                     packageType: treatment === 'mixed' ? '혼적 Pallet' : matchedMethod.packageType,
                                     dimensions: dims,
-                                    supplier: item.supplier || '',
+                                    supplier: supplierName,
                                     netWeight: String(Math.round(netW)),
                                     grossWeight: String(Math.round(grossW)),
                                     cbm: cbm
@@ -7685,7 +7702,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   });
 
                                   const first = items[0];
-                                  const dimensions = first.dimensions || '1100x1100x1000';
+                                  const dimensions = (first.dimensions && first.dimensions !== '0x0x0') ? first.dimensions : '1100x1100x1000';
                                   const cbm = first.cbm || '1.210';
 
                                   mergedMixedItems.push({
