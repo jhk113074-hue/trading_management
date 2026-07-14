@@ -151,7 +151,7 @@ export const OrderDetail: React.FC = () => {
     },
     물류선적: {
       '포워딩/운송사 및 수출 Volume 선택': false,
-      'Vessel, ETD, ETA 입력': false,
+      'ETD 입력': false,
       '도착보고 발송 완료': false,
     },
     서류관리: {
@@ -1076,8 +1076,8 @@ export const OrderDetail: React.FC = () => {
     const hasVolume = !!basicForm.shipmentType;
     if (hasForwarder && hasVolume)
       po물류['포워딩/운송사 및 수출 Volume 선택'] = true;
-    if (basicForm.vesselBooking && basicForm.etd && basicForm.eta)
-      po물류['Vessel, ETD, ETA 입력'] = true;
+    if (basicForm.etd)
+      po물류['ETD 입력'] = true;
     if (issuedDocs.some(d => d.status === 'active' && d.fileName.startsWith('도착보고서')))
       po물류['도착보고 발송 완료'] = true;
     autoDetect['물류선적'] = po물류;
