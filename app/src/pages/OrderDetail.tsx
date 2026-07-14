@@ -7585,6 +7585,80 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                               type="button"
                               disabled={!isEditing}
                               onClick={() => {
+                                if (!window.confirm("현재 컨테이너의 패킹리스트를 비우고, 모든 주문 품목의 제품코드와 총수량을 직접 배정하시겠습니까?")) return;
+                                
+                                const newContainers: any[] = [];
+                                const currentContainerItems: any[] = [];
+                                let currentPkgNo = 1;
+
+                                (orderItems || []).forEach((item: any) => {
+                                  const itemCode = item.productCode || '';
+                                  const itemName = item.productName || item.description || '';
+                                  const qty = Number(item.quantity) || 0;
+                                  if (qty <= 0) return;
+
+                                  const p = products.find(prod => prod.productCode === getRawProductCode(itemCode));
+                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
+                                    id: 'default_injected',
+                                    name: 'Default',
+                                    packageType: '단품',
+                                    qtyPerPallet: 1,
+                                    unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0
+                                  };
+
+                                  let dims = '0x0x0';
+                                  let netW = 0;
+                                  let grossW = 0;
+                                  let cbm = '0.000';
+
+                                  if (matchedMethod) {
+                                    const w = matchedMethod.unitWidth || 0;
+                                    const l = matchedMethod.unitLength || 0;
+                                    const h = matchedMethod.unitHeight || 0;
+                                    dims = `${w}x${l}x${h}`;
+                                    netW = (matchedMethod.unitWeight || 0) * qty;
+                                    grossW = (matchedMethod.unitGrossWeight || 0) * qty;
+                                    cbm = String(((w * l * h) / 1000000000 * qty).toFixed(3));
+                                  }
+
+                                  currentContainerItems.push({
+                                    pkgNo: String(currentPkgNo),
+                                    pkg: '1',
+                                    qty: String(qty),
+                                    description: itemCode ? `${itemCode}` : itemName,
+                                    packageType: matchedMethod ? matchedMethod.packageType : '단품',
+                                    dimensions: dims,
+                                    supplier: item.supplier || '',
+                                    netWeight: String(Math.round(netW)),
+                                    grossWeight: String(Math.round(grossW)),
+                                    cbm: cbm
+                                  });
+                                  currentPkgNo++;
+                                });
+
+                                newContainers.push({
+                                  containerNo: `CONTAINER-01`,
+                                  sealNo: '',
+                                  items: currentContainerItems
+                                });
+
+                                setBasicForm(prev => ({
+                                  ...prev,
+                                  packingList: {
+                                    ...prev.packingList,
+                                    containers: newContainers
+                                  }
+                                }));
+                                alert('🔄 모든 품목의 코드와 총수량이 컨테이너 패킹리스트에 직접 배정되었습니다.');
+                              }}
+                              style={{ padding: '6px 12px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13.5px', cursor: isEditing ? 'pointer' : 'not-allowed', marginLeft: '6px' }}
+                            >
+                              ⚡ 주문 총수량 직접 배정
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!isEditing}
+                              onClick={() => {
                                 const newContainers = [...(basicForm.packingList.containers || [])];
                                 newContainers.push({
                                   containerNo: `CONTAINER-0${newContainers.length + 1}`,
