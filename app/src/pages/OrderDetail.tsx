@@ -7150,16 +7150,19 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13.5px', background: '#fff', border: '1px solid var(--border-color)' }}>
                       <thead>
                         <tr style={{ background: '#f1f5f9', borderBottom: '1px solid var(--border-default)' }}>
-                          <th style={{ padding: '8px', textAlign: 'left', width: '20%' }}>제품코드 / 품명</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>주문 총수량</th>
-                          <th style={{ padding: '8px', textAlign: 'left', width: '12%' }}>포장 형태 (마스터)</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>PL당 적재수량</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>순중량 (Kg)</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>총중량 (Kg)</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '10%' }}>완제 팔레트수</th>
-                          <th style={{ padding: '8px', textAlign: 'right', width: '8%' }}>남은 자투리 수량</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '13%' }}>자투리 처리 방식</th>
-                          <th style={{ padding: '8px', textAlign: 'center', width: '5%' }}>순서</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '4%' }}>No.</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '18%' }}>제품코드 / 품명</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '10%' }}>제조사</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '7%' }}>주문 총수량</th>
+                          <th style={{ padding: '8px', textAlign: 'left', width: '11%' }}>포장 형태 (마스터)</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '10%' }}>규격 (WxLxH)</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '7%' }}>PL당 적재수량</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '7%' }}>순중량 (Kg)</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '7%' }}>총중량 (Kg)</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '8%' }}>완제 팔레트수</th>
+                          <th style={{ padding: '8px', textAlign: 'right', width: '7%' }}>남은 자투리 수량</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '11%' }}>자투리 처리 방식</th>
+                          <th style={{ padding: '8px', textAlign: 'center', width: '4%' }}>순서</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -7209,9 +7212,28 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           const residueKey = `residue_${itemCode}_${idx}`;
                           const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
 
-                          return (
+                          
+                           // Dimensions logic
+                           let w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
+                           let l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
+                           let h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
+                           if (w === 0) w = (p?.palletWidth || p?.unitWidth || 0);
+                           if (l === 0) l = (p?.palletLength || p?.unitLength || 0);
+                           if (h === 0) h = (p?.palletHeight || p?.unitHeight || 0);
+                           const dimsStr = w || l || h ? `${w}x${l}x${h}` : '-';
+
+                           // Supplier logic
+                           const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
+                                                   p?.suppliers?.[0]?.supplierName || 
+                                                   p?.purchasePrices?.find((pr: any) => pr.isDefault)?.supplierName ||
+                                                   p?.purchasePrices?.[0]?.supplierName || 
+                                                   '';
+                           const supplierName = item.supplier || defaultSupplier || '-';
+
+                           return (
                             <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                              <td style={{ padding: '8px', fontWeight: 'bold' }}>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+<td style={{ padding: '8px', fontWeight: 'bold' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <span>[{itemCode}] {itemName}</span>
                                   {p && (
@@ -7243,6 +7265,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   )}
                                 </div>
                               </td>
+                              <td style={{ padding: '8px' }}>{supplierName}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>{qty.toLocaleString()} EA</td>
                               <td style={{ padding: '8px' }}>
                                 <select
@@ -7270,6 +7293,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   )}
                                 </select>
                               </td>
+                               <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>{dimsStr}</td>
                               <td style={{ padding: '8px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                                   <input
