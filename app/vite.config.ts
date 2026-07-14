@@ -60,6 +60,7 @@ export default defineConfig({
         // Firebase 실시간 데이터는 캐시 제외, 앱 셸만 캐시
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/container/],
         runtimeCaching: [
           {
             // Firebase Firestore는 항상 네트워크 우선
