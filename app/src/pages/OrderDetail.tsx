@@ -1086,8 +1086,7 @@ export const OrderDetail: React.FC = () => {
     const po서류: Record<string, boolean> = {};
     if (basicForm.exportDeclarationNo)
       po서류['수출신고번호 입력'] = true;
-    const isDocsUploaded = (order.ciFiles && order.ciFiles.length > 0) &&
-                           (order.plFiles && order.plFiles.length > 0) &&
+    const isDocsUploaded = ((order.ciFiles && order.ciFiles.length > 0) || (order.plFiles && order.plFiles.length > 0)) &&
                            (order.cooFiles && order.cooFiles.length > 0) &&
                            (order.blFiles && order.blFiles.length > 0);
     if (isDocsUploaded)
@@ -9587,8 +9586,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                   {/* 8개의 유첨 파일 그리드 대통합 (같은 폭, 같은 높이) */}
                   <div style={{ gridColumn: 'span 3', borderTop: '1px solid var(--border-default)', paddingTop: '12px', marginTop: '10px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-                      {renderFileField('CI 유첨 (수동)', 'ciFiles', 'ci-file-input')}
-                      {renderFileField('PL 유첨 (수동)', 'plFiles', 'pl-file-input')}
+                      {renderFileField('CI / PL 유첨 (수동)', 'ciFiles', 'ci-file-input')}
                       {renderFileField('COO 유첨', 'cooFiles', 'coo-file-input')}
                       {renderFileField('B/L 유첨', 'blFiles', 'bl-file-input')}
                       {renderFileField('수출면장 업로드', 'exportDeclarationFiles', 'export-declaration-file-input')}
