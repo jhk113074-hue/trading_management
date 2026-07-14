@@ -7592,18 +7592,24 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 let currentPkgNo = 1;
 
                                 (orderItems || []).forEach((item: any) => {
-                                  const itemCode = item.productCode || '';
-                                  const itemName = item.productName || item.description || '';
-                                  const qty = Number(item.quantity) || 0;
+                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
+                                  const itemCode = match ? match[1] : '-';
+                                  const qty = Number(item.qty) || 0;
                                   if (qty <= 0) return;
 
-                                  const p = products.find(prod => prod.productCode === getRawProductCode(itemCode));
+                                  const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
                                   const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
-                                    id: 'default_injected',
-                                    name: 'Default',
+                                    id: 'default_single',
+                                    name: '단품',
+                                    unit: p?.unit || 'EA',
+                                    isDefault: true,
                                     packageType: '단품',
                                     qtyPerPallet: 1,
-                                    unitWidth: 0, unitLength: 0, unitHeight: 0, unitWeight: 0, unitGrossWeight: 0
+                                    unitWidth: p?.unitWidth || 0,
+                                    unitLength: p?.unitLength || 0,
+                                    unitHeight: p?.unitHeight || 0,
+                                    unitWeight: p?.unitWeight || 0,
+                                    unitGrossWeight: p?.unitGrossWeight || 0
                                   };
 
                                   let dims = '0x0x0';
@@ -7625,7 +7631,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     pkgNo: String(currentPkgNo),
                                     pkg: '1',
                                     qty: String(qty),
-                                    description: itemCode ? `${itemCode}` : itemName,
+                                    description: item.name || '',
                                     packageType: matchedMethod ? matchedMethod.packageType : '단품',
                                     dimensions: dims,
                                     supplier: item.supplier || '',
