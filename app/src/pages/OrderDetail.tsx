@@ -7631,227 +7631,48 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
 
                                 const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
-                                mixedItems.forEach((it: any) => {
-                                  const s = it.supplier || 'DEFAULT';
-                                  const g = it.mixedGroup || '1';
-                                  const key = `${s}_group_${g}`;
-                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
-                                  mixedBySupplierAndGroup[key].push(it);
-                                });
+                                 mixedItems.forEach((it: any) => {
+                                   const s = it.supplier || 'DEFAULT';
+                                   const g = it.mixedGroup || '1';
+                                   const key = `${s}_group_${g}`;
+                                   if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
+                                   mixedBySupplierAndGroup[key].push(it);
+                                 });
 
-                                const mergedMixedItems: any[] = [];
-                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
-                                  const items = mixedBySupplierAndGroup[groupKey];
-                                  const supplierKey = groupKey.split('_group_')[0];
-                                  const groupNo = groupKey.split('_group_')[1];
-                                  if (items.length === 0) return;
+                                 const mergedMixedItems: any[] = [];
+                                 Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                   const items = mixedBySupplierAndGroup[groupKey];
+                                   if (items.length === 0) return;
+                                   const groupNo = groupKey.split('_group_')[1];
+                                   items.forEach((it: any) => {
+                                     const cleanDesc = (it.description || '').replace(/^\[혼적 - 그룹 \d+\]\s*/i, '');
+                                     it.description = `[혼적 - 그룹 ${groupNo}] ${cleanDesc}`;
+                                     mergedMixedItems.push(it);
+                                   });
+                                 });
 
-                                  let totalNet = 0;
-                                  let totalGross = 0;
-                                  let totalQty = 0;
-                                  const itemDetails: string[] = [];
+                                 currentPkgNo = 1;
+                                 nonMixedItems.forEach((it: any) => {
+                                   it.pkgNo = String(currentPkgNo);
+                                   currentPkgNo++;
+                                 });
 
-                                  items.forEach((it: any) => {
-                                    totalNet += Number(it.netWeight) || 0;
-                                    totalGross += Number(it.grossWeight) || 0;
-                                    totalQty += Number(it.qty) || 0;
-                                    
-                                    const cleanDesc = (it.description || '').replace(/\s*\([^)]*\)/g, '').trim();
-                                    itemDetails.push(`${cleanDesc} (${Number(it.qty).toLocaleString()} EA)`);
-                                  });
+                                 Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                   const items = mixedBySupplierAndGroup[groupKey];
+                                   if (items.length === 0) return;
+                                   items.forEach((it: any, itemGroupIdx: number) => {
+                                     it.pkgNo = String(currentPkgNo);
+                                     it.pkg = itemGroupIdx === 0 ? '1' : '0';
+                                   });
+                                   currentPkgNo++;
+                                 });
 
-                                  const first = items[0];
-                                  const dimensions = first.dimensions || '1100x1100x1000';
-                                  const cbm = first.cbm || '1.210';
+                                 const finalItems = [
+                                   ...nonMixedItems,
+                                   ...mergedMixedItems
+                                 ];
 
-                                  mergedMixedItems.push({
-                                    pkgNo: String(currentPkgNo),
-                                    pkg: '1',
-                                    qty: String(totalQty),
-                                    description: `[혼적 - 그룹 ${groupNo}] ${itemDetails.join(' / ')}`,
-                                    packageType: '혼적 Pallet',
-                                    dimensions: dimensions,
-                                    supplier: supplierKey === 'DEFAULT' ? '' : supplierKey,
-                                    netWeight: String(Math.round(totalNet)),
-                                    grossWeight: String(Math.round(totalGross)),
-                                    cbm: cbm
-                                  });
-                                  currentPkgNo++;
-                                });
-
-                                currentContainerItems = [
-                                  ...nonMixedItems,
-                                  ...mergedMixedItems
-                                ];
-
-                                // Allocate items to containers (e.g., maximum 20 CBM per 20FT, 45 CBM per 40FT)
-                                // Let's split logically by 컨테이너
-                                newContainers.push({
-                                  containerNo: `CONTAINER-01`,
-                                  sealNo: '',
-                                  items: currentContainerItems
-                                });
-
-                                setBasicForm(prev => ({ ...prev, packingList: { ...prev.packingList, containers: newContainers } }));
-                                alert('🔄 제품별 팔레트 연산결과가 컨테이너에 자동 배정되었습니다.');
-                              }}
-                              style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', fontSize: '13.5px', cursor: 'pointer' }}
-                            >
-                              ⚡ 팔레트 연산결과 자동 배정
-                            </button>
-                            <button
-                              type="button"
-                              disabled={!isEditing}
-                              onClick={() => {
-                                if (!window.confirm("현재 컨테이너의 패킹리스트를 비우고, 모든 주문 품목의 제품코드와 총수량을 직접 배정하시겠습니까?")) return;
                                 
-                                const newContainers: any[] = [];
-                                const currentContainerItems: any[] = [];
-                                let currentPkgNo = 1;
-
-                                (orderItems || []).forEach((item: any, itemIdx: number) => {
-                                  const match = (item.name || '').match(/^\[(.*?)\]\s*(.*)$/);
-                                  const itemCode = match ? match[1] : '-';
-                                  const qty = Number(item.qty) || 0;
-                                  if (qty <= 0) return;
-
-                                  const p = products.find(prod => prod.productCode === itemCode || prod.id === itemCode);
-                                  const matchedMethod = p?.packingMethods?.find((m: any) => m.id === item.selectedPackingMethodId) || p?.packingMethods?.find((m: any) => m.isDefault) || p?.packingMethods?.[0] || {
-                                    id: 'default_single',
-                                    name: '단품',
-                                    unit: p?.unit || 'EA',
-                                    isDefault: true,
-                                    packageType: '단품',
-                                    qtyPerPallet: 100,
-                                    unitWidth: p?.unitWidth || 0,
-                                    unitLength: p?.unitLength || 0,
-                                    unitHeight: p?.unitHeight || 0,
-                                    unitWeight: p?.unitWeight || 0,
-                                    unitGrossWeight: p?.unitGrossWeight || 0,
-                                    palletWidth: p?.palletWidth || 0,
-                                    palletLength: p?.palletLength || 0,
-                                    palletHeight: p?.palletHeight || 0,
-                                    palletWeight: p?.palletWeight || 0,
-                                    palletGrossWeight: p?.palletGrossWeight || 0
-                                  };
-
-                                  const isPlt = matchedMethod.packageType.toLowerCase().includes('pallet') || matchedMethod.packageType.toLowerCase().includes('plt');
-                                  let w = isPlt ? (matchedMethod.palletWidth || 0) : (matchedMethod.unitWidth || 0);
-                                  let l = isPlt ? (matchedMethod.palletLength || 0) : (matchedMethod.unitLength || 0);
-                                  let h = isPlt ? (matchedMethod.palletHeight || 0) : (matchedMethod.unitHeight || 0);
-
-                                  // Fallback to product level dimensions if method has 0
-                                  if (w === 0) w = (p?.palletWidth || p?.unitWidth || 0);
-                                  if (l === 0) l = (p?.palletLength || p?.unitLength || 0);
-                                  if (h === 0) h = (p?.palletHeight || p?.unitHeight || 0);
-
-                                  const residueKey = `residue_${itemCode}_${itemIdx}`;
-                                  const treatment = (basicForm.packingList as any)?.[residueKey] || 'independent';
-
-                                  let netW = 0;
-                                  let grossW = 0;
-                                  let cbm = '0.000';
-                                  let dims = `${w}x${l}x${h}`;
-
-                                  const methodNet = isPlt ? (matchedMethod.palletWeight || 0) : (matchedMethod.unitWeight || 0);
-                                  const methodGross = isPlt ? (matchedMethod.palletGrossWeight || 0) : (matchedMethod.unitGrossWeight || 0);
-                                  const finalNetUnit = methodNet || p?.palletWeight || p?.unitWeight || 0;
-                                  const finalGrossUnit = methodGross || p?.palletGrossWeight || p?.unitGrossWeight || 0;
-
-                                  if (isPlt) {
-                                    const qtyPerPallet = matchedMethod.qtyPerPallet || 100;
-                                    netW = finalNetUnit * (qty / qtyPerPallet);
-                                    grossW = finalGrossUnit * (qty / qtyPerPallet);
-                                    cbm = String(((w * l * h) / 1000000000 * (qty / qtyPerPallet)).toFixed(3));
-                                  } else {
-                                    netW = finalNetUnit * qty;
-                                    grossW = finalGrossUnit * qty;
-                                    cbm = String(((w * l * h) / 1000000000 * qty).toFixed(3));
-                                  }
-
-                                  const defaultSupplier = p?.suppliers?.find((s: any) => s.isDefault)?.supplierName || 
-                                                          p?.suppliers?.[0]?.supplierName || 
-                                                          p?.purchasePrices?.find((pr: any) => pr.isDefault)?.supplierName ||
-                                                          p?.purchasePrices?.[0]?.supplierName || 
-                                                          '';
-                                  const supplierName = item.supplier || defaultSupplier || '';
-
-                                  const mixedGroup = (basicForm.packingList as any)?.[ `group_${itemCode}_${itemIdx}` ] || '1';
-                                  currentContainerItems.push({
-                                    pkgNo: '',
-                                    pkg: '1',
-                                    qty: String(qty),
-                                    description: item.name || '',
-                                    packageType: treatment === 'mixed' ? '혼적 Pallet' : matchedMethod.packageType,
-                                    dimensions: dims,
-                                    supplier: supplierName,
-                                    mixedGroup: mixedGroup,
-                                    netWeight: String(Math.round(netW)),
-                                    grossWeight: String(Math.round(grossW)),
-                                    cbm: cbm
-                                  });
-                                });
-
-                                const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
-                                const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
-
-                                const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
-                                mixedItems.forEach((it: any) => {
-                                  const s = it.supplier || 'DEFAULT';
-                                  const g = it.mixedGroup || '1';
-                                  const key = `${s}_group_${g}`;
-                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
-                                  mixedBySupplierAndGroup[key].push(it);
-                                });
-
-                                const mergedMixedItems: any[] = [];
-                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
-                                  const items = mixedBySupplierAndGroup[groupKey];
-                                  const supplierKey = groupKey.split('_group_')[0];
-                                  const groupNo = groupKey.split('_group_')[1];
-                                  if (items.length === 0) return;
-
-                                  let totalNet = 0;
-                                  let totalGross = 0;
-                                  let totalQty = 0;
-                                  const itemDetails: string[] = [];
-
-                                  items.forEach((it: any) => {
-                                    totalNet += Number(it.netWeight) || 0;
-                                    totalGross += Number(it.grossWeight) || 0;
-                                    totalQty += Number(it.qty) || 0;
-                                    
-                                    const cleanDesc = (it.description || '').replace(/\s*\([^)]*\)/g, '').trim();
-                                    itemDetails.push(`${cleanDesc} (${Number(it.qty).toLocaleString()} EA)`);
-                                  });
-
-                                  const first = items[0];
-                                  const dimensions = (first.dimensions && first.dimensions !== '0x0x0') ? first.dimensions : '1100x1100x1000';
-                                  const cbm = first.cbm || '1.210';
-
-                                  mergedMixedItems.push({
-                                    pkgNo: '',
-                                    pkg: '1',
-                                    qty: String(totalQty),
-                                    description: `[혼적 - 그룹 ${groupNo}] ${itemDetails.join(' / ')}`,
-                                    packageType: '혼적 Pallet',
-                                    dimensions: dimensions,
-                                    supplier: supplierKey === 'DEFAULT' ? '' : supplierKey,
-                                    netWeight: String(Math.round(totalNet)),
-                                    grossWeight: String(Math.round(totalGross)),
-                                    cbm: cbm
-                                  });
-                                });
-
-                                const finalItems = [
-                                  ...nonMixedItems,
-                                  ...mergedMixedItems
-                                ];
-
-                                finalItems.forEach((it: any) => {
-                                  it.pkgNo = String(currentPkgNo);
-                                  currentPkgNo++;
-                                });
 
                                 newContainers.push({
                                   containerNo: `CONTAINER-01`,
