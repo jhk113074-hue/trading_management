@@ -7293,7 +7293,70 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   )}
                                 </select>
                               </td>
-                               <td style={{ padding: '8px', textAlign: 'center', whiteSpace: 'nowrap' }}>{dimsStr}</td>
+                               
+                               <td style={{ padding: '4px', textAlign: 'center' }}>
+                                 {(() => {
+                                   const cleanDims = (dimsStr || '0x0x0').toLowerCase().replace(/\s+/g, '');
+                                   const dims = cleanDims.split('x');
+                                   const widthVal = dims[0] || '0';
+                                   const lengthVal = dims[1] || '0';
+                                   const heightVal = dims[2] || '0';
+
+                                   const handleDimChange = async (dimKey: 'w' | 'l' | 'h', inputVal: string) => {
+                                     const numericVal = parseInt(inputVal) || 0;
+                                     if (p) {
+                                       const nextMethods = [...(p.packingMethods || [])];
+                                       const defaultIdx = nextMethods.findIndex((m: any) => m.id === matchedMethod.id);
+                                       const targetIdx = defaultIdx !== -1 ? defaultIdx : 0;
+                                       if (nextMethods[targetIdx]) {
+                                         if (dimKey === 'w') {
+                                           nextMethods[targetIdx].unitWidth = numericVal;
+                                           nextMethods[targetIdx].palletWidth = numericVal;
+                                         } else if (dimKey === 'l') {
+                                           nextMethods[targetIdx].unitLength = numericVal;
+                                           nextMethods[targetIdx].palletLength = numericVal;
+                                         } else if (dimKey === 'h') {
+                                           nextMethods[targetIdx].unitHeight = numericVal;
+                                           nextMethods[targetIdx].palletHeight = numericVal;
+                                         }
+                                         await updateDoc(doc(db, 'companies', COMPANY_ID, 'products', p.id), { packingMethods: nextMethods });
+                                       }
+                                     }
+                                   };
+
+                                   return (
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center' }}>
+                                       <input 
+                                         type="number"
+                                         placeholder="W"
+                                         disabled={!isEditing}
+                                         value={widthVal}
+                                         style={{ width: '48px', padding: '3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
+                                         onChange={e => handleDimChange('w', e.target.value)}
+                                       />
+                                       <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
+                                       <input 
+                                         type="number"
+                                         placeholder="L"
+                                         disabled={!isEditing}
+                                         value={lengthVal}
+                                         style={{ width: '48px', padding: '3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
+                                         onChange={e => handleDimChange('l', e.target.value)}
+                                       />
+                                       <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>×</span>
+                                       <input 
+                                         type="number"
+                                         placeholder="H"
+                                         disabled={!isEditing}
+                                         value={heightVal}
+                                         style={{ width: '48px', padding: '3px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12.5px', textAlign: 'center', height: '28px', boxSizing: 'border-box', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b' }}
+                                         onChange={e => handleDimChange('h', e.target.value)}
+                                       />
+                                     </div>
+                                   );
+                                 })()}
+                               </td>
+
                               <td style={{ padding: '8px', textAlign: 'right' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                                   <input
@@ -7332,7 +7395,8 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 {residue.toLocaleString()} EA
                               </td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
-                                <select
+                                
+                                 <select
                                   disabled={residue === 0 || !isEditing}
                                   value={treatment}
                                   onChange={e => {
@@ -7349,6 +7413,31 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                   <option value="single">박스 단품 (손적재)</option>
                                   <option value="mixed">혼적용 (Mixed PLT)</option>
                                 </select>
+                                  {treatment === 'mixed' && (
+                                    <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>혼적그룹:</span>
+                                      <select
+                                        disabled={!isEditing}
+                                        value={(basicForm.packingList as any)?.[ `group_${itemCode}_${idx}` ] || '1'}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          setBasicForm(prev => {
+                                            const nextPL = { ...(prev.packingList || {}) };
+                                            (nextPL as any)[ `group_${itemCode}_${idx}` ] = val;
+                                            return { ...prev, packingList: nextPL };
+                                          });
+                                        }}
+                                        style={{ padding: '2px 4px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '12px' }}
+                                      >
+                                        <option value="1">그룹 1</option>
+                                        <option value="2">그룹 2</option>
+                                        <option value="3">그룹 3</option>
+                                        <option value="4">그룹 4</option>
+                                        <option value="5">그룹 5</option>
+                                      </select>
+                                    </div>
+                                  )}
+
                               </td>
                               <td style={{ padding: '8px', textAlign: 'center' }}>
                                 <div style={{ display: 'flex', gap: '3px', justifyContent: 'center' }}>
@@ -7523,6 +7612,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         packageType: '혼적 Pallet',
                                         dimensions: `${w}x${l}x${h}`,
                                         supplier: item.supplier || '',
+                                        mixedGroup: (basicForm.packingList as any)?.[ `group_${itemCode}_${itemIdx}` ] || '1',
                                         netWeight: String(Math.round(isPlt
                                           ? (matchedMethod.palletWeight || 0) * (residue / qtyPerPallet)
                                           : (isSingleRaw ? (matchedMethod.unitWeight || 0) * residue : (matchedMethod.unitWeight || 0) * (residue / qtyPerPallet)))),
@@ -7540,16 +7630,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
                                 const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
 
-                                const mixedBySupplier: { [key: string]: any[] } = {};
+                                const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
                                 mixedItems.forEach((it: any) => {
                                   const s = it.supplier || 'DEFAULT';
-                                  if (!mixedBySupplier[s]) mixedBySupplier[s] = [];
-                                  mixedBySupplier[s].push(it);
+                                  const g = it.mixedGroup || '1';
+                                  const key = `${s}_group_${g}`;
+                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
+                                  mixedBySupplierAndGroup[key].push(it);
                                 });
 
                                 const mergedMixedItems: any[] = [];
-                                Object.keys(mixedBySupplier).forEach((supplierKey: string) => {
-                                  const items = mixedBySupplier[supplierKey];
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  const supplierKey = groupKey.split('_group_')[0];
+                                  const groupNo = groupKey.split('_group_')[1];
                                   if (items.length === 0) return;
 
                                   let totalNet = 0;
@@ -7574,7 +7668,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     pkgNo: String(currentPkgNo),
                                     pkg: '1',
                                     qty: String(totalQty),
-                                    description: `[혼적] ${itemDetails.join(' / ')}`,
+                                    description: `[혼적 - 그룹 ${groupNo}] ${itemDetails.join(' / ')}`,
                                     packageType: '혼적 Pallet',
                                     dimensions: dimensions,
                                     supplier: supplierKey === 'DEFAULT' ? '' : supplierKey,
@@ -7682,6 +7776,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                           '';
                                   const supplierName = item.supplier || defaultSupplier || '';
 
+                                  const mixedGroup = (basicForm.packingList as any)?.[ `group_${itemCode}_${itemIdx}` ] || '1';
                                   currentContainerItems.push({
                                     pkgNo: '',
                                     pkg: '1',
@@ -7690,6 +7785,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     packageType: treatment === 'mixed' ? '혼적 Pallet' : matchedMethod.packageType,
                                     dimensions: dims,
                                     supplier: supplierName,
+                                    mixedGroup: mixedGroup,
                                     netWeight: String(Math.round(netW)),
                                     grossWeight: String(Math.round(grossW)),
                                     cbm: cbm
@@ -7699,16 +7795,20 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                 const nonMixedItems = currentContainerItems.filter((it: any) => it.packageType !== '혼적 Pallet');
                                 const mixedItems = currentContainerItems.filter((it: any) => it.packageType === '혼적 Pallet');
 
-                                const mixedBySupplier: { [key: string]: any[] } = {};
+                                const mixedBySupplierAndGroup: { [key: string]: any[] } = {};
                                 mixedItems.forEach((it: any) => {
                                   const s = it.supplier || 'DEFAULT';
-                                  if (!mixedBySupplier[s]) mixedBySupplier[s] = [];
-                                  mixedBySupplier[s].push(it);
+                                  const g = it.mixedGroup || '1';
+                                  const key = `${s}_group_${g}`;
+                                  if (!mixedBySupplierAndGroup[key]) mixedBySupplierAndGroup[key] = [];
+                                  mixedBySupplierAndGroup[key].push(it);
                                 });
 
                                 const mergedMixedItems: any[] = [];
-                                Object.keys(mixedBySupplier).forEach((supplierKey: string) => {
-                                  const items = mixedBySupplier[supplierKey];
+                                Object.keys(mixedBySupplierAndGroup).forEach((groupKey: string) => {
+                                  const items = mixedBySupplierAndGroup[groupKey];
+                                  const supplierKey = groupKey.split('_group_')[0];
+                                  const groupNo = groupKey.split('_group_')[1];
                                   if (items.length === 0) return;
 
                                   let totalNet = 0;
@@ -7733,7 +7833,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     pkgNo: '',
                                     pkg: '1',
                                     qty: String(totalQty),
-                                    description: `[혼적] ${itemDetails.join(' / ')}`,
+                                    description: `[혼적 - 그룹 ${groupNo}] ${itemDetails.join(' / ')}`,
                                     packageType: '혼적 Pallet',
                                     dimensions: dimensions,
                                     supplier: supplierKey === 'DEFAULT' ? '' : supplierKey,
