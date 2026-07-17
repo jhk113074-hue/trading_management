@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db, COMPANY_ID } from '../firebase';
@@ -125,6 +125,7 @@ export const Orders: React.FC = () => {
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const processedPiRef = useRef<string | null>(null);
 
   // Column resize: [날짜, 주문번호, 수주사, 발주사, 발주액, 매출액, ETD, ETA, 단계, 다음단계]
   const { thStyle, resizerProps, colWidths } = useColumnResize([110, 150, 100, 240, 120, 140, 100, 100, 280, 260]);
@@ -176,6 +177,9 @@ export const Orders: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const piId = params.get('createFromPi');
     if (piId && quotations.length > 0) {
+      if (processedPiRef.current === piId) return;
+      processedPiRef.current = piId;
+      
       const targetPi = quotations.find(q => q.id === piId);
       if (targetPi) {
         setLoading(true);
@@ -274,6 +278,7 @@ export const Orders: React.FC = () => {
             }
 
             const orderPayload: any = {
+              type: targetPi.type || 'trade',
               id: orderRef.id,
               ciNumber: ciNumber,
               custPo: targetPi.yourRef || '',
