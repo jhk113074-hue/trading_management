@@ -394,7 +394,7 @@ export const Orders: React.FC = () => {
         if (dateFilterType === 'Last3Months') {
           const ninetyDaysAgo = new Date();
           ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-          return d >= ninetyDaysAgo && d <= new Date();
+          return d >= ninetyDaysAgo;
         }
         if (dateFilterType === 'Monthly') return y === selectedYear && m === selectedMonth;
         if (dateFilterType === 'Quarterly') return y === selectedYear && Math.floor((m-1)/3)+1 === selectedQuarter;
