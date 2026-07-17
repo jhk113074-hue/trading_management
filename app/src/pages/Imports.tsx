@@ -529,35 +529,50 @@ export const Imports: React.FC<{ mode?: 'active' | 'quotes' }> = ({ mode = 'acti
   const [selectedImportCompany, setSelectedImportCompany] = useState('All');
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>({ key: 'eta', direction: 'desc' });
-  const [colWidths, setColWidths] = useState<Record<string, number>>({
-    quote_requestDate: 80,
-    quote_quoteNumber: 100,
-    quote_importCompany: 75,
-    quote_itemName: 120,
-    quote_finalSellingPrice: 90,
-    quote_customerQuoteAmount: 100,
-    quote_finalCustomer: 90,
-    quote_importerName: 100,
-    quote_buyingPrice: 90,
-    quote_appliedExchangeRate: 70,
-    quote_customerDecision: 75,
+  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('YSACC_IMPORTS_COL_WIDTHS');
+    const defaultWidths = {
+      quote_requestDate: 80,
+      quote_quoteNumber: 100,
+      quote_importCompany: 75,
+      quote_itemName: 120,
+      quote_finalSellingPrice: 90,
+      quote_customerQuoteAmount: 100,
+      quote_finalCustomer: 90,
+      quote_importerName: 100,
+      quote_buyingPrice: 90,
+      quote_appliedExchangeRate: 70,
+      quote_customerDecision: 75,
 
-    active_requestDate: 80,
-    active_id: 70,
-    active_poNumber: 120,
-    active_importerName: 100,
-    active_itemName: 120,
-    active_transportType: 90,
-    active_importCompany: 75,
-    active_routeFrom: 100,
-    active_etd: 75,
-    active_eta: 75,
-    active_finalCustomer: 90,
-    active_managerName: 60,
-    active_customerQuoteAmount: 100,
-    active_totalBuyingCost: 100,
-    quote_totalBuyingCost: 100,
+      active_requestDate: 80,
+      active_id: 70,
+      active_poNumber: 120,
+      active_importerName: 100,
+      active_itemName: 120,
+      active_transportType: 90,
+      active_importCompany: 75,
+      active_routeFrom: 100,
+      active_etd: 75,
+      active_eta: 75,
+      active_finalCustomer: 90,
+      active_managerName: 60,
+      active_customerQuoteAmount: 100,
+      active_totalBuyingCost: 100,
+      quote_totalBuyingCost: 100,
+    };
+    if (saved) {
+      try {
+        return { ...defaultWidths, ...JSON.parse(saved) };
+      } catch (e) {
+        return defaultWidths;
+      }
+    }
+    return defaultWidths;
   });
+
+  useEffect(() => {
+    localStorage.setItem('YSACC_IMPORTS_COL_WIDTHS', JSON.stringify(colWidths));
+  }, [colWidths]);
 
   const handleResizeStart = (colKey: string, e: React.MouseEvent) => {
     e.preventDefault();
