@@ -349,7 +349,7 @@ const CreateIssueModal: React.FC<{ onClose: () => void; userName: string }> = ({
         </div>
 
         <FieldLabel>내용</FieldLabel>
-        <textarea value={content} onChange={e => setContent(e.target.value)} rows={5} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+        <textarea value={content} onChange={e => setContent(e.target.value)} rows={5} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', minHeight: '150px' }} />
 
         {/* 파일 첨부 */}
         <FieldLabel>파일 첨부 (캡처 이미지 포함)</FieldLabel>
@@ -652,7 +652,7 @@ const IssueDetailModal: React.FC<{
           </div>
 
           <FieldLabel>내용</FieldLabel>
-          <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
+          <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={4} placeholder="이슈를 상세히 설명해주세요..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', minHeight: '150px' }} />
 
         {/* ─── 파일 첨부 (드래그&드롭 / Ctrl+V / 파일선택) ─── */}
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>📎 파일 첨부 (드래그&드롭 / Ctrl+V)</div>
