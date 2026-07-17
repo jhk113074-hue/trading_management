@@ -462,7 +462,7 @@ export const Dashboard: React.FC = () => {
       if (etd) {
         list.push({
           id: `order-etd-${o.id}`,
-          title: `🚢 [ETD] ${o.customer || '바이어'} (${o.id})`,
+          title: `🚢 [ETD] ${o.customer || '바이어'} (${o.ciNumber || o.id})`,
           type: '기타',
           startDate: etd,
           startTime: '09:00',
@@ -470,7 +470,22 @@ export const Dashboard: React.FC = () => {
           endTime: '18:00',
           isPublic: true,
           creatorName: 'System',
-          description: `주문번호: ${o.id}\n바이어: ${o.customer || ''}\n선적 예정일 (ETD): ${etd}`
+          description: `주문번호: ${o.ciNumber || o.id}\n바이어: ${o.customer || ''}\n선적 예정일 (ETD): ${etd}`
+        });
+      }
+      const eta = (o.eta || "").trim();
+      if (eta) {
+        list.push({
+          id: `order-eta-${o.id}`,
+          title: `🛬 [ETA] ${o.customer || '바이어'} (${o.ciNumber || o.id})`,
+          type: '기타',
+          startDate: eta,
+          startTime: '09:00',
+          endDate: eta,
+          endTime: '18:00',
+          isPublic: true,
+          creatorName: 'System',
+          description: `주문번호: ${o.ciNumber || o.id}\n바이어: ${o.customer || ''}\n도착 예정일 (ETA): ${eta}`
         });
       }
     });
