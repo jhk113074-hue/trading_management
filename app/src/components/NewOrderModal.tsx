@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { collection, doc, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Order, OrderItem, ForwarderEntry } from '../types/order';
@@ -29,6 +30,10 @@ interface Props {
 }
 
 export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, currentUser, initialQuotationId }) => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [quotations, setQuotations] = useState<ProformaInvoice[]>([]);
@@ -1019,11 +1024,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                         <select
                           value={item.currency || 'USD'}
-                          onChange={e => handleItemChange(idx, 'currency', e.target.value)}
+                          onChange={e => handleCurrencySelection(e.target.value, item.currency || 'USD', customCurrencies, val => handleItemChange(idx, 'currency', val))}
                           style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none', cursor: 'pointer' }}
                         >
-                          <option value="USD">USD</option>
-                          <option value="KRW">KRW</option>
+                          {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                          <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
                         </select>
                         <input
                           type="number"
@@ -1041,11 +1046,11 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                       <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                         <select
                           value={item.purchaseUnitCurrency || 'USD'}
-                          onChange={e => handleItemChange(idx, 'purchaseUnitCurrency', e.target.value)}
+                          onChange={e => handleCurrencySelection(e.target.value, item.purchaseUnitCurrency || 'USD', customCurrencies, val => handleItemChange(idx, 'purchaseUnitCurrency', val))}
                           style={{ width: '70px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none', cursor: 'pointer' }}
                         >
-                          <option value="USD">USD</option>
-                          <option value="KRW">KRW</option>
+                          {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                          <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
                         </select>
                         <input
                           type="number"

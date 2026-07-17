@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { ImportRequest, TaxDocumentRow } from '../types';
 import { storage, db, COMPANY_ID } from '../firebase';
@@ -246,6 +247,10 @@ const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, label, isUploadin
 };
 
 export const ImportDetail: React.FC = () => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const calculateTotalCostHelper = (cb: any, piItems: any[] = []) => {
     const applied = cb.appliedExchangeRate || 1450;
     const priceUsd = cb.buyingPriceUsd || 0;
@@ -4254,13 +4259,15 @@ customsDuty,
                         <select
                           value={request.dealStatementCurrency || 'KRW'}
                           onChange={(e) => {
-                            const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCurrency: e.target.value as 'KRW' | 'USD' } : r);
-                            saveToStorage(updated);
+                            handleCurrencySelection(e.target.value, request.dealStatementCurrency || 'KRW', customCurrencies, val => {
+                              const updated = importRequests.map(r => r.id === id ? { ...r, dealStatementCurrency: val as any } : r);
+                              saveToStorage(updated);
+                            });
                           }}
                           style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', padding: '0 6px', fontWeight: 600, color: '#1e293b' }}
                         >
-                          <option value="KRW">원화 (KRW ₩)</option>
-                          <option value="USD">달러 (USD $)</option>
+                          {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                          <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
                         </select>
                       </div>
                     </div>
@@ -4432,13 +4439,13 @@ customsDuty,
                                   <td style={{ padding: '1px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                                       <select
-                                        value={item.currency || 'KRW'}
-                                        onChange={(e) => updateItem({ currency: e.target.value as 'KRW' | 'USD' })}
-                                        style={{ height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 2px', fontWeight: 600, color: '#1e293b' }}
-                                      >
-                                        <option value="KRW">₩</option>
-                                        <option value="USD">$</option>
-                                      </select>
+                                         value={item.currency || 'KRW'}
+                                         onChange={(e) => handleCurrencySelection(e.target.value, item.currency || 'KRW', customCurrencies, val => updateItem({ currency: val as any }))}
+                                         style={{ height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', padding: '0 2px', fontWeight: 600, color: '#1e293b' }}
+                                       >
+                                         {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                         <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
+                                       </select>
                                       <input
                                         type="number"
                                         value={item.price || ''}
@@ -5900,13 +5907,13 @@ customsDuty,
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', textTransform: 'uppercase' }}>통화</label>
                     <select
-                      value={dealStatementData.currency || 'KRW'}
-                      onChange={(e) => setDealStatementData({ ...dealStatementData, currency: e.target.value as 'KRW' | 'USD' })}
-                      style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b' }}
-                    >
-                      <option value="KRW">원화 (KRW ₩)</option>
-                      <option value="USD">달러 (USD $)</option>
-                    </select>
+                       value={dealStatementData.currency || 'KRW'}
+                       onChange={(e) => handleCurrencySelection(e.target.value, dealStatementData.currency || 'KRW', customCurrencies, val => setDealStatementData({ ...dealStatementData, currency: val as any }))}
+                       style={{ height: '32px', padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', fontWeight: 600, color: '#1e293b' }}
+                     >
+                       {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                       <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
+                     </select>
                   </div>
                 </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { doc, setDoc, serverTimestamp, collection, getDocs } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, COMPANY_ID, storage } from '../firebase';
@@ -14,6 +15,10 @@ interface Props {
 }
 
 export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, products, isCopy }) => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const [activeTab, setActiveTab] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -1313,21 +1318,21 @@ export const ProductModal: React.FC<Props> = ({ initialProduct, onClose, product
                               </td>
                               <td style={{ padding: '6px 8px' }}>
                                 <select
-                                  value={hist.currency}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setFormData(prev => {
-                                      const next = [...(prev.purchasePrices || [])];
-                                      next[idx] = { ...next[idx], currency: val };
-                                      return { ...prev, purchasePrices: next };
-                                    });
-                                  }}
-                                  style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
-                                >
-                                  <option value="USD">USD</option>
-                                  <option value="KRW">KRW</option>
-                                  <option value="EUR">EUR</option>
-                                </select>
+                                   value={hist.currency}
+                                   onChange={e => {
+                                     handleCurrencySelection(e.target.value, hist.currency, customCurrencies, val => {
+                                       setFormData(prev => {
+                                         const next = [...(prev.purchasePrices || [])];
+                                         next[idx] = { ...next[idx], currency: val as any };
+                                         return { ...prev, purchasePrices: next };
+                                       });
+                                     });
+                                   }}
+                                   style={{ padding: '0 6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', width: '100%', boxSizing: 'border-box', height: '34px', outline: 'none' }}
+                                 >
+                                   {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                   <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
+                                 </select>
                               </td>
                               <td style={{ padding: '6px 8px' }}>
                                 <input

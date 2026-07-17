@@ -17,6 +17,7 @@ import { exportCiPlToExcel } from '../utils/ciPlExcelGenerator';
 import { CiPlPreviewModal } from '../components/CiPlPreviewModal';
 import { DateInput } from '../components/ui/DateInput';
 import { CustomerSearchModal } from '../components/CustomerSearchModal';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import type { Customer } from '../types/customer';
 
 
@@ -123,6 +124,10 @@ const fromCommaString = (val: string): number => {
 const steps = ["수주정보", "소싱/발주", "물류/선적", "서류관리", "정산/결제", "변경이력"] as const;
 
 export const OrderDetail: React.FC = () => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
@@ -5569,11 +5574,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                           <div style={{ display: 'flex', flexDirection: 'row', gap: '3px', alignItems: 'center' }}>
                             <select
                               value={item.currency || 'USD'}
-                              onChange={e => handleItemChange(idx, 'currency', e.target.value)}
+                              onChange={e => handleCurrencySelection(e.target.value, item.currency || 'USD', customCurrencies, val => handleItemChange(idx, 'currency', val))}
                               style={{ width: '75px', padding: '0 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', boxSizing: 'border-box', height: '32px', outline: 'none', color: '#1e293b', background: '#fff', cursor: 'pointer' }}
                             >
-                              <option value="USD">USD</option>
-                              <option value="KRW">KRW</option>
+                              {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                              <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
                             </select>
                             <input
                               type="number"
@@ -6091,11 +6096,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                               <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'flex-end' }}>
                                                 <select
                                                   value={origCurrency}
-                                                  onChange={(e) => handleSourcingItemChange(itemIndexInMain, 'originalPurchaseCurrency', e.target.value)}
+                                                  onChange={(e) => handleCurrencySelection(e.target.value, origCurrency, customCurrencies, val => handleSourcingItemChange(itemIndexInMain, 'originalPurchaseCurrency', val))}
                                                   style={{ width: '42px', padding: '2px 2px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', background: '#fff' }}
                                                 >
-                                                  <option value="USD">$</option>
-                                                  <option value="KRW">₩</option>
+                                                  {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                                  <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
                                                 </select>
                                                 <input
                                                   type="text"
@@ -6140,20 +6145,21 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                                 value={purchaseCurrency}
                                                 disabled={!isEditing}
                                                 onChange={(e) => {
-                                                  const val = e.target.value as 'KRW' | 'USD';
-                                                  setSourcingItems(prev => {
-                                                    return prev.map(item => {
-                                                      if (item === it) {
-                                                        return { ...item, purchaseUnitCurrency: val };
-                                                      }
-                                                      return item;
+                                                  handleCurrencySelection(e.target.value, purchaseCurrency, customCurrencies, val => {
+                                                    setSourcingItems(prev => {
+                                                      return prev.map(item => {
+                                                        if (item === it) {
+                                                          return { ...item, purchaseUnitCurrency: val as any };
+                                                        }
+                                                        return item;
+                                                      });
                                                     });
                                                   });
                                                 }}
                                                 style={{ width: '42px', padding: '2px 2px', border: '1px solid var(--border-default)', borderRadius: '4px', fontSize: '15.5px', outline: 'none', background: isEditing ? '#fff' : '#f1f5f9' }}
                                               >
-                                                <option value="KRW">₩</option>
-                                                <option value="USD">$</option>
+                                                {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                                <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
                                               </select>
                                               <input
                                                 type="text"
@@ -11146,11 +11152,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     />
                                     <select
                                       value={inst.currency || (isKrw ? 'KRW' : 'USD')}
-                                      onChange={e => handleInstallmentChange(i, 'currency', e.target.value)}
+                                      onChange={e => handleCurrencySelection(e.target.value, inst.currency || (isKrw ? 'KRW' : 'USD'), customCurrencies, val => handleInstallmentChange(i, 'currency', val))}
                                       style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent' }}
                                     >
-                                      <option value="KRW">₩</option>
-                                      <option value="USD">$</option>
+                                      {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                      <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
                                     </select>
                                     <select
                                       value={inst.method || '송금'}
@@ -11361,13 +11367,13 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                         style={{ padding: '1px 4px', border: 'none', borderRight: '1px solid var(--border-color)', fontSize: '13px', width: '135px', outline: 'none' }}
                                       />
                                       <select
-                                        value={inst.currency || fw.freightCurrency || 'KRW'}
-                                        onChange={e => handleFwInstallmentChange(instIdx, 'currency', e.target.value)}
-                                        style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent' }}
-                                      >
-                                        <option value="KRW">₩</option>
-                                        <option value="USD">$</option>
-                                      </select>
+                                         value={inst.currency || fw.freightCurrency || 'KRW'}
+                                         onChange={e => handleCurrencySelection(e.target.value, inst.currency || fw.freightCurrency || 'KRW', customCurrencies, val => handleFwInstallmentChange(instIdx, 'currency', val))}
+                                         style={{ padding: '1px 2px', border: 'none', fontSize: '13px', outline: 'none', background: 'transparent' }}
+                                       >
+                                         {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                         <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
+                                       </select>
                                       <select
                                         value={inst.method || '송금'}
                                         onChange={e => handleFwInstallmentChange(instIdx, 'method', e.target.value)}
@@ -11718,13 +11724,11 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                                     <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569' }}>통화</span>
                                     <select
                                       value={inst.currency || 'USD'}
-                                      onChange={e => handleCollectFieldChange('currency', e.target.value)}
+                                      onChange={e => handleCurrencySelection(e.target.value, inst.currency || 'USD', customCurrencies, val => handleCollectFieldChange('currency', val))}
                                       style={{ padding: '0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', boxSizing: 'border-box' }}
                                     >
-                                      <option value="USD">USD ($)</option>
-                                      <option value="KRW">KRW (₩)</option>
-                                      <option value="CNY">CNY (¥)</option>
-                                      <option value="EUR">EUR (€)</option>
+                                      {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                      <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
                                     </select>
                                   </div>
 

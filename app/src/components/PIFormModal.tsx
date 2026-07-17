@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { doc, setDoc, getDoc, serverTimestamp, collection, getDocs, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { db, COMPANY_ID, storage } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -50,6 +51,10 @@ interface Props {
 }
 
 export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }) => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const [savingType, setSavingType] = useState<'normal' | 'revision' | 'deleting' | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
@@ -2319,20 +2324,21 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                             return (
                               <>
                                 <select
-                                  value={curCurrency}
-                                  onChange={(e) => {
-                                    const nextCur = e.target.value;
-                                    updateItem(idx, {
-                                      purchasePriceCurrency: nextCur,
-                                      purchasePriceUsd: nextCur === 'USD' ? (amountVal || 0) : 0,
-                                      purchasePriceKrw: nextCur === 'KRW' ? (amountVal || 0) : 0
-                                    });
-                                  }}
-                                  style={{ ...gridInputStyle, width: '65px', padding: '2px' }}
-                                >
-                                  <option value="KRW">KRW</option>
-                                  <option value="USD">USD</option>
-                                </select>
+                                   value={curCurrency}
+                                   onChange={(e) => {
+                                     handleCurrencySelection(e.target.value, curCurrency, customCurrencies, val => {
+                                       updateItem(idx, {
+                                         purchasePriceCurrency: val,
+                                         purchasePriceUsd: val === 'USD' ? (amountVal || 0) : 0,
+                                         purchasePriceKrw: val === 'KRW' ? (amountVal || 0) : 0
+                                       });
+                                     });
+                                   }}
+                                   style={{ ...gridInputStyle, width: '65px', padding: '2px' }}
+                                 >
+                                   {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                                   <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+</option>
+                                 </select>
                                 <PurchasePriceInput
                                   curCurrency={curCurrency}
                                   purchasePriceUsd={it.purchasePriceUsd}

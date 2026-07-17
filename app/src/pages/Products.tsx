@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, terminate, clearIndexedDbPersistence } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Product } from '../types/product';
@@ -73,6 +74,10 @@ const excelMapping = [
 ];
 
 export const Products: React.FC = () => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -399,11 +404,10 @@ export const Products: React.FC = () => {
           <option value="">전체 중분류</option>
           {categories.medium.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <select value={currFilter} onChange={(e) => setCurrFilter(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}>
+        <select value={currFilter} onChange={(e) => handleCurrencySelection(e.target.value, currFilter, customCurrencies, setCurrFilter)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}>
           <option value="">통화(전체)</option>
-          <option value="USD">USD</option>
-          <option value="KRW">KRW</option>
-          <option value="EUR">EUR</option>
+          {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+          <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
         </select>
         <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)} style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', color: '#1e293b', outline: 'none', cursor: 'pointer', height: '34px', boxSizing: 'border-box' }}>
           <option value="">공급업체(전체)</option>

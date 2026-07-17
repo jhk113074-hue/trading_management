@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { subscribeCustomCurrencies, handleCurrencySelection, DEFAULT_CURRENCIES } from '../utils/currency';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,6 +38,10 @@ interface ApprovalDoc {
 }
 
 export const ApprovalSystem: React.FC = () => {
+  const [customCurrencies, setCustomCurrencies] = useState<string[]>([]);
+  useEffect(() => {
+    return subscribeCustomCurrencies(setCustomCurrencies);
+  }, []);
   const { userProfile } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [documents, setDocuments] = useState<ApprovalDoc[]>([]);
@@ -1030,12 +1035,11 @@ export const ApprovalSystem: React.FC = () => {
                     <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>통화 선택</label>
                     <select
                       value={currency}
-                      onChange={e => setCurrency(e.target.value)}
+                      onChange={e => handleCurrencySelection(e.target.value, currency, customCurrencies, setCurrency)}
                       style={{ padding: '4px 12px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', backgroundColor: '#fff', color: '#1e293b', cursor: 'pointer', boxSizing: 'border-box' }}
                     >
-                      <option value="USD">USD ($)</option>
-                      <option value="KRW">KRW (₩)</option>
-                      <option value="MYR">MYR (RM)</option>
+                      {[...DEFAULT_CURRENCIES, ...customCurrencies].map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="ADD_NEW_CURRENCY" style={{ color: '#2563eb', fontWeight: 'bold' }}>+ 추가등록</option>
                     </select>
                   </div>
                 </div>
