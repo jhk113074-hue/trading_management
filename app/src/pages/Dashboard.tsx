@@ -454,6 +454,39 @@ export const Dashboard: React.FC = () => {
 
   // ── Calendar States & Subscription ──
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
+
+  const derivedEvents = useMemo(() => {
+    const list = [...calendarEvents];
+    orders.forEach(o => {
+      const etd = (o.etd || "").trim();
+      if (etd) {
+        list.push({
+          id: `order-etd-${o.id}`,
+          title: `🚢 [ETD] ${o.customer || '바이어'} (${o.id})`,
+          type: '기타',
+          startDate: etd,
+          startTime: '09:00',
+          endDate: etd,
+          endTime: '18:00',
+          isPublic: true,
+          creatorName: 'System',
+          description: `주문번호: ${o.id}\n바이어: ${o.customer || ''}\n선적 예정일 (ETD): ${etd}`
+        });
+      }
+    });
+    return list;
+  }, [calendarEvents, orders]);
+
+  const upcomingETDs = useMemo(() => {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return orders
+      .filter(o => {
+        const etd = (o.etd || "").trim();
+        return etd.startsWith(thisMonth);
+      })
+      .sort((a, b) => (a.etd || "").localeCompare(b.etd || ""));
+  }, [orders]);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0 ~ 11
   const [selectedDateForEvent, setSelectedDateForEvent] = useState<string | null>(null);
@@ -570,7 +603,7 @@ export const Dashboard: React.FC = () => {
     const holiday = getHoliday(dateStr);
     const isKrHoliday = holiday?.country === 'KR';
 
-    const dayEvents = calendarEvents.filter(e => {
+    const dayEvents = derivedEvents.filter(e => {
       const start = e.startDate;
       const end = e.endDate || start;
       return dateStr >= start && dateStr <= end;
@@ -1461,7 +1494,7 @@ export const Dashboard: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📌 <span>오늘의 일정 ({
-                        calendarEvents.filter(e => {
+                        derivedEvents.filter(e => {
                           const todayStr = new Date().toISOString().split('T')[0];
                           const start = e.startDate;
                           const end = e.endDate || start;
@@ -1494,7 +1527,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '175px', paddingRight: '4px' }}>
-                    {calendarEvents.filter(e => {
+                    {derivedEvents.filter(e => {
                       const todayStr = new Date().toISOString().split('T')[0];
                       const start = e.startDate;
                       const end = e.endDate || start;
@@ -1504,7 +1537,7 @@ export const Dashboard: React.FC = () => {
                         오늘 등록된 일정이 없습니다.
                       </div>
                     ) : (
-                      calendarEvents.filter(e => {
+                      derivedEvents.filter(e => {
                         const todayStr = new Date().toISOString().split('T')[0];
                         const start = e.startDate;
                         const end = e.endDate || start;
@@ -1573,7 +1606,7 @@ export const Dashboard: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                       📋 <span>{currentMonth + 1}월 전체 일정 ({
-                        calendarEvents.filter(e => {
+                        derivedEvents.filter(e => {
                           const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                           return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                         }).length
@@ -1582,7 +1615,7 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '175px', paddingRight: '4px' }}>
-                    {calendarEvents.filter(e => {
+                    {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                     }).length === 0 ? (
@@ -1590,7 +1623,7 @@ export const Dashboard: React.FC = () => {
                         이번 달에 등록된 일정이 없습니다.
                       </div>
                     ) : (
-                      calendarEvents.filter(e => {
+                      derivedEvents.filter(e => {
                         const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                         return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                       })
@@ -1713,6 +1746,34 @@ export const Dashboard: React.FC = () => {
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
                   <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
                 </div>
+              </div>
+
+              {/* 5. 이번달 선적 예정 일정 (ETD) */}
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', flex: '1.2', overflowY: 'auto', maxHeight: '180px' }}>
+                <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6' }} />
+                    🚢 이번 달 선적 예정 일정 (ETD)
+                  </div>
+                  <span style={{ fontSize: '12px', color: '#8b5cf6', fontWeight: 800 }}>{upcomingETDs.length}건</span>
+                </div>
+                {upcomingETDs.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>이번 달 선적 예정 일정이 없습니다.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {upcomingETDs.map(o => (
+                      <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px', padding: '6px 8px', background: '#fff', border: '1px solid #f1f5f9', borderRadius: '4px' }}>
+                        <span style={{ fontWeight: 700, color: '#334155', minWidth: '75px' }}>📅 {o.etd}</span>
+                        <span style={{ flex: 1, marginLeft: '8px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={o.customer}>
+                          {o.customer || '바이어 정보 없음'} ({o.id})
+                        </span>
+                        <span style={{ fontSize: '11px', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px', color: '#1e40af', fontWeight: 700 }}>
+                          {o.status || '진행중'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
