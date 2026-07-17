@@ -489,8 +489,42 @@ export const Dashboard: React.FC = () => {
         });
       }
     });
+    
+    imports.forEach(imp => {
+      const etd = (imp.etd || "").trim();
+      if (etd) {
+        list.push({
+          id: `import-etd-${imp.id}`,
+          title: `🚢 [수입 ETD] ${imp.importerName || imp.itemName || '공급처'} (${imp.poNumber || imp.id})`,
+          type: '기타',
+          startDate: etd,
+          startTime: '09:00',
+          endDate: etd,
+          endTime: '18:00',
+          isPublic: true,
+          creatorName: 'System',
+          description: `PO 번호: ${imp.poNumber || imp.id}\n수입처: ${imp.importerName || ''}\n품목명: ${imp.itemName || ''}\n선적 예정일 (ETD): ${etd}`
+        });
+      }
+      const eta = (imp.eta || "").trim();
+      if (eta) {
+        list.push({
+          id: `import-eta-${imp.id}`,
+          title: `🛬 [수입 ETA] ${imp.importerName || imp.itemName || '공급처'} (${imp.poNumber || imp.id})`,
+          type: '기타',
+          startDate: eta,
+          startTime: '09:00',
+          endDate: eta,
+          endTime: '18:00',
+          isPublic: true,
+          creatorName: 'System',
+          description: `PO 번호: ${imp.poNumber || imp.id}\n수입처: ${imp.importerName || ''}\n품목명: ${imp.itemName || ''}\n도착 예정일 (ETA): ${eta}`
+        });
+      }
+    });
+
     return list;
-  }, [calendarEvents, orders]);
+  }, [calendarEvents, orders, imports]);
 
   const upcomingETDs = useMemo(() => {
     const now = new Date();
@@ -1780,7 +1814,7 @@ export const Dashboard: React.FC = () => {
                       <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px', padding: '6px 8px', background: '#fff', border: '1px solid #f1f5f9', borderRadius: '4px' }}>
                         <span style={{ fontWeight: 700, color: '#334155', minWidth: '75px' }}>📅 {o.etd}</span>
                         <span style={{ flex: 1, marginLeft: '8px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={o.customer}>
-                          {o.customer || '바이어 정보 없음'} ({o.id})
+                          {o.customer || '바이어 정보 없음'} ({o.ciNumber || o.id})
                         </span>
                         <span style={{ fontSize: '11px', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px', color: '#1e40af', fontWeight: 700 }}>
                           {o.status || '진행중'}
