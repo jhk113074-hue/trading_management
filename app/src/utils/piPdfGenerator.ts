@@ -240,8 +240,18 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
 
   <!-- Trade Terms Section -->
   <div>
-    <div class="section-title color-gold">TRADE TERMS</div>
+    <div class="section-title color-gold">${piData.type === 'consulting' ? 'CONTRACT TERMS' : 'TRADE TERMS'}</div>
     <table class="terms-table">
+      ${piData.type === 'consulting' ? `
+      <tr>
+        <td class="terms-label" style="width: 25%;">Payment Terms</td>
+        <td class="terms-value" style="width: 75%;" colspan="3">${piData.paymentTerms || '-'}</td>
+      </tr>
+      <tr>
+        <td class="terms-label" style="width: 25%;">Delivery Term</td>
+        <td class="terms-value" style="width: 75%;" colspan="3">${piData.deliveryTerm || '-'}</td>
+      </tr>
+      ` : `
       <tr>
         <td class="terms-label">Incoterms</td>
         <td class="terms-value">${piData.incoterms || '-'}</td>
@@ -266,6 +276,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
         <td class="terms-label">Origin</td>
         <td class="terms-value">${piData.origin || '-'}</td>
       </tr>
+      `}
     </table>
   </div>
 
@@ -276,7 +287,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
       <thead>
         <tr>
           <th style="width:30px; text-align:center;">No</th>
-          <th style="width:110px; text-align:left;">Product</th>
+          <th style="width:110px; text-align:left;">${piData.type === 'consulting' ? 'Service Item' : 'Product'}</th>
           <th style="width:130px; text-align:left;">Spec</th>
           <th style="width:65px; text-align:right;">Qty</th>
           <th style="width:45px; text-align:center;">Unit</th>
@@ -291,7 +302,7 @@ export const generatePIPdf = async (piData: ProformaInvoice, items: PIItem[]) =>
     </table>
   </div>
 
-  ${freightTable}
+  ${piData.type !== 'consulting' ? freightTable : ''}
 
   <!-- Totals Section -->
   <div class="totals-section">

@@ -197,7 +197,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   // 4. TRADE TERMS
   worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
-  worksheet.getCell(`A${currentRow}`).value = "TRADE TERMS";
+  worksheet.getCell(`A${currentRow}`).value = piData.type === 'consulting' ? "CONTRACT TERMS" : "TRADE TERMS";
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFD97706' } };
   currentRow++;
 
@@ -244,13 +244,19 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
     worksheet.getRow(row).height = 20;
   };
 
-  applyTermsStyle(currentRow, "Incoterms", piData.incoterms || '-', "Destination", piData.destinationPort || '-');
-  currentRow++;
-  applyTermsStyle(currentRow, "Departure Port", piData.departurePort || '-', "Shipping", piData.shippingMethod || '-');
-  currentRow++;
-  applyTermsStyle(currentRow, "Payment Terms", piData.paymentTerms || '-', "Packaging", piData.packagingSpec || '-');
-  currentRow++;
-  applyTermsStyle(currentRow, "Delivery Term", piData.deliveryTerm || '-', "Origin", piData.origin || '-');
+  if (piData.type === 'consulting') {
+    applyTermsStyle(currentRow, "Payment Terms", piData.paymentTerms || '-', "Delivery Term", piData.deliveryTerm || '-');
+    currentRow++;
+  } else {
+    applyTermsStyle(currentRow, "Incoterms", piData.incoterms || '-', "Destination", piData.destinationPort || '-');
+    currentRow++;
+    applyTermsStyle(currentRow, "Departure Port", piData.departurePort || '-', "Shipping", piData.shippingMethod || '-');
+    currentRow++;
+    applyTermsStyle(currentRow, "Payment Terms", piData.paymentTerms || '-', "Packaging", piData.packagingSpec || '-');
+    currentRow++;
+    applyTermsStyle(currentRow, "Delivery Term", piData.deliveryTerm || '-', "Origin", piData.origin || '-');
+    currentRow++;
+  }
   currentRow += 2;
 
   // 5. LINE ITEMS
@@ -259,7 +265,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
   worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
   currentRow++;
 
-  const headers = ['NO', 'PRODUCT', 'SPEC', 'QTY', 'UNIT', 'UNIT PRICE', 'TOTAL (USD)', 'REMARKS'];
+  const headers = ['NO', piData.type === 'consulting' ? 'SERVICE ITEM' : 'PRODUCT', 'SPEC', 'QTY', 'UNIT', 'UNIT PRICE', 'TOTAL (USD)', 'REMARKS'];
   const headerRow = worksheet.getRow(currentRow);
   headers.forEach((h, i) => {
     const cell = headerRow.getCell(i + 1);
@@ -346,7 +352,7 @@ export const generatePIExcel = async (piData: Partial<ProformaInvoice>, items: P
 
   // 6. FREIGHT CHARGES
   let freightTotal = 0;
-  if (piData.freightCharges && piData.freightCharges.length > 0) {
+  if (piData.type !== 'consulting' && piData.freightCharges && piData.freightCharges.length > 0) {
     worksheet.mergeCells(`A${currentRow}:H${currentRow}`);
     worksheet.getCell(`A${currentRow}`).value = "FREIGHT CHARGES";
     worksheet.getCell(`A${currentRow}`).font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFB91C1C' } };
