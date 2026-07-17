@@ -5058,7 +5058,7 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
 
       {/* Tab Menu */}
       <div style={{ display: 'flex', gap: '6px', padding: '4px 0', borderBottom: '1px solid var(--border-color)' }}>
-        {steps.map((step) => {
+        {steps.filter(step => order?.type !== 'consulting' || step !== '물류/선적').map((step) => {
           const isCurrent = step === activeStep;
           return (
             <button
@@ -5222,67 +5222,77 @@ const handleSaveSupplierPoDetails = async (supplierName: string) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>출발항</span>
-                <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="출발항" />
-              </div>
+              {order?.type !== 'consulting' && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>출발항</span>
+                    <input type="text" value={basicForm.portOfLoading} onChange={e => setBasicForm(prev => ({ ...prev, portOfLoading: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="출발항" />
+                  </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>도착항</span>
-                <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="도착항" />
-              </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>도착항</span>
+                    <input type="text" value={basicForm.portOfDischarge} onChange={e => setBasicForm(prev => ({ ...prev, portOfDischarge: e.target.value }))} disabled={!isEditing} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} placeholder="도착항" />
+                  </div>
+                </>
+              )}
             </div>
 
             {/* 줄 3: 인코텀즈 / 결제 조건 / L/C 거래 여부 / 요청 납기일 / 제품준비일(최종 완료일) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '0.8fr 1.2fr 1.1fr 1fr 1.1fr', gap: '10px', width: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>인코텀즈</span>
-                {isEditing ? (
-                  <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-                    <option value="FOB">FOB</option>
-                    <option value="CIF">CIF</option>
-                    <option value="EXW">EXW</option>
-                    <option value="CFR">CFR</option>
-                    <option value="DAP">DAP</option>
-                    <option value="DDP">DDP</option>
-                  </select>
-                ) : (
-                  <input type="text" value={order.incoterms} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
-                )}
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: order?.type === 'consulting' ? '1fr 1fr' : '0.8fr 1.2fr 1.1fr 1fr 1.1fr', gap: '10px', width: '100%' }}>
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>인코텀즈</span>
+                  {isEditing ? (
+                    <select value={basicForm.incoterms} onChange={e => setBasicForm(prev => ({ ...prev, incoterms: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                      <option value="FOB">FOB</option>
+                      <option value="CIF">CIF</option>
+                      <option value="EXW">EXW</option>
+                      <option value="CFR">CFR</option>
+                      <option value="DAP">DAP</option>
+                      <option value="DDP">DDP</option>
+                    </select>
+                  ) : (
+                    <input type="text" value={order.incoterms} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                  )}
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>결제 조건</span>
                 <input type="text" value={basicForm.paymentTerms} onChange={e => setBasicForm(prev => ({ ...prev, paymentTerms: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>L/C 거래 여부</span>
-                {isEditing ? (
-                  <select value={basicForm.isLc} onChange={e => setBasicForm(prev => ({ ...prev, isLc: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
-                    <option value="">기본 T/T</option>
-                    <option value="Y">L/C 거래 (Y)</option>
-                    <option value="N">T/T 거래 (N)</option>
-                  </select>
-                ) : (
-                  <input type="text" value={basicForm.isLc === 'Y' ? 'L/C 거래 (Y)' : basicForm.isLc === 'N' ? 'T/T 거래 (N)' : '일반 거래'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
-                )}
-              </div>
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>L/C 거래 여부</span>
+                  {isEditing ? (
+                    <select value={basicForm.isLc} onChange={e => setBasicForm(prev => ({ ...prev, isLc: e.target.value as any }))} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#fff', color: '#1e293b', outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }}>
+                      <option value="">기본 T/T</option>
+                      <option value="Y">L/C 거래 (Y)</option>
+                      <option value="N">T/T 거래 (N)</option>
+                    </select>
+                  ) : (
+                    <input type="text" value={basicForm.isLc === 'Y' ? 'L/C 거래 (Y)' : basicForm.isLc === 'N' ? 'T/T 거래 (N)' : '일반 거래'} disabled style={{ width: '100%', minWidth: '0', padding: '6px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#f1f5f9', color: '#64748b', boxSizing: 'border-box' }} />
+                  )}
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>요청 납기일</span>
                 <DateInput value={basicForm.requestedDelivery} onChange={e => setBasicForm(prev => ({ ...prev, requestedDelivery: e.target.value }))} disabled={!isEditing} style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', background: isEditing ? '#fff' : '#f1f5f9', color: isEditing ? '#1e293b' : '#64748b', outline: 'none', boxSizing: 'border-box' }} />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
-                <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>제품준비일 (최종 완료일)</span>
-                <input
-                  type="date"
-                  value={basicForm.cargoReadyDate || ''}
-                  disabled={true}
-                  style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#eff6ff', color: '#1e3a8a', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box', fontVariantNumeric: 'tabular-nums' }}
-                />
-              </div>
+              {order?.type !== 'consulting' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: '0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 750, color: '#1e3a8a', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>제품준비일 (최종 완료일)</span>
+                  <input
+                    type="date"
+                    value={basicForm.cargoReadyDate || ''}
+                    disabled={true}
+                    style={{ width: '100%', minWidth: '0', padding: '6px 4px', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '13px', height: '34px', background: '#eff6ff', color: '#1e3a8a', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box', fontVariantNumeric: 'tabular-nums' }}
+                  />
+                </div>
+              )}
             </div>
 
             {/* 줄 5: 비고 */}

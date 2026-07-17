@@ -108,6 +108,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
   const [formData, setFormData] = useState<Partial<ProformaInvoice>>(() => {
     const defaults: Partial<ProformaInvoice> = {
+      type: 'trade',
       piNumber: '',
       piDate: new Date().toISOString().split('T')[0],
       validityDays: 30,
@@ -130,7 +131,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       // Only pick known safe primitive fields from initialPI
       const pi = initialPI as any;
       const safeFields: (keyof ProformaInvoice)[] = [
-        'piNumber', 'piDate', 'validityDays', 'validUntilDate', 'issuingCompany',
+        'type', 'piNumber', 'piDate', 'validityDays', 'validUntilDate', 'issuingCompany',
         'customerId', 'customerName', 'customerAddress', 'contactPerson', 'email',
         'incoterms', 'destinationPort', 'departurePort',
         'packagingSpec', 'validityDesc', 'paymentTerms', 'shippingMethod',
@@ -2039,6 +2040,17 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
 
             {/* ── Row 1: 발행사 | 작성자 | 작성일 | PI Number | Your Ref | Validity | Valid Until ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', alignItems: 'end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>구분 ★</label>
+                <select
+                  value={formData.type || 'trade'}
+                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
+                  style={{ padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', outline: 'none', backgroundColor: '#fff', height: '34px', boxSizing: 'border-box', fontWeight: 600, color: '#1e293b', cursor: 'pointer' }}
+                >
+                  <option value="trade">일반 무역 (물품)</option>
+                  <option value="consulting">컨설팅 용역 (서비스)</option>
+                </select>
+              </div>
               <CompactComboSelect label="발행사 ★" field="issuingCompany" options={['YSACC', 'YS']} required={true} />
               <CompactComboSelect label="작성자" field="createdByName" options={['대표이사 김주한', '박현 차장', '김하은 사원']} />
               <CompactInput label="작성일 (PI Date) ★" type="date" value={formData.piDate} onChange={(v: any) => setFormData(prev => ({...prev, piDate: v}))} />
@@ -2080,19 +2092,25 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 </div>
               </div>
               <CompactInput label="담당" value={formData.contactPerson || ''} onChange={(v: any) => setFormData(prev => ({...prev, contactPerson: v}))} />
-              <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
-              <CompactComboSelect label="Dest. Port ★" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+              {formData.type !== 'consulting' && (
+                <>
+                  <CompactComboSelect label="Incoterms ★" field="incoterms" options={tradeTermsDB.incoterms || []} required={true} />
+                  <CompactComboSelect label="Dest. Port ★" field="destinationPort" options={tradeTermsDB.destinationPorts || []} required={true} />
+                </>
+              )}
               <CompactComboSelect label="Payment ★" field="paymentTerms" options={tradeTermsDB.paymentTerms || []} required={true} />
             </div>
 
             {/* ── Row 4: Departure | Packing | Shipping | Delivery | Origin ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
-              <CompactComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
-              <CompactComboSelect label="Packing Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
-              <CompactComboSelect label="Shipping" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
-              <CompactComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
-              <CompactComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
-            </div>
+            {formData.type !== 'consulting' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', alignItems: 'end' }}>
+                <CompactComboSelect label="Departure Port" field="departurePort" options={tradeTermsDB.departurePorts || []} />
+                <CompactComboSelect label="Packing Spec." field="packagingSpec" options={tradeTermsDB.packagingSpecs || []} />
+                <CompactComboSelect label="Shipping" field="shippingMethod" options={tradeTermsDB.shippingMethods || []} />
+                <CompactComboSelect label="Delivery Term" field="deliveryTerm" options={tradeTermsDB.deliveryTerms || []} />
+                <CompactComboSelect label="Origin" field="origin" options={tradeTermsDB.origins || []} />
+              </div>
+            )}
           </div>
 
           {/* Line Items */}
@@ -2102,7 +2120,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 <span>📦</span> 상품 라인 (Line Items)
               </h4>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}>🚢 적재 시뮬레이션</button>
+                {formData.type !== 'consulting' && <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}>🚢 적재 시뮬레이션</button>}
                 <button onClick={addItem} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>＋ 상품 추가</button>
               </div>
             </div>
@@ -2124,7 +2142,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr><td colSpan={10} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
+                  <tr><td colSpan={formData.type === 'consulting' ? 9 : 10} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>상품을 추가해주세요</td></tr>
                 ) : items.map((it, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '4px' }}>
@@ -2135,7 +2153,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                               type="text" 
                               list={`products_datalist_${idx}`}
                               value={it.productCode} 
-                              placeholder="상품코드 검색/입력"
+                              placeholder={formData.type === 'consulting' ? '용역/서비스 수행 항목명 입력' : '상품코드 검색/입력'}
                               onChange={(e) => updateItem(idx, 'productCode', e.target.value)} 
                               style={{ ...gridInputStyle, paddingRight: '42px' }} 
                             />
@@ -2248,55 +2266,57 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                         </div>
                         <textarea 
                           value={it.spec || ''} 
-                          placeholder="스펙 (Spec)" 
+                          placeholder={formData.type === 'consulting' ? '세부 수행 조건 및 설명' : '스펙 (Spec)'} 
                           onChange={(e) => updateItem(idx, 'spec', e.target.value)} 
                           rows={1}
                           style={{ ...gridInputStyle, resize: 'both', minHeight: '29px', minWidth: '80px', padding: '4px 8px', fontFamily: 'inherit', marginTop: '2px', overflow: 'auto' }} 
                         />
                       </div>
                     </td>
-                    <td style={{ padding: '4px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        {it.productCode ? (() => {
-                          const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
-                          const methods = getProductPackingMethods(prod);
-                          return (
-                            <select
-                              value={it.selectedPackingMethodId || 'default'}
-                              onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
-                              style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center' }}
-                            >
-                              {methods.map((m: any) => (
-                                <option key={m.id} value={m.id}>
-                                  {m.name}
-                                </option>
-                              ))}
-                            </select>
-                          );
-                        })() : (
-                          <select style={{ ...gridInputStyle }} disabled><option>--</option></select>
-                        )}
-                        {(() => {
-                          const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
-                          const methods = getProductPackingMethods(prod);
-                          const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
-                          const packUnit = selectedMethod?.packageType || '단품';
-                          return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
-                              <input 
-                                type="number" 
-                                step="0.1"
-                                placeholder="패킹수량"
-                                value={it.palletQty || ''} 
-                                onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
-                                style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
-                              />
-                              <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </td>
+                    {formData.type !== 'consulting' && (
+                      <td style={{ padding: '4px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {it.productCode ? (() => {
+                            const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                            const methods = getProductPackingMethods(prod);
+                            return (
+                              <select
+                                value={it.selectedPackingMethodId || 'default'}
+                                onChange={(e) => updateItem(idx, 'selectedPackingMethodId', e.target.value)}
+                                style={{ ...gridInputStyle, textAlign: 'center', textAlignLast: 'center' }}
+                              >
+                                {methods.map((m: any) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                            );
+                          })() : (
+                            <select style={{ ...gridInputStyle }} disabled><option>--</option></select>
+                          )}
+                          {(() => {
+                            const prod = products.find(p => p.productCode === getRawProductCode(it.productCode));
+                            const methods = getProductPackingMethods(prod);
+                            const selectedMethod = methods.find((m: any) => m.id === it.selectedPackingMethodId);
+                            const packUnit = selectedMethod?.packageType || '단품';
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
+                                <input 
+                                  type="number" 
+                                  step="0.1"
+                                  placeholder="패킹수량"
+                                  value={it.palletQty || ''} 
+                                  onChange={(e) => updateItem(idx, 'palletQty', parseFloat(e.target.value) || 0)} 
+                                  style={{ ...gridInputStyle, textAlign: 'right', flex: 1 }} 
+                                />
+                                <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>{packUnit}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                    )}
                     <td style={{ padding: '4px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <input 
@@ -2456,6 +2476,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '12px' }}>
 
             {/* Freight Charges (USD) */}
+            {formData.type !== 'consulting' && (
             <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px', background: '#fff', border: '1px solid var(--border-default)', padding: '12px 16px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Freight Charges (USD)</span>
@@ -2556,6 +2577,7 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
                 운송비 합계: <span style={{ color: '#0f172a' }}>${(formData.freightTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
+            )}
 
           </div>
 

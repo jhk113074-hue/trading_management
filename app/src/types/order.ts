@@ -36,6 +36,7 @@ export interface OrderItem {
 }
 
 export interface Order {
+  type?: 'trade' | 'consulting';
   id: string; // PO-YYYY-NNNN
   custPo: string;
   quotationId: string;

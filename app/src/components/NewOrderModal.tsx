@@ -46,6 +46,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
   const [isPISearchOpen, setIsPISearchOpen] = useState(false);
   
   const [formData, setFormData] = useState({
+    type: 'trade' as 'trade' | 'consulting',
     poId: '', // Auto-generated e.g., PO-YYYY-NNNN
     custPo: '',
     quotationId: initialQuotationId || '',
@@ -219,6 +220,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
           const latestRevData = latestRev as any;
           setFormData(prev => ({
             ...prev,
+            type: latestRevData.type || 'trade',
             deliveryTerm: prev.deliveryTerm || latestRevData.deliveryTerm || '',
             origin: prev.origin || latestRevData.origin || '',
             yourRef: prev.yourRef || latestRevData.yourRef || '',
@@ -715,6 +717,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               </div>
             </div>
 
+            {formData.type !== 'consulting' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>인코텀즈 <span style={{ color: '#ef4444' }}>*</span></label>
               <select value={formData.incoterms} onChange={e => handleFormDataChange('incoterms', e.target.value)} style={{ padding: '6px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13px', height: '34px', outline: 'none', background: '#fff', color: '#1e293b', boxSizing: 'border-box', cursor: 'pointer' }}>
@@ -726,6 +729,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                 <option value="DDP">DDP</option>
               </select>
             </div>
+          )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>결제 조건 (Payment Terms)</label>
@@ -836,7 +840,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
               <thead>
                 <tr style={{ background: '#1e3a8a', color: '#ffffff' }}>
                   <th style={{ padding: '10px 6px', textAlign: 'center', width: '40px', fontWeight: 700, borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px' }}>No</th>
-                  <th style={{ padding: '10px 6px', textAlign: 'left', width: '220px', fontWeight: 700 }}>상품코드</th>
+                  <th style={{ padding: '10px 6px', textAlign: 'left', width: '220px', fontWeight: 700 }}>{formData.type === 'consulting' ? '수행 용역/컨설팅 항목' : '상품코드'}</th>
                   <th style={{ padding: '10px 6px', textAlign: 'left', width: '150px', fontWeight: 700 }}>스펙 (Spec)</th>
                   <th style={{ padding: '10px 6px', textAlign: 'left', width: '130px', fontWeight: 700 }}>공급사</th>
                   <th style={{ padding: '10px 6px', textAlign: 'center', width: '110px', fontWeight: 700 }}>수량 / 단위</th>
@@ -861,7 +865,7 @@ export const NewOrderModal: React.FC<Props> = ({ onClose, onSaveSuccess, current
                               list={`po_products_datalist_${idx}`}
                               value={item.name || ''}
                               onChange={e => handleItemChange(idx, 'name', e.target.value)}
-                              placeholder="상품코드 검색/입력"
+                              placeholder={formData.type === 'consulting' ? '수행 용역명 입력' : '상품코드 검색/입력'}
                               style={{ width: '100%', padding: '0 40px 0 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box', height: '28px', outline: 'none' }}
                             />
                             {item.name && (

@@ -51,6 +51,7 @@ export interface PIRevision {
 }
 
 export interface ProformaInvoice {
+  type?: 'trade' | 'consulting';
   id: string; // piNumber is the ID, e.g., PI-YSACC-2026-0001
   piNumber: string;
   piDate: string;
