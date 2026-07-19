@@ -1472,6 +1472,13 @@ export const Dashboard: React.FC = () => {
           text-overflow: clip !important;
           max-width: none !important;
         }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
       {tradingLoading ? (
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
@@ -1575,14 +1582,14 @@ export const Dashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '4px' }}>
+                  <div className="no-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '0' }}>
                     {derivedEvents.filter(e => {
                       const todayStr = new Date().toISOString().split('T')[0];
                       const start = e.startDate;
                       const end = e.endDate || start;
                       return todayStr >= start && todayStr <= end;
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '10px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         오늘 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -1663,12 +1670,12 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '4px' }}>
+                  <div className="no-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '0' }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
                     }).length === 0 ? (
-                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '30px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', padding: '10px 0', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         이번 달에 등록된 일정이 없습니다.
                       </div>
                     ) : (
@@ -1798,7 +1805,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 5. 이번달 선적 예정 일정 (ETD) */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: '1.2', overflowY: 'auto', maxHeight: '75px' }}>
+              <div className="no-scrollbar" style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: '1.2', overflowY: 'auto', maxHeight: '75px' }}>
                 <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6' }} />
