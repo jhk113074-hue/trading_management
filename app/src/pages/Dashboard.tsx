@@ -1472,12 +1472,19 @@ export const Dashboard: React.FC = () => {
           text-overflow: clip !important;
           max-width: none !important;
         }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 5px;
         }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f8fafc;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
         }
       `}</style>
       {tradingLoading ? (
@@ -1582,7 +1589,7 @@ export const Dashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="no-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '0' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '170px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const todayStr = new Date().toISOString().split('T')[0];
                       const start = e.startDate;
@@ -1670,7 +1677,7 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="no-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '0' }}>
+                  <div className="custom-scrollbar" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '170px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
