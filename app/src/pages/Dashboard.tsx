@@ -665,7 +665,7 @@ export const Dashboard: React.FC = () => {
           setActiveDateEventsList(dateStr);
         }}
         style={{
-          minHeight: '33px',
+          minHeight: '48px',
           background: dateStr === activeDateEventsList ? '#f0fdf4' : (isCurrentMonth ? '#fff' : '#f8fafc'),
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
@@ -683,13 +683,13 @@ export const Dashboard: React.FC = () => {
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1px' }}>
           <span style={{
-            fontSize: '11px',
+            fontSize: '14.5px',
             fontWeight: 800,
             color: isToday ? '#fff' : (!isCurrentMonth ? 'var(--border-default)' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : 'var(--text-secondary)'),
             background: isToday ? '#3b82f6' : 'transparent',
             borderRadius: isToday ? '50%' : 'none',
-            width: isToday ? '18px' : 'auto',
-            height: isToday ? '18px' : 'auto',
+            width: isToday ? '24px' : 'auto',
+            height: isToday ? '24px' : 'auto',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -708,15 +708,15 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Dot indicators */}
-        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', minHeight: '6px', marginBottom: '2px' }}>
+        <div style={{ display: 'flex', gap: '2px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', minHeight: '8px', marginBottom: '2px' }}>
           {dayEvents.slice(0, 4).map(e => {
             const colors = getEventBadgeColor(e.type);
             return (
               <span
                 key={e.id}
                 style={{
-                  width: '5px',
-                  height: '5px',
+                  width: '7px',
+                  height: '7px',
                   borderRadius: '50%',
                   background: colors.text,
                   display: 'inline-block'
@@ -1449,7 +1449,7 @@ export const Dashboard: React.FC = () => {
       <style>{`
         .holiday-badge {
           display: inline-block;
-          font-size: 7.5px !important;
+          font-size: 9.5px !important;
           font-weight: 850 !important;
           line-height: 1;
           white-space: nowrap;
@@ -1480,7 +1480,7 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '10px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '260px 1fr', gap: '12px', alignItems: 'stretch', order: 2 }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '10px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '340px 1fr', gap: '12px', alignItems: 'stretch', order: 2 }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
@@ -1523,7 +1523,7 @@ export const Dashboard: React.FC = () => {
                 {/* 요일 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
                   {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
-                    <span key={day} style={{ fontSize: '11px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : 'var(--text-secondary)' }}>
+                    <span key={day} style={{ fontSize: '13.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : 'var(--text-secondary)' }}>
                       {day}
                     </span>
                   ))}
