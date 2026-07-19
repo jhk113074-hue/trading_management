@@ -1485,7 +1485,7 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '340px 1fr', gap: '6px', alignItems: 'stretch', order: 2 }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px 1fr', gap: '6px', alignItems: 'stretch', order: 2 }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
               <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '3px' }}>
