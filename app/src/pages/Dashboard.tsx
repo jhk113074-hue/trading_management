@@ -2645,7 +2645,7 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                     {userProfile?.name?.charAt(0) || '나'}
                   </div>
                   <div style={{ overflow: 'hidden' }}>
@@ -2684,7 +2684,7 @@ export const Dashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {u.name?.charAt(0)}
                       </div>
                       <div style={{ overflow: 'hidden' }}>
@@ -2732,7 +2732,7 @@ export const Dashboard: React.FC = () => {
           <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '4px 0' }} />
 
           {/* Unassigned Tasks Section */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '150px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100px' }}>
             <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>✉</span> 미배당 — 드래그하여 배정
             </div>
@@ -2749,7 +2749,7 @@ export const Dashboard: React.FC = () => {
                 padding: '8px',
                 overflowY: 'auto',
                 minHeight: '100px',
-                maxHeight: '280px',
+                maxHeight: '180px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px'
@@ -2784,9 +2784,9 @@ export const Dashboard: React.FC = () => {
         <div className="kanban-right-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0, width: '100%', overflow: 'hidden' }}>
           
           {/* Active Assignee Info Header & Filters */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '10px', padding: '12px 16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid var(--border-default)', borderRadius: '10px', padding: '6px 12px', flexWrap: 'wrap', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', fontWeight: 800, color: '#fff' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#fff' }}>
                 {activeUser?.name?.slice(0, 2) || '전체'}
               </div>
               <div>
@@ -2852,8 +2852,8 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '8px',
-                  padding: '8px 10px',
+                  marginBottom: '4px',
+                  padding: '4px 8px',
                   borderRadius: '4px',
                   background: basket.headerBg,
                   border: `1px solid ${basket.headerBorder}`
@@ -2883,8 +2883,8 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, minHeight: 0, overflow: 'hidden', marginTop: '4px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minHeight: 0, overflow: 'hidden', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto', paddingRight: '2px', minHeight: 0 }}>
                     {filteredTasks.filter(t => {
                       const s = t.status?.toUpperCase();
                       if (basket.id === 'TODO') return s === 'TODO' || s === '대기';
@@ -2902,13 +2902,13 @@ export const Dashboard: React.FC = () => {
                         style={{
                           background: '#fff',
                           borderRadius: '6px',
-                          padding: '8px 10px',
+                          padding: '4px 6px',
                           border: '1px solid var(--border-color)',
                           cursor: 'grab',
                           boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '4px',
+                          gap: '2px',
                           opacity: draggingId === task.id ? 0.4 : 1
                         }}
                       >
