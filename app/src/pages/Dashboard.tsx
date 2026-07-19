@@ -2793,7 +2793,7 @@ export const Dashboard: React.FC = () => {
           )}
 
           {/* 4 Baskets Kanban Board */}
-          <div className="board-container kanban-board-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', alignItems: 'stretch', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <div className="board-container kanban-board-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '12px', alignItems: 'stretch', flex: 1, minHeight: 0, overflow: 'hidden' }}>
             {baskets.map(basket => (
               <div
                 key={basket.id}
