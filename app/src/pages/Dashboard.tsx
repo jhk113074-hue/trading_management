@@ -197,7 +197,7 @@ const WorldClocks: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '6px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center', position: 'relative' }}>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: '#f8fafc', padding: '4px 10px', borderRadius: '8px', border: '1px solid #f1f5f9', whiteSpace: 'nowrap', overflowX: 'auto', width: '100%', justifyContent: 'center', position: 'relative' }}>
         <span style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text-secondary)', marginRight: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           🌐 세계 시각:
         </span>
@@ -304,7 +304,7 @@ const WorldClocks: React.FC = () => {
                 ))}
               </select>
             </div>
-            <button type="submit" style={{ padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '31px' }}>
+            <button type="submit" style={{ padding: '4px 10px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', height: '31px' }}>
               ＋ 국가 추가
             </button>
           </form>
@@ -665,11 +665,11 @@ export const Dashboard: React.FC = () => {
           setActiveDateEventsList(dateStr);
         }}
         style={{
-          minHeight: '34px',
+          minHeight: '24px',
           background: dateStr === activeDateEventsList ? '#f0fdf4' : (isCurrentMonth ? '#fff' : '#f8fafc'),
           border: '1px solid var(--border-color)',
           borderRadius: '6px',
-          padding: '2px 4px',
+          padding: '0 2px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -683,7 +683,7 @@ export const Dashboard: React.FC = () => {
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '1px' }}>
           <span style={{
-            fontSize: '14.5px',
+            fontSize: '12.5px',
             fontWeight: 800,
             color: isToday ? '#fff' : (!isCurrentMonth ? 'var(--border-default)' : (dayOfWeek === 0 || isKrHoliday) ? '#ef4444' : dayOfWeek === 6 ? '#3b82f6' : 'var(--text-secondary)'),
             background: isToday ? '#3b82f6' : 'transparent',
@@ -1480,10 +1480,10 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '340px 1fr', gap: '8px', alignItems: 'stretch', order: 2 }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '340px 1fr', gap: '6px', alignItems: 'stretch', order: 2 }}>
               
               {/* 스케줄러 헤더 영역 (양쪽 컬럼 통합) */}
-              <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '6px' }}>
+              <div style={{ gridColumn: '1 / span 2', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '3px' }}>
                 <span style={{ fontSize: '17.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   📅 YSACC 스케줄러
                 </span>
@@ -1521,7 +1521,7 @@ export const Dashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column' }}>
 
                 {/* 요일 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px', marginBottom: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '2px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '2px', marginBottom: '2px' }}>
                   {['일', '월', '화', '수', '목', '금', '토'].map((day, idx) => (
                     <span key={day} style={{ fontSize: '13.5px', fontWeight: 800, color: idx === 0 ? '#ef4444' : idx === 6 ? '#3b82f6' : 'var(--text-secondary)' }}>
                       {day}
@@ -1575,7 +1575,7 @@ export const Dashboard: React.FC = () => {
                     </button>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '110px', paddingRight: '4px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const todayStr = new Date().toISOString().split('T')[0];
                       const start = e.startDate;
@@ -1614,7 +1614,7 @@ export const Dashboard: React.FC = () => {
                               });
                             }}
                             style={{
-                              padding: '5px 8px',
+                              padding: '3px 6px',
                               background: colors.bg,
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
@@ -1663,7 +1663,7 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '110px', paddingRight: '4px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', maxHeight: '75px', paddingRight: '4px' }}>
                     {derivedEvents.filter(e => {
                       const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       return e.startDate.startsWith(currentMonthStr) || (e.endDate && e.endDate.startsWith(currentMonthStr));
@@ -1698,7 +1698,7 @@ export const Dashboard: React.FC = () => {
                               });
                             }}
                             style={{
-                              padding: '5px 8px',
+                              padding: '3px 6px',
                               background: colors.bg,
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
@@ -1739,14 +1739,14 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* ── 오른쪽 (50%): 무역실시간매출및PI현황 ── */}
-            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '5px', order: 1 }}>
+            <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '3px', order: 1 }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 2px 0' }}>
                 <span>📊 무역 실시간 매출 및 PI 현황</span>
                 <span style={{ fontSize: '0.85rem', background: 'var(--primary-color)', color: '#fff', padding: '1px 6px', borderRadius: '20px', fontWeight: 700 }}>통합 대시보드</span>
               </h2>
 
               {/* 1. 이번달 PI 건수 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
                   이번달 PI 건수
@@ -1759,7 +1759,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 2. 수주 금액 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
                   수주 금액
@@ -1772,7 +1772,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 3. 당월 매출 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#ea580c' }} />
                   당월 매출 (원화 합산)
@@ -1785,7 +1785,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 4. 전체 누적 매출금액 */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flex: 1 }}>
                 <div style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626' }} />
                   전체 누적 매출금액
@@ -1798,7 +1798,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* 5. 이번달 선적 예정 일정 (ETD) */}
-              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: '6px', flex: '1.2', overflowY: 'auto', maxHeight: '110px' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: '6px', flex: '1.2', overflowY: 'auto', maxHeight: '75px' }}>
                 <div style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6' }} />
@@ -2814,7 +2814,7 @@ export const Dashboard: React.FC = () => {
 
           {/* Unassigned Warning Info Bar */}
           {unassignedTasks.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fffbeb', border: '1px solid #fef08a', color: '#854d0e', padding: '6px 12px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fffbeb', border: '1px solid #fef08a', color: '#854d0e', padding: '4px 10px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 600 }}>
               <span>✉</span>
               <span>처리 대기 중인 위임 업무가 <strong style={{ color: '#ca8a04' }}>{unassignedTasks.length}건</strong> 있습니다. 왼쪽 패널에서 담당자에게 드래그하여 배정하세요.</span>
             </div>
