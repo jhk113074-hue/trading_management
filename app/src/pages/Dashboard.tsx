@@ -1100,19 +1100,19 @@ export const Dashboard: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 600, flex: 1, lineHeight: 1.3 }}>{task.title}</span>
+          <span style={{ fontSize: '0.76rem', fontWeight: 600, flex: 1, lineHeight: 1.3 }}>{task.title}</span>
           <span style={{
-            fontSize: '0.6rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px',
+            fontSize: '0.64rem', fontWeight: 800, padding: '1px 4px', borderRadius: '3px',
             color: badgeStyle.color, background: badgeStyle.bg, border: badgeStyle.border, flexShrink: 0,
           }}>{quad}</span>
         </div>
         <div style={{ display: 'flex', gap: '5px', marginTop: '5px', flexWrap: 'wrap' }}>
-          {task.projectName && <span style={{ fontSize: '0.62rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 4px', color: 'var(--text-secondary)' }}>{task.projectName}</span>}
-          {task.dueDate && <span style={{ fontSize: '0.62rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : 'var(--text-secondary)' }}>📅 {task.dueDate}</span>}
+          {task.projectName && <span style={{ fontSize: '0.66rem', background: '#f1f5f9', borderRadius: '3px', padding: '1px 4px', color: 'var(--text-secondary)' }}>{task.projectName}</span>}
+          {task.dueDate && <span style={{ fontSize: '0.66rem', color: task.dueDate < new Date().toISOString().split('T')[0] ? '#ef4444' : 'var(--text-secondary)' }}>📅 {task.dueDate}</span>}
           {(task.commentCount ?? 0) > 0 && (
             <span 
               className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
-              style={{ fontSize: '0.6rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
+              style={{ fontSize: '0.64rem', background: '#fef3c7', color: '#d97706', padding: '1px 4px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: '800' }}
             >
               💬 {task.commentCount}
             </span>
@@ -2886,7 +2886,7 @@ export const Dashboard: React.FC = () => {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div style={{
-                                fontSize: '0.68rem',
+                                fontSize: '0.72rem',
                                 fontWeight: 700,
                                 color: 'var(--text-primary)',
                                 flex: 1,
@@ -2903,7 +2903,7 @@ export const Dashboard: React.FC = () => {
                             const badgeStyle = badgeStyles[quad] || badgeStyles.Q2;
                             return (
                               <div style={{
-                                fontSize: '0.55rem',
+                                fontSize: '0.59rem',
                                 fontWeight: 800,
                                 padding: '0 3px',
                                 borderRadius: '2px',
@@ -2917,7 +2917,7 @@ export const Dashboard: React.FC = () => {
                           })()}
                         </div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.58rem', marginTop: '2px', flexWrap: 'wrap', gap: '2px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem', marginTop: '2px', flexWrap: 'wrap', gap: '2px' }}>
                           <div style={{ display: 'flex', gap: '3px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
                               {task.type === 'PROJECT' ? '프로젝트' : '일반'}
