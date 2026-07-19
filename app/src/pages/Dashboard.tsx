@@ -2631,15 +2631,15 @@ export const Dashboard: React.FC = () => {
       <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         
         {/* Left Side Panel (담당자별 배당 현황 & 미배당 업무) */}
-        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '12px', borderRight: '1px solid var(--border-color)', paddingRight: '16px', overflowY: 'auto' }}>
+        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px', borderRight: '1px solid var(--border-color)', paddingRight: '16px', overflowY: 'auto' }}>
           <div>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
-            <div style={{ fontSize: '0.78rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '6px 10px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <div style={{ fontSize: '0.74rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '4px 8px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
               <span>📂</span> 미배당 업무 <span style={{ color: '#ca8a04', fontWeight: 800 }}>{unassignedTasks.length}건</span>
             </div>
             
             {/* Assignee list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {/* 내 업무 */}
               <div
                 onClick={() => setFilter('내 업무')}
@@ -2650,8 +2650,8 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
                   background: filter === '내 업무' ? 'rgba(190, 18, 60, 0.08)' : '#fff',
                   border: filter === '내 업무' ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                   cursor: 'pointer',
@@ -2659,16 +2659,12 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg,var(--primary-color),var(--primary-hover))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                     {userProfile?.name?.charAt(0) || '나'}
                   </div>
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {userProfile?.name} (본인)
-                    </div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-                      총 {tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건
-                    </div>
+                  <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>{userProfile?.name} (본인)</span>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>({tasks.filter(t => t.assigneeId === userProfile?.id || t.assigneeName === userProfile?.name).length}건)</span>
                   </div>
                 </div>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
@@ -2689,8 +2685,8 @@ export const Dashboard: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
                       background: isSelected ? 'rgba(190, 18, 60, 0.08)' : '#fff',
                       border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                       cursor: 'pointer',
@@ -2698,16 +2694,14 @@ export const Dashboard: React.FC = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--focus-ring), #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {u.name?.charAt(0)}
                       </div>
-                      <div style={{ overflow: 'hidden' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }} title={`${u.name} (${u.department || '담당자'})`}>
                           {u.name} ({u.department || '담당자'})
-                        </div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
-                          총 {mTasks.length}건
-                        </div>
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', flexShrink: 0 }}>({mTasks.length}건)</span>
                       </div>
                     </div>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} />
@@ -2722,8 +2716,8 @@ export const Dashboard: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
                   background: filter === '전체' ? 'rgba(190, 18, 60, 0.08)' : '#fff',
                   border: filter === '전체' ? '1px solid var(--primary-color)' : '1px solid var(--border-default)',
                   cursor: 'pointer',
@@ -2738,7 +2732,7 @@ export const Dashboard: React.FC = () => {
             </div>
             
             {/* 담당자 추가 */}
-            <a href="/team-management" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: 'var(--text-secondary)', marginTop: '10px', fontWeight: 600 }}>
+            <a href="/team-management" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 600 }}>
               ✉ 담당자 추가
             </a>
           </div>
