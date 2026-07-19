@@ -2593,10 +2593,10 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Kanban Container: Sidebar on left + Board on right */}
-      <div className="kanban-main-layout" style={{ display: 'flex', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+      <div className="kanban-main-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 4fr', gap: '12px', alignItems: 'stretch', flex: 1, overflow: 'hidden', minHeight: 0 }}>
         
         {/* Left Side Panel (담당자별 배당 현황 & 미배당 업무) */}
-        <div className="kanban-left-panel" style={{ width: '280px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px', borderRight: '1px solid var(--border-color)', paddingRight: '16px', overflowY: 'auto' }}>
+        <div className="kanban-left-panel" style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderRight: '1px solid var(--border-color)', paddingRight: '12px', overflowY: 'auto' }}>
           <div>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>담당자별 배당 현황</h3>
             <div style={{ fontSize: '0.74rem', background: '#fef9c3', border: '1px solid #fef08a', color: '#854d0e', padding: '4px 8px', borderRadius: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
