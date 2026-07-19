@@ -2757,7 +2757,6 @@ export const Dashboard: React.FC = () => {
                 padding: '8px',
                 overflowY: 'auto',
                 minHeight: '100px',
-                maxHeight: '180px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px'
