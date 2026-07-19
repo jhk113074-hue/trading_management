@@ -2917,23 +2917,19 @@ export const Dashboard: React.FC = () => {
                           })()}
                         </div>
                         
-                        <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.65rem', background: '#eff6ff', color: '#2563eb', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
-                            {task.type === 'PROJECT' ? '프로젝트' : '일반'}
-                          </span>
-                          <span style={{ fontSize: '0.65rem', background: '#f0fdf4', color: '#16a34a', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
-                            {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
-                          </span>
-                          {filter === '전체' && (
-                            <span style={{ fontSize: '0.65rem', background: '#f3e8ff', color: '#7c3aed', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
-                              👤 {task.assigneeName || '미배정'}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.65rem', marginTop: '3px', flexWrap: 'wrap', gap: '3px' }}>
+                          <div style={{ display: 'flex', gap: '3px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
+                              {task.type === 'PROJECT' ? '프로젝트' : '일반'}
                             </span>
-                          )}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <span>마감 {task.dueDate || '-'}</span>
+                            <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
+                              {task.scheduleType === 'SELF' ? '스스로 계획' : '일정기반'}
+                            </span>
+                            {filter === '전체' && (
+                              <span style={{ background: '#f3e8ff', color: '#7c3aed', padding: '0 4px', borderRadius: '3px', fontWeight: 600 }}>
+                                👤 {task.assigneeName || '미배정'}
+                              </span>
+                            )}
                             {(task.commentCount ?? 0) > 0 && (
                               <span 
                                 className={isCommentNew(task.lastCommentAt) ? 'blink-badge' : ''}
@@ -2943,7 +2939,11 @@ export const Dashboard: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div style={{ color: 'var(--focus-ring)', fontWeight: 700 }}>{task.projectName || 'YSACC'}</div>
+                          
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)' }}>
+                            <span>마감 {task.dueDate || '-'}</span>
+                            <span style={{ color: 'var(--focus-ring)', fontWeight: 700 }}>{task.projectName || 'YSACC'}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
