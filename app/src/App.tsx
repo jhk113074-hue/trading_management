@@ -25,6 +25,8 @@ import { Mails } from './pages/Mails';
 import { MeetingMinutes } from './pages/MeetingMinutes';
 import { Imports } from './pages/Imports';
 import { ImportDetail } from './pages/ImportDetail';
+import { Credentials } from './pages/Credentials';
+
 
 import { FilePreviewModal } from './components/FilePreviewModal';
 
@@ -70,6 +72,8 @@ const App: React.FC = () => {
               <Route path="team-management" element={<TeamManagement />} />
               <Route path="profile" element={<ProfileSettings />} />
               <Route path="my-company" element={<MyCompanySettings />} />
+              <Route path="credentials" element={<Credentials />} />
+
               <Route path="issues" element={<IssueBoard />} />
               <Route path="leave-management" element={<LeaveManagement />} />
               <Route path="approvals" element={<ApprovalSystem />} />
