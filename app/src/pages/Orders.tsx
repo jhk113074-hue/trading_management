@@ -143,6 +143,8 @@ export const Orders: React.FC = () => {
   const [customerFilter, setCustomerFilter] = useState('All');
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All');
+  const [completedFilter, setCollapsedFilter] = useState('All'); // 'All' | 'Hide'
+
   const [dateFilterType, setDateFilterType] = useState<string>('Last3Months');
   const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -373,6 +375,8 @@ export const Orders: React.FC = () => {
     if (customerFilter !== 'All') result = result.filter(o => o.customer === customerFilter);
     if (stepFilter !== 'All') result = result.filter(o => mapStatusToStep(o.status || '') === stepFilter);
     if (viewFilter === 'Urgent') result = result.filter(o => o.nextAction.level === 'RED');
+    if (completedFilter === 'Hide') result = result.filter(o => mapStatusToStep(o.status || '', o) !== '완료');
+
     if (dateFilterType !== 'All') {
       result = result.filter(o => {
         let d: Date | null = null;
@@ -565,7 +569,9 @@ export const Orders: React.FC = () => {
         { label: '담당자', value: managerFilter, set: setManagerFilter, opts: [['All', '전체'], ...managers.map(m => [m, m])] },
         { label: '단계', value: stepFilter, set: setStepFilter, opts: [['All', '전체'], ['수주정보', '수주정보'], ['소싱/발주', '소싱/발주'], ['물류/선적', '물류/선적'], ['서류관리', '서류관리'], ['정산/결제', '정산/결제']] },
         { label: '보기', value: viewFilter, set: setViewFilter, opts: [['All', '전체 오더'], ['Urgent', '⚠️ 긴급만']] },
+        { label: '완료건', value: completedFilter, set: setCollapsedFilter, opts: [['All', '전체보기'], ['Hide', '완료건 제외']] },
       ].map(({ label, value, set, opts }) => (
+
         <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexShrink: 0 }}>
           <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>{label}</label>
           <select value={value} onChange={e => set(e.target.value)} style={{ padding: '4px 10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '13.5px', height: '34px', backgroundColor: '#fff', color: '#1e293b', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
