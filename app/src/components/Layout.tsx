@@ -75,6 +75,12 @@ export const Layout: React.FC = () => {
   }, [isDragging]);
 
   React.useEffect(() => {
+    if (window.innerWidth <= 1028) {
+      setSidebarCollapsed(true);
+    }
+  }, [location.pathname]);
+
+  React.useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', resize);
       window.addEventListener('mouseup', stopResizing);
@@ -439,6 +445,12 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {!sidebarCollapsed && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setSidebarCollapsed(true)} 
+        />
+      )}
       <aside 
         className="sidebar" 
         style={{ 

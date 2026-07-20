@@ -301,11 +301,20 @@ body {
   gap: 2px;
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
 /* 모바일 반응형 헤더 & 대시보드 보완 스타일 */
 @media (max-width: 768px) {
   .header {
     padding: 0 12px !important;
-    height: 56px !important;
+    height: auto !important;
+    min-height: 56px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
   }
   .header-logo-text {
     font-size: 18px !important;
@@ -319,24 +328,47 @@ body {
 }
 
 /* 모바일 및 소형 기기 칸반 레이아웃 대응 */
-@media (max-width: 1024px) {
+@media (max-width: 1028px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    box-shadow: 8px 0 24px rgba(0,0,0,0.15) !important;
+    transition: width 0.22s cubic-bezier(0.4,0,0.2,1) !important;
+  }
+  .sidebar-backdrop {
+    position: fixed !important;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4) !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 9998 !important;
+  }
   .kanban-main-layout {
+    display: flex !important; /* 인라인 display: grid 무력화 */
     flex-direction: column !important;
     gap: 16px !important;
+    overflow-y: auto !important;
   }
   .kanban-left-panel {
     width: 100% !important;
     border-right: none !important;
-    border-bottom: 1px solid var(--border-default) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     padding-right: 0 !important;
-    padding-bottom: 20px !important;
+    padding-bottom: 16px !important;
+    overflow-y: visible !important;
   }
   .kanban-right-panel {
     width: 100% !important;
     min-width: 100% !important;
+    overflow: visible !important;
   }
   .kanban-board-grid {
+    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important; /* 태블릿에서는 2열 */
+    gap: 10px !important;
+    overflow: visible !important;
   }
 }
 
