@@ -769,7 +769,7 @@ export const Layout: React.FC = () => {
             )}
 
             {/* 세션 남은 시간 카운트다운 표시 영역 */}
-            <div style={{
+            <div className="header-session-time" style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '8px',
@@ -782,7 +782,7 @@ export const Layout: React.FC = () => {
               color: 'var(--text-secondary)',
               marginRight: '6px',
             }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span className="header-session-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 🔒 남은시간: <span style={{ color: sessionTimeLeft <= 300 ? '#ef4444' : '#0f172a' }}>{formatCountdown(sessionTimeLeft)}</span>
               </span>
               <Button
@@ -796,7 +796,7 @@ export const Layout: React.FC = () => {
               </Button>
             </div>
 
-            <Link to="/profile" className="btn" style={{
+            <Link to="/profile" className="btn header-profile-link" style={{
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
@@ -810,9 +810,10 @@ export const Layout: React.FC = () => {
               color: 'var(--text-secondary)',
               cursor: 'pointer'
             }}>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: '1' }}>⚙</span> 내 정보 수정
+              <span style={{ color: 'var(--text-secondary)', fontSize: '17px', lineHeight: '1' }}>⚙</span>
+              <span className="header-profile-text">내 정보 수정</span>
             </Link>
-            <Button variant="secondary" onClick={logout}>
+            <Button variant="secondary" onClick={logout} className="header-logout-btn">
               로그아웃
             </Button>
           </div>
