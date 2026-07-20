@@ -11,6 +11,7 @@ import { generatePIExcel } from '../utils/piExcelGenerator';
 import { ProductModal } from './ProductModal';
 import { ProductSearchModal } from './ProductSearchModal';
 import { CustomerSearchModal } from './CustomerSearchModal';
+import * as XLSX from 'xlsx';
 
 import { DateInput } from './ui/DateInput';
 
@@ -887,6 +888,181 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
       palletQty: 1, remarks: '', roundDigits: 2,
       selectedPackingMethodId: 'default_injected'
     }]);
+  };
+
+  const downloadLineItemsTemplate = () => {
+    let rowsToExport = [];
+    if (items.length > 0) {
+      rowsToExport = items.map(it => {
+        const rawCode = getRawProductCode(it.productCode);
+        const currency = it.purchasePriceKrw > 0 ? 'KRW' : 'USD';
+        const price = it.purchasePriceKrw > 0 ? it.purchasePriceKrw : it.purchasePriceUsd;
+        return {
+          '상품코드 (Product Code)': rawCode,
+          '수량 (Quantity)': it.quantity || 0,
+          '단위 (Unit)': it.unit || 'EA',
+          '매입통화 (Currency)': currency,
+          '매입단가 (Purchase Price)': price || 0,
+          '마진율 (%) (Margin Rate)': it.marginRate !== undefined ? it.marginRate : 15,
+          '올림자릿수 (Round Digits)': it.roundDigits !== undefined ? it.roundDigits : 2,
+          '비고 (Remarks)': it.remarks || ''
+        };
+      });
+    } else {
+      rowsToExport = [
+        {
+          '상품코드 (Product Code)': 'WBR-7575Z',
+          '수량 (Quantity)': 80,
+          '단위 (Unit)': 'EA',
+          '매입통화 (Currency)': 'KRW',
+          '매입단가 (Purchase Price)': 1860,
+          '마진율 (%) (Margin Rate)': 10,
+          '올림자릿수 (Round Digits)': 2,
+          '비고 (Remarks)': '예시 항목 1'
+        },
+        {
+          '상품코드 (Product Code)': 'WBR-0160Z',
+          '수량 (Quantity)': 20,
+          '단위 (Unit)': 'EA',
+          '매입통화 (Currency)': 'KRW',
+          '매입단가 (Purchase Price)': 3230,
+          '마진율 (%) (Margin Rate)': 15,
+          '올림자릿수 (Round Digits)': 2,
+          '비고 (Remarks)': '예시 항목 2'
+        }
+      ];
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rowsToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LineItems");
+    XLSX.writeFile(wb, "견적서_상품라인_양식.xlsx");
+  };
+
+  const importLineItemsExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(firstSheet) as any[];
+
+        if (json.length === 0) {
+          alert('가져올 데이터가 없습니다.');
+          return;
+        }
+
+        const parsedItems: PIItem[] = json.map((row, idx) => {
+          const rawCode = String(row['상품코드 (Product Code)'] || '').trim();
+          const quantity = parseFloat(row['수량 (Quantity)']) || 0;
+          const unit = String(row['단위 (Unit)'] || 'EA').trim().toUpperCase();
+          const currency = String(row['매입통화 (Currency)'] || 'KRW').trim().toUpperCase();
+          const purchasePrice = parseFloat(row['매입단가 (Purchase Price)']) || 0;
+          const marginRate = parseFloat(row['마진율 (%) (Margin Rate)']) !== undefined && !isNaN(parseFloat(row['마진율 (%) (Margin Rate)'])) ? parseFloat(row['마진율 (%) (Margin Rate)']) : 15;
+          const roundDigits = parseFloat(row['올림자릿수 (Round Digits)']) !== undefined && !isNaN(parseFloat(row['올림자릿수 (Round Digits)'])) ? parseFloat(row['올림자릿수 (Round Digits)']) : 2;
+          const remarks = String(row['비고 (Remarks)'] || '').trim();
+
+          const purchasePriceKrw = currency === 'KRW' ? purchasePrice : 0;
+          const purchasePriceUsd = currency !== 'KRW' ? purchasePrice : 0;
+
+          const p = products.find(prod => prod.productCode === rawCode);
+          let displayName = rawCode;
+          let spec = '';
+          let unitToUse = unit;
+          let selectedPackingMethodId = 'default_injected';
+          let packingSpecOverride: any = undefined;
+
+          if (p) {
+            displayName = p.nameEn || p.nameKo || '';
+            spec = p.spec || '';
+            unitToUse = p.unit || unit;
+            
+            const methods = getProductPackingMethods(p);
+            const defaultMethod = methods.find((m: any) => m.isDefault) || methods[0];
+            if (defaultMethod) {
+              selectedPackingMethodId = defaultMethod.id;
+              if (defaultMethod.unit) {
+                unitToUse = defaultMethod.unit;
+              }
+              const isPallet = defaultMethod.packageType?.includes('Pallet') || defaultMethod.packageType?.endsWith('+ Pallet');
+              packingSpecOverride = {
+                packageType: defaultMethod.packageType,
+                qtyPerPallet: defaultMethod.qtyPerPallet || 0,
+                specWidth: isPallet ? (defaultMethod.palletWidth || defaultMethod.unitWidth || 0) : (defaultMethod.unitWidth || 0),
+                specLength: isPallet ? (defaultMethod.palletLength || defaultMethod.unitLength || 0) : (defaultMethod.unitLength || 0),
+                specHeight: isPallet ? (defaultMethod.palletHeight || defaultMethod.unitHeight || 0) : (defaultMethod.unitHeight || 0),
+                weight: isPallet ? (defaultMethod.palletWeight || defaultMethod.unitWeight || 0) : (defaultMethod.unitWeight || 0),
+                grossWeight: isPallet ? (defaultMethod.palletGrossWeight || defaultMethod.unitGrossWeight || 0) : (defaultMethod.unitGrossWeight || defaultMethod.unitWeight || 0),
+              };
+            }
+          }
+
+          let rawSalePrice = 0;
+          const rate = formData.exchangeRate || 1400;
+          if (purchasePriceKrw > 0) {
+            rawSalePrice = purchasePriceKrw / rate / (1 - marginRate / 100);
+          } else {
+            rawSalePrice = purchasePriceUsd / (1 - marginRate / 100);
+          }
+
+          const salePriceUsd = ceilValue(rawSalePrice, roundDigits);
+          const lineTotalUsd = salePriceUsd * quantity;
+
+          let palletQty = 1;
+          if (packingSpecOverride) {
+            const qpp = packingSpecOverride.qtyPerPallet;
+            if (qpp && qpp > 0) {
+              palletQty = parseFloat((quantity / qpp).toFixed(2));
+            } else {
+              palletQty = quantity;
+            }
+          } else if (p) {
+            if (p.qtyPerPallet && p.qtyPerPallet > 0) {
+              palletQty = parseFloat((quantity / p.qtyPerPallet).toFixed(2));
+            } else if (p.weight && p.weight > 0) {
+              palletQty = parseFloat((quantity / p.weight).toFixed(2));
+            } else {
+              palletQty = quantity;
+            }
+          } else {
+            palletQty = quantity;
+          }
+
+          return {
+            lineNumber: idx + 1,
+            productCode: p ? `[${p.productCode}] ${displayName}` : rawCode,
+            productName: displayName,
+            spec,
+            description: displayName,
+            quantity,
+            unit: unitToUse,
+            purchasePriceKrw,
+            purchasePriceUsd,
+            exchangeRate: rate,
+            marginRate,
+            salePriceUsd,
+            lineTotalUsd,
+            palletQty,
+            remarks,
+            roundDigits,
+            selectedPackingMethodId,
+            packingSpecOverride
+          };
+        });
+
+        setItems(parsedItems);
+        alert(`성공적으로 ${parsedItems.length}개의 상품 라인을 업로드했습니다.`);
+      } catch (err) {
+        console.error(err);
+        alert('엑셀 파일 분석 중 오류가 발생했습니다. 양식을 확인해주세요.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
   };
 
   const updateItem = (index: number, fieldOrUpdates: keyof PIItem | Partial<PIItem>, value?: any) => {
@@ -2119,9 +2295,14 @@ export const PIFormModal: React.FC<Props> = ({ initialPI, onClose, currentUser }
               <h4 style={{ fontSize: '13.5px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📦</span> 상품 라인 (Line Items)
               </h4>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {formData.type !== 'consulting' && <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}>🚢 적재 시뮬레이션</button>}
-                <button onClick={addItem} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '7px 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>＋ 상품 추가</button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {formData.type !== 'consulting' && <button onClick={handleSimulation} style={{ background: '#3b82f6', color: '#fff', border: 'none', height: '34px', padding: '0 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}>🚢 적재 시뮬레이션</button>}
+                <button onClick={downloadLineItemsTemplate} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', height: '34px', padding: '0 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>📥 양식 다운로드</button>
+                <label style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', height: '34px', padding: '0 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>
+                  📤 엑셀 업로드
+                  <input type="file" accept=".xlsx, .xls" onChange={importLineItemsExcel} style={{ display: 'none' }} />
+                </label>
+                <button onClick={addItem} style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', height: '34px', padding: '0 14px', borderRadius: '4px', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', color: '#475569', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}>＋ 상품 추가</button>
               </div>
             </div>
             <div style={{ overflowX: 'auto', width: '100%', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
