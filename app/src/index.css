@@ -317,13 +317,30 @@ body {
     padding-bottom: 8px !important;
   }
   .header-logo-text {
-    font-size: 18px !important;
+    font-size: clamp(15px, 2.5vw, 20px) !important;
   }
   .header-logo-text span {
     margin-right: 3px !important;
   }
   .header-user-text {
     display: none !important; /* 모바일 환경에서는 좁아서 이름님 로그인중 텍스트를 숨겨 겹침 방지 */
+  }
+  
+  /* 유동적인 폰트 크기 자동 조절 (Viewport-based fluid sizing) */
+  .header-session-time, .header-profile-link, .header-logout-btn {
+    font-size: clamp(11px, 2vw, 14px) !important;
+  }
+  .top-section h2 {
+    font-size: clamp(15px, 2.6vw, 20px) !important;
+  }
+  .top-section p {
+    font-size: clamp(11px, 1.8vw, 13px) !important;
+  }
+  .kanban-left-panel h3 {
+    font-size: clamp(12px, 2vw, 14px) !important;
+  }
+  .task-card, .task-card * {
+    font-size: clamp(10px, 1.6vw, 12px) !important;
   }
 }
 
