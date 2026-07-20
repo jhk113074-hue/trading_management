@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db, COMPANY_ID } from '../firebase';
 import type { Credential } from '../types';
 import { CredentialModal } from '../components/CredentialModal';
 import { useColumnResize } from '../hooks/useColumnResize';
+import { useAuth } from '../contexts/AuthContext';
+import * as XLSX from 'xlsx';
+
+const excelMapping = [
+  { header: '이름', key: 'siteName' },
+  { header: '홈페이지', key: 'homepageUrl' },
+  { header: 'ID', key: 'loginId' },
+  { header: 'PW', key: 'loginPw' },
+  { header: '비고', key: 'remarks' }
+];
 
 export const Credentials: React.FC = () => {
+  const { userProfile } = useAuth();
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,6 +82,66 @@ export const Credentials: React.FC = () => {
     }
   };
 
+  const exportExcel = () => {
+    const data = credentials.map(c => {
+      let row: any = {};
+      excelMapping.forEach(m => {
+        row[m.header] = (c as any)[m.key] ?? '';
+      });
+      return row;
+    });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Credentials');
+    XLSX.writeFile(wb, 'credentials_master.xlsx');
+  };
+
+  const importExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(firstSheet);
+
+        let successCount = 0;
+        for (const row of json as any[]) {
+          let credentialData: any = {};
+          excelMapping.forEach(m => {
+            if (row[m.header] !== undefined && row[m.header] !== null) {
+              credentialData[m.key] = String(row[m.header]).trim();
+            }
+          });
+
+          if (!credentialData.siteName) continue; // siteName is required
+
+          // Generate unique ID based on timestamp and randomness
+          const docId = `cred_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          credentialData.updatedAt = serverTimestamp();
+          credentialData.createdAt = serverTimestamp();
+          credentialData.updatedBy = userProfile?.name || 'Excel 업로드';
+
+          await setDoc(doc(db, 'companies', COMPANY_ID, 'credentials', docId), credentialData, { merge: true });
+          successCount++;
+        }
+        alert(`✅ Excel 업로드 완료: 총 ${successCount}건의 계정이 추가/병합되었습니다.`);
+      } catch (err: any) {
+        alert('❌ Excel 업로드 오류: ' + err.message);
+        console.error(err);
+      } finally {
+        event.target.value = ''; // Reset file input
+        setIsUploading(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   return (
     <div className="page-container" style={{ padding: '24px 30px' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
@@ -77,26 +149,40 @@ export const Credentials: React.FC = () => {
           <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#1e293b', margin: 0 }}>🔑 공동작업 사이트 비밀번호 관리</h1>
           <p style={{ color: '#64748b', fontSize: '13px', marginTop: '2px' }}>협업 시 사용하는 국세청, 무역인증 등 공용 사이트 계정 정보 모음</p>
         </div>
-        <button 
-          onClick={() => { setEditingCred(undefined); setIsModalOpen(true); }}
-          style={{
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            padding: '0 16px',
-            borderRadius: '4px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '12.5px',
-            transition: 'background 0.2s',
-            height: '34px',
-            boxSizing: 'border-box'
-          }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
-        >
-          ➕ 신규 사이트 등록
-        </button>
+        <div style={{ display: 'flex', gap: '8px', height: '34px' }}>
+          <button 
+            onClick={exportExcel}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+          >
+            ⬇ Excel 다운로드
+          </button>
+          <button 
+            onClick={() => document.getElementById('excel_upload_input')?.click()}
+            disabled={isUploading}
+            style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '0 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+          >
+            {isUploading ? '⏳ 업로드 중...' : '⬆ Excel 업로드'}
+          </button>
+          <input 
+            type="file" 
+            id="excel_upload_input" 
+            accept=".xlsx, .xls" 
+            style={{ display: 'none' }} 
+            onChange={importExcel} 
+          />
+          <button 
+            onClick={() => { setEditingCred(undefined); setIsModalOpen(true); }}
+            style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0 16px', borderRadius: '4px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: '12.5px', transition: 'background 0.2s', height: '100%', boxSizing: 'border-box' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
+          >
+            ➕ 신규 사이트 등록
+          </button>
+        </div>
       </header>
 
       {/* Search Bar */}
