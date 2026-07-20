@@ -143,7 +143,7 @@ export const Orders: React.FC = () => {
   const [customerFilter, setCustomerFilter] = useState('All');
   const [stepFilter, setStepFilter] = useState('All');
   const [viewFilter, setViewFilter] = useState('All');
-  const [completedFilter, setCollapsedFilter] = useState('All'); // 'All' | 'Hide'
+  const [completedFilter, setCollapsedFilter] = useState('Hide'); // 'All' | 'Hide'
 
   const [dateFilterType, setDateFilterType] = useState<string>('Last3Months');
   const [dateFilterTarget, setDateFilterTarget] = useState<'date' | 'etd'>('date');
