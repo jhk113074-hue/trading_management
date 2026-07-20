@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
+html {
+  font-size: 17.5px;
+}
+
 :root {
   /* ── YSACC 디자인시스템 (로그인 화면 기준으로 통일) ── */
   --bg-primary: #F8F8F9; /* surface-page */
