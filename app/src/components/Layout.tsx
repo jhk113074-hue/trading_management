@@ -21,10 +21,17 @@ export const Layout: React.FC = () => {
   const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
     try {
       const saved = localStorage.getItem('sidebar_collapsed_sections');
-      return saved ? JSON.parse(saved) : {};
+      if (saved) {
+        return JSON.parse(saved);
+      }
     } catch {
-      return {};
+      // ignore
     }
+    return {
+      'DB관리': true,
+      '시스템': true,
+      '관리': true
+    };
   });
 
   const toggleSection = (section: string) => {
