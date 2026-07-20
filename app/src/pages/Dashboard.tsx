@@ -1452,7 +1452,7 @@ export const Dashboard: React.FC = () => {
         <div style={{ padding: '20px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>무역 통계 데이터를 실시간 연결 중...</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
+          <div className="dashboard-top-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px', alignItems: 'stretch' }}>
             
             {/* ── 왼쪽 (50%): 달력 및 일정 목록 (좌우 배치) ── */}
             <div style={{ background: '#fff', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '6px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'grid', gridTemplateColumns: '272px 1fr', gap: '6px', alignItems: 'stretch', order: 2 }}>
@@ -2378,7 +2378,7 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '12px 0 10px 0' }} />
+      <hr className="dashboard-divider" style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '12px 0 10px 0' }} />
 
       {/* Date Navigation & Kanban Header */}
       <div className="top-section" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', justifyContent: 'space-between', flexShrink: 0 }}>

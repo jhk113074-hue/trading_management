@@ -325,6 +325,9 @@ body {
   .header-user-text {
     display: none !important; /* 모바일 환경에서는 좁아서 이름님 로그인중 텍스트를 숨겨 겹침 방지 */
   }
+  .dashboard-top-section, .dashboard-divider {
+    display: none !important; /* 모바일 화면에서는 일정/통계를 숨기고 업무(칸반)만 보이도록 설정 */
+  }
   
   /* 유동적인 폰트 크기 자동 조절 (Viewport-based fluid sizing) */
   .header-session-time, .header-profile-link, .header-logout-btn {
