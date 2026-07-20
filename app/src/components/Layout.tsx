@@ -18,6 +18,24 @@ export const Layout: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeNotificationTask, setActiveNotificationTask] = useState<Task | null>(null);
 
+  const [collapsedSections, setCollapsedSections] = useState<{[key: string]: boolean}>(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_collapsed_sections');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => {
+      const next = { ...prev, [section]: !prev[section] };
+      localStorage.setItem('sidebar_collapsed_sections', JSON.stringify(next));
+      return next;
+    });
+  };
+
+
   // Session Timeout (2 hours) States
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
@@ -433,50 +451,75 @@ export const Layout: React.FC = () => {
 
         {/* 메뉴 */}
         <nav style={{ padding: '8px 0', flex: 1 }}>
-          {menuItems.map((group, gIdx) => (
-            <div key={gIdx} className="sidebar-section">
-              {group.section && <div className="sidebar-section-title">{group.section}</div>}
-              {group.items.map((item: any) => (
-                (item as any).external ? (
-                  <a 
-                    key={item.path} 
-                    href={item.path} 
-                    onClick={e => {
-                      e.preventDefault();
-                      window.open(item.path, '_blank', 'width=1100,height=800,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no,status=no');
+          {menuItems.map((group, gIdx) => {
+            const isCollapsed = group.section ? !!collapsedSections[group.section] : false;
+            return (
+              <div key={gIdx} className="sidebar-section" style={{ marginBottom: '12px' }}>
+                {group.section && (
+                  <div 
+                    className="sidebar-section-title"
+                    onClick={() => toggleSection(group.section)}
+                    style={{ 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      userSelect: 'none',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-md)',
+                      transition: 'background 0.2s',
                     }}
-                    className="nav-item"
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.03)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
-                  </a>
-                ) : (
-                  <Link 
-                    key={item.path} 
-                    to={item.path} 
-                    className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-                  >
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {item.label}
-                      {item.badgeCount > 0 && (
-                        <span 
-                          className="blink-dot"
-                          style={{ 
-                            width: '6px', 
-                            height: '6px', 
-                            borderRadius: '50%', 
-                            backgroundColor: '#ef4444', 
-                            display: 'inline-block',
-                            boxShadow: '0 0 4px rgba(239, 68, 68, 0.6)'
-                          }} 
-                        />
-                      )}
+                    <span>{group.section}</span>
+                    <span style={{ fontSize: '9px', opacity: 0.7 }}>
+                      {isCollapsed ? '▶' : '▼'}
                     </span>
-                    {item.count ? <span style={{ background: 'rgba(13,148,136,0.3)', color: '#2dd4bf', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', flexShrink: 0 }}>{item.count}</span> : null}
-                  </Link>
-                )
-              ))}
-            </div>
-          ))}
+                  </div>
+                )}
+                {!isCollapsed && group.items.map((item: any) => (
+                  (item as any).external ? (
+                    <a 
+                      key={item.path} 
+                      href={item.path} 
+                      onClick={e => {
+                        e.preventDefault();
+                        window.open(item.path, '_blank', 'width=1100,height=800,toolbar=no,menubar=no,scrollbars=yes,resizable=yes,location=no,status=no');
+                      }}
+                      className="nav-item"
+                    >
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</span>
+                    </a>
+                  ) : (
+                    <Link 
+                      key={item.path} 
+                      to={item.path} 
+                      className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                    >
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {item.label}
+                        {item.badgeCount > 0 && (
+                          <span 
+                            className="blink-dot"
+                            style={{ 
+                              width: '6px', 
+                              height: '6px', 
+                              borderRadius: '50%', 
+                              backgroundColor: '#ef4444', 
+                              display: 'inline-block',
+                              boxShadow: '0 0 4px rgba(239, 68, 68, 0.6)'
+                            }} 
+                          />
+                        )}
+                      </span>
+                      {item.count ? <span style={{ background: 'rgba(13,148,136,0.3)', color: '#2dd4bf', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 700, padding: '1px 7px', flexShrink: 0 }}>{item.count}</span> : null}
+                    </Link>
+                  )
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         {/* 하단 사용자 영역 */}
