@@ -483,7 +483,7 @@ export const Orders: React.FC = () => {
       });
     }
     return result;
-  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
+  }, [orders, quotations, issuingCompanyFilter, managerFilter, customerFilter, stepFilter, viewFilter, completedFilter, dateFilterType, dateFilterTarget, selectedYear, selectedMonth, selectedQuarter, selectedHalf, rangeStart, rangeEnd, sortKey, sortOrder]);
 
   const stats = useMemo(() => {
     const totalUsd = processedOrders.reduce((sum, o) => {
