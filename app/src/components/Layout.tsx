@@ -417,7 +417,7 @@ export const Layout: React.FC = () => {
         { path: '/proforma-invoices', label: '≡ 수출 견적관리', external: false },
         { path: '/orders', label: '📦 수출 주문관리', external: false },
         { path: '/import-quotes', label: '📥 수입 견적관리', external: false },
-        { path: '/imports', label: '⚓ 수입관리', external: false },
+        { path: '/imports', label: '⚓ 수입 주문관리', external: false },
         { path: '/domestic-quotes', label: '📋 국내 견적관리', external: false },
         { path: '/domestic-orders', label: '🏬 국내 주문관리', external: false }
       ] as any },
