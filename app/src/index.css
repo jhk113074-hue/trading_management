@@ -515,13 +515,20 @@ textarea:focus {
   font-weight: 500 !important;
 }
 
-/* ── 주요 대제목 및 바스켓 타이틀은 두껍게 유지 ── */
+/* ── 주요 대제목, 소제목 및 바스켓 타이틀은 두껍게 유지 ── */
 .dashboard-top-section h2,
 .dashboard-top-section h2 *,
 .kanban-left-panel h3,
 .top-section h2,
 .top-section h2 *,
-.board-column div[style*="fontSize: '13px'"] {
+.board-column div[style*="fontSize: '13px'"],
+/* 소제목들 (무역현황 항목명, 스케줄러 세부 타이틀, 미배정 타이틀 등) */
+.dashboard-top-section div[style*="fontWeight: 800"],
+.dashboard-top-section div[style*="font-weight: 800"],
+.dashboard-top-section span[style*="fontSize: '15.5px'"],
+.dashboard-top-section span[style*="fontSize: '15.5px'"] span,
+.kanban-left-panel div[style*="fontWeight: 800"],
+.kanban-left-panel div[style*="font-weight: 800"] {
   font-weight: 800 !important;
 }
 
@@ -530,7 +537,7 @@ textarea:focus {
   font-weight: 800 !important;
 }
 
-/* 통계 지표의 핵심 수치(금액/건수)는 시인성을 위해 중간 굵기(650) 유지 */
+/* 통계 지표의 핵심 수치(금액/건수)는 시인성을 위해 중간 굵기(700) 유지 */
 .dashboard-top-section span[style*="fontSize: '20px'"],
 .dashboard-top-section span[style*="fontSize: '19px'"] {
   font-weight: 700 !important;
