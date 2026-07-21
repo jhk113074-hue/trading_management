@@ -305,6 +305,12 @@ body {
   display: none;
 }
 
+@media (max-width: 1200px) {
+  .dashboard-top-section {
+    grid-template-columns: 1fr !important; /* 태블릿/소형 노트북 크기에서는 세로 배치 */
+  }
+}
+
 /* 모바일 반응형 헤더 & 대시보드 보완 스타일 */
 @media (max-width: 768px) {
   .header {
