@@ -1727,9 +1727,9 @@ export const Dashboard: React.FC = () => {
                   이번달 PI 건수
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsCount}</span> 건</span>
+                  <span><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsCount}</span> 건</span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
+                  <span><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#3b82f6', fontWeight: 900, fontSize: '20px' }}>{tradingKPIs.piYsaccCount}</span> 건</span>
                 </div>
               </div>
 
@@ -1740,9 +1740,9 @@ export const Dashboard: React.FC = () => {
                   수주 금액
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
+                  <span><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
+                  <span><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#10b981', fontWeight: 900, fontSize: '19px' }}>${tradingKPIs.orderYsaccAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.orderYsaccCount}건)</span></span>
                 </div>
               </div>
 
@@ -1753,9 +1753,9 @@ export const Dashboard: React.FC = () => {
                   당월 매출 (원화 합산)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
+                  <span><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
+                  <span><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#ea580c', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccCount}건)</span></span>
                 </div>
               </div>
 
@@ -1766,9 +1766,9 @@ export const Dashboard: React.FC = () => {
                   전체 누적 매출금액
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '16.5px', fontWeight: 700 }}>
-                  <span>영성ACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
+                  <span><strong className="company-bold">영성ACC:</strong> <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsTotalCount}건)</span></span>
                   <span style={{ color: 'var(--border-default)', fontWeight: 'normal' }}>|</span>
-                  <span>(주)YSACC: <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
+                  <span><strong className="company-bold">(주)YSACC:</strong> <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '19px' }}>₩{Math.round(tradingKPIs.salesYsaccTotalAmount).toLocaleString()}</span> <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'normal' }}>({tradingKPIs.salesYsaccTotalCount}건)</span></span>
                 </div>
               </div>
 

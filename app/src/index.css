@@ -553,3 +553,8 @@ textarea:focus {
 .dashboard-top-section strong {
   font-weight: 500 !important; /* 스케줄러 일정 목록 타이틀 가늘게 */
 }
+
+/* 회사 라벨명 두껍게 복원 */
+.company-bold {
+  font-weight: 800 !important;
+}
