@@ -341,6 +341,32 @@ export const DomesticQuotes: React.FC = () => {
     return { expectedBuyingAmount, quoteAmount, expectedMargin, expectedMarginRate };
   }, [items]);
 
+  // Compute related revisions for current base quoteNo
+  const relatedRevisions = useMemo(() => {
+    if (!quoteNo.trim()) return [];
+    const baseNo = quoteNo.trim().replace(/-R\d+$/, '');
+    return quotes
+      .filter(q => (q.quoteNo || '').replace(/-R\d+$/, '') === baseNo)
+      .sort((a, b) => (a.revision || 0) - (b.revision || 0));
+  }, [quoteNo, quotes]);
+
+  // Switch active modal into Revision Mode
+  const handleSwitchToRevise = () => {
+    const baseId = editingItem ? editingItem.id : parentQuoteId;
+    if (!baseId) {
+      alert("개정(Revise)을 생성할 원본 견적서가 선택되지 않았습니다.");
+      return;
+    }
+    setParentQuoteId(baseId);
+    setEditingItem(null);
+    const nextRev = (revision || 0) + 1;
+    setRevision(nextRev);
+    const cleanNo = (quoteNo || '').replace(/-R\d+$/, '');
+    setQuoteNo(`${cleanNo}-R${nextRev}`);
+    setQuoteDate(new Date().toISOString().split('T')[0]);
+    alert(`🔄 개정(Revise) 작성 모드로 전환되었습니다!\n견적서 내용을 변경 후 [Revise 저장] 버튼을 누르시면 새로운 개정차수(Rev ${nextRev})로 등록됩니다.`);
+  };
+
   // Open Modal for Create, Edit, or Revise
   const handleOpenModal = (item?: DomesticQuoteItem, isRevise: boolean = false) => {
     setModalPos({ x: Math.max(20, (window.innerWidth - 980) / 2), y: Math.max(15, (window.innerHeight - 720) / 2) });
@@ -769,7 +795,7 @@ export const DomesticQuotes: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 850, color: '#1e293b', margin: 0 }}>📋 국내 견적관리</h1>
-          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 견적 및 단가 검토 통합 관리</span>
+          <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>국내 매입/매출 견적 및 단가 검토 통합 관리 (Revision 관리 연동)</span>
         </div>
         <button
           onClick={() => handleOpenModal()}
@@ -863,7 +889,7 @@ export const DomesticQuotes: React.FC = () => {
             <thead>
               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #cbd5e1', color: '#475569' }}>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적일자</th>
-                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적번호</th>
+                <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>견적번호 (Revision)</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>주체</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>수신 (고객사)</th>
                 <th style={{ padding: '12px', fontSize: '13px', fontWeight: 750, letterSpacing: '0.02em', textTransform: 'uppercase' }}>품목 정보 (수량)</th>
@@ -899,11 +925,24 @@ export const DomesticQuotes: React.FC = () => {
                       <td style={{ padding: '12px', color: '#475569', fontWeight: 600 }}>{item.quoteDate}</td>
                       <td style={{ padding: '12px', fontWeight: 800, color: '#1e293b' }}>
                         {item.quoteNo}
-                        {item.revision > 0 && (
-                          <span style={{ fontSize: '11px', background: '#e0e7ff', color: '#3730a3', padding: '1px 5px', borderRadius: '4px', marginLeft: '6px', fontWeight: 800 }}>
-                            Rev {item.revision}
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenModal(item, true)}
+                          title="이 견적을 기반으로 새 차수(Revise) 개정 작성"
+                          style={{
+                            fontSize: '11px',
+                            background: item.revision > 0 ? '#e0e7ff' : '#f1f5f9',
+                            color: item.revision > 0 ? '#3730a3' : '#475569',
+                            border: '1px solid #c7d2fe',
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            marginLeft: '6px',
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {item.revision > 0 ? `Rev ${item.revision}` : 'Rev 0 (개정)'}
+                        </button>
                       </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: item.companyType === 'YSACC' ? '#eff6ff' : '#fef3c7', color: item.companyType === 'YSACC' ? '#2563eb' : '#d97706' }}>
@@ -945,8 +984,8 @@ export const DomesticQuotes: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleOpenModal(item, true)}
-                            title="새 버전(Revise) 생성"
-                            style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#6d28d9', cursor: 'pointer' }}
+                            title="새 차수(Revise) 개정 작성"
+                            style={{ background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 800, color: '#6d28d9', cursor: 'pointer' }}
                           >
                             🔄 Revise
                           </button>
@@ -1039,7 +1078,7 @@ export const DomesticQuotes: React.FC = () => {
             >
               <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '14px', color: '#3b82f6' }}>✥</span>
-                {parentQuoteId ? '🔄 국내 견적서 Revise (개정 작성)' : editingItem ? '✏️ 국내 견적서 수정' : '➕ 신규 국내 견적서 작성'}
+                {parentQuoteId || revision > 0 ? '🔄 국내 견적서 Revise (개정 작성)' : editingItem ? '✏️ 국내 견적서 수정' : '➕ 신규 국내 견적서 작성'}
                 {revision > 0 && <span style={{ fontSize: '11px', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '4px' }}>Rev {revision}</span>}
               </h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1063,18 +1102,55 @@ export const DomesticQuotes: React.FC = () => {
                   <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1e293b' }}>1. 견적 기본 및 수신자 정보 (고객사/공급사 🔍 DB 연결)</span>
                   <span style={{ fontSize: '10.5px', color: '#2563eb', fontWeight: 700 }}>⚡ 돋보기 버튼 클릭 시 DB 검색</span>
                 </div>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+
+                {/* 🔄 Revision History Badge Row */}
+                {relatedRevisions.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '5px 10px', borderRadius: '4px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#1e40af' }}>🔄 개정 차수 선택:</span>
+                    {relatedRevisions.map(rev => {
+                      const isSelected = rev.id === editingItem?.id || rev.quoteNo === quoteNo;
+                      return (
+                        <button
+                          key={rev.id}
+                          type="button"
+                          onClick={() => handleOpenModal(rev, false)}
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid',
+                            borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                            background: isSelected ? '#2563eb' : '#fff',
+                            color: isSelected ? '#fff' : '#475569',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {rev.revision === 0 ? 'Rev 0 (원안)' : `Rev ${rev.revision}`} ({rev.quoteDate})
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
-                      견적번호 <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 750, color: '#475569', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                        견적번호 (Revision) <span style={{ color: '#ef4444' }}>*</span>
+                      </label>
+                      {revision > 0 && (
+                        <span style={{ fontSize: '10px', color: '#6d28d9', fontWeight: 800 }}>
+                          (차수: Rev {revision})
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="text"
                       required
                       value={quoteNo}
                       onChange={e => setQuoteNo(e.target.value)}
-                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 600, color: '#1e293b', outline: 'none' }}
+                      style={{ height: '30px', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0 8px', fontSize: '12px', fontWeight: 700, color: '#1e293b', outline: 'none' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1451,6 +1527,16 @@ export const DomesticQuotes: React.FC = () => {
                 >
                   취소
                 </button>
+                {editingItem && (
+                  <button
+                    type="button"
+                    onClick={handleSwitchToRevise}
+                    style={{ height: '32px', padding: '0 14px', background: '#f5f3ff', color: '#6d28d9', border: '1px solid #c4b5fd', borderRadius: '4px', fontSize: '12.5px', fontWeight: 800, cursor: 'pointer' }}
+                    title="현재 견적을 기반으로 새로운 차수(Rev)를 생성합니다."
+                  >
+                    🔄 Revise (새 차수 개정)
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={isSubmitting}
