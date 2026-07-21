@@ -1929,18 +1929,21 @@ export const DomesticTrade: React.FC = () => {
                 <h1 style={{ textAlign: 'center', fontSize: '28px', fontWeight: 900, letterSpacing: '12px', margin: '0 0 20px 0', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
                   주 문 서
                 </h1>
-
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+                  
+                  {/* Left: Supplier Info (수신) */}
                   <div style={{ border: '1px solid #000', padding: '12px', fontSize: '13px', lineHeight: '1.8' }}>
-                    <div><strong>주문번호 :</strong> {previewItem.tradeNo}</div>
-                    {previewItem.quoteNo && <div><strong>견적번호 :</strong> {previewItem.quoteNo}</div>}
-                    <div><strong>일 자 :</strong> {previewItem.tradeDate}</div>
-                    <div><strong>수 신 :</strong> <span style={{ fontSize: '15px', fontWeight: 800 }}>{previewItem.customerName}</span></div>
+                    <div><strong>발주(주문)번호 :</strong> {previewItem.tradeNo}</div>
+                    {previewItem.quoteNo && <div><strong>참조번호 :</strong> {previewItem.quoteNo}</div>}
+                    <div><strong>발주일자 :</strong> {previewItem.tradeDate}</div>
+                    <div><strong>수 신 (공급처) :</strong> <span style={{ fontSize: '15px', fontWeight: 800 }}>{previewItem.supplierName}</span></div>
                     {previewItem.receiverAttention && <div><strong>참 조 :</strong> {previewItem.receiverAttention}</div>}
                     {previewItem.receiverTel && <div><strong>전화번호 :</strong> {previewItem.receiverTel}</div>}
                     {previewItem.receiverFax && <div><strong>F A X :</strong> {previewItem.receiverFax}</div>}
-                    <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 주문합니다.</div>
+                    <div style={{ marginTop: '8px', fontWeight: 700 }}>하기와 같이 정히 발주(주문)합니다.</div>
                   </div>
+
+                  {/* Right: YSACC / YS Company Stamp Info (발주자) */}
                   {(() => {
                     const activeComp = myCompanies[previewItem.companyType] || myCompanies[previewItem.companyType === 'YS' ? 'YS' : 'YSACC'] || {};
                     const compBizNo = activeComp.bizNo || '879-81-01648';
@@ -1949,6 +1952,7 @@ export const DomesticTrade: React.FC = () => {
                     const compAddress = activeComp.addressKo || '충북 청주시 서원구 성봉로 180, 302호';
                     const compPhone = activeComp.phone || '070-4141-2927';
                     const compFax = activeComp.fax || '0303-3444-1130';
+
                     return (
                       <div style={{ border: '1px solid #000', padding: '12px', fontSize: '12.5px', lineHeight: '1.6', position: 'relative' }}>
                         <div style={{ fontWeight: 700, color: '#1e293b' }}>▣ 취급품목 : {previewItem.specialNotes || 'S.M.C 관련 품목, 물탱크 관련 부자재'}</div>
@@ -1964,6 +1968,7 @@ export const DomesticTrade: React.FC = () => {
                   })()}
                 </div>
 
+                {/* Items Table */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', marginBottom: '20px', border: '1px solid #000' }}>
                   <thead>
                     <tr style={{ background: '#f1f5f9', borderBottom: '1px solid #000' }}>
@@ -1971,32 +1976,36 @@ export const DomesticTrade: React.FC = () => {
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>품 명</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>규 격</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', width: '90px' }}>수량</th>
-                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '100px' }}>단 가</th>
-                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '120px' }}>금 액</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '110px' }}>단 가</th>
+                      <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', width: '130px' }}>금 액</th>
                       <th style={{ border: '1px solid #000', padding: '8px', textAlign: 'left', width: '110px' }}>비 고</th>
                     </tr>
                   </thead>
                   <tbody>
                     {previewItem.items && previewItem.items.length > 0 ? (
-                      previewItem.items.map((it, idx) => (
-                        <tr key={it.id || idx}>
-                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 800 }}>{it.productName}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px' }}>{it.spec || '-'}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {it.salesUnitPrice.toLocaleString()}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {it.salesAmount.toLocaleString()}</td>
-                          <td style={{ border: '1px solid #000', padding: '8px' }}>{it.note || '-'}</td>
-                        </tr>
-                      ))
+                      previewItem.items.map((it, idx) => {
+                        const buyingUnitPrice = it.buyingUnitPrice || (it.buyingAmount ? Math.round(it.buyingAmount / (it.quantity || 1)) : 0);
+                        const buyingAmount = it.buyingAmount || (buyingUnitPrice * (it.quantity || 1));
+                        return (
+                          <tr key={it.id || idx}>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{idx + 1}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 800 }}>{it.productName}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>{it.spec || '-'}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontWeight: 700 }}>{it.quantity.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {buyingUnitPrice.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {buyingAmount.toLocaleString()}</td>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>{it.note || '-'}</td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>1</td>
                         <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 800 }}>{previewItem.productName}</td>
                         <td style={{ border: '1px solid #000', padding: '8px' }}>-</td>
                         <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>{previewItem.quantity || 1}</td>
-                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {Math.round(previewItem.salesAmount / (previewItem.quantity || 1)).toLocaleString()}</td>
-                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {previewItem.salesAmount.toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}>₩ {Math.round((previewItem.buyingAmount || 0) / (previewItem.quantity || 1)).toLocaleString()}</td>
+                        <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 800 }}>₩ {(previewItem.buyingAmount || 0).toLocaleString()}</td>
                         <td style={{ border: '1px solid #000', padding: '8px' }}>-</td>
                       </tr>
                     )}
@@ -2015,19 +2024,17 @@ export const DomesticTrade: React.FC = () => {
                   <tfoot>
                     <tr style={{ background: '#f8fafc', fontWeight: 800 }}>
                       <td colSpan={5} style={{ border: '1px solid #000', padding: '10px', textAlign: 'center', fontSize: '14px' }}>합 계</td>
-                      <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'right', fontSize: '15px', color: '#1e293b' }}>₩ {previewItem.salesAmount.toLocaleString()}</td>
+                      <td style={{ border: '1px solid #000', padding: '10px', textAlign: 'right', fontSize: '15px', color: '#1e293b' }}>₩ {(previewItem.buyingAmount || 0).toLocaleString()}</td>
                       <td style={{ border: '1px solid #000', padding: '10px' }} />
                     </tr>
                   </tfoot>
                 </table>
 
+                {/* Footer Notes & Manager */}
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', alignItems: 'end' }}>
                   <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
                     <div style={{ fontWeight: 800 }}>※ 특기사항</div>
-                    <div style={{ marginBottom: '8px', color: '#334155' }}>{previewItem.specialNotes || '-'}</div>
-                    <div style={{ fontWeight: 800 }}>※ 一 般 事 項</div>
-                    <div>1. {previewItem.vatType || '부가가치세(VAT): 별도'}</div>
-                    <div>2. {previewItem.paymentTerms || '결제조건 : 선금 30%, 잔금 70%'}</div>
+                    <div style={{ marginBottom: '8px', color: '#334155' }}>{previewItem.specialNotes || '발주 명세 확인 및 지정 장소 납품 부탁드립니다.'}</div>
                   </div>
                   <div style={{ border: '1px solid #000', fontSize: '12px' }}>
                     <div style={{ background: '#f1f5f9', borderBottom: '1px solid #000', padding: '4px', textAlign: 'center', fontWeight: 800 }}>담당자</div>
@@ -2041,9 +2048,6 @@ export const DomesticTrade: React.FC = () => {
                   </div>
                 </div>
 
-                <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #cbd5e1', paddingTop: '12px', fontSize: '14px', fontWeight: 900, color: '#1e293b' }}>
-                  {previewItem.companyType === 'YS' ? '영성ACC' : '(주)와이에스에이씨씨'}
-                </div>
               </div>
             </div>
 
