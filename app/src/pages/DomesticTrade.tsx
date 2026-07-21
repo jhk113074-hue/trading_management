@@ -978,13 +978,6 @@ export const DomesticTrade: React.FC = () => {
                             💳 정산/이익관리
                           </button>
                           <button
-                            onClick={() => setPreviewItem(item)}
-                            title="엑셀/인쇄 양식 미리보기"
-                            style={{ background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#1d4ed8', cursor: 'pointer' }}
-                          >
-                            🖨️ 주문서 출력
-                          </button>
-                          <button
                             onClick={() => handleOpenModal(item)}
                             style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                           >
