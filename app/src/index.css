@@ -565,3 +565,22 @@ textarea:focus {
 .company-bold {
   font-weight: 800 !important;
 }
+
+/* ── 전체 업무 리스트 페이지 글꼴 굵기 완화 (제목/헤더 제외) ── */
+.task-list-page,
+.task-list-page button,
+.task-list-page select,
+.task-list-page td,
+.task-list-page span,
+.task-list-page input {
+  font-weight: 500 !important; /* 얇은 글씨체 */
+}
+
+/* 중요 대제목 및 테이블 헤더는 가독성 및 가이드라인 준수를 위해 유지 */
+.task-list-page h1 {
+  font-weight: 800 !important;
+}
+.task-list-page th,
+.task-list-page th * {
+  font-weight: 700 !important;
+}
