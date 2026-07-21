@@ -870,7 +870,7 @@ export const DomesticTrade: React.FC = () => {
                       </td>
                       <td style={{ padding: '12px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', background: item.companyType === 'YSACC' ? '#eff6ff' : '#fef3c7', color: item.companyType === 'YSACC' ? '#2563eb' : '#d97706' }}>
-                          {item.companyType}
+                          {item.companyType === 'YS' ? '영성ACC' : 'YSACC'}
                         </span>
                       </td>
                       <td style={{ padding: '12px', color: '#334155', fontWeight: 600 }}>{item.supplierName}</td>
